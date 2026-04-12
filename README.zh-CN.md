@@ -32,6 +32,13 @@ GitRelay 是一款原生 macOS 应用，用于管理多个 Git 托管平台之�
 
 ## 安装
 
+### Homebrew
+
+```bash
+brew tap yangflow/tap
+brew install --cask gitrelay
+```
+
 ### 下载 DMG
 
 前往 [Releases](https://github.com/yangflow/gitrelay/releases) 下载最新版 `GitRelay-x.y.z.dmg`，打开后将 GitRelay 拖入 Applications 文件夹。

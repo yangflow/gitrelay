@@ -32,6 +32,13 @@ It supports any combination of GitLab, GitHub, Gitea, Gitee, Bitbucket, or self-
 
 ## Install
 
+### Homebrew
+
+```bash
+brew tap yangflow/tap
+brew install --cask gitrelay
+```
+
 ### Download DMG
 
 Go to [Releases](https://github.com/yangflow/gitrelay/releases) and download the latest `GitRelay-x.y.z.dmg`. Open it and drag GitRelay to Applications.
