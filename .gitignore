@@ -1,0 +1,48 @@
+## macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+## Xcode build output
+build/
+dist/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## Xcode per-user state (should never be committed)
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+
+## Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+Package.pins
+Package.resolved
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+## CocoaPods / Carthage (not used here but future-proof)
+Pods/
+Carthage/Build/
+
+## Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+## Misc
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
