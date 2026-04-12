@@ -33,7 +33,7 @@ final class UpdaterService: NSObject {
         // startingUpdater: false — do not auto-check on launch until
         // SUFeedURL and SUPublicEDKey are configured in build settings.
         self.controller = SPUStandardUpdaterController(
-            startingUpdater: false,
+            startingUpdater: true,
             updaterDelegate: nil,
             userDriverDelegate: nil
         )
@@ -58,11 +58,25 @@ final class UpdaterService {
     private init() {}
 
     func checkForUpdates() {
-        guard let url = URL(string: "https://github.com/yangflow/gitrelay/releases") else { return }
-        NSWorkspace.shared.open(url)
+        let alert = NSAlert()
+        alert.messageText = "Updates not configured"
+        alert.informativeText = """
+            GitRelay was built without the Sparkle auto-update framework.
+
+            To enable in-app updates:
+              1. Xcode → File → Add Package Dependencies
+              2. Paste https://github.com/sparkle-project/Sparkle
+              3. Add the `Sparkle` library to the gitrelay app target
+              4. Set SUFeedURL and SUPublicEDKey in build settings
+              5. Rebuild
+
+            See UpdaterService.swift for the full runbook.
+            """
+        alert.alertStyle = .informational
+        alert.runModal()
     }
 
-    var canCheck: Bool { true }
+    var canCheck: Bool { false }
 }
 
 #endif
