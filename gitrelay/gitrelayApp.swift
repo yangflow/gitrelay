@@ -24,6 +24,11 @@ struct gitrelayApp: App {
         .windowResizability(.contentMinSize)
         .defaultSize(width: 900, height: 600)
 
+        Window("About GitRelay", id: "about") {
+            AboutView()
+        }
+        .windowResizability(.contentSize)
+
         MenuBarExtra {
             MenuBarPopoverView()
                 .environment(appVM)

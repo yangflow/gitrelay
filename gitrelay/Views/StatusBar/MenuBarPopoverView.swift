@@ -37,6 +37,13 @@ struct MenuBarPopoverView: View {
                 Spacer()
                 Button("打开主窗口") { openMainWindow() }
                     .controlSize(.small)
+                Button {
+                    openWindow(id: "about")
+                } label: {
+                    Image(systemName: "info.circle")
+                }
+                .buttonStyle(.borderless)
+                .help("关于 GitRelay")
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
