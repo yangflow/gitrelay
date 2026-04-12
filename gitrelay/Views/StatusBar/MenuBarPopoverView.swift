@@ -7,15 +7,17 @@ struct MenuBarIconLabel: View {
     let appVM: AppViewModel
 
     var body: some View {
-        Image(systemName: iconName)
-            .font(.system(size: 14, weight: .medium))
-            .symbolRenderingMode(.monochrome)
+        Image(nsImage: icon)
     }
 
-    private var iconName: String {
-        appVM.statuses.values.contains { if case .failed = $0 { return true }; return false }
-            ? "exclamationmark.triangle.fill"
-            : "arrow.triangle.2.circlepath"
+    private var icon: NSImage {
+        let hasFailed = appVM.statuses.values.contains { if case .failed = $0 { return true }; return false }
+        let name = hasFailed ? "exclamationmark.triangle.fill" : "arrow.triangle.2.circlepath"
+        let config = NSImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+        let image = NSImage(systemSymbolName: name, accessibilityDescription: "GitRelay")?
+            .withSymbolConfiguration(config) ?? NSImage()
+        image.isTemplate = true
+        return image
     }
 }
 
