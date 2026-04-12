@@ -22,7 +22,7 @@ SCHEME="gitrelay"
 CONFIGURATION="Release"
 DERIVED="build/DerivedData"
 DIST="dist"
-APP_NAME="gitrelay.app"
+APP_NAME="GitRelay.app"
 
 if ! command -v xcodebuild >/dev/null 2>&1; then
     echo "error: xcodebuild not found in PATH" >&2

@@ -57,7 +57,7 @@ SCHEME="gitrelay"
 CONFIGURATION="Release"
 DERIVED="build/DerivedData"
 DIST="dist"
-APP_NAME="gitrelay.app"
+APP_NAME="GitRelay.app"
 DMG_NAME="GitRelay-$VERSION.dmg"
 
 # -----------------------------------------------------------------------------

@@ -24,7 +24,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		964A1ADF2F8B6C8F008A7FD2 /* gitrelay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = gitrelay.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		964A1ADF2F8B6C8F008A7FD2 /* GitRelay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitRelay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		964A1AEC2F8B6C91008A7FD2 /* gitrelayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = gitrelayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		964A1AF62F8B6C91008A7FD2 /* gitrelayUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = gitrelayUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -85,7 +85,7 @@
 		964A1AE02F8B6C8F008A7FD2 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				964A1ADF2F8B6C8F008A7FD2 /* gitrelay.app */,
+				964A1ADF2F8B6C8F008A7FD2 /* GitRelay.app */,
 				964A1AEC2F8B6C91008A7FD2 /* gitrelayTests.xctest */,
 				964A1AF62F8B6C91008A7FD2 /* gitrelayUITests.xctest */,
 			);
@@ -114,7 +114,7 @@
 			packageProductDependencies = (
 			);
 			productName = gitrelay;
-			productReference = 964A1ADF2F8B6C8F008A7FD2 /* gitrelay.app */;
+			productReference = 964A1ADF2F8B6C8F008A7FD2 /* GitRelay.app */;
 			productType = "com.apple.product-type.application";
 		};
 		964A1AEB2F8B6C91008A7FD2 /* gitrelayTests */ = {
@@ -406,7 +406,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yangflow.gitrelay;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = GitRelay;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -436,7 +436,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yangflow.gitrelay;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = GitRelay;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -463,7 +463,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/gitrelay.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/gitrelay";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GitRelay.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GitRelay";
 			};
 			name = Debug;
 		};
@@ -483,7 +483,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/gitrelay.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/gitrelay";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GitRelay.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GitRelay";
 			};
 			name = Release;
 		};

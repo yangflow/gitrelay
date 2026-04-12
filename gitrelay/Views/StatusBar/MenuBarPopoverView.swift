@@ -9,7 +9,7 @@ struct MenuBarIconLabel: View {
     var body: some View {
         Image(systemName: iconName)
             .font(.system(size: 14, weight: .medium))
-            .symbolRenderingMode(.template)
+            .symbolRenderingMode(.monochrome)
     }
 
     private var iconName: String {
@@ -23,6 +23,7 @@ struct MenuBarIconLabel: View {
 
 struct MenuBarPopoverView: View {
     @Environment(AppViewModel.self) private var appVM
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(spacing: 0) {
@@ -67,11 +68,9 @@ struct MenuBarPopoverView: View {
     }
 
     private func openMainWindow() {
+        NSApp.setActivationPolicy(.regular)
+        openWindow(id: "main")
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.windows
-            .filter { !($0 is NSPanel) }
-            .first?
-            .makeKeyAndOrderFront(nil)
     }
 }
 
