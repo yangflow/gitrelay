@@ -33,9 +33,22 @@
 		964A1AF62F8B6C91008A7FD2 /* gitrelayUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = gitrelayUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BCC7306444FA42C98AA71785 /* Exceptions for "gitrelay" folder in "gitrelay" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 964A1ADE2F8B6C8F008A7FD2 /* gitrelay */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		964A1AE12F8B6C8F008A7FD2 /* gitrelay */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BCC7306444FA42C98AA71785 /* Exceptions for "gitrelay" folder in "gitrelay" target */,
+			);
 			path = gitrelay;
 			sourceTree = "<group>";
 		};
