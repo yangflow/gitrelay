@@ -6,6 +6,8 @@ GitRelay is a native macOS app that manages one-way mirror syncs between Git hos
 
 It supports any combination of GitLab, GitHub, Gitea, Gitee, Bitbucket, or self-hosted Git servers — SSH Agent, SSH key, and HTTPS token auth included.
 
+[中文](./README.zh-CN.md)
+
 ---
 
 ## Features
@@ -29,6 +31,12 @@ It supports any combination of GitLab, GitHub, Gitea, Gitee, Bitbucket, or self-
 ---
 
 ## Install
+
+### Download DMG
+
+Go to [Releases](https://github.com/yangflow/gitrelay/releases) and download the latest `GitRelay-x.y.z.dmg`. Open it and drag GitRelay to Applications.
+
+> Unsigned build: right-click → Open on first launch, or run `xattr -cr /Applications/GitRelay.app`
 
 ### Build from source
 
