@@ -1,23 +1,12 @@
 import SwiftUI
 
-enum SheetMode: Identifiable {
-    case add
-    case edit(RepoConfig)
-
-    var id: String {
-        switch self {
-        case .add:         return "add"
-        case .edit(let r): return "edit-\(r.id)"
-        }
-    }
-}
-
 struct ContentView: View {
     @Environment(AppViewModel.self) private var appVM
     @State private var selectedRepoID: UUID?
     @State private var sheetMode: SheetMode?
 
     var body: some View {
+        @Bindable var appVM = appVM
         NavigationSplitView {
             SidebarView(selectedRepoID: $selectedRepoID, sheetMode: $sheetMode)
         } detail: {
@@ -34,6 +23,15 @@ struct ContentView: View {
             case .edit(let repo):
                 AddEditRepoSheet(repo: repo)
             }
+        }
+        .alert(
+            "发生错误",
+            isPresented: $appVM.isShowingError,
+            presenting: appVM.errorMessage
+        ) { _ in
+            Button("确定", role: .cancel) { }
+        } message: { message in
+            Text(message)
         }
     }
 }

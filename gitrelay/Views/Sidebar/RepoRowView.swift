@@ -16,11 +16,11 @@ struct RepoRowView: View {
         }
         .padding(.vertical, 2)
         .contextMenu {
-            Button("立即同步") { onSyncNow() }
+            Button("立即同步", action: onSyncNow)
                 .disabled(status == .syncing)
             Divider()
-            Button("编辑...") { onEdit() }
-            Button("删除...", role: .destructive) { onDelete() }
+            Button("编辑...", action: onEdit)
+            Button("删除...", role: .destructive, action: onDelete)
         }
     }
 }

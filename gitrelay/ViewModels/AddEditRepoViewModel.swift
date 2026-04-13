@@ -2,13 +2,6 @@ import Foundation
 import SwiftUI
 import Observation
 
-enum AuthMode: String, CaseIterable, Identifiable {
-    case sshAgent   = "SSH Agent"
-    case sshKey     = "SSH Key"
-    case httpsToken = "HTTPS Token"
-    var id: String { rawValue }
-}
-
 @MainActor
 @Observable
 final class AddEditRepoViewModel {
@@ -23,9 +16,9 @@ final class AddEditRepoViewModel {
     var dstToken: String       = ""
     var frequency: SyncFrequency = .manual
 
-    var nameError: String?     = nil
-    var srcError: String?      = nil
-    var dstError: String?      = nil
+    var nameError: String?
+    var srcError: String?
+    var dstError: String?
 
     let editingID: UUID?
 
@@ -41,8 +34,7 @@ final class AddEditRepoViewModel {
     }
 
     var isValid: Bool {
-        validate()
-        return nameError == nil && srcError == nil && dstError == nil
+        nameError == nil && srcError == nil && dstError == nil
     }
 
     @discardableResult
@@ -50,7 +42,7 @@ final class AddEditRepoViewModel {
         nameError = name.trimmingCharacters(in: .whitespaces).isEmpty ? "请输入名称" : nil
         srcError  = isValidGitURL(srcURL) ? nil : "请输入有效的 Git URL"
         dstError  = isValidGitURL(dstURL) ? nil : "请输入有效的 Git URL"
-        return nameError == nil && srcError == nil && dstError == nil
+        return isValid
     }
 
     func buildRepoConfig() -> RepoConfig {
@@ -87,17 +79,17 @@ final class AddEditRepoViewModel {
 
     private func populate(auth: AuthConfig, mode: inout AuthMode, keyPath: inout String, token: inout String) {
         switch auth {
-        case .sshAgent:            mode = .sshAgent
-        case .sshKey(let path):    mode = .sshKey;     keyPath = path
-        case .httpsToken:          mode = .httpsToken
+        case .sshAgent:         mode = .sshAgent
+        case .sshKey(let path): mode = .sshKey;     keyPath = path
+        case .httpsToken:       mode = .httpsToken
         }
     }
 
     private func buildAuth(mode: AuthMode, keyPath: String, token: String, repoID: UUID, side: String) -> AuthConfig {
         switch mode {
-        case .sshAgent:   return .sshAgent
-        case .sshKey:     return .sshKey(privateKeyPath: keyPath)
-        case .httpsToken: return .httpsToken(keychainTag: keychainTag(repoID: repoID, side: side))
+        case .sshAgent:   .sshAgent
+        case .sshKey:     .sshKey(privateKeyPath: keyPath)
+        case .httpsToken: .httpsToken(keychainTag: keychainTag(repoID: repoID, side: side))
         }
     }
 

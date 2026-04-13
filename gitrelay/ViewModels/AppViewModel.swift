@@ -10,6 +10,17 @@ final class AppViewModel {
     var records: [UUID: [SyncRecord]] = [:]
     var inProgressSyncIDs: Set<UUID> = []
 
+    var errorMessage: String?
+
+    var isShowingError: Bool {
+        get { errorMessage != nil }
+        set { if !newValue { errorMessage = nil } }
+    }
+
+    var hasAnyFailure: Bool {
+        statuses.values.contains { if case .failed = $0 { true } else { false } }
+    }
+
     private let scheduler = SyncScheduler()
     private var activeSyncEngines: [UUID: SyncEngine] = [:]
 
@@ -18,7 +29,7 @@ final class AppViewModel {
             try MirrorStore.ensureBaseDirectoryExists()
             repos = try RepoStore.load()
         } catch {
-            print("[AppViewModel] Load failed: \(error)")
+            errorMessage = "加载仓库配置失败：\(error.localizedDescription)"
         }
 
         scheduler.onFire = { [weak self] id in
@@ -125,12 +136,16 @@ final class AppViewModel {
 
     private func patchLastSynced(repoID: UUID, error: String?) {
         guard let index = repos.firstIndex(where: { $0.id == repoID }) else { return }
-        repos[index].lastSyncedAt  = Date()
+        repos[index].lastSyncedAt  = Date.now
         repos[index].lastSyncError = error
         saveRepos()
     }
 
     private func saveRepos() {
-        try? RepoStore.save(repos)
+        do {
+            try RepoStore.save(repos)
+        } catch {
+            errorMessage = "保存仓库配置失败:\(error.localizedDescription)"
+        }
     }
 }

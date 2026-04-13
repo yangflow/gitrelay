@@ -15,7 +15,7 @@ struct BranchListView: View {
                     .scaleEffect(0.7)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else if branches.isEmpty {
-                Text("未检测到分支（同步后可见）")
+                Text("未检测到分支(同步后可见)")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             } else {
@@ -23,15 +23,15 @@ struct BranchListView: View {
                     ForEach(branches) { branch in
                         HStack {
                             Image(systemName: branch.isDefault ? "arrow.branch" : "line.diagonal")
-                                .font(.caption2)
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .frame(width: 14)
                             Text(branch.name)
-                                .font(.system(size: 12))
+                                .font(.callout)
                                 .lineLimit(1)
                             Spacer()
                             Text(branch.tipSHA.truncatingSHA)
-                                .font(.system(size: 11, design: .monospaced))
+                                .font(.system(.caption, design: .monospaced))
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 3)
@@ -42,11 +42,11 @@ struct BranchListView: View {
                     }
                 }
                 .background(Color(nsColor: .controlBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .overlay(
+                .clipShape(.rect(cornerRadius: 6))
+                .overlay {
                     RoundedRectangle(cornerRadius: 6)
                         .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-                )
+                }
             }
         }
     }

@@ -10,17 +10,14 @@ final class RepoDetailViewModel {
 
     private let runner = GitRunner()
 
-    func loadBranches(for repoID: UUID) {
+    func loadBranches(for repoID: UUID) async {
         guard MirrorStore.mirrorExists(for: repoID) else {
             branches = []
             return
         }
         isLoadingBranches = true
+        defer { isLoadingBranches = false }
         let path = MirrorStore.mirrorPath(for: repoID).path
-        Task {
-            let result        = (try? await runner.listRefs(repoPath: path)) ?? []
-            branches          = result
-            isLoadingBranches = false
-        }
+        branches = (try? await runner.listRefs(repoPath: path)) ?? []
     }
 }

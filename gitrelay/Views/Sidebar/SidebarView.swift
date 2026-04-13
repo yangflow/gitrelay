@@ -28,13 +28,11 @@ struct SidebarView: View {
         .listStyle(.sidebar)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button { sheetMode = .add } label: {
-                    Label("添加", systemImage: "plus")
-                }
+                Button("添加", systemImage: "plus") { sheetMode = .add }
             }
             ToolbarItem(placement: .automatic) {
-                Button { appVM.triggerSyncAll() } label: {
-                    Label("全部同步", systemImage: "arrow.triangle.2.circlepath")
+                Button("全部同步", systemImage: "arrow.triangle.2.circlepath") {
+                    appVM.triggerSyncAll()
                 }
                 .disabled(appVM.repos.isEmpty)
             }
@@ -44,10 +42,10 @@ struct SidebarView: View {
                 if selectedRepoID == id { selectedRepoID = nil }
                 appVM.deleteRepo(id: id)
             }
-            Button("取消", role: .cancel) {}
+            Button("取消", role: .cancel) { }
         } message: { id in
             let name = appVM.repos.first(where: { $0.id == id })?.name ?? ""
-            Text("确认删除「\(name)」？本地镜像缓存也将被删除，此操作不可撤销。")
+            Text("确认删除「\(name)」?本地镜像缓存也将被删除,此操作不可撤销。")
         }
     }
 }

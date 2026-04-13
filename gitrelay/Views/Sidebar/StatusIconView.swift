@@ -3,6 +3,7 @@ import SwiftUI
 struct StatusIconView: View {
     let status: SyncStatus
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isAnimating = false
 
     var body: some View {
@@ -17,7 +18,7 @@ struct StatusIconView: View {
             case .ahead(let n):
                 HStack(spacing: 2) {
                     Text("\(n)")
-                        .font(.caption2)
+                        .font(.caption)
                         .foregroundStyle(.blue)
                     Image(systemName: "arrow.up.circle.fill")
                         .foregroundStyle(.blue)
@@ -25,10 +26,15 @@ struct StatusIconView: View {
             case .syncing:
                 Image(systemName: "arrow.triangle.2.circlepath")
                     .foregroundStyle(.secondary)
-                    .rotationEffect(.degrees(isAnimating ? 360 : 0))
-                    .onAppear {
-                        withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
+                    .rotationEffect(.degrees(reduceMotion ? 0 : (isAnimating ? 360 : 0)))
+                    .opacity(reduceMotion && isAnimating ? 0.5 : 1)
+                    .task {
+                        if reduceMotion {
                             isAnimating = true
+                        } else {
+                            withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
+                                isAnimating = true
+                            }
                         }
                     }
                     .onDisappear { isAnimating = false }
@@ -37,6 +43,6 @@ struct StatusIconView: View {
                     .foregroundStyle(.yellow)
             }
         }
-        .font(.system(size: 14))
+        .font(.callout)
     }
 }

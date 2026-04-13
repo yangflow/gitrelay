@@ -9,9 +9,8 @@ struct gitrelayApp: App {
             ContentView()
                 .environment(appVM)
                 .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { _ in
-                    // After the window finishes closing, hide from Dock if no
-                    // titled window remains visible.
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(50))
                         let hasVisibleWindow = NSApp.windows.contains {
                             $0.styleMask.contains(.titled) && $0.isVisible
                         }
