@@ -28,7 +28,12 @@ struct SidebarView: View {
         .listStyle(.sidebar)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("添加", systemImage: "plus") { sheetMode = .add }
+                Button("手动添加", systemImage: "plus") { sheetMode = .add }
+                    .help("手动添加仓库")
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button("浏览远端仓库", systemImage: "magnifyingglass") { sheetMode = .browse }
+                    .help("从 GitHub / GitLab 浏览并选择")
             }
             ToolbarItem(placement: .automatic) {
                 Button("全部同步", systemImage: "arrow.triangle.2.circlepath") {

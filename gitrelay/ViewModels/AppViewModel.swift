@@ -53,6 +53,22 @@ final class AppViewModel {
         saveRepos()
     }
 
+    func addRepos(_ newRepos: [RepoConfig], triggerSync: Bool = false) {
+        guard !newRepos.isEmpty else { return }
+        for repo in newRepos {
+            repos.append(repo)
+            statuses[repo.id] = .unknown
+            records[repo.id]  = []
+            scheduler.schedule(repo: repo)
+        }
+        saveRepos()
+        if triggerSync {
+            for repo in newRepos {
+                self.triggerSync(repoID: repo.id)
+            }
+        }
+    }
+
     func updateRepo(_ updated: RepoConfig) {
         guard let index = repos.firstIndex(where: { $0.id == updated.id }) else { return }
         repos[index] = updated

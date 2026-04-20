@@ -22,6 +22,8 @@ struct ContentView: View {
                 AddEditRepoSheet(repo: nil)
             case .edit(let repo):
                 AddEditRepoSheet(repo: repo)
+            case .browse:
+                BrowseRemoteRepoSheet()
             }
         }
         .alert(
