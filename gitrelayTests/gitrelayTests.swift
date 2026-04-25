@@ -145,6 +145,177 @@ struct RepoConfigCodableTests {
 
         #expect(repo.destructivePushPolicy == .auto)
     }
+
+    @Test func legacySuccessfulSyncBackfillsLastSuccessfulSyncedAt() throws {
+        let json = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "legacy-repo",
+          "srcURL": "git@github.com:user/repo.git",
+          "dstURL": "git@github.com:user/mirror.git",
+          "srcAuth": { "sshAgent": {} },
+          "dstAuth": { "sshAgent": {} },
+          "frequency": "手动",
+          "createdAt": "2026-04-25T12:00:00Z",
+          "lastSyncedAt": "2026-04-25T13:00:00Z"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
+
+        #expect(repo.lastSuccessfulSyncedAt == repo.lastSyncedAt)
+        #expect(repo.consecutiveFailureCount == 0)
+    }
+
+    @Test func legacyFailedSyncDefaultsToOneFailure() throws {
+        let json = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "legacy-repo",
+          "srcURL": "git@github.com:user/repo.git",
+          "dstURL": "git@github.com:user/mirror.git",
+          "srcAuth": { "sshAgent": {} },
+          "dstAuth": { "sshAgent": {} },
+          "frequency": "手动",
+          "createdAt": "2026-04-25T12:00:00Z",
+          "lastSyncedAt": "2026-04-25T13:00:00Z",
+          "lastSyncError": "network failed"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
+
+        #expect(repo.lastSuccessfulSyncedAt == nil)
+        #expect(repo.consecutiveFailureCount == 1)
+    }
+
+    @Test func recordSyncResultIncrementsFailuresAndResetsOnSuccess() {
+        let failureAt = Date(timeIntervalSince1970: 1_777_080_000)
+        let successAt = failureAt.addingTimeInterval(60)
+        var repo = RepoConfig(
+            name: "my-repo",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git"
+        )
+
+        repo.recordSyncResult(at: failureAt, error: "network failed")
+        repo.recordSyncResult(at: failureAt.addingTimeInterval(30), error: "still failing")
+
+        #expect(repo.lastSyncedAt == failureAt.addingTimeInterval(30))
+        #expect(repo.lastSuccessfulSyncedAt == nil)
+        #expect(repo.lastSyncError == "still failing")
+        #expect(repo.consecutiveFailureCount == 2)
+
+        repo.recordSyncResult(at: successAt, error: nil)
+
+        #expect(repo.lastSyncedAt == successAt)
+        #expect(repo.lastSuccessfulSyncedAt == successAt)
+        #expect(repo.lastSyncError == nil)
+        #expect(repo.consecutiveFailureCount == 0)
+    }
+}
+
+// MARK: - SyncHealthSummary
+
+struct SyncHealthSummaryTests {
+    @Test func classifiesTodaySuccessFailureAndNotRunRepos() {
+        let calendar = makeUTCCalendar()
+        let now = makeDate(year: 2026, month: 4, day: 25, hour: 12, calendar: calendar)
+        let yesterday = makeDate(year: 2026, month: 4, day: 24, hour: 12, calendar: calendar)
+
+        let successRepo = makeRepo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000011")!,
+            lastSyncedAt: now,
+            lastSuccessfulSyncedAt: now
+        )
+        let failedRepo = makeRepo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000012")!,
+            lastSyncedAt: now,
+            lastSyncError: "network failed",
+            consecutiveFailureCount: 3
+        )
+        let notRunRepo = makeRepo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000013")!,
+            lastSyncedAt: yesterday,
+            lastSuccessfulSyncedAt: yesterday
+        )
+
+        let summary = SyncHealthSummary.make(
+            repos: [successRepo, failedRepo, notRunRepo],
+            statuses: [:],
+            now: now,
+            calendar: calendar
+        )
+
+        #expect(summary.succeededToday == 1)
+        #expect(summary.failedToday == 1)
+        #expect(summary.notRunToday == 1)
+        #expect(summary.total == 3)
+        #expect(summary.hasFailures)
+    }
+
+    @Test func failedStatusCountsAsTodayFailure() {
+        let calendar = makeUTCCalendar()
+        let now = makeDate(year: 2026, month: 4, day: 25, hour: 12, calendar: calendar)
+        let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000014")!
+        let repo = makeRepo(
+            id: repoID,
+            lastSyncedAt: now,
+            lastSuccessfulSyncedAt: now
+        )
+
+        let summary = SyncHealthSummary.make(
+            repos: [repo],
+            statuses: [repoID: .failed("blocked")],
+            now: now,
+            calendar: calendar
+        )
+
+        #expect(summary.succeededToday == 0)
+        #expect(summary.failedToday == 1)
+        #expect(summary.notRunToday == 0)
+    }
+
+    private func makeUTCCalendar() -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        return calendar
+    }
+
+    private func makeDate(
+        year: Int,
+        month: Int,
+        day: Int,
+        hour: Int,
+        calendar: Calendar
+    ) -> Date {
+        calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!
+    }
+
+    private func makeRepo(
+        id: UUID,
+        lastSyncedAt: Date?,
+        lastSuccessfulSyncedAt: Date? = nil,
+        lastSyncError: String? = nil,
+        consecutiveFailureCount: Int = 0
+    ) -> RepoConfig {
+        RepoConfig(
+            id: id,
+            name: "repo-\(id.uuidString.suffix(4))",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            lastSyncedAt: lastSyncedAt,
+            lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
+            lastSyncError: lastSyncError,
+            consecutiveFailureCount: consecutiveFailureCount
+        )
+    }
 }
 
 // MARK: - Form Validation
@@ -214,5 +385,30 @@ struct AddEditRepoValidationTests {
         let repo = vm.buildRepoConfig()
 
         #expect(repo.destructivePushPolicy == .auto)
+    }
+
+    @Test func buildRepoConfigPreservesHealthFieldsWhenEditing() {
+        let lastSyncedAt = Date(timeIntervalSince1970: 1_777_080_000)
+        let lastSuccessfulSyncedAt = lastSyncedAt.addingTimeInterval(-3_600)
+        let existingRepo = RepoConfig(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000021")!,
+            name: "old-name",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            lastSyncedAt: lastSyncedAt,
+            lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
+            lastSyncError: "network failed",
+            consecutiveFailureCount: 4
+        )
+        let vm = AddEditRepoViewModel(editing: existingRepo)
+        vm.name = "new-name"
+
+        let repo = vm.buildRepoConfig()
+
+        #expect(repo.name == "new-name")
+        #expect(repo.lastSyncedAt == lastSyncedAt)
+        #expect(repo.lastSuccessfulSyncedAt == lastSuccessfulSyncedAt)
+        #expect(repo.lastSyncError == "network failed")
+        #expect(repo.consecutiveFailureCount == 4)
     }
 }

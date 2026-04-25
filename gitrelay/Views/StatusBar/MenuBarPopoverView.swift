@@ -26,6 +26,12 @@ struct MenuBarPopoverView: View {
                     .frame(maxWidth: .infinity)
                     .padding(20)
             } else {
+                SyncHealthSummaryView(summary: appVM.healthSummary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+
+                Divider()
+
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(appVM.repos) { repo in

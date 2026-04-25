@@ -1,0 +1,69 @@
+import SwiftUI
+
+struct SyncHealthSummaryView: View {
+    let summary: SyncHealthSummary
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                title
+                Spacer(minLength: 4)
+                metrics
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                title
+                metrics
+            }
+        }
+        .font(.caption)
+        .lineLimit(1)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var title: some View {
+        Label("今日", systemImage: "calendar")
+            .foregroundStyle(.secondary)
+    }
+
+    private var metrics: some View {
+        HStack(spacing: 8) {
+            HealthMetricView(
+                title: "成功",
+                count: summary.succeededToday,
+                systemImage: "checkmark.circle.fill",
+                tint: .green
+            )
+            HealthMetricView(
+                title: "失败",
+                count: summary.failedToday,
+                systemImage: "xmark.octagon.fill",
+                tint: summary.hasFailures ? .red : .secondary
+            )
+            HealthMetricView(
+                title: "未运行",
+                count: summary.notRunToday,
+                systemImage: "clock",
+                tint: .secondary
+            )
+        }
+    }
+}
+
+private struct HealthMetricView: View {
+    let title: String
+    let count: Int
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        Label {
+            Text("\(title) \(count)")
+                .monospacedDigit()
+                .minimumScaleFactor(0.82)
+        } icon: {
+            Image(systemName: systemImage)
+                .foregroundStyle(tint)
+        }
+    }
+}

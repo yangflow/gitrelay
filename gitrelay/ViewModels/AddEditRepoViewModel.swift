@@ -22,9 +22,19 @@ final class AddEditRepoViewModel {
     var dstError: String?
 
     let editingID: UUID?
+    private let createdAt: Date?
+    private let lastSyncedAt: Date?
+    private let lastSuccessfulSyncedAt: Date?
+    private let lastSyncError: String?
+    private let consecutiveFailureCount: Int
 
     init(editing repo: RepoConfig? = nil) {
         editingID = repo?.id
+        createdAt = repo?.createdAt
+        lastSyncedAt = repo?.lastSyncedAt
+        lastSuccessfulSyncedAt = repo?.lastSuccessfulSyncedAt
+        lastSyncError = repo?.lastSyncError
+        consecutiveFailureCount = repo?.consecutiveFailureCount ?? 0
         guard let repo else { return }
         name      = repo.name
         srcURL    = repo.srcURL
@@ -57,7 +67,12 @@ final class AddEditRepoViewModel {
             srcAuth: buildAuth(mode: srcAuthMode, keyPath: srcKeyPath, token: srcToken, repoID: id, side: "src"),
             dstAuth: buildAuth(mode: dstAuthMode, keyPath: dstKeyPath, token: dstToken, repoID: id, side: "dst"),
             frequency: frequency,
-            destructivePushPolicy: destructivePushPolicy
+            destructivePushPolicy: destructivePushPolicy,
+            createdAt: createdAt ?? Date(),
+            lastSyncedAt: lastSyncedAt,
+            lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
+            lastSyncError: lastSyncError,
+            consecutiveFailureCount: consecutiveFailureCount
         )
     }
 

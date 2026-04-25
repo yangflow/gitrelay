@@ -9,23 +9,32 @@ struct SidebarView: View {
     @State private var showDeleteAlert = false
 
     var body: some View {
-        List(selection: $selectedRepoID) {
-            ForEach(appVM.repos) { repo in
-                let status = appVM.statuses[repo.id] ?? .unknown
-                RepoRowView(
-                    repo: repo,
-                    status: status,
-                    onSyncNow: { appVM.triggerSync(repoID: repo.id) },
-                    onEdit:    { sheetMode = .edit(repo) },
-                    onDelete:  {
-                        pendingDeleteID = repo.id
-                        showDeleteAlert = true
-                    }
-                )
-                .tag(repo.id)
+        VStack(spacing: 0) {
+            List(selection: $selectedRepoID) {
+                ForEach(appVM.repos) { repo in
+                    let status = appVM.statuses[repo.id] ?? .unknown
+                    RepoRowView(
+                        repo: repo,
+                        status: status,
+                        onSyncNow: { appVM.triggerSync(repoID: repo.id) },
+                        onEdit:    { sheetMode = .edit(repo) },
+                        onDelete:  {
+                            pendingDeleteID = repo.id
+                            showDeleteAlert = true
+                        }
+                    )
+                    .tag(repo.id)
+                }
+            }
+            .listStyle(.sidebar)
+
+            if !appVM.repos.isEmpty {
+                Divider()
+                SyncHealthSummaryView(summary: appVM.healthSummary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
             }
         }
-        .listStyle(.sidebar)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("手动添加", systemImage: "plus") { sheetMode = .add }

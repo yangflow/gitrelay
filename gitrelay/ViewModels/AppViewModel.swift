@@ -21,6 +21,10 @@ final class AppViewModel {
         statuses.values.contains { if case .failed = $0 { true } else { false } }
     }
 
+    var healthSummary: SyncHealthSummary {
+        SyncHealthSummary.make(repos: repos, statuses: statuses)
+    }
+
     private let scheduler = SyncScheduler()
     private var activeSyncEngines: [UUID: SyncEngine] = [:]
 
@@ -37,7 +41,7 @@ final class AppViewModel {
         }
 
         for repo in repos {
-            statuses[repo.id] = .unknown
+            statuses[repo.id] = initialStatus(for: repo)
             records[repo.id]  = []
             scheduler.schedule(repo: repo)
         }
@@ -47,7 +51,7 @@ final class AppViewModel {
 
     func addRepo(_ repo: RepoConfig) {
         repos.append(repo)
-        statuses[repo.id] = .unknown
+        statuses[repo.id] = initialStatus(for: repo)
         records[repo.id]  = []
         scheduler.schedule(repo: repo)
         saveRepos()
@@ -57,7 +61,7 @@ final class AppViewModel {
         guard !newRepos.isEmpty else { return }
         for repo in newRepos {
             repos.append(repo)
-            statuses[repo.id] = .unknown
+            statuses[repo.id] = initialStatus(for: repo)
             records[repo.id]  = []
             scheduler.schedule(repo: repo)
         }
@@ -152,9 +156,15 @@ final class AppViewModel {
 
     private func patchLastSynced(repoID: UUID, error: String?) {
         guard let index = repos.firstIndex(where: { $0.id == repoID }) else { return }
-        repos[index].lastSyncedAt  = Date.now
-        repos[index].lastSyncError = error
+        repos[index].recordSyncResult(error: error)
         saveRepos()
+    }
+
+    private func initialStatus(for repo: RepoConfig) -> SyncStatus {
+        if let error = repo.lastSyncError {
+            return .failed(error)
+        }
+        return .unknown
     }
 
     private func saveRepos() {

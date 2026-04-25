@@ -20,6 +20,8 @@ struct RepoStatusSectionView: View {
                 RepoFailureRowView(
                     message: message,
                     lastSyncedAt: repo.lastSyncedAt,
+                    lastSuccessfulSyncedAt: repo.lastSuccessfulSyncedAt,
+                    consecutiveFailureCount: repo.consecutiveFailureCount,
                     onRetry: onSyncNow
                 )
             } else {

@@ -12,18 +12,19 @@ struct MenuBarRepoRowView: View {
             HStack(spacing: 8) {
                 StatusIconView(status: status)
                     .frame(width: 18, alignment: .center)
-                Text(repo.name)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Group {
-                    if let lastSyncedAt = repo.lastSyncedAt {
-                        Text(lastSyncedAt, format: .relative(presentation: .named))
-                    } else {
-                        Text("未同步")
-                    }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(repo.name)
+                        .foregroundStyle(isEscalatedFailure ? .red : .primary)
+                        .lineLimit(1)
+                    lastSuccessLabel
+                        .font(.caption2)
+                        .foregroundStyle(isStale ? .tertiary : .secondary)
+                        .lineLimit(1)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                if isEscalatedFailure {
+                    FailureCountBadge(count: repo.consecutiveFailureCount)
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -36,5 +37,28 @@ struct MenuBarRepoRowView: View {
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
+    }
+
+    private var lastSuccessLabel: some View {
+        Group {
+            if let lastSuccessfulSyncedAt = repo.lastSuccessfulSyncedAt {
+                Text("最近成功 \(lastSuccessfulSyncedAt, format: .relative(presentation: .named))")
+            } else if repo.lastSyncedAt != nil {
+                Text("尚无成功同步")
+            } else {
+                Text("未同步")
+            }
+        }
+    }
+
+    private var isEscalatedFailure: Bool {
+        repo.consecutiveFailureCount >= 3
+    }
+
+    private var isStale: Bool {
+        guard let lastSuccessfulSyncedAt = repo.lastSuccessfulSyncedAt else {
+            return true
+        }
+        return Date.now.timeIntervalSince(lastSuccessfulSyncedAt) > 86_400
     }
 }
