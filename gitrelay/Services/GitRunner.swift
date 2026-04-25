@@ -101,6 +101,15 @@ actor GitRunner {
         )
     }
 
+    func pushMirrorDryRun(mirrorPath: String, dstURL: String, env: [String: String] = [:]) async throws -> DestructivePushPlan {
+        let (stdout, stderr) = try await run(
+            args: ["push", "--mirror", "--dry-run", dstURL],
+            env: env,
+            cwd: mirrorPath
+        )
+        return DestructivePushPlan.parse(gitOutput: [stdout, stderr].joined(separator: "\n"))
+    }
+
     func countCommitsAhead(mirrorPath: String) async throws -> Int {
         let (stdout, _) = try await run(
             args: ["rev-list", "--count", "refs/dst/HEAD..HEAD"],

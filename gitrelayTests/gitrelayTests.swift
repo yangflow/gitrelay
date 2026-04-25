@@ -1,5 +1,6 @@
+import Foundation
 import Testing
-@testable import gitrelay
+@testable import GitRelay
 
 // MARK: - SyncFrequency
 
@@ -66,6 +67,86 @@ struct CredentialRedactionTests {
     }
 }
 
+// MARK: - DestructivePushPlan
+
+@MainActor
+struct DestructivePushPlanTests {
+    @Test func parsesDeletedRefs() {
+        let output = """
+        To github.com:user/mirror.git
+         - [deleted]         stale-branch
+         - [deleted]         refs/tags/v1.0.0
+        """
+
+        let plan = DestructivePushPlan.parse(gitOutput: output)
+
+        #expect(plan.deletedRefs == ["stale-branch", "refs/tags/v1.0.0"])
+        #expect(plan.forcedUpdateRefs.isEmpty)
+        #expect(plan.isDestructive)
+    }
+
+    @Test func parsesForcedUpdates() {
+        let output = """
+        To github.com:user/mirror.git
+         + 2ab034b...394de57 main -> main (forced update)
+         + 7e1a111...9aa2200 refs/tags/v1 -> refs/tags/v1 (forced update)
+        """
+
+        let plan = DestructivePushPlan.parse(gitOutput: output)
+
+        #expect(plan.deletedRefs.isEmpty)
+        #expect(plan.forcedUpdateRefs == ["main", "refs/tags/v1"])
+        #expect(plan.isDestructive)
+    }
+
+    @Test func ignoresNonDestructiveDryRunLines() {
+        let output = """
+        To github.com:user/mirror.git
+         * [new branch]      main -> main
+           abc1234..def5678  develop -> develop
+        """
+
+        #expect(DestructivePushPlan.parse(gitOutput: output) == .empty)
+    }
+}
+
+// MARK: - RepoConfig Codable
+
+@MainActor
+struct RepoConfigCodableTests {
+    @Test func newReposDefaultToStrictDestructivePushPolicy() {
+        let repo = RepoConfig(
+            name: "my-repo",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git"
+        )
+
+        #expect(repo.destructivePushPolicy == .strict)
+    }
+
+    @Test func existingReposWithoutPolicyDecodeAsAuto() throws {
+        let json = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "legacy-repo",
+          "srcURL": "git@github.com:user/repo.git",
+          "dstURL": "git@github.com:user/mirror.git",
+          "srcAuth": { "sshAgent": {} },
+          "dstAuth": { "sshAgent": {} },
+          "frequency": "手动",
+          "createdAt": "2026-04-25T12:00:00Z"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
+
+        #expect(repo.destructivePushPolicy == .auto)
+    }
+}
+
 // MARK: - Form Validation
 
 @MainActor
@@ -121,5 +202,17 @@ struct AddEditRepoValidationTests {
         _ = vm.validate()
         #expect(vm.srcError != nil)
         #expect(vm.dstError != nil)
+    }
+
+    @Test func buildRepoConfigKeepsDestructivePushPolicy() {
+        let vm = AddEditRepoViewModel()
+        vm.name = "my-repo"
+        vm.srcURL = "git@gitlab.com:org/repo.git"
+        vm.dstURL = "git@github.com:user/repo.git"
+        vm.destructivePushPolicy = .auto
+
+        let repo = vm.buildRepoConfig()
+
+        #expect(repo.destructivePushPolicy == .auto)
     }
 }

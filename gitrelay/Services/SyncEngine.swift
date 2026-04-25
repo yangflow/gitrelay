@@ -65,6 +65,22 @@ final class SyncEngine {
             record.commitsBefore = commitsBefore
 
             // 3. Push to dst
+            log("Checking mirror push impact...")
+            let plan = try await runner.pushMirrorDryRun(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
+            if plan.isDestructive {
+                log("Dry-run detected destructive changes: \(plan.summary).")
+                plan.deletedRefs.forEach { log("  delete: \($0)") }
+                plan.forcedUpdateRefs.forEach { log("  force-update: \($0)") }
+
+                if repo.destructivePushPolicy == .strict {
+                    throw DestructivePushError.blocked(plan)
+                }
+
+                log("Destructive push policy is automatic; continuing.")
+            } else {
+                log("Dry-run found no destructive ref changes.")
+            }
+
             log("Pushing to destination...")
             try await runner.pushMirror(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
             log("Push complete. ✓")
@@ -115,6 +131,10 @@ final class SyncEngine {
     }
 
     private func classifyError(_ error: Error) -> String {
+        if let destructivePushError = error as? DestructivePushError {
+            return destructivePushError.localizedDescription
+        }
+
         let raw = SyncEngine.redactCredentials(error.localizedDescription)
         let lower = raw.lowercased()
         if lower.contains("authentication failed") || lower.contains("permission denied") ||

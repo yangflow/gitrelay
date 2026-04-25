@@ -15,6 +15,7 @@ final class AddEditRepoViewModel {
     var dstKeyPath: String     = ""
     var dstToken: String       = ""
     var frequency: SyncFrequency = .manual
+    var destructivePushPolicy: DestructivePushPolicy = .strict
 
     var nameError: String?
     var srcError: String?
@@ -29,6 +30,7 @@ final class AddEditRepoViewModel {
         srcURL    = repo.srcURL
         dstURL    = repo.dstURL
         frequency = repo.frequency
+        destructivePushPolicy = repo.destructivePushPolicy
         populate(auth: repo.srcAuth, mode: &srcAuthMode, keyPath: &srcKeyPath, token: &srcToken)
         populate(auth: repo.dstAuth, mode: &dstAuthMode, keyPath: &dstKeyPath, token: &dstToken)
     }
@@ -54,7 +56,8 @@ final class AddEditRepoViewModel {
             dstURL: dstURL.trimmingCharacters(in: .whitespaces),
             srcAuth: buildAuth(mode: srcAuthMode, keyPath: srcKeyPath, token: srcToken, repoID: id, side: "src"),
             dstAuth: buildAuth(mode: dstAuthMode, keyPath: dstKeyPath, token: dstToken, repoID: id, side: "dst"),
-            frequency: frequency
+            frequency: frequency,
+            destructivePushPolicy: destructivePushPolicy
         )
     }
 

@@ -66,9 +66,22 @@ struct AddEditRepoSheet: View {
                     FrequencyPickerView(frequency: $vm.frequency)
                 }
 
+                Section("破坏性推送保护") {
+                    Picker("策略", selection: $vm.destructivePushPolicy) {
+                        ForEach(DestructivePushPolicy.allCases) { policy in
+                            Text(policy.displayName).tag(policy)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    Text(vm.destructivePushPolicy.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section {
                     Label {
-                        Text("Push mirror 会删除目标仓库中源仓库不存在的分支,目标仓库将成为源仓库的完整镜像。")
+                        Text("GitRelay 会先执行 dry-run。严格保护会阻断目标仓库 ref 删除和强制更新;自动执行保留传统 mirror 行为。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } icon: {
