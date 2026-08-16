@@ -16,6 +16,10 @@ final class SyncEngine {
 
     var onEvent: ((SyncEvent) -> Void)?
 
+    /// Called when `.strict` policy needs an explicit continue/cancel decision.
+    /// Return `true` to proceed with the destructive push, `false` to block.
+    var confirmDestructivePush: ((DestructivePushPlan) async -> Bool)?
+
     init(repo: RepoConfig) {
         self.repo = repo
         self.record = SyncRecord(repoID: repo.id)
@@ -64,7 +68,7 @@ final class SyncEngine {
             }
             record.commitsBefore = commitsBefore
 
-            // 3. Push to dst
+            // 3. Push to dst (dry-run first to catch prune / forced updates)
             log("Checking mirror push impact...")
             let plan = try await runner.pushMirrorDryRun(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
             if plan.isDestructive {
@@ -72,11 +76,16 @@ final class SyncEngine {
                 plan.deletedRefs.forEach { log("  delete: \($0)") }
                 plan.forcedUpdateRefs.forEach { log("  force-update: \($0)") }
 
-                if repo.destructivePushPolicy == .strict {
-                    throw DestructivePushError.blocked(plan)
+                if repo.destructivePushPolicy.requiresConfirmation(for: plan) {
+                    log("Waiting for confirmation of destructive push...")
+                    let confirmed = await confirmDestructivePush?(plan) ?? false
+                    guard confirmed else {
+                        throw DestructivePushError.blocked(plan)
+                    }
+                    log("User confirmed destructive push; continuing.")
+                } else {
+                    log("Destructive push policy is automatic; continuing.")
                 }
-
-                log("Destructive push policy is automatic; continuing.")
             } else {
                 log("Dry-run found no destructive ref changes.")
             }

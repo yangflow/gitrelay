@@ -74,6 +74,9 @@ struct MenuBarPopoverView: View {
             .padding(.vertical, 10)
         }
         .frame(width: 280)
+        .onReceive(NotificationCenter.default.publisher(for: .gitrelayOpenMainWindow)) { _ in
+            openMainWindow()
+        }
     }
 
     private func openMainWindow() {

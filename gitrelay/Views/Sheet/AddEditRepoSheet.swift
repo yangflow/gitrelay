@@ -81,7 +81,7 @@ struct AddEditRepoSheet: View {
 
                 Section {
                     Label {
-                        Text("GitRelay 会先执行 dry-run。严格保护会阻断目标仓库 ref 删除和强制更新;自动执行保留传统 mirror 行为。")
+                        Text("GitRelay 会先执行 dry-run。严格保护会在删除或强制更新前弹出确认弹窗;取消则阻断并记失败。自动执行保留传统 mirror 行为。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } icon: {

@@ -35,5 +35,19 @@ struct ContentView: View {
         } message: { message in
             Text(message)
         }
+        .sheet(item: Binding(
+            get: { appVM.presentedDestructiveConfirmation },
+            // Buttons own the lifecycle; ignore SwiftUI writes so confirming one
+            // queued prompt cannot cancel the next via a transient nil set.
+            set: { _ in }
+        )) { request in
+            DestructivePushConfirmationSheet(
+                repoName: request.repoName,
+                plan: request.plan,
+                onConfirm: { appVM.confirmPendingDestructivePush() },
+                onCancel: { appVM.cancelPendingDestructivePush() }
+            )
+            .interactiveDismissDisabled()
+        }
     }
 }

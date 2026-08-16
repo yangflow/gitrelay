@@ -16,9 +16,14 @@ enum DestructivePushPolicy: String, Codable, CaseIterable, Identifiable {
     var description: String {
         switch self {
         case .strict:
-            return "dry-run 检测到目标侧 ref 删除或强制更新时阻断同步。"
+            return "dry-run 检测到目标侧 ref 删除或强制更新时弹出确认,取消则阻断同步。"
         case .auto:
             return "检测到删除或强制更新也继续推送,适合临时镜像或已确认的目标仓库。"
         }
+    }
+
+    /// strict 策略在 dry-run 发现删除 / 强制更新时需要用户显式确认。
+    func requiresConfirmation(for plan: DestructivePushPlan) -> Bool {
+        self == .strict && plan.isDestructive
     }
 }
