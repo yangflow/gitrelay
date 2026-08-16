@@ -365,6 +365,216 @@ struct SyncHealthSummaryTests {
     }
 }
 
+// MARK: - VerificationDecision
+
+struct VerificationDecisionTests {
+    @Test func identicalCommitSHAsMatchWithoutTrees() {
+        let decision = VerificationDecision.decide(
+            branch: "main",
+            srcCommitSHA: "aaa111",
+            dstCommitSHA: "aaa111"
+        )
+        #expect(decision == .matched(reason: .identicalCommitSHA))
+    }
+
+    @Test func differingSHAsWithIdenticalTreesMatch() {
+        let decision = VerificationDecision.decide(
+            branch: "main",
+            srcCommitSHA: "aaa111",
+            dstCommitSHA: "bbb222",
+            srcTreeHash: "tree999",
+            dstTreeHash: "tree999"
+        )
+        #expect(decision == .matched(reason: .identicalTreeHash))
+    }
+
+    @Test func differingSHAsAndTreesMarkDiverged() {
+        let decision = VerificationDecision.decide(
+            branch: "main",
+            srcCommitSHA: "aaa111",
+            dstCommitSHA: "bbb222",
+            srcTreeHash: "treeSRC",
+            dstTreeHash: "treeDST"
+        )
+        guard case .diverged(let detail) = decision else {
+            Issue.record("expected diverged")
+            return
+        }
+        #expect(detail.srcCommitSHA == "aaa111")
+        #expect(detail.dstCommitSHA == "bbb222")
+        #expect(detail.srcTreeHash == "treeSRC")
+        #expect(detail.dstTreeHash == "treeDST")
+        #expect(detail.summary.contains("main"))
+    }
+
+    @Test func missingDstRefIsInconclusive() {
+        let decision = VerificationDecision.decide(
+            branch: "main",
+            srcCommitSHA: "aaa111",
+            dstCommitSHA: nil
+        )
+        guard case .inconclusive(let message) = decision else {
+            Issue.record("expected inconclusive")
+            return
+        }
+        #expect(message.contains("目标"))
+    }
+
+    @Test func differingSHAsWithoutTreesAreInconclusive() {
+        let decision = VerificationDecision.decide(
+            branch: "main",
+            srcCommitSHA: "aaa111",
+            dstCommitSHA: "bbb222"
+        )
+        guard case .inconclusive = decision else {
+            Issue.record("expected inconclusive when trees are missing")
+            return
+        }
+    }
+}
+
+// MARK: - VerificationSampler
+
+struct VerificationSamplerTests {
+    struct SeededGenerator: RandomNumberGenerator {
+        var state: UInt64
+        mutating func next() -> UInt64 {
+            state = state &* 6364136223846793005 &+ 1
+            return state
+        }
+    }
+
+    @Test func sampleRespectsCountAndDoesNotExceedPopulation() {
+        let repos = (0..<5).map { index in
+            RepoConfig(
+                id: UUID(uuidString: "00000000-0000-0000-0000-00000000000\(index)")!,
+                name: "repo-\(index)",
+                srcURL: "git@github.com:user/repo.git",
+                dstURL: "git@github.com:user/mirror.git"
+            )
+        }
+        var generator = SeededGenerator(state: 42)
+        let sample = VerificationSampler.sample(from: repos, count: 3, using: &generator)
+        #expect(sample.count == 3)
+        #expect(Set(sample.map(\.id)).count == 3)
+    }
+
+    @Test func sampleOfZeroOrEmptyIsEmpty() {
+        #expect(VerificationSampler.sample(from: [], count: 3).isEmpty)
+        let repo = RepoConfig(
+            name: "only",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git"
+        )
+        var generator = SeededGenerator(state: 7)
+        #expect(VerificationSampler.sample(from: [repo], count: 0, using: &generator).isEmpty)
+    }
+
+    @Test func sampleCountLargerThanPopulationReturnsAll() {
+        let repos = (0..<2).map { index in
+            RepoConfig(
+                id: UUID(uuidString: "00000000-0000-0000-0000-00000000001\(index)")!,
+                name: "repo-\(index)",
+                srcURL: "git@github.com:user/repo.git",
+                dstURL: "git@github.com:user/mirror.git"
+            )
+        }
+        var generator = SeededGenerator(state: 99)
+        let sample = VerificationSampler.sample(from: repos, count: 10, using: &generator)
+        #expect(sample.count == 2)
+    }
+}
+
+// MARK: - GitRunner ls-remote parsing
+
+struct LSRemoteParsingTests {
+    @Test func parsesMatchingRef() {
+        let output = """
+        abcdef0123456789\trefs/heads/main
+        1111222233334444\trefs/heads/develop
+        """
+        #expect(GitRunner.parseLSRemoteSHA(output, matchingRef: "refs/heads/main") == "abcdef0123456789")
+        #expect(GitRunner.parseLSRemoteSHA(output, matchingRef: "refs/heads/develop") == "1111222233334444")
+    }
+
+    @Test func missingRefReturnsNil() {
+        let output = "abcdef0123456789\trefs/heads/main\n"
+        #expect(GitRunner.parseLSRemoteSHA(output, matchingRef: "refs/heads/other") == nil)
+    }
+}
+
+// MARK: - Diverged persistence
+
+struct DivergedStateTests {
+    @Test func recordVerificationResultSetsAndClearsDivergence() {
+        var repo = RepoConfig(
+            name: "my-repo",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git"
+        )
+        let verifiedAt = Date(timeIntervalSince1970: 1_777_100_000)
+
+        repo.recordVerificationResult(at: verifiedAt, divergedDetail: "分支 main 内容分歧")
+        #expect(repo.isDiverged)
+        #expect(repo.lastVerifiedAt == verifiedAt)
+        #expect(repo.divergedDetail == "分支 main 内容分歧")
+
+        repo.recordVerificationResult(at: verifiedAt.addingTimeInterval(60), divergedDetail: nil)
+        #expect(!repo.isDiverged)
+        #expect(repo.divergedDetail == nil)
+    }
+
+    @Test func successfulSyncClearsDivergence() {
+        var repo = RepoConfig(
+            name: "my-repo",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            divergedDetail: "旧分歧"
+        )
+        repo.recordSyncResult(error: nil)
+        #expect(repo.divergedDetail == nil)
+        #expect(!repo.isDiverged)
+    }
+
+    @Test func legacyReposDefaultBranchIsMain() throws {
+        let json = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "legacy-repo",
+          "srcURL": "git@github.com:user/repo.git",
+          "dstURL": "git@github.com:user/mirror.git",
+          "srcAuth": { "sshAgent": {} },
+          "dstAuth": { "sshAgent": {} },
+          "frequency": "手动",
+          "createdAt": "2026-04-25T12:00:00Z"
+        }
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
+        #expect(repo.defaultBranch == "main")
+        #expect(repo.divergedDetail == nil)
+    }
+
+    @Test func normalizedBranchStripsRefsHeadsPrefix() {
+        #expect(RepoConfig.normalizedBranch("refs/heads/develop") == "develop")
+        #expect(RepoConfig.normalizedBranch("  ") == "main")
+    }
+}
+
+struct VerificationFrequencyTests {
+    @Test func weeklyIsDefaultInterval() {
+        #expect(VerificationFrequency.week1.interval == 604_800)
+        #expect(VerificationPreferences.default.frequency == .week1)
+        #expect(VerificationPreferences.default.sampleSize == 3)
+    }
+
+    @Test func sampleSizeIsClamped() {
+        #expect(VerificationPreferences.clampedSampleSize(0) == 1)
+        #expect(VerificationPreferences.clampedSampleSize(999) == 50)
+    }
+}
+
 // MARK: - Form Validation
 
 @MainActor
@@ -437,15 +647,19 @@ struct AddEditRepoValidationTests {
     @Test func buildRepoConfigPreservesHealthFieldsWhenEditing() {
         let lastSyncedAt = Date(timeIntervalSince1970: 1_777_080_000)
         let lastSuccessfulSyncedAt = lastSyncedAt.addingTimeInterval(-3_600)
+        let lastVerifiedAt = lastSyncedAt.addingTimeInterval(120)
         let existingRepo = RepoConfig(
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000021")!,
             name: "old-name",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
+            defaultBranch: "develop",
             lastSyncedAt: lastSyncedAt,
             lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
             lastSyncError: "network failed",
-            consecutiveFailureCount: 4
+            consecutiveFailureCount: 4,
+            lastVerifiedAt: lastVerifiedAt,
+            divergedDetail: "内容分歧"
         )
         let vm = AddEditRepoViewModel(editing: existingRepo)
         vm.name = "new-name"
@@ -453,10 +667,13 @@ struct AddEditRepoValidationTests {
         let repo = vm.buildRepoConfig()
 
         #expect(repo.name == "new-name")
+        #expect(repo.defaultBranch == "develop")
         #expect(repo.lastSyncedAt == lastSyncedAt)
         #expect(repo.lastSuccessfulSyncedAt == lastSuccessfulSyncedAt)
         #expect(repo.lastSyncError == "network failed")
         #expect(repo.consecutiveFailureCount == 4)
+        #expect(repo.lastVerifiedAt == lastVerifiedAt)
+        #expect(repo.divergedDetail == "内容分歧")
     }
 }
 

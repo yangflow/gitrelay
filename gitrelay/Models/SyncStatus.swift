@@ -5,5 +5,6 @@ enum SyncStatus: Equatable {
     case idle
     case ahead(Int)
     case syncing
+    case diverged(String)
     case failed(String)
 }

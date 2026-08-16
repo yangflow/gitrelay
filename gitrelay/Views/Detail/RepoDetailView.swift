@@ -9,6 +9,7 @@ struct RepoDetailView: View {
     private var status: SyncStatus { appVM.statuses[repo.id] ?? .unknown }
     private var records: [SyncRecord] { appVM.records[repo.id] ?? [] }
     private var isSyncing: Bool { appVM.inProgressSyncIDs.contains(repo.id) }
+    private var isVerifying: Bool { appVM.inProgressVerifyIDs.contains(repo.id) }
 
     var body: some View {
         ScrollView {
@@ -21,9 +22,11 @@ struct RepoDetailView: View {
                     repo: repo,
                     status: status,
                     isSyncing: isSyncing,
+                    isVerifying: isVerifying,
                     records: records,
                     nextFireDate: appVM.nextFireDate(for: repo.id),
                     onSyncNow: { appVM.triggerSync(repoID: repo.id) },
+                    onVerifyNow: { appVM.triggerVerify(repoID: repo.id) },
                     onCancel: { appVM.cancelSync(repoID: repo.id) }
                 )
 

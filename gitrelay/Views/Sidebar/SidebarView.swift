@@ -17,6 +17,7 @@ struct SidebarView: View {
                         repo: repo,
                         status: status,
                         onSyncNow: { appVM.triggerSync(repoID: repo.id) },
+                        onVerifyNow: { appVM.triggerVerify(repoID: repo.id) },
                         onEdit:    { sheetMode = .edit(repo) },
                         onDelete:  {
                             pendingDeleteID = repo.id

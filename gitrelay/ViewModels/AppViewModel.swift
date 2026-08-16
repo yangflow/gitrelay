@@ -2,7 +2,6 @@ import Foundation
 import SwiftUI
 import AppKit
 import Observation
-import AppKit
 
 @MainActor
 @Observable
@@ -11,6 +10,8 @@ final class AppViewModel {
     var statuses: [UUID: SyncStatus] = [:]
     var records: [UUID: [SyncRecord]] = [:]
     var inProgressSyncIDs: Set<UUID> = []
+    var inProgressVerifyIDs: Set<UUID> = []
+    var verificationPreferences: VerificationPreferences
 
     var errorMessage: String?
     /// FIFO queue: parallel syncs may each need a destructive-push prompt.
@@ -29,6 +30,11 @@ final class AppViewModel {
         statuses.values.contains { if case .failed = $0 { true } else { false } }
     }
 
+    var hasAnyDivergence: Bool {
+        statuses.values.contains { if case .diverged = $0 { true } else { false } }
+            || repos.contains { $0.isDiverged }
+    }
+
     var healthSummary: SyncHealthSummary {
         SyncHealthSummary.make(repos: repos, statuses: statuses)
     }
@@ -43,11 +49,18 @@ final class AppViewModel {
     let failureNotifier = SyncFailureNotifier()
 
     private let scheduler = SyncScheduler()
+    private let verificationScheduler = VerificationScheduler()
+    private let verificationPreferencesStore: VerificationPreferencesStore
     private var activeSyncEngines: [UUID: SyncEngine] = [:]
+    private var activeVerifiers: [UUID: IntegrityVerifier] = [:]
     private var focusFlushTask: Task<Void, Never>?
     private var activationObserver: NSObjectProtocol?
 
-    init() {
+    init(verificationPreferencesStore: VerificationPreferencesStore? = nil) {
+        let store = verificationPreferencesStore ?? VerificationPreferencesStore()
+        self.verificationPreferencesStore = store
+        self.verificationPreferences = store.preferences
+
         do {
             try MirrorStore.ensureBaseDirectoryExists()
             repos = try RepoStore.load()
@@ -66,12 +79,20 @@ final class AppViewModel {
                 self.triggerSync(repoID: id)
             }
         }
+        verificationScheduler.onFire = { [weak self] in
+            Task { self?.runScheduledVerificationSample() }
+        }
+        store.onPreferencesChange = { [weak self] (prefs: VerificationPreferences) in
+            self?.verificationPreferences = prefs
+            self?.verificationScheduler.reschedule(frequency: prefs.frequency)
+        }
 
         for repo in repos {
             statuses[repo.id] = initialStatus(for: repo)
             records[repo.id]  = []
             scheduler.schedule(repo: repo)
         }
+        verificationScheduler.schedule(frequency: verificationPreferences.frequency)
 
         environmentMonitor.start()
         failureNotifier.requestAuthorizationIfNeeded()
@@ -108,6 +129,11 @@ final class AppViewModel {
     func updateRepo(_ updated: RepoConfig) {
         guard let index = repos.firstIndex(where: { $0.id == updated.id }) else { return }
         repos[index] = updated
+        if updated.isDiverged {
+            statuses[updated.id] = .diverged(updated.divergedDetail ?? "内容分歧")
+        } else if case .diverged = statuses[updated.id] {
+            statuses[updated.id] = updated.lastSyncError.map(SyncStatus.failed) ?? .unknown
+        }
         scheduler.reschedule(repo: updated)
         saveRepos()
     }
@@ -115,11 +141,16 @@ final class AppViewModel {
     func deleteRepo(id: UUID) {
         scheduler.deschedule(repoID: id)
         cancelSync(repoID: id)
+        cancelVerify(repoID: id)
         repos.removeAll { $0.id == id }
         statuses.removeValue(forKey: id)
         records.removeValue(forKey: id)
         failureNotifier.clearPending(for: id)
         try? MirrorStore.deleteMirror(for: id)
+        let scratch = Constants.baseDirectory
+            .appendingPathComponent("verify-scratch")
+            .appendingPathComponent(id.uuidString)
+        try? FileManager.default.removeItem(at: scratch)
         saveRepos()
     }
 
@@ -127,6 +158,7 @@ final class AppViewModel {
 
     func triggerSync(repoID: UUID) {
         guard !inProgressSyncIDs.contains(repoID),
+              !inProgressVerifyIDs.contains(repoID),
               let repo = repos.first(where: { $0.id == repoID }) else { return }
 
         let engine = SyncEngine(repo: repo)
@@ -185,6 +217,31 @@ final class AppViewModel {
         pending.respond(false)
     }
 
+    // MARK: - Integrity verification
+
+    func updateVerificationPreferences(_ preferences: VerificationPreferences) {
+        verificationPreferencesStore.preferences = preferences
+    }
+
+    func nextVerificationFireDate() -> Date? {
+        verificationScheduler.nextFireDate()
+    }
+
+    func triggerVerify(repoID: UUID) {
+        guard !inProgressSyncIDs.contains(repoID),
+              !inProgressVerifyIDs.contains(repoID),
+              let repo = repos.first(where: { $0.id == repoID }) else { return }
+        startVerify(repo: repo)
+    }
+
+    func triggerVerifySampleNow() {
+        runScheduledVerificationSample()
+    }
+
+    func cancelVerify(repoID: UUID) {
+        activeVerifiers[repoID]?.cancel()
+    }
+
     func nextFireDate(for repoID: UUID) -> Date? {
         scheduler.nextFireDate(for: repoID)
     }
@@ -212,6 +269,60 @@ final class AppViewModel {
         )
     }
 
+    private func runScheduledVerificationSample() {
+        let sample = VerificationSampler.sample(
+            from: repos,
+            count: verificationPreferences.sampleSize
+        )
+        for repo in sample {
+            triggerVerify(repoID: repo.id)
+        }
+    }
+
+    private func startVerify(repo: RepoConfig) {
+        let repoID = repo.id
+        let verifier = IntegrityVerifier(repo: repo)
+        activeVerifiers[repoID] = verifier
+        inProgressVerifyIDs.insert(repoID)
+
+        verifier.onEvent = { [weak self] event in
+            guard let self else { return }
+            switch event {
+            case .started, .log:
+                break
+            case .completed(let decision, let record):
+                self.appendRecord(record, for: repoID)
+                self.finishVerify(repoID: repoID)
+                switch decision {
+                case .matched:
+                    self.patchVerification(repoID: repoID, divergedDetail: nil)
+                    if case .failed = self.statuses[repoID] {
+                        // Keep sync failure visible.
+                    } else {
+                        self.statuses[repoID] = .idle
+                    }
+                case .diverged(let detail):
+                    self.patchVerification(repoID: repoID, divergedDetail: detail.summary)
+                    self.statuses[repoID] = .diverged(detail.summary)
+                case .inconclusive:
+                    if let index = self.repos.firstIndex(where: { $0.id == repoID }) {
+                        self.repos[index].lastVerifiedAt = Date()
+                        self.saveRepos()
+                    }
+                }
+            case .failed(_, let record):
+                self.appendRecord(record, for: repoID)
+                self.finishVerify(repoID: repoID)
+                if let index = self.repos.firstIndex(where: { $0.id == repoID }) {
+                    self.repos[index].lastVerifiedAt = Date()
+                    self.saveRepos()
+                }
+            }
+        }
+
+        Task { await verifier.run() }
+    }
+
     private func appendRecord(_ record: SyncRecord, for repoID: UUID) {
         var existing = records[repoID] ?? []
         existing.append(record)
@@ -225,12 +336,16 @@ final class AppViewModel {
         activeSyncEngines.removeValue(forKey: repoID)
     }
 
+    private func finishVerify(repoID: UUID) {
+        inProgressVerifyIDs.remove(repoID)
+        activeVerifiers.removeValue(forKey: repoID)
+    }
+
     private func requestDestructiveConfirmation(
         repoID: UUID,
         repoName: String,
         plan: DestructivePushPlan
     ) async -> Bool {
-        // Replace any unanswered prompt for this repo (re-entrancy / retry).
         denyPendingDestructiveConfirmation(for: repoID)
         bringAppForwardForConfirmation()
 
@@ -267,9 +382,18 @@ final class AppViewModel {
         saveRepos()
     }
 
+    private func patchVerification(repoID: UUID, divergedDetail: String?) {
+        guard let index = repos.firstIndex(where: { $0.id == repoID }) else { return }
+        repos[index].recordVerificationResult(divergedDetail: divergedDetail)
+        saveRepos()
+    }
+
     private func initialStatus(for repo: RepoConfig) -> SyncStatus {
         if let error = repo.lastSyncError {
             return .failed(error)
+        }
+        if let detail = repo.divergedDetail {
+            return .diverged(detail)
         }
         return .unknown
     }

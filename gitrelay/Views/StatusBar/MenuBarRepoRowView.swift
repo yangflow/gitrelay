@@ -41,7 +41,9 @@ struct MenuBarRepoRowView: View {
 
     private var lastSuccessLabel: some View {
         Group {
-            if let lastSuccessfulSyncedAt = repo.lastSuccessfulSyncedAt {
+            if case .diverged = status {
+                Text("内容分歧")
+            } else if let lastSuccessfulSyncedAt = repo.lastSuccessfulSyncedAt {
                 Text("最近成功 \(lastSuccessfulSyncedAt, format: .relative(presentation: .named))")
             } else if repo.lastSyncedAt != nil {
                 Text("尚无成功同步")

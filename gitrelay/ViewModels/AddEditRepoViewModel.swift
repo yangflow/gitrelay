@@ -16,6 +16,7 @@ final class AddEditRepoViewModel {
     var dstToken: String       = ""
     var frequency: SyncFrequency = .manual
     var destructivePushPolicy: DestructivePushPolicy = .strict
+    var defaultBranch: String = "main"
 
     var nameError: String?
     var srcError: String?
@@ -27,6 +28,8 @@ final class AddEditRepoViewModel {
     private let lastSuccessfulSyncedAt: Date?
     private let lastSyncError: String?
     private let consecutiveFailureCount: Int
+    private let lastVerifiedAt: Date?
+    private let divergedDetail: String?
 
     init(editing repo: RepoConfig? = nil) {
         editingID = repo?.id
@@ -35,12 +38,15 @@ final class AddEditRepoViewModel {
         lastSuccessfulSyncedAt = repo?.lastSuccessfulSyncedAt
         lastSyncError = repo?.lastSyncError
         consecutiveFailureCount = repo?.consecutiveFailureCount ?? 0
+        lastVerifiedAt = repo?.lastVerifiedAt
+        divergedDetail = repo?.divergedDetail
         guard let repo else { return }
         name      = repo.name
         srcURL    = repo.srcURL
         dstURL    = repo.dstURL
         frequency = repo.frequency
         destructivePushPolicy = repo.destructivePushPolicy
+        defaultBranch = repo.defaultBranch
         populate(auth: repo.srcAuth, mode: &srcAuthMode, keyPath: &srcKeyPath, token: &srcToken)
         populate(auth: repo.dstAuth, mode: &dstAuthMode, keyPath: &dstKeyPath, token: &dstToken)
     }
@@ -68,11 +74,14 @@ final class AddEditRepoViewModel {
             dstAuth: buildAuth(mode: dstAuthMode, keyPath: dstKeyPath, token: dstToken, repoID: id, side: "dst"),
             frequency: frequency,
             destructivePushPolicy: destructivePushPolicy,
+            defaultBranch: defaultBranch,
             createdAt: createdAt ?? Date(),
             lastSyncedAt: lastSyncedAt,
             lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
             lastSyncError: lastSyncError,
-            consecutiveFailureCount: consecutiveFailureCount
+            consecutiveFailureCount: consecutiveFailureCount,
+            lastVerifiedAt: lastVerifiedAt,
+            divergedDetail: divergedDetail
         )
     }
 

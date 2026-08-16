@@ -4,6 +4,7 @@ struct RepoRowView: View {
     let repo: RepoConfig
     let status: SyncStatus
     let onSyncNow: () -> Void
+    let onVerifyNow: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
 
@@ -29,6 +30,8 @@ struct RepoRowView: View {
         .contextMenu {
             Button("立即同步", action: onSyncNow)
                 .disabled(status == .syncing)
+            Button("立即校验", action: onVerifyNow)
+                .disabled(status == .syncing)
             Divider()
             Button("编辑...", action: onEdit)
             Button("删除...", role: .destructive, action: onDelete)
@@ -37,7 +40,9 @@ struct RepoRowView: View {
 
     private var lastSuccessLabel: some View {
         Group {
-            if let lastSuccessfulSyncedAt = repo.lastSuccessfulSyncedAt {
+            if case .diverged = status {
+                Text("内容分歧")
+            } else if let lastSuccessfulSyncedAt = repo.lastSuccessfulSyncedAt {
                 Text("最近成功 \(lastSuccessfulSyncedAt, format: .relative(presentation: .named))")
             } else if repo.lastSyncedAt != nil {
                 Text("尚无成功同步")

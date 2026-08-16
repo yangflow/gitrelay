@@ -13,6 +13,10 @@ struct RepoStatusLabel: View {
             Label("已同步", systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
                 .font(.callout)
+        case .diverged:
+            Label("内容分歧", systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.yellow)
+                .font(.callout)
         default:
             Label("未知状态", systemImage: "questionmark.circle")
                 .foregroundStyle(.secondary)

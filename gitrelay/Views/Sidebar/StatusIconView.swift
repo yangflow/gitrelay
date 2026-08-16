@@ -38,6 +38,10 @@ struct StatusIconView: View {
                         }
                     }
                     .onDisappear { isAnimating = false }
+            case .diverged:
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.yellow)
+                    .help("备份内容与源仓库不一致")
             case .failed:
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.yellow)

@@ -66,6 +66,14 @@ struct AddEditRepoSheet: View {
                     FrequencyPickerView(frequency: $vm.frequency)
                 }
 
+                Section("校验分支") {
+                    TextField("main", text: $vm.defaultBranch)
+                        .font(.system(.body, design: .monospaced))
+                    Text("完整性校验比对 src/dst 上该分支的 tip 与 tree hash。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("破坏性推送保护") {
                     Picker("策略", selection: $vm.destructivePushPolicy) {
                         ForEach(DestructivePushPolicy.allCases) { policy in
@@ -105,7 +113,7 @@ struct AddEditRepoSheet: View {
             .padding(16)
         }
         .frame(width: 520)
-        .frame(minHeight: 560)
+        .frame(minHeight: 620)
     }
 
     private func save() {
