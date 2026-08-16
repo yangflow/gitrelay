@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Observation
+import AppKit
 
 @MainActor
 @Observable
@@ -25,8 +26,19 @@ final class AppViewModel {
         SyncHealthSummary.make(repos: repos, statuses: statuses)
     }
 
+    /// Current reason scheduled syncs are paused, if any.
+    var scheduledSyncPauseReason: SyncPauseReason? {
+        environmentMonitor.pauseReason(using: notificationPreferences.preferences.pausePolicy)
+    }
+
+    let notificationPreferences = NotificationPreferencesStore()
+    let environmentMonitor = SyncEnvironmentMonitor()
+    let failureNotifier = SyncFailureNotifier()
+
     private let scheduler = SyncScheduler()
     private var activeSyncEngines: [UUID: SyncEngine] = [:]
+    private var focusFlushTask: Task<Void, Never>?
+    private var activationObserver: NSObjectProtocol?
 
     init() {
         do {
@@ -36,8 +48,16 @@ final class AppViewModel {
             errorMessage = "加载仓库配置失败：\(error.localizedDescription)"
         }
 
+        failureNotifier.onRetry = { [weak self] id in
+            self?.triggerSync(repoID: id)
+        }
+
         scheduler.onFire = { [weak self] id in
-            Task { self?.triggerSync(repoID: id) }
+            Task { @MainActor in
+                guard let self else { return }
+                guard self.scheduledSyncPauseReason == nil else { return }
+                self.triggerSync(repoID: id)
+            }
         }
 
         for repo in repos {
@@ -45,6 +65,11 @@ final class AppViewModel {
             records[repo.id]  = []
             scheduler.schedule(repo: repo)
         }
+
+        environmentMonitor.start()
+        failureNotifier.requestAuthorizationIfNeeded()
+        startFocusFlushLoop()
+        observeAppActivation()
     }
 
     // MARK: - CRUD
@@ -86,6 +111,7 @@ final class AppViewModel {
         repos.removeAll { $0.id == id }
         statuses.removeValue(forKey: id)
         records.removeValue(forKey: id)
+        failureNotifier.clearPending(for: id)
         try? MirrorStore.deleteMirror(for: id)
         saveRepos()
     }
@@ -111,11 +137,13 @@ final class AppViewModel {
                 self.finishSync(repoID: repoID)
                 self.patchLastSynced(repoID: repoID, error: nil)
                 self.statuses[repoID] = .idle
+                self.failureNotifier.clearPending(for: repoID)
             case .failed(let message, let record):
                 self.appendRecord(record, for: repoID)
                 self.finishSync(repoID: repoID)
                 self.patchLastSynced(repoID: repoID, error: message)
                 self.statuses[repoID] = .failed(message)
+                self.notifySyncFailure(repoID: repoID, message: message)
             case .started, .log:
                 break
             }
@@ -140,7 +168,24 @@ final class AppViewModel {
         records[repoID]?.last
     }
 
+    func flushDeferredFailureNotifications() {
+        failureNotifier.flushPendingIfFocusEnded(
+            level: notificationPreferences.preferences.interruptionLevel
+        )
+    }
+
     // MARK: - Private
+
+    private func notifySyncFailure(repoID: UUID, message: String) {
+        guard let repo = repos.first(where: { $0.id == repoID }) else { return }
+        failureNotifier.handleSyncFailure(
+            repoID: repoID,
+            repoName: repo.name,
+            message: message,
+            consecutiveFailureCount: repo.consecutiveFailureCount,
+            preferences: notificationPreferences.preferences
+        )
+    }
 
     private func appendRecord(_ record: SyncRecord, for repoID: UUID) {
         var existing = records[repoID] ?? []
@@ -172,6 +217,28 @@ final class AppViewModel {
             try RepoStore.save(repos)
         } catch {
             errorMessage = "保存仓库配置失败:\(error.localizedDescription)"
+        }
+    }
+
+    private func startFocusFlushLoop() {
+        focusFlushTask?.cancel()
+        focusFlushTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                self?.flushDeferredFailureNotifications()
+            }
+        }
+    }
+
+    private func observeAppActivation() {
+        activationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.flushDeferredFailureNotifications()
+            }
         }
     }
 }

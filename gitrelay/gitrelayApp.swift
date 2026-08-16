@@ -8,6 +8,8 @@ struct gitrelayApp: App {
         WindowGroup(id: "main") {
             ContentView()
                 .environment(appVM)
+                .environment(appVM.notificationPreferences)
+                .environment(appVM.environmentMonitor)
                 .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { _ in
                     Task { @MainActor in
                         try? await Task.sleep(for: .milliseconds(50))
@@ -28,9 +30,17 @@ struct gitrelayApp: App {
         }
         .windowResizability(.contentSize)
 
+        Settings {
+            SettingsView()
+                .environment(appVM.notificationPreferences)
+                .environment(appVM.environmentMonitor)
+        }
+
         MenuBarExtra {
             MenuBarPopoverView()
                 .environment(appVM)
+                .environment(appVM.notificationPreferences)
+                .environment(appVM.environmentMonitor)
         } label: {
             MenuBarIconLabel(appVM: appVM)
         }
