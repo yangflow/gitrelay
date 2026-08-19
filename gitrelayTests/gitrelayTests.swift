@@ -2068,3 +2068,152 @@ struct SyncLogStoreTests {
 private func setBaseDirectoryForTesting(_ url: URL) {
     Constants.setBaseDirectoryForTesting(url)
 }
+
+// MARK: - SSHKeyGenerator
+
+struct SSHKeyGeneratorTests {
+    private func makeHomeDirectory() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-ssh-tests-\(UUID().uuidString)")
+    }
+
+    @Test func defaultDisplayPathUsesGitRelayKeyName() {
+        #expect(SSHKeyGenerator.defaultDisplayPath == "~/.ssh/gitrelay_ed25519")
+    }
+
+    @Test func defaultPrivateKeyPathUsesHomeSSHDirectory() {
+        let home = URL(fileURLWithPath: "/Users/demo")
+        #expect(SSHKeyGenerator.defaultPrivateKeyPath(homeDirectory: home) == "/Users/demo/.ssh/gitrelay_ed25519")
+    }
+
+    @Test func expandPathHandlesTildePrefix() {
+        let home = URL(fileURLWithPath: "/Users/demo")
+        #expect(SSHKeyGenerator.expandPath("~/.ssh/gitrelay_ed25519", homeDirectory: home) == "/Users/demo/.ssh/gitrelay_ed25519")
+        #expect(SSHKeyGenerator.expandPath("/tmp/key", homeDirectory: home) == "/tmp/key")
+    }
+
+    @Test func publicKeyPathAppendsPubSuffix() {
+        #expect(SSHKeyGenerator.publicKeyPath(forPrivateKeyPath: "/Users/demo/.ssh/gitrelay_ed25519") == "/Users/demo/.ssh/gitrelay_ed25519.pub")
+    }
+
+    @Test func makeSSHKeygenArgumentsUsesEd25519AndEmptyPassphraseByDefault() {
+        let args = SSHKeyGenerator.makeSSHKeygenArguments(
+            privateKeyPath: "/Users/demo/.ssh/gitrelay_ed25519",
+            passphrase: nil
+        )
+        #expect(args == [
+            "-t", "ed25519",
+            "-f", "/Users/demo/.ssh/gitrelay_ed25519",
+            "-C", "gitrelay",
+            "-q",
+            "-N", "",
+        ])
+    }
+
+    @Test func makeSSHKeygenArgumentsIncludesProvidedPassphrase() {
+        let args = SSHKeyGenerator.makeSSHKeygenArguments(
+            privateKeyPath: "/Users/demo/.ssh/gitrelay_ed25519",
+            passphrase: "secret"
+        )
+        #expect(args.contains("-N"))
+        #expect(args.last == "secret")
+    }
+
+    @Test func privateKeyPermissionExpectationIsSixZeroZero() {
+        #expect(SSHKeyGenerator.privateKeyPermissions == 0o600)
+    }
+
+    @Test func generateAppliesPrivateKeyPermissionsAndReturnsPublicKey() throws {
+        let home = makeHomeDirectory()
+        defer { try? FileManager.default.removeItem(at: home) }
+
+        let privatePath = home.appendingPathComponent(".ssh/gitrelay_ed25519").path
+        let publicPath = privatePath + ".pub"
+        let publicKeyContents = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAtest gitrelay\n"
+
+        let result = try SSHKeyGenerator.generate(
+            privateKeyPath: privatePath,
+            homeDirectory: home,
+            runProcess: { _, _ in
+                try Data("PRIVATE".utf8).write(to: URL(fileURLWithPath: privatePath))
+                try Data(publicKeyContents.utf8).write(to: URL(fileURLWithPath: publicPath))
+            }
+        )
+
+        let privateAttributes = try FileManager.default.attributesOfItem(atPath: privatePath)
+        let privatePermissions = (privateAttributes[.posixPermissions] as? NSNumber)?.uint16Value
+        #expect(privatePermissions == SSHKeyGenerator.privateKeyPermissions)
+        #expect(result.publicKey == publicKeyContents.trimmingCharacters(in: .whitespacesAndNewlines))
+        #expect(result.privateKeyPath == privatePath)
+        #expect(result.publicKeyPath == publicPath)
+    }
+
+    @Test func generateRejectsExistingKeyFiles() throws {
+        let home = makeHomeDirectory()
+        defer { try? FileManager.default.removeItem(at: home) }
+
+        let privatePath = home.appendingPathComponent(".ssh/gitrelay_ed25519").path
+        try FileManager.default.createDirectory(
+            at: home.appendingPathComponent(".ssh"),
+            withIntermediateDirectories: true
+        )
+        FileManager.default.createFile(atPath: privatePath, contents: Data())
+
+        do {
+            _ = try SSHKeyGenerator.generate(
+                privateKeyPath: privatePath,
+                homeDirectory: home,
+                sshKeygenPath: "/usr/bin/ssh-keygen",
+                runProcess: { _, _ in }
+            )
+            Issue.record("Expected keyAlreadyExists")
+        } catch SSHKeyGeneratorError.keyAlreadyExists(let path) {
+            #expect(path == privatePath)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+}
+
+// MARK: - GitRemoteHost
+
+struct GitRemoteHostTests {
+    @Test func parsesSSHStyleRemoteHost() {
+        #expect(GitRemoteHost.host(from: "git@github.com:user/repo.git") == "github.com")
+        #expect(GitRemoteHost.host(from: "git@gitlab.com:org/repo.git") == "gitlab.com")
+    }
+
+    @Test func parsesHTTPSRemoteHost() {
+        #expect(GitRemoteHost.host(from: "https://github.com/user/repo.git") == "github.com")
+    }
+
+    @Test func infersProviderFromHost() {
+        #expect(GitRemoteHost.inferredProvider(from: "github.com") == .github)
+        #expect(GitRemoteHost.inferredProvider(from: "gitlab.company.com") == .gitlab)
+        #expect(GitRemoteHost.inferredProvider(from: "gitea.example.com") == .gitea)
+    }
+
+    @Test func sshKeysSettingsURLUsesProviderSpecificPaths() {
+        #expect(
+            GitRemoteHost.sshKeysSettingsURL(for: .github, host: "github.com").absoluteString
+            == "https://github.com/settings/keys"
+        )
+        #expect(
+            GitRemoteHost.sshKeysSettingsURL(for: .gitlab, host: "gitlab.com").absoluteString
+            == "https://gitlab.com/-/user_settings/ssh_keys"
+        )
+        #expect(
+            GitRemoteHost.sshKeysSettingsURL(for: .gitlab, host: "gitlab.company.com").absoluteString
+            == "https://gitlab.company.com/-/user_settings/ssh_keys"
+        )
+        #expect(
+            GitRemoteHost.sshKeysSettingsURL(for: .gitea, host: "gitea.example.com").absoluteString
+            == "https://gitea.example.com/user/settings/keys"
+        )
+    }
+
+    @Test func sshKeysSettingsURLFromRemoteURL() {
+        let url = GitRemoteHost.sshKeysSettingsURL(forRemoteURL: "git@github.com:user/repo.git")
+        #expect(url?.absoluteString == "https://github.com/settings/keys")
+    }
+}
