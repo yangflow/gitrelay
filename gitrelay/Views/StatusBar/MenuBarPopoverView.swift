@@ -4,6 +4,7 @@ import AppKit
 struct MenuBarPopoverView: View {
     @Environment(AppViewModel.self) private var appVM
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,6 +18,16 @@ struct MenuBarPopoverView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
+
+            if let pauseReason = appVM.scheduledSyncPauseReason {
+                Divider()
+                Label(pauseReason.displayMessage, systemImage: "pause.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
 
             Divider()
 
@@ -56,6 +67,13 @@ struct MenuBarPopoverView: View {
                     Image(systemName: "info.circle")
                 }
                 .help("关于 GitRelay")
+
+                Button {
+                    openSettings()
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .help("设置")
 
                 Spacer()
 

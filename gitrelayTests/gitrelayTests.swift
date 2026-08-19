@@ -412,3 +412,278 @@ struct AddEditRepoValidationTests {
         #expect(repo.consecutiveFailureCount == 4)
     }
 }
+
+// MARK: - FailureNotificationPolicy
+
+struct FailureNotificationPolicyTests {
+    @Test func disabledNeverNotifies() {
+        let policy = FailureNotificationPolicy(
+            isEnabled: false,
+            notifyOnFirstFailure: true,
+            consecutiveFailureThreshold: 3
+        )
+        #expect(!policy.shouldNotify(consecutiveFailureCount: 1))
+        #expect(!policy.shouldNotify(consecutiveFailureCount: 3))
+        #expect(!policy.shouldNotify(consecutiveFailureCount: 6))
+    }
+
+    @Test func zeroCountNeverNotifies() {
+        let policy = FailureNotificationPolicy()
+        #expect(!policy.shouldNotify(consecutiveFailureCount: 0))
+        #expect(!policy.shouldNotify(consecutiveFailureCount: -1))
+    }
+
+    @Test func notifiesOnFirstFailureWhenEnabled() {
+        let policy = FailureNotificationPolicy(
+            notifyOnFirstFailure: true,
+            consecutiveFailureThreshold: 3
+        )
+        #expect(policy.shouldNotify(consecutiveFailureCount: 1))
+        #expect(!policy.shouldNotify(consecutiveFailureCount: 2))
+        #expect(policy.shouldNotify(consecutiveFailureCount: 3))
+        #expect(!policy.shouldNotify(consecutiveFailureCount: 4))
+        #expect(policy.shouldNotify(consecutiveFailureCount: 6))
+    }
+
+    @Test func skipsFirstFailureWhenDisabled() {
+        let policy = FailureNotificationPolicy(
+            notifyOnFirstFailure: false,
+            consecutiveFailureThreshold: 3
+        )
+        #expect(!policy.shouldNotify(consecutiveFailureCount: 1))
+        #expect(!policy.shouldNotify(consecutiveFailureCount: 2))
+        #expect(policy.shouldNotify(consecutiveFailureCount: 3))
+        #expect(policy.shouldNotify(consecutiveFailureCount: 6))
+    }
+
+    @Test func thresholdOfOneNotifiesEveryFailure() {
+        let policy = FailureNotificationPolicy(
+            notifyOnFirstFailure: false,
+            consecutiveFailureThreshold: 1
+        )
+        #expect(policy.shouldNotify(consecutiveFailureCount: 1))
+        #expect(policy.shouldNotify(consecutiveFailureCount: 2))
+        #expect(policy.shouldNotify(consecutiveFailureCount: 5))
+    }
+
+    @Test func clampsNonPositiveThresholdToOne() {
+        let policy = FailureNotificationPolicy(consecutiveFailureThreshold: 0)
+        #expect(policy.consecutiveFailureThreshold == 1)
+        #expect(policy.shouldNotify(consecutiveFailureCount: 1))
+    }
+}
+
+// MARK: - FailureNotificationCopy
+
+struct FailureNotificationCopyTests {
+    @Test func singleFailureBodyOmitsStreakPrefix() {
+        #expect(
+            FailureNotificationCopy.body(message: "Network error", consecutiveFailureCount: 1)
+            == "Network error"
+        )
+    }
+
+    @Test func streakBodyIncludesCount() {
+        #expect(
+            FailureNotificationCopy.body(message: "Network error", consecutiveFailureCount: 4)
+            == "连续失败 4 次 — Network error"
+        )
+    }
+
+    @Test func aggregatedBodyListsRepoNames() {
+        let body = FailureNotificationCopy.aggregatedBody(
+            items: [
+                (repoName: "alpha", message: "fail", count: 2),
+                (repoName: "beta", message: "fail", count: 3),
+                (repoName: "gamma", message: "fail", count: 1),
+                (repoName: "delta", message: "fail", count: 1)
+            ]
+        )
+        #expect(body.contains("4 个仓库同步失败"))
+        #expect(body.contains("alpha"))
+        #expect(body.contains("beta"))
+        #expect(body.contains("gamma"))
+        #expect(body.contains("等"))
+    }
+
+    @Test func aggregatedBodyForSingleItemUsesRepoDetail() {
+        let body = FailureNotificationCopy.aggregatedBody(
+            items: [(repoName: "alpha", message: "Network error", count: 2)]
+        )
+        #expect(body.contains("alpha"))
+        #expect(body.contains("Network error"))
+        #expect(body.contains("连续失败 2 次"))
+    }
+}
+
+// MARK: - SyncPausePolicy
+
+struct SyncPausePolicyTests {
+    @Test func pausesOnlyWhenMatchingFlagsEnabled() {
+        let policy = SyncPausePolicy(pauseOnLowPowerMode: true, pauseOnExpensiveNetwork: true)
+        #expect(policy.shouldPause(isLowPowerMode: true, isExpensiveNetwork: false))
+        #expect(policy.shouldPause(isLowPowerMode: false, isExpensiveNetwork: true))
+        #expect(policy.shouldPause(isLowPowerMode: true, isExpensiveNetwork: true))
+        #expect(!policy.shouldPause(isLowPowerMode: false, isExpensiveNetwork: false))
+    }
+
+    @Test func respectsDisabledPauseOptions() {
+        let policy = SyncPausePolicy(pauseOnLowPowerMode: false, pauseOnExpensiveNetwork: false)
+        #expect(!policy.shouldPause(isLowPowerMode: true, isExpensiveNetwork: true))
+        #expect(policy.pauseReason(isLowPowerMode: true, isExpensiveNetwork: true) == nil)
+    }
+
+    @Test func reportsCombinedReason() {
+        let policy = SyncPausePolicy(pauseOnLowPowerMode: true, pauseOnExpensiveNetwork: true)
+        #expect(
+            policy.pauseReason(isLowPowerMode: true, isExpensiveNetwork: true)
+            == .lowPowerAndExpensiveNetwork
+        )
+        #expect(
+            policy.pauseReason(isLowPowerMode: true, isExpensiveNetwork: false)
+            == .lowPowerMode
+        )
+        #expect(
+            policy.pauseReason(isLowPowerMode: false, isExpensiveNetwork: true)
+            == .expensiveNetwork
+        )
+    }
+}
+
+// MARK: - NotificationPreferencesStore
+
+@MainActor
+struct NotificationPreferencesStoreTests {
+    @Test func loadsDefaultsWhenKeysMissing() {
+        let suite = "gitrelay.tests.notification-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = NotificationPreferencesStore(defaults: defaults)
+        #expect(store.preferences == .default)
+    }
+
+    @Test func persistsAndReloadsMutations() {
+        let suite = "gitrelay.tests.notification-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = NotificationPreferencesStore(defaults: defaults)
+        var prefs = store.preferences
+        prefs.notificationsEnabled = false
+        prefs.notifyOnFirstFailure = false
+        prefs.consecutiveFailureThreshold = 5
+        prefs.interruptionLevel = .timeSensitive
+        prefs.pauseOnLowPowerMode = false
+        prefs.pauseOnExpensiveNetwork = false
+        store.preferences = prefs
+
+        let reloaded = NotificationPreferencesStore(defaults: defaults)
+        #expect(reloaded.preferences.notificationsEnabled == false)
+        #expect(reloaded.preferences.notifyOnFirstFailure == false)
+        #expect(reloaded.preferences.consecutiveFailureThreshold == 5)
+        #expect(reloaded.preferences.interruptionLevel == .timeSensitive)
+        #expect(reloaded.preferences.pauseOnLowPowerMode == false)
+        #expect(reloaded.preferences.pauseOnExpensiveNetwork == false)
+    }
+
+    @Test func resetToDefaultsRestoresFactoryValues() {
+        let suite = "gitrelay.tests.notification-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = NotificationPreferencesStore(defaults: defaults)
+        var prefs = store.preferences
+        prefs.notificationsEnabled = false
+        prefs.consecutiveFailureThreshold = 9
+        store.preferences = prefs
+        store.resetToDefaults()
+        #expect(store.preferences == .default)
+    }
+
+    @Test func normalizesNonPositiveThreshold() {
+        let suite = "gitrelay.tests.notification-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = NotificationPreferencesStore(defaults: defaults)
+        var prefs = store.preferences
+        prefs.consecutiveFailureThreshold = 0
+        store.preferences = prefs
+        #expect(store.preferences.consecutiveFailureThreshold == 1)
+    }
+}
+
+// MARK: - SyncFailureNotifier (Focus deferral)
+
+@MainActor
+struct SyncFailureNotifierFocusTests {
+    @Test func queuesWhileFocusedAndFlushesAfterFocusEnds() {
+        var focused: Bool? = true
+        let notifier = SyncFailureNotifier(focusStatusProvider: { focused })
+        let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000031")!
+
+        notifier.handleSyncFailure(
+            repoID: repoID,
+            repoName: "demo",
+            message: "Network error — check connectivity",
+            consecutiveFailureCount: 1,
+            preferences: .default
+        )
+
+        #expect(notifier.pendingDuringFocus[repoID]?.repoName == "demo")
+
+        focused = false
+        notifier.flushPendingIfFocusEnded(level: .active)
+        #expect(notifier.pendingDuringFocus.isEmpty)
+    }
+
+    @Test func ignoresCancelledSyncFailures() {
+        var focused: Bool? = true
+        let notifier = SyncFailureNotifier(focusStatusProvider: { focused })
+        let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000032")!
+
+        notifier.handleSyncFailure(
+            repoID: repoID,
+            repoName: "demo",
+            message: "Cancelled",
+            consecutiveFailureCount: 1,
+            preferences: .default
+        )
+
+        #expect(notifier.pendingDuringFocus.isEmpty)
+    }
+
+    @Test func clearPendingDropsDeferredAlert() {
+        var focused: Bool? = true
+        let notifier = SyncFailureNotifier(focusStatusProvider: { focused })
+        let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000033")!
+
+        notifier.handleSyncFailure(
+            repoID: repoID,
+            repoName: "demo",
+            message: "Network error",
+            consecutiveFailureCount: 1,
+            preferences: .default
+        )
+        notifier.clearPending(for: repoID)
+        #expect(notifier.pendingDuringFocus.isEmpty)
+    }
+
+    @Test func respectsDisabledNotifications() {
+        var focused: Bool? = true
+        let notifier = SyncFailureNotifier(focusStatusProvider: { focused })
+        var prefs = NotificationPreferences.default
+        prefs.notificationsEnabled = false
+
+        notifier.handleSyncFailure(
+            repoID: UUID(),
+            repoName: "demo",
+            message: "Network error",
+            consecutiveFailureCount: 1,
+            preferences: prefs
+        )
+
+        #expect(notifier.pendingDuringFocus.isEmpty)
+    }
+}

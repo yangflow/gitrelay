@@ -28,6 +28,16 @@ struct SidebarView: View {
             }
             .listStyle(.sidebar)
 
+            if let pauseReason = appVM.scheduledSyncPauseReason {
+                Divider()
+                Label(pauseReason.displayMessage, systemImage: "pause.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             if !appVM.repos.isEmpty {
                 Divider()
                 SyncHealthSummaryView(summary: appVM.healthSummary)
