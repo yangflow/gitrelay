@@ -50,7 +50,7 @@ struct SyncLogRecordView: View {
     }
 
     @ViewBuilder
-    private func logBlock(title: String?, lines: [String]) {
+    private func logBlock(title: String?, lines: [String]) -> some View {
         if let title {
             Text(title)
                 .font(.caption2)
