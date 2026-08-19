@@ -59,7 +59,7 @@ enum OrgSubscriptionAutoAdder {
         do {
             let outcome = try await client.createRepo(
                 name: name,
-                namespace: OrgSubscriptionTemplateApplier.targetNamespace(for: template),
+                namespace: targetNamespace(for: template),
                 isPrivate: template.targetVisibilityPrivate,
                 description: repo.description
             )
@@ -122,5 +122,20 @@ enum OrgSubscriptionAutoAdder {
         while host.hasSuffix("/") { host.removeLast() }
         if host.hasSuffix("/api/v1") { host = String(host.dropLast("/api/v1".count)) }
         return URL(string: host + "/api/v1")
+    }
+
+    private static func targetNamespace(for template: OrgSubscriptionTemplate) -> TargetNamespace {
+        switch template.targetNamespaceKind {
+        case .currentUser:
+            return .currentUser
+        case .organization:
+            return .organization(
+                template.targetNamespaceOwner.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+        case .adminForUser:
+            return .adminForUser(
+                template.targetNamespaceOwner.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+        }
     }
 }

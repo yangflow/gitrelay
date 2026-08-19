@@ -80,21 +80,6 @@ nonisolated enum OrgSubscriptionTemplateApplier {
         return false
     }
 
-    static func targetNamespace(for template: OrgSubscriptionTemplate) -> TargetNamespace {
-        switch template.targetNamespaceKind {
-        case .currentUser:
-            return .currentUser
-        case .organization:
-            return .organization(
-                template.targetNamespaceOwner.trimmingCharacters(in: .whitespacesAndNewlines)
-            )
-        case .adminForUser:
-            return .adminForUser(
-                template.targetNamespaceOwner.trimmingCharacters(in: .whitespacesAndNewlines)
-            )
-        }
-    }
-
     private static func buildAuth(
         mode: AuthMode,
         keyPath: String,
