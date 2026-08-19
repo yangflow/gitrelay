@@ -6,15 +6,37 @@ struct MenuBarPopoverView: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
 
+    @State private var searchText = ""
+
+    private var filteredRepos: [RepoConfig] {
+        MenuBarPopoverFilter.filteredRepos(appVM.repos, searchText: searchText)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Button("全部同步") { appVM.triggerSyncAll() }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                Spacer()
-                Button("打开主窗口", action: openMainWindow)
-                    .controlSize(.small)
+            VStack(spacing: 8) {
+                HStack {
+                    Button("全部同步") { appVM.triggerSyncAll() }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .disabled(appVM.repos.isEmpty)
+                    Spacer()
+                    Button("打开主窗口", action: { openMainWindow(focusing: nil) })
+                        .controlSize(.small)
+                }
+
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                    TextField("搜索仓库", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .font(.caption)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
@@ -43,21 +65,29 @@ struct MenuBarPopoverView: View {
 
                 Divider()
 
-                ScrollView {
-                    VStack(spacing: 0) {
-                        ForEach(appVM.repos) { repo in
-                            MenuBarRepoRowView(
-                                repo: repo,
-                                status: appVM.statuses[repo.id] ?? .unknown,
-                                onSync: { appVM.triggerSync(repoID: repo.id) }
-                            )
-                            if repo.id != appVM.repos.last?.id {
-                                Divider().padding(.leading, 36)
+                if filteredRepos.isEmpty {
+                    Text("无匹配仓库")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(20)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            ForEach(filteredRepos) { repo in
+                                MenuBarRepoRowView(
+                                    repo: repo,
+                                    status: appVM.statuses[repo.id] ?? .unknown,
+                                    onOpen: { openMainWindow(focusing: repo.id) },
+                                    onSync: { appVM.triggerSync(repoID: repo.id) }
+                                )
+                                if repo.id != filteredRepos.last?.id {
+                                    Divider().padding(.leading, 36)
+                                }
                             }
                         }
                     }
+                    .frame(maxHeight: 280)
                 }
-                .frame(maxHeight: 280)
             }
 
             Divider()
@@ -93,11 +123,12 @@ struct MenuBarPopoverView: View {
         }
         .frame(width: 280)
         .onReceive(NotificationCenter.default.publisher(for: .gitrelayOpenMainWindow)) { _ in
-            openMainWindow()
+            openMainWindow(focusing: nil)
         }
     }
 
-    private func openMainWindow() {
+    private func openMainWindow(focusing repoID: UUID?) {
+        appVM.pendingMainWindowRepoID = repoID
         let popover = NSApp.keyWindow
         NSApp.setActivationPolicy(.regular)
         openWindow(id: "main")

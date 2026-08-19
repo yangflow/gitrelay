@@ -714,6 +714,54 @@ struct RepoRowHealthPresentationTests {
     }
 }
 
+// MARK: - MenuBarPopoverFilter
+
+struct MenuBarPopoverFilterTests {
+    private func makeRepo(name: String, tags: [String] = []) -> RepoConfig {
+        RepoConfig(
+            name: name,
+            srcURL: "git@github.com:user/\(name).git",
+            dstURL: "git@github.com:user/\(name)-mirror.git",
+            tags: tags
+        )
+    }
+
+    @Test func emptySearchReturnsAllRepos() {
+        let repos = [
+            makeRepo(name: "alpha"),
+            makeRepo(name: "beta")
+        ]
+
+        #expect(MenuBarPopoverFilter.filteredRepos(repos, searchText: "") == repos)
+        #expect(MenuBarPopoverFilter.filteredRepos(repos, searchText: "   ") == repos)
+    }
+
+    @Test func searchMatchesRepoNameCaseInsensitively() {
+        let alpha = makeRepo(name: "AlphaProject")
+        let beta = makeRepo(name: "beta-service")
+        let repos = [alpha, beta]
+
+        #expect(MenuBarPopoverFilter.filteredRepos(repos, searchText: "alpha") == [alpha])
+        #expect(MenuBarPopoverFilter.filteredRepos(repos, searchText: "SERVICE") == [beta])
+    }
+
+    @Test func searchMatchesTags() {
+        let tagged = makeRepo(name: "mirror-a", tags: ["production"])
+        let other = makeRepo(name: "mirror-b", tags: ["staging"])
+        let repos = [tagged, other]
+
+        #expect(MenuBarPopoverFilter.filteredRepos(repos, searchText: "prod") == [tagged])
+    }
+
+    @Test func canTriggerSyncAllowsAllStatusesExceptSyncing() {
+        #expect(MenuBarPopoverFilter.canTriggerSync(for: .idle))
+        #expect(MenuBarPopoverFilter.canTriggerSync(for: .unknown))
+        #expect(MenuBarPopoverFilter.canTriggerSync(for: .failed("network")))
+        #expect(MenuBarPopoverFilter.canTriggerSync(for: .diverged("detail")))
+        #expect(!MenuBarPopoverFilter.canTriggerSync(for: .syncing))
+    }
+}
+
 // MARK: - SyncHistorySparkline
 
 struct SyncHistorySparklineTests {
