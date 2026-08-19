@@ -18,7 +18,7 @@ struct AuthFieldView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Picker("\(label) 认证", selection: $mode) {
+            Picker("\(label) Authentication", selection: $mode) {
                 ForEach(AuthMode.allCases) { m in
                     Text(m.rawValue).tag(m)
                 }
@@ -27,18 +27,18 @@ struct AuthFieldView: View {
 
             switch mode {
             case .sshAgent:
-                Text("使用系统 SSH Agent(~/.ssh/config)")
+                Text("Use System SSH Agent (~/.ssh/config)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             case .sshKey:
                 HStack {
-                    TextField("私钥路径", text: $keyPath)
+                    TextField("Private Key Path", text: $keyPath)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.caption, design: .monospaced))
-                    Button("生成新密钥") { showGenerateKeySheet = true }
+                    Button("Generate New Key") { showGenerateKeySheet = true }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
-                    Button("选择...") { isPickingKey = true }
+                    Button("Choose...") { isPickingKey = true }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                 }
@@ -52,7 +52,7 @@ struct AuthFieldView: View {
                     }
                 }
                 HStack(spacing: 8) {
-                    Button("查看密钥") { loadPublicKeyPreview() }
+                    Button("View Key") { loadPublicKeyPreview() }
                         .buttonStyle(.borderless)
                         .controlSize(.small)
                         .disabled(keyPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -66,7 +66,7 @@ struct AuthFieldView: View {
                 SecureField("Personal Access Token", text: $token)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.caption, design: .monospaced))
-                Text("Token 将加密存储在系统 Keychain 中")
+                Text("The token will be encrypted in the system Keychain")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

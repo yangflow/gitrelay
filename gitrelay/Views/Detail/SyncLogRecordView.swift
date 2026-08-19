@@ -17,7 +17,7 @@ struct SyncLogRecordView: View {
 
             if !record.targetResults.isEmpty {
                 if !record.logLines.isEmpty {
-                    logBlock(title: "源", lines: record.logLines)
+                    logBlock(title: "Source", lines: record.logLines)
                 }
                 ForEach(record.targetResults) { result in
                     targetBlock(result)
@@ -70,8 +70,8 @@ struct SyncLogRecordView: View {
     }
 
     private var isDivergenceRecord: Bool {
-        record.logLines.contains { $0.contains("内容分歧") || $0.contains("Divergence detected") }
-            || record.targetResults.contains { ($0.error ?? "").contains("内容分歧") }
+        record.logLines.contains { $0.contains("Content divergence") || $0.contains("Divergence detected") }
+            || record.targetResults.contains { ($0.error ?? "").contains("Content divergence") }
     }
 
     private var iconName: String {

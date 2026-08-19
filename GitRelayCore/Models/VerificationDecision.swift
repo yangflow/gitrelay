@@ -20,7 +20,7 @@ enum VerificationDecision: Equatable {
         var summaryOverride: String?
 
         var summary: String {
-            summaryOverride ?? "分支 \(branch) 内容分歧：src \(srcCommitSHA.truncatingSHA) / dst \(dstCommitSHA.truncatingSHA)"
+            summaryOverride ?? "Content divergence on branch \(branch): src \(srcCommitSHA.truncatingSHA) / dst \(dstCommitSHA.truncatingSHA)"
         }
     }
 
@@ -36,10 +36,10 @@ enum VerificationDecision: Equatable {
         dstTreeHash: String? = nil
     ) -> VerificationDecision {
         guard let srcCommitSHA, !srcCommitSHA.isEmpty else {
-            return .inconclusive("源仓库缺少分支 \(branch)")
+            return .inconclusive("Source repository is missing branch \(branch)")
         }
         guard let dstCommitSHA, !dstCommitSHA.isEmpty else {
-            return .inconclusive("目标仓库缺少分支 \(branch)")
+            return .inconclusive("Target repository is missing branch \(branch)")
         }
 
         if srcCommitSHA == dstCommitSHA {
@@ -48,7 +48,7 @@ enum VerificationDecision: Equatable {
 
         guard let srcTreeHash, !srcTreeHash.isEmpty,
               let dstTreeHash, !dstTreeHash.isEmpty else {
-            return .inconclusive("commit SHA 不一致，但未能取得两侧 tree hash")
+            return .inconclusive("Commit SHAs differ, but the tree hashes could not be obtained from both sides")
         }
 
         if srcTreeHash == dstTreeHash {

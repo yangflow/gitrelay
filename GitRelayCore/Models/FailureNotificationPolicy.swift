@@ -36,27 +36,27 @@ struct FailureNotificationPolicy: Equatable, Sendable {
 /// Builds copy for single-repo and aggregated Focus-flush notifications.
 enum FailureNotificationCopy {
     static func title(repoName: String) -> String {
-        "同步失败：\(repoName)"
+        "Sync Failed: \(repoName)"
     }
 
     static func body(message: String, consecutiveFailureCount: Int) -> String {
         if consecutiveFailureCount > 1 {
-            return "连续失败 \(consecutiveFailureCount) 次 — \(message)"
+            return "\(consecutiveFailureCount) consecutive failures — \(message)"
         }
         return message
     }
 
     static func aggregatedTitle(failureCount: Int) -> String {
-        "专注模式结束后的同步摘要"
+        "Sync Summary After Focus"
     }
 
     static func aggregatedBody(items: [(repoName: String, message: String, count: Int)]) -> String {
-        guard !items.isEmpty else { return "有仓库同步失败。" }
+        guard !items.isEmpty else { return "Some repositories failed to sync." }
         if items.count == 1, let only = items.first {
             return body(message: "\(only.repoName)：\(only.message)", consecutiveFailureCount: only.count)
         }
         let preview = items.prefix(3).map(\.repoName).joined(separator: "、")
-        let suffix = items.count > 3 ? " 等" : ""
-        return "\(items.count) 个仓库同步失败：\(preview)\(suffix)"
+        let suffix = items.count > 3 ? " and others" : ""
+        return "\(items.count) repositories failed to sync: \(preview)\(suffix)"
     }
 }

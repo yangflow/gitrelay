@@ -1,7 +1,7 @@
 import SwiftUI
 
 private enum RepoDetailTab: String, CaseIterable, Identifiable {
-    case overview = "概览"
+    case overview = "Overview"
     case releases = "Releases"
 
     var id: String { rawValue }
@@ -21,7 +21,7 @@ struct RepoDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Picker("详情页", selection: $selectedTab) {
+            Picker("Detail Page", selection: $selectedTab) {
                 ForEach(RepoDetailTab.allCases) { tab in
                     Text(tab.rawValue).tag(tab)
                 }

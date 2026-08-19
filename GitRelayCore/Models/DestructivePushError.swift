@@ -6,7 +6,7 @@ enum DestructivePushError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .blocked(let plan):
-            return "已阻断破坏性镜像推送: \(plan.summary)。可再次同步并在确认弹窗中选择继续,或将策略改为自动执行。"
+            return "Destructive mirror push blocked: \(plan.summary). Sync again and choose Continue in the confirmation dialog, or change the policy to Run Automatically."
         }
     }
 }

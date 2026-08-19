@@ -29,13 +29,13 @@ struct SSHKeyGeneratedSheet: View {
                     .font(.title2)
                     .foregroundStyle(.green)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("SSH 密钥已生成")
+                    Text("SSH Key Generated")
                         .font(.headline)
-                    Text("将公钥添加到 \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) 后即可使用 SSH 认证。")
+                    Text("Add the public key to \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) to use SSH authentication.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     if didCopy {
-                        Label("已复制到剪贴板", systemImage: "checkmark.circle.fill")
+                        Label("Copied to Clipboard", systemImage: "checkmark.circle.fill")
                             .font(.caption)
                             .foregroundStyle(.green)
                     }
@@ -58,11 +58,11 @@ struct SSHKeyGeneratedSheet: View {
             Divider()
 
             HStack {
-                Button("复制公钥") {
+                Button("Copy Public Key") {
                     ClipboardService.copy(result.publicKey)
                     didCopy = true
                 }
-                Button("打开 \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) SSH 设置") {
+                Button("Open \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) SSH Settings") {
                     if !didCopy {
                         ClipboardService.copy(result.publicKey)
                         didCopy = true
@@ -70,7 +70,7 @@ struct SSHKeyGeneratedSheet: View {
                     NSWorkspace.shared.open(settingsURL)
                 }
                 Spacer()
-                Button("完成") { dismiss() }
+                Button("Done") { dismiss() }
                     .keyboardShortcut(.return)
                     .buttonStyle(.borderedProminent)
             }

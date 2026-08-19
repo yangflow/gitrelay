@@ -12,7 +12,7 @@ struct RepoDivergedRowView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.yellow)
             VStack(alignment: .leading, spacing: 4) {
-                Text("备份内容可能已偏离源仓库")
+                Text("Backup content may have diverged from the source repository")
                     .font(.callout)
                     .fontWeight(.medium)
                 Text(detail)
@@ -20,18 +20,18 @@ struct RepoDivergedRowView: View {
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                 if let lastVerifiedAt {
-                    Text("最近校验：\(lastVerifiedAt.formatted(.relative(presentation: .named)))")
+                    Text("Last verified: \(lastVerifiedAt.formatted(.relative(presentation: .named)))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
             Spacer()
             VStack(spacing: 6) {
-                Button("立即校验", action: onVerifyNow)
+                Button("Verify Now", action: onVerifyNow)
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(isVerifying)
-                Button("立即同步", action: onSyncNow)
+                Button("Sync Now", action: onSyncNow)
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
             }

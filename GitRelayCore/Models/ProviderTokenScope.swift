@@ -13,13 +13,13 @@ nonisolated struct TokenScopeValidation: Hashable, Sendable {
     var bannerText: String {
         let scopeList = sortedGrantedScopes.joined(separator: ", ")
         if isFullyAuthorized {
-            return "Token 有效, scopes = [\(scopeList)]"
+            return "Token is valid, scopes = [\(scopeList)]"
         }
         let missing = missingRequiredScopes.joined(separator: ", ")
         if scopeList.isEmpty {
-            return "Token 有效, 但无法读取 scopes; 缺少必需权限: \(missing)"
+            return "Token is valid, but its scopes could not be read; required scopes are missing: \(missing)"
         }
-        return "Token 有效, scopes = [\(scopeList)]; 缺少必需权限: \(missing)"
+        return "Token is valid, scopes = [\(scopeList)]; required scopes are missing: \(missing)"
     }
 }
 
@@ -60,11 +60,11 @@ nonisolated enum ProviderTokenUsage: Hashable, Sendable {
     var disclosureText: String? {
         switch self {
         case .webhookRegistration(.github):
-            return "在 Provider 上自动注册 webhook 需要额外的 admin:repo_hook 权限（超出日常镜像同步所需）。请仅在信任本机应用时授予。"
+            return "Automatically registering a webhook with the provider requires the additional admin:repo_hook scope, beyond what routine mirror sync needs. Grant it only if you trust this local app."
         case .webhookRegistration(.gitlab):
-            return "在 GitLab 上自动注册 webhook 需要 api 权限。请仅在信任本机应用时授予。"
+            return "Automatically registering a webhook on GitLab requires the api scope. Grant it only if you trust this local app."
         case .webhookRegistration(.gitea):
-            return "在 Gitea 上自动注册 webhook 需要 write:repository 权限。请仅在信任本机应用时授予。"
+            return "Automatically registering a webhook on Gitea requires the write:repository scope. Grant it only if you trust this local app."
         default:
             return nil
         }

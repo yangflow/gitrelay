@@ -36,7 +36,7 @@ struct RepoHeaderView: View {
 
             if repo.usesSelectiveRefSync {
                 Label {
-                    Text(repo.partialSyncWarning ?? "部分 ref 同步（非完整备份）")
+                    Text(repo.partialSyncWarning ?? "Partial ref sync (not a complete backup)")
                         .font(.caption)
                         .foregroundStyle(.orange)
                 } icon: {
@@ -51,7 +51,7 @@ struct RepoHeaderView: View {
     private func targetLabel(_ target: MirrorTarget) -> some View {
         HStack(spacing: 6) {
             if target.kind == .filesystem {
-                Text("归档")
+                Text("Archive")
                     .font(.caption2)
                     .padding(.horizontal, 4)
                     .padding(.vertical, 1)
@@ -68,7 +68,7 @@ struct RepoHeaderView: View {
                     .foregroundStyle(.secondary)
             }
             if !target.enabled {
-                Text("已禁用")
+                Text("Disabled")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }

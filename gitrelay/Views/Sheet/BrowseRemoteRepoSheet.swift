@@ -49,11 +49,11 @@ struct BrowseRemoteRepoSheet: View {
 
     private var headerTitle: String {
         switch vm.phase {
-        case .connect:          "浏览并选择远端仓库"
-        case .selecting:        "选择要镜像的仓库"
-        case .configureTarget:  "配置目标仓库"
-        case .submitting:       "正在创建目标仓库"
-        case .result:           "执行结果"
+        case .connect:          "Browse and Select Remote Repositories"
+        case .selecting:        "Select Repositories to Mirror"
+        case .configureTarget:  "Configure Target Repositories"
+        case .submitting:       "Creating Target Repositories"
+        case .result:           "Results"
         }
     }
 
@@ -62,8 +62,8 @@ struct BrowseRemoteRepoSheet: View {
         case .connect:          "1 / 3"
         case .selecting:        "2 / 3"
         case .configureTarget:  "3 / 3"
-        case .submitting:       "处理中…"
-        case .result:           "完成"
+        case .submitting:       "Processing…"
+        case .result:           "Done"
         }
     }
 
@@ -84,7 +84,7 @@ struct BrowseRemoteRepoSheet: View {
     private var connectView: some View {
         Form {
             Section("Provider") {
-                Picker("类型", selection: $vm.provider) {
+                Picker("Type", selection: $vm.provider) {
                     ForEach(GitProvider.listingCases) { p in
                         Text(p.displayName).tag(p)
                     }
@@ -102,29 +102,29 @@ struct BrowseRemoteRepoSheet: View {
             }
 
             if vm.provider == .gitlab {
-                Section("GitLab Host(自建实例可选)") {
+                Section("GitLab Host (Self-Hosted Instance Optional)") {
                     TextField("https://gitlab.company.com", text: $vm.gitlabHost)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.caption, design: .monospaced))
-                    Text("留空则使用 gitlab.com。会自动追加 /api/v4 路径。")
+                    Text("Leave blank to use gitlab.com. The /api/v4 path is appended automatically.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
 
             Section("Personal Access Token") {
-                SecureField("仅用于拉取仓库列表,不用于 git 同步", text: $vm.token)
+                SecureField("Used only to fetch the repository list, not for git sync", text: $vm.token)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.caption, design: .monospaced))
                     .onChange(of: vm.token) { _, _ in
                         vm.sourceScopeValidation = nil
                         vm.refreshCachedSourceScopeValidation()
                     }
-                Toggle("保存到 Keychain(下次自动填充)", isOn: $vm.rememberToken)
+                Toggle("Save to Keychain (Autofill Next Time)", isOn: $vm.rememberToken)
             }
 
-            Section("范围") {
-                Picker("选择范围", selection: $vm.scopeKind) {
+            Section("Scope") {
+                Picker("Select Scope", selection: $vm.scopeKind) {
                     ForEach(BrowseRemoteRepoViewModel.ScopeKind.allCases) { k in
                         Text(k.label).tag(k)
                     }
@@ -135,7 +135,7 @@ struct BrowseRemoteRepoSheet: View {
                 }
 
                 if vm.scopeKind == .organization {
-                    TextField(vm.provider == .github ? "组织名称 (如 anthropic)" : "群组路径 (如 gitlab-org/charts)",
+                    TextField(vm.provider == .github ? "Organization name (for example, anthropic)" : "Group path (for example, gitlab-org/charts)",
                               text: $vm.organizationName)
                         .textFieldStyle(.roundedBorder)
                 }
@@ -158,13 +158,13 @@ struct BrowseRemoteRepoSheet: View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField("搜索名称或描述", text: $vm.searchText)
+                TextField("Search Names or Descriptions", text: $vm.searchText)
                     .textFieldStyle(.plain)
                 Spacer()
-                Button("全选当前") { vm.selectAllVisible() }
+                Button("Select All Visible") { vm.selectAllVisible() }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
-                Button("清空") { vm.clearSelection() }
+                Button("Clear") { vm.clearSelection() }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
             }
@@ -184,7 +184,7 @@ struct BrowseRemoteRepoSheet: View {
                 if vm.hasMore {
                     HStack {
                         Spacer()
-                        Button(vm.isLoading ? "加载中..." : "加载更多") {
+                        Button(vm.isLoading ? "Loading..." : "Load More") {
                             Task { await vm.loadMore() }
                         }
                         .disabled(vm.isLoading)
@@ -211,13 +211,13 @@ struct BrowseRemoteRepoSheet: View {
 
     private var targetView: some View {
         Form {
-            Section("已选择 \(vm.selectedIDs.count) 个仓库") {
-                Text("源 URL 由所选仓库自动生成(按下方的源认证方式选择 SSH 或 HTTPS)")
+            Section("\(vm.selectedIDs.count) repositories selected") {
+                Text("Source URLs are generated from the selected repositories (choose SSH or HTTPS with the source authentication option below)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            Section("源仓库认证(用于 git clone/fetch)") {
+            Section("Source Repository Authentication (for git clone/fetch)") {
                 AuthFieldView(
                     label: "Source",
                     remoteURL: sourceRemoteURL,
@@ -227,8 +227,8 @@ struct BrowseRemoteRepoSheet: View {
                 )
             }
 
-            Section("目标仓库") {
-                Toggle("在目标端自动创建仓库 (Gitea)", isOn: $vm.targetAutoCreate)
+            Section("Target Repository") {
+                Toggle("Automatically Create Repositories on the Target (Gitea)", isOn: $vm.targetAutoCreate)
                     .onChange(of: vm.targetAutoCreate) { _, enabled in
                         if enabled {
                             Task { await vm.prepareTargetConfiguration() }
@@ -237,8 +237,8 @@ struct BrowseRemoteRepoSheet: View {
                         }
                     }
                 Text(vm.targetAutoCreate
-                     ? "使用 Gitea API 按所选仓库批量创建; 名称冲突时复用已存在仓库。"
-                     : "目标仓库需要预先存在; 使用 {name} 模板生成 URL。")
+                     ? "Use the Gitea API to create the selected repositories in a batch; reuse existing repositories when names conflict."
+                     : "Target repositories must already exist; URLs are generated with the {name} template.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -246,17 +246,17 @@ struct BrowseRemoteRepoSheet: View {
             if vm.targetAutoCreate {
                 autoCreateFields
             } else {
-                Section("目标 URL 模板") {
+                Section("Target URL Template") {
                     TextField("git@github.com:myuser/{name}.git", text: $vm.targetURLTemplate)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.caption, design: .monospaced))
-                    Text("使用 {name} 作为仓库名占位符。")
+                    Text("Use {name} as the repository name placeholder.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
 
-            Section("目标仓库认证(用于 git push)") {
+            Section("Target Repository Authentication (for git push)") {
                 AuthFieldView(
                     label: "Target",
                     remoteURL: targetRemoteURL,
@@ -266,14 +266,14 @@ struct BrowseRemoteRepoSheet: View {
                 )
             }
 
-            Section("命名 & 频率") {
-                TextField("名称前缀(可选)", text: $vm.namePrefix)
+            Section("Naming & Frequency") {
+                TextField("Name Prefix (Optional)", text: $vm.namePrefix)
                     .textFieldStyle(.roundedBorder)
                 FrequencyPickerView(frequency: $vm.frequency)
             }
 
             if !vm.selectedRepos.isEmpty {
-                Section("预览(前 3 条)") {
+                Section("Preview (First 3)") {
                     ForEach(vm.selectedRepos.prefix(3), id: \.id) { repo in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(vm.previewName(for: repo)).font(.caption).bold()
@@ -304,28 +304,28 @@ struct BrowseRemoteRepoSheet: View {
             TextField("https://gitea.company.com", text: $vm.targetCreateHost)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(.caption, design: .monospaced))
-            Text("自动追加 /api/v1 路径。")
+            Text("The /api/v1 path is appended automatically.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
 
         Section("Gitea API Token") {
-            SecureField("需要 write:repository 权限", text: $vm.targetCreateToken)
+            SecureField("Requires the write:repository scope", text: $vm.targetCreateToken)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(.caption, design: .monospaced))
                 .onChange(of: vm.targetCreateToken) { _, _ in
                     vm.targetScopeValidation = nil
                     vm.refreshCachedTargetScopeValidation()
                 }
-            Toggle("保存到 Keychain(下次自动填充)", isOn: $vm.rememberTargetCreateToken)
+            Toggle("Save to Keychain (Autofill Next Time)", isOn: $vm.rememberTargetCreateToken)
         }
         .onChange(of: vm.targetCreateHost) { _, _ in
             vm.targetScopeValidation = nil
             vm.refreshCachedTargetScopeValidation()
         }
 
-        Section("命名空间") {
-            Picker("位置", selection: $vm.targetNamespaceKind) {
+        Section("Namespace") {
+            Picker("Location", selection: $vm.targetNamespaceKind) {
                 ForEach(BrowseRemoteRepoViewModel.NamespaceKind.allCases) { k in
                     Text(k.label).tag(k)
                 }
@@ -334,18 +334,18 @@ struct BrowseRemoteRepoSheet: View {
 
             switch vm.targetNamespaceKind {
             case .currentUser:
-                Text("将创建在当前 Token 所属用户名下。")
+                Text("Repositories will be created under the username associated with the current token.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             case .organization:
-                TextField("组织名称", text: $vm.targetNamespaceOwner)
+                TextField("Organization Name", text: $vm.targetNamespaceOwner)
                     .textFieldStyle(.roundedBorder)
             case .adminForUser:
-                TextField("目标用户名(Token 需为管理员)", text: $vm.targetNamespaceOwner)
+                TextField("Target Username (Token Must Be an Administrator)", text: $vm.targetNamespaceOwner)
                     .textFieldStyle(.roundedBorder)
             }
 
-            Toggle("创建为 Private 仓库", isOn: $vm.targetVisibilityPrivate)
+            Toggle("Create as Private Repositories", isOn: $vm.targetVisibilityPrivate)
         }
     }
 
@@ -356,7 +356,7 @@ struct BrowseRemoteRepoSheet: View {
             Spacer()
             ProgressView()
                 .controlSize(.large)
-            Text("正在处理 \(vm.submitProgress) / \(vm.submitTotal)")
+            Text("Processing \(vm.submitProgress) / \(vm.submitTotal)")
                 .font(.callout)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -380,21 +380,21 @@ struct BrowseRemoteRepoSheet: View {
         return Form {
             Section {
                 HStack(spacing: 14) {
-                    Label("成功 \(succeeded)", systemImage: "checkmark.circle.fill")
+                    Label("Succeeded \(succeeded)", systemImage: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                     if existed > 0 {
-                        Label("复用 \(existed)", systemImage: "arrow.counterclockwise.circle.fill")
+                        Label("Reused \(existed)", systemImage: "arrow.counterclockwise.circle.fill")
                             .foregroundStyle(.blue)
                     }
                     if failed > 0 {
-                        Label("失败 \(failed)", systemImage: "xmark.octagon.fill")
+                        Label("Failed \(failed)", systemImage: "xmark.octagon.fill")
                             .foregroundStyle(.red)
                     }
                 }
                 .font(.caption)
             }
 
-            Section("详情") {
+            Section("Details") {
                 ForEach(vm.batchResults) { outcome in
                     BatchOutcomeRow(outcome: outcome)
                 }
@@ -408,12 +408,12 @@ struct BrowseRemoteRepoSheet: View {
     private var footer: some View {
         HStack {
             if vm.phase != .connect, vm.phase != .submitting, vm.phase != .result {
-                Button("上一步") { goBack() }
+                Button("Back") { goBack() }
                     .buttonStyle(.bordered)
             }
             Spacer()
             if vm.phase != .submitting {
-                Button(vm.phase == .result ? "关闭" : "取消") { dismiss() }
+                Button(vm.phase == .result ? "Close" : "Cancel") { dismiss() }
                     .keyboardShortcut(.escape)
             }
             primaryButton
@@ -424,14 +424,14 @@ struct BrowseRemoteRepoSheet: View {
     @ViewBuilder private var primaryButton: some View {
         switch vm.phase {
         case .connect:
-            Button(vm.isLoading ? "加载中..." : "加载仓库") {
+            Button(vm.isLoading ? "Loading..." : "Load Repositories") {
                 Task { await vm.loadFirstPage() }
             }
             .buttonStyle(.borderedProminent)
             .disabled(!vm.canAdvanceToSelect || vm.isLoading)
             .keyboardShortcut(.return)
         case .selecting:
-            Button("下一步 (\(vm.selectedIDs.count))") {
+            Button("Next (\(vm.selectedIDs.count))") {
                 vm.phase = .configureTarget
                 Task { await vm.prepareTargetConfiguration() }
             }
@@ -440,8 +440,8 @@ struct BrowseRemoteRepoSheet: View {
             .keyboardShortcut(.return)
         case .configureTarget:
             Button(vm.targetAutoCreate
-                   ? "创建并添加 \(vm.selectedIDs.count) 个"
-                   : "添加 \(vm.selectedIDs.count) 个仓库") {
+                   ? "Create and Add \(vm.selectedIDs.count)"
+                   : "Add \(vm.selectedIDs.count) Repositories") {
                 Task { await vm.runBatch() }
             }
             .buttonStyle(.borderedProminent)
@@ -451,7 +451,7 @@ struct BrowseRemoteRepoSheet: View {
             EmptyView()
         case .result:
             let count = vm.successfulConfigs.count
-            Button("添加 \(count) 个到同步列表") {
+            Button("Add \(count) to Sync List") {
                 let configs = vm.successfulConfigs
                 vm.persistTokensForSuccessfulConfigs()
                 appVM.addRepos(configs, triggerSync: true)
@@ -522,7 +522,7 @@ private struct BatchOutcomeRow: View {
                     .foregroundStyle(existed ? Color.blue : Color.green)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(repo.fullName).font(.caption).bold()
-                    Text(existed ? "远端已存在,将复用" : "创建成功")
+                    Text(existed ? "Remote already exists and will be reused" : "Created Successfully")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }

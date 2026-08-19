@@ -29,11 +29,11 @@ enum SyncPauseReason: Equatable, Sendable {
     var displayMessage: String {
         switch self {
         case .lowPowerMode:
-            return "低电量模式已开启，计划同步已暂停"
+            return "Low Power Mode is on; scheduled sync is paused"
         case .expensiveNetwork:
-            return "当前为蜂窝热点 / 昂贵网络，计划同步已暂停"
+            return "The current network is a cellular hotspot or an expensive network; scheduled sync is paused"
         case .lowPowerAndExpensiveNetwork:
-            return "低电量模式且网络昂贵，计划同步已暂停"
+            return "Low Power Mode is on and the network is expensive; scheduled sync is paused"
         }
     }
 }

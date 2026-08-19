@@ -36,7 +36,7 @@ struct MenuBarRepoRowView: View {
                         .font(.body)
                 }
                 .buttonStyle(.borderless)
-                .help("立即同步")
+                .help("Sync Now")
                 .disabled(!canSync)
             }
         }

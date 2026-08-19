@@ -7,9 +7,9 @@ struct EmptyStateView: View {
         ContentUnavailableView {
             Label("GitRelay", systemImage: "arrow.left.arrow.right.circle")
         } description: {
-            Text("把任意 Git 仓库镜像同步到另一个仓库\nGitLab → GitHub · Gitea · Gitee")
+            Text("Mirror any Git repository to another repository\nGitLab → GitHub · Gitea · Gitee")
         } actions: {
-            Button("添加第一个仓库", action: onAdd)
+            Button("Add Your First Repository", action: onAdd)
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
         }

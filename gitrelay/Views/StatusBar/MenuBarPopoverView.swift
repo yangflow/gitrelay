@@ -16,12 +16,12 @@ struct MenuBarPopoverView: View {
         VStack(spacing: 0) {
             VStack(spacing: 8) {
                 HStack {
-                    Button("全部同步") { appVM.triggerSyncAll() }
+                    Button("Sync All") { appVM.triggerSyncAll() }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
                         .disabled(appVM.repos.isEmpty)
                     Spacer()
-                    Button("打开主窗口", action: { openMainWindow(focusing: nil) })
+                    Button("Open Main Window", action: { openMainWindow(focusing: nil) })
                         .controlSize(.small)
                 }
 
@@ -29,7 +29,7 @@ struct MenuBarPopoverView: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
                         .font(.caption)
-                    TextField("搜索仓库", text: $searchText)
+                    TextField("Search Repositories", text: $searchText)
                         .textFieldStyle(.plain)
                         .font(.caption)
                 }
@@ -54,7 +54,7 @@ struct MenuBarPopoverView: View {
             Divider()
 
             if appVM.repos.isEmpty {
-                Text("暂无仓库")
+                Text("No Repositories")
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
                     .padding(20)
@@ -66,7 +66,7 @@ struct MenuBarPopoverView: View {
                 Divider()
 
                 if filteredRepos.isEmpty {
-                    Text("无匹配仓库")
+                    Text("No Matching Repositories")
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
                         .padding(20)
@@ -96,14 +96,14 @@ struct MenuBarPopoverView: View {
                 Button(action: openAbout) {
                     Image(systemName: "info.circle")
                 }
-                .help("关于 GitRelay")
+                .help("About GitRelay")
 
                 Button {
                     openSettings()
                 } label: {
                     Image(systemName: "gearshape")
                 }
-                .help("设置")
+                .help("Settings")
 
                 Spacer()
 
@@ -113,7 +113,7 @@ struct MenuBarPopoverView: View {
                     Image(systemName: "power")
                 }
                 .keyboardShortcut("q")
-                .help("退出 GitRelay")
+                .help("Quit GitRelay")
             }
             .buttonStyle(.borderless)
             .font(.caption)

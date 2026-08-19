@@ -1,8 +1,8 @@
 import SwiftUI
 
 enum SidebarDisplayMode: String, CaseIterable, Identifiable {
-    case all = "所有"
-    case byTag = "按标签分组"
+    case all = "All"
+    case byTag = "Group by Tag"
 
     var id: String { rawValue }
 }
@@ -24,7 +24,7 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("显示", selection: $displayMode) {
+            Picker("Display", selection: $displayMode) {
                 ForEach(SidebarDisplayMode.allCases) { mode in
                     Text(mode.rawValue).tag(mode)
                 }
@@ -62,15 +62,15 @@ struct SidebarView: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("手动添加", systemImage: "plus") { sheetMode = .add }
-                    .help("手动添加仓库")
+                Button("Add Manually", systemImage: "plus") { sheetMode = .add }
+                    .help("Add a Repository Manually")
             }
             ToolbarItem(placement: .primaryAction) {
-                Button("浏览远端仓库", systemImage: "magnifyingglass") { sheetMode = .browse }
-                    .help("从 GitHub / GitLab 浏览并选择")
+                Button("Browse Remote Repositories", systemImage: "magnifyingglass") { sheetMode = .browse }
+                    .help("Browse and select from GitHub or GitLab")
             }
             ToolbarItem(placement: .automatic) {
-                Button("全部同步", systemImage: "arrow.triangle.2.circlepath") {
+                Button("Sync All", systemImage: "arrow.triangle.2.circlepath") {
                     appVM.triggerSyncAll()
                 }
                 .disabled(appVM.repos.isEmpty)
@@ -87,15 +87,15 @@ struct SidebarView: View {
                 repoCount: appVM.repos(matchingTag: group.tag).count
             )
         }
-        .alert("删除仓库", isPresented: $showDeleteAlert, presenting: pendingDeleteID) { id in
-            Button("删除", role: .destructive) {
+        .alert("Delete Repository", isPresented: $showDeleteAlert, presenting: pendingDeleteID) { id in
+            Button("Delete", role: .destructive) {
                 if selectedRepoID == id { selectedRepoID = nil }
                 appVM.deleteRepo(id: id)
             }
-            Button("取消", role: .cancel) { }
+            Button("Cancel", role: .cancel) { }
         } message: { id in
             let name = appVM.repos.first(where: { $0.id == id })?.name ?? ""
-            Text("确认删除「\(name)」?本地镜像缓存也将被删除,此操作不可撤销。")
+            Text("Delete “\(name)”? The local mirror cache will also be deleted. This action cannot be undone.")
         }
     }
 
@@ -110,7 +110,7 @@ struct SidebarView: View {
     private var groupedReposList: some View {
         let sections = RepoTagGrouping.sections(from: appVM.repos)
         if sections.isEmpty {
-            ContentUnavailableView("暂无仓库", systemImage: "folder")
+            ContentUnavailableView("No Repositories", systemImage: "folder")
         } else {
             ForEach(sections) { section in
                 Section {
@@ -144,26 +144,26 @@ struct SidebarView: View {
 
     @ViewBuilder
     private func tagGroupContextMenu(tag: String?, repoCount: Int) -> some View {
-        Button("同步此组") {
+        Button("Sync This Group") {
             appVM.triggerSync(matchingTag: tag)
         }
         .disabled(repoCount == 0)
 
-        Button("校验此组") {
+        Button("Verify This Group") {
             appVM.triggerVerify(matchingTag: tag)
         }
         .disabled(repoCount == 0)
 
         Divider()
 
-        Button("编辑组内所有仓库频率...") {
+        Button("Edit Frequency for All Repositories in Group...") {
             batchFrequencyGroup = TagGroupSheetItem(tag: tag)
         }
         .disabled(repoCount == 0)
     }
 
     private var tagGroupToolbarMenu: some View {
-        Menu("组操作", systemImage: "tag") {
+        Menu("Group Actions", systemImage: "tag") {
             ForEach(RepoTagGrouping.sections(from: appVM.repos)) { section in
                 Menu("\(section.title) (\(section.repos.count))") {
                     tagGroupContextMenu(tag: section.tag, repoCount: section.repos.count)

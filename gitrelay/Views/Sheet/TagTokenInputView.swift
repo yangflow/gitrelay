@@ -25,7 +25,7 @@ struct TagTokenInputView: View {
                 }
             }
 
-            TextField("输入标签后按回车添加", text: $draft)
+            TextField("Enter a tag and press Return to add it", text: $draft)
                 .textFieldStyle(.roundedBorder)
                 .focused($isFieldFocused)
                 .onSubmit { commitDraft() }
@@ -52,7 +52,7 @@ struct TagTokenInputView: View {
                 .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
             }
 
-            Text("可用逗号或回车分隔多个标签；输入时会自动补全已有标签。")
+            Text("Separate multiple tags with commas or Return. Existing tags are suggested as you type.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -78,7 +78,7 @@ struct TagTokenInputView: View {
                     .font(.caption2)
             }
             .buttonStyle(.plain)
-            .help("移除标签")
+            .help("Remove Tag")
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)

@@ -21,7 +21,7 @@ struct GenerateSSHKeySheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("生成 SSH 密钥")
+            Text("Generate SSH Key")
                 .font(.headline)
                 .padding([.horizontal, .top], 20)
                 .padding(.bottom, 12)
@@ -30,15 +30,15 @@ struct GenerateSSHKeySheet: View {
 
             Form {
                 Section {
-                    TextField("私钥路径", text: $keyPath)
+                    TextField("Private Key Path", text: $keyPath)
                         .font(.system(.body, design: .monospaced))
-                    Text("默认保存为 \(SSHKeyGenerator.defaultDisplayPath)。公钥将写入同路径的 .pub 文件。")
+                    Text("The default path is \(SSHKeyGenerator.defaultDisplayPath). The public key will be written to a .pub file at the same path.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Section {
-                    Toggle("使用 passphrase 加密私钥", isOn: $usePassphrase)
+                    Toggle("Encrypt the private key with a passphrase", isOn: $usePassphrase)
                     if usePassphrase {
                         SecureField("Passphrase", text: $passphrase)
                             .textFieldStyle(.roundedBorder)
@@ -59,10 +59,10 @@ struct GenerateSSHKeySheet: View {
 
             HStack {
                 Spacer()
-                Button("取消") { dismiss() }
+                Button("Cancel") { dismiss() }
                     .keyboardShortcut(.escape)
                     .disabled(isGenerating)
-                Button("生成", action: generate)
+                Button("Generate", action: generate)
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.return)
                     .disabled(isGenerating)

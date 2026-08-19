@@ -58,9 +58,9 @@ struct RepoConfig: Codable, Identifiable, Equatable {
     var partialSyncWarning: String? {
         guard usesSelectiveRefSync else { return nil }
         if isShallowClone {
-            return "浅克隆无法完整 push --mirror，将仅同步所选 ref，不构成完整备份。"
+            return "A shallow clone cannot perform a complete push --mirror. Only the selected refs will sync, so this is not a complete backup."
         }
-        return "已自定义 ref 过滤，将仅同步所选 ref，不构成完整备份。"
+        return "Custom ref filters are set. Only the selected refs will sync, so this is not a complete backup."
     }
 
     static func normalizedRefSpecs(_ raw: [String]) -> [String] {

@@ -141,9 +141,9 @@ final class AddEditRepoViewModel {
         let isCustomRefs = !RepoConfig.refSpecsEqual(refSpecs, RepoConfig.defaultRefSpecs)
         guard isShallow || isCustomRefs else { return nil }
         if isShallow {
-            return "浅克隆无法完整 push --mirror，将仅同步所选 ref，不构成完整备份。"
+            return "A shallow clone cannot perform a complete push --mirror. Only the selected refs will sync, so this is not a complete backup."
         }
-        return "已自定义 ref 过滤，将仅同步所选 ref，不构成完整备份。"
+        return "Custom ref filters are set. Only the selected refs will sync, so this is not a complete backup."
     }
 
     var isValid: Bool {
@@ -152,8 +152,8 @@ final class AddEditRepoViewModel {
 
     @discardableResult
     func validate() -> Bool {
-        nameError = name.trimmingCharacters(in: .whitespaces).isEmpty ? "请输入名称" : nil
-        srcError  = isValidGitURL(srcURL) ? nil : "请输入有效的 Git URL"
+        nameError = name.trimmingCharacters(in: .whitespaces).isEmpty ? "Enter a name" : nil
+        srcError  = isValidGitURL(srcURL) ? nil : "Enter a valid Git URL"
         depthError = validateDepthText()
 
         targetErrors = [:]
@@ -166,24 +166,24 @@ final class AddEditRepoViewModel {
             case .gitRemote:
                 let trimmed = target.url.trimmingCharacters(in: .whitespaces)
                 if trimmed.isEmpty {
-                    targetErrors[target.id] = "请输入有效的 Git URL"
+                    targetErrors[target.id] = "Enter a valid Git URL"
                 } else if !isValidGitURL(trimmed) {
-                    targetErrors[target.id] = "请输入有效的 Git URL"
+                    targetErrors[target.id] = "Enter a valid Git URL"
                 }
             case .filesystem:
                 let trimmed = target.filesystemPath.trimmingCharacters(in: .whitespaces)
                 if trimmed.isEmpty {
-                    targetErrors[target.id] = "请选择归档目录"
+                    targetErrors[target.id] = "Choose an archive directory"
                 }
                 if let retention = parsedRetentionCount(for: target), retention < 1 {
-                    targetErrors[target.id] = "保留份数须为正整数"
+                    targetErrors[target.id] = "The number to keep must be a positive integer"
                 }
             }
         }
 
         if targets.filter(isTargetConfigured).allSatisfy({ !$0.enabled }) {
             if targetErrors.isEmpty {
-                targetErrors[targets[0].id] = "至少启用一个目标"
+                targetErrors[targets[0].id] = "Enable at least one target"
             }
         }
 
@@ -251,7 +251,7 @@ final class AddEditRepoViewModel {
         let trimmed = depthText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         guard let value = Int(trimmed), value > 0 else {
-            return "深度须为正整数"
+            return "Depth must be a positive integer"
         }
         return nil
     }

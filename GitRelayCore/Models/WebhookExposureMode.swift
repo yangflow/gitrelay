@@ -16,23 +16,23 @@ nonisolated enum WebhookExposureMode: String, CaseIterable, Identifiable, Sendab
 
     var displayName: String {
         switch self {
-        case .off: return "仅本机 (127.0.0.1)"
+        case .off: return "Local Only (127.0.0.1)"
         case .cloudflareTunnel: return "Cloudflare Tunnel"
         case .tailscaleFunnel: return "Tailscale Funnel"
-        case .relaySketch: return "中继回落 (示意)"
+        case .relaySketch: return "Relay Fallback (Example)"
         }
     }
 
     var helpText: String {
         switch self {
         case .off:
-            return "Webhook 仅监听本机回环地址。可用 curl 本地验证；外网需要开启下方暴露模式。"
+            return "The webhook listens only on the local loopback address. You can verify it locally with curl; external access requires an exposure mode below."
         case .cloudflareTunnel:
-            return "需本机已安装 cloudflared。示例：cloudflared tunnel --url http://127.0.0.1:<port>，再把生成的 https 主机填入公共 Base URL。"
+            return "cloudflared must be installed locally. Example: cloudflared tunnel --url http://127.0.0.1:<port>, then enter the generated HTTPS host in Public Base URL."
         case .tailscaleFunnel:
-            return "需本机已安装 tailscale 并启用 Funnel。示例：tailscale funnel <port>，再把 Funnel HTTPS 主机填入公共 Base URL。"
+            return "Tailscale must be installed locally with Funnel enabled. Example: tailscale funnel <port>, then enter the Funnel HTTPS host in Public Base URL."
         case .relaySketch:
-            return "未来可由 Cloudflare Worker / GitHub App 长轮询中继到本机；本版本仅保留配置入口，不部署托管基础设施。"
+            return "A future Cloudflare Worker or GitHub App could relay to this Mac using long polling. This version provides configuration only and does not deploy hosted infrastructure."
         }
     }
 }

@@ -51,7 +51,7 @@ struct AboutView: View {
                 Button {
                     UpdaterService.shared.checkForUpdates()
                 } label: {
-                    Label("检查更新", systemImage: "arrow.down.circle")
+                    Label("Check for Updates", systemImage: "arrow.down.circle")
                 }
             }
             .buttonStyle(.borderless)

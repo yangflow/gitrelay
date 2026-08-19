@@ -7,9 +7,9 @@ nonisolated enum TargetNamespace: Hashable, Sendable {
 
     var displayLabel: String {
         switch self {
-        case .currentUser:              "当前用户"
-        case .organization(let org):    "组织: \(org)"
-        case .adminForUser(let user):   "管理员 → 用户: \(user)"
+        case .currentUser:              "Current User"
+        case .organization(let org):    "Organization: \(org)"
+        case .adminForUser(let user):   "Administrator → User: \(user)"
         }
     }
 }
@@ -29,11 +29,11 @@ nonisolated enum TargetProviderAPIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unauthorized(let m): return m.map { "鉴权失败(401)：\($0)" } ?? "鉴权失败(401)"
-        case .forbidden(let m):    return m.map { "无权限(403)：\($0)" } ?? "无权限(403)"
-        case .validation(let m):   return m.map { "参数错误：\($0)" } ?? "参数错误(422)"
-        case .network(let e):      return "网络错误：\(e.localizedDescription)"
-        case .decoding(let e):     return "响应解析失败：\(e.localizedDescription)"
+        case .unauthorized(let m): return m.map { "Authentication failed (401): \($0)" } ?? "Authentication failed (401)"
+        case .forbidden(let m):    return m.map { "Permission denied (403): \($0)" } ?? "Permission denied (403)"
+        case .validation(let m):   return m.map { "Invalid parameters: \($0)" } ?? "Invalid parameters (422)"
+        case .network(let e):      return "Network error: \(e.localizedDescription)"
+        case .decoding(let e):     return "Failed to parse response: \(e.localizedDescription)"
         case .http(let s, let m):  return m.map { "HTTP \(s)：\($0)" } ?? "HTTP \(s)"
         }
     }

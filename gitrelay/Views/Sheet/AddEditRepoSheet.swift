@@ -12,8 +12,8 @@ struct AddEditRepoSheet: View {
         _vm = State(initialValue: AddEditRepoViewModel(editing: repo))
     }
 
-    private var title: String { editingRepo == nil ? "添加仓库" : "编辑仓库" }
-    private var primaryActionTitle: String { editingRepo == nil ? "添加并开始同步" : "保存" }
+    private var title: String { editingRepo == nil ? "Add Repository" : "Edit Repository" }
+    private var primaryActionTitle: String { editingRepo == nil ? "Add and Start Syncing" : "Save" }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -27,14 +27,14 @@ struct AddEditRepoSheet: View {
             Divider()
 
             Form {
-                Section("名称") {
-                    TextField("例如:my-project", text: $vm.name)
+                Section("Name") {
+                    TextField("For example: my-project", text: $vm.name)
                     if let err = vm.nameError {
                         Text(err).font(.caption).foregroundStyle(.red)
                     }
                 }
 
-                Section("Source(源仓库)") {
+                Section("Source Repository") {
                     TextField("git@gitlab.com:org/repo.git", text: $vm.srcURL)
                         .font(.system(.caption, design: .monospaced))
                     if let err = vm.srcError {
@@ -63,36 +63,36 @@ struct AddEditRepoSheet: View {
                     Button {
                         vm.addTarget()
                     } label: {
-                        Label("添加目标", systemImage: "plus.circle")
+                        Label("Add Target", systemImage: "plus.circle")
                     }
                 } header: {
-                    Text("Targets(目标仓库)")
+                    Text("Targets")
                 } footer: {
-                    Text("同一源仓库可镜像到多个目标；可选择 Git 远程或文件系统归档 (tar.gz / zip / git bundle)。禁用的目标在同步时跳过。")
+                    Text("A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync.")
                         .font(.caption)
                 }
 
-                Section("同步频率") {
+                Section("Sync Frequency") {
                     FrequencyPickerView(frequency: $vm.frequency)
                 }
 
-                Section("标签") {
+                Section("Tags") {
                     TagTokenInputView(
                         tags: $vm.tags,
                         suggestions: appVM.allKnownTags
                     )
                 }
 
-                Section("校验分支") {
+                Section("Verification Branch") {
                     TextField("main", text: $vm.defaultBranch)
                         .font(.system(.body, design: .monospaced))
-                    Text("完整性校验比对 src/dst 上该分支的 tip 与 tree hash。")
+                    Text("Integrity verification compares this branch's tip and tree hash on src and dst.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                Section("破坏性推送保护") {
-                    Picker("策略", selection: $vm.destructivePushPolicy) {
+                Section("Destructive Push Protection") {
+                    Picker("Policy", selection: $vm.destructivePushPolicy) {
                         ForEach(DestructivePushPolicy.allCases) { policy in
                             Text(policy.displayName).tag(policy)
                         }
@@ -104,18 +104,18 @@ struct AddEditRepoSheet: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Section("Release 镜像") {
-                    Toggle("镜像 Releases 及二进制 assets", isOn: $vm.mirrorReleases)
-                    Text("同步 git 仓库后，将源仓库 Release 的 tag/title/body 与 .dmg、.tar.gz 等附件增量复制到每个已启用目标。需要 GitHub/GitLab API Token。")
+                Section("Release Mirroring") {
+                    Toggle("Mirror Releases and Binary Assets", isOn: $vm.mirrorReleases)
+                    Text("After syncing the git repository, incrementally copy source Release tags, titles, bodies, and attachments such as .dmg and .tar.gz files to each enabled target. A GitHub or GitLab API token is required.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Section {
-                    Toggle("允许 Webhook 即时同步", isOn: $vm.webhookEnabled)
+                    Toggle("Allow Instant Webhook Sync", isOn: $vm.webhookEnabled)
                     if vm.webhookEnabled {
                         if let editing = editingRepo {
-                            Text("路径：/hook/\(editing.webhookPathID)")
+                            Text("Path: /hook/\(editing.webhookPathID)")
                                 .font(.system(.caption, design: .monospaced))
                                 .textSelection(.enabled)
 
@@ -126,34 +126,34 @@ struct AddEditRepoSheet: View {
                                     .textSelection(.enabled)
                                     .lineLimit(2)
                                 Spacer()
-                                Button("复制 URL") { ClipboardService.copy(url) }
+                                Button("Copy URL") { ClipboardService.copy(url) }
                                     .font(.caption)
                             }
 
                             if let secret = WebhookSecretStore.loadSecret(repoID: editing.id) {
                                 HStack {
-                                    Text("HMAC 密钥已存入 Keychain")
+                                    Text("HMAC secret saved in Keychain")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                     Spacer()
-                                    Button("复制密钥") { ClipboardService.copy(secret) }
+                                    Button("Copy Secret") { ClipboardService.copy(secret) }
                                         .font(.caption)
                                 }
                             }
                         } else {
-                            Text("保存后生成路径 /hook/<repo-id> 与 HMAC 密钥（写入 Keychain）。请同时在设置中启用本机监听。")
+                            Text("Saving generates a /hook/<repo-id> path and an HMAC secret stored in Keychain. Also enable the local listener in Settings.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
-                        Toggle("保存时尝试通过 GitHub API 注册 webhook", isOn: $vm.registerWebhookOnSave)
+                        Toggle("Try to Register the Webhook Through the GitHub API When Saving", isOn: $vm.registerWebhookOnSave)
                         if vm.registerWebhookOnSave {
                             if let disclosure = ProviderTokenUsage.webhookRegistration(provider: .github).disclosureText {
                                 Text(disclosure)
                                     .font(.caption)
                                     .foregroundStyle(.orange)
                             }
-                            SecureField("GitHub Token（需 admin:repo_hook）", text: $vm.webhookRegistrationToken)
+                            SecureField("GitHub Token (Requires admin:repo_hook)", text: $vm.webhookRegistrationToken)
                             TokenScopeBannerView(validation: vm.webhookScopeValidation)
                             if let message = vm.webhookRegistrationMessage {
                                 Text(message)
@@ -165,19 +165,19 @@ struct AddEditRepoSheet: View {
                 } header: {
                     Text("Webhook")
                 } footer: {
-                    Text("收到校验通过的 push 事件后立即同步，不受频率调度限制。需在「设置 → Webhook」启用本机监听；外网暴露使用 Cloudflare Tunnel / Tailscale Funnel（可选）。")
+                    Text("Sync immediately after receiving a verified push event, independent of the frequency schedule. Enable the local listener in Settings → Webhook. Cloudflare Tunnel or Tailscale Funnel can optionally provide external access.")
                 }
 
                 Section {
-                    DisclosureGroup("高级选项") {
-                        TextField("克隆深度（留空 = 全量历史）", text: $vm.depthText)
+                    DisclosureGroup("Advanced Options") {
+                        TextField("Clone Depth (Blank = Full History)", text: $vm.depthText)
                             .font(.system(.body, design: .monospaced))
                         if let err = vm.depthError {
                             Text(err).font(.caption).foregroundStyle(.red)
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Fetch refspecs（每行一条）")
+                            Text("Fetch Refspecs (One per Line)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             TextEditor(text: $vm.refSpecsText)
@@ -185,7 +185,7 @@ struct AddEditRepoSheet: View {
                                 .frame(minHeight: 72)
                         }
 
-                        Text("默认同步所有分支与 tag。可改为仅 main + v* tag，例如：\n+refs/heads/main:refs/heads/main\n+refs/tags/v*:refs/tags/v*")
+                        Text("By default, all branches and tags are synced. You can limit this to main and v* tags, for example:\n+refs/heads/main:refs/heads/main\n+refs/tags/v*:refs/tags/v*")
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
@@ -204,7 +204,7 @@ struct AddEditRepoSheet: View {
 
                 Section {
                     Label {
-                        Text("GitRelay 会先执行 dry-run。严格保护会在删除或强制更新前弹出确认弹窗;取消则阻断并记失败。自动执行保留传统 mirror 行为。")
+                        Text("GitRelay performs a dry run first. Strict Protection asks for confirmation before deletions or forced updates; canceling blocks the sync and records a failure. Run Automatically preserves traditional mirror behavior.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } icon: {
@@ -219,7 +219,7 @@ struct AddEditRepoSheet: View {
 
             HStack {
                 Spacer()
-                Button("取消") { dismiss() }
+                Button("Cancel") { dismiss() }
                     .keyboardShortcut(.escape)
                 Button(primaryActionTitle, action: save)
                     .buttonStyle(.borderedProminent)
@@ -278,10 +278,10 @@ struct AddEditRepoSheet: View {
     ) async -> String? {
         let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            return "Webhook 自动注册已跳过：未提供 GitHub Token。"
+            return "Automatic webhook registration was skipped because no GitHub token was provided."
         }
         guard let path = GitRemoteRepoPath.parse(from: repo.srcURL), !path.namespace.isEmpty else {
-            return "Webhook 自动注册已跳过：无法从源 URL 解析 owner/repo。"
+            return "Automatic webhook registration was skipped because owner/repo could not be parsed from the source URL."
         }
         let client = GitHubWebhookAPIClient(token: trimmed)
         do {
@@ -291,7 +291,7 @@ struct AddEditRepoSheet: View {
                 usage: .webhookRegistration(provider: .github)
             )
             guard validation.isFullyAuthorized else {
-                return "Webhook 自动注册已跳过：Token 缺少 admin:repo_hook。"
+                return "Automatic webhook registration was skipped because the token lacks admin:repo_hook."
             }
             let secret = try WebhookSecretStore.ensureSecret(repoID: repo.id)
             let registration = try await client.createPushHook(
@@ -300,9 +300,9 @@ struct AddEditRepoSheet: View {
                 hookURL: hookURL,
                 secret: secret
             )
-            return "已在 GitHub 注册 webhook #\(registration.id)。"
+            return "Registered webhook #\(registration.id) on GitHub."
         } catch {
-            return "Webhook 自动注册失败：\(error.localizedDescription)"
+            return "Automatic webhook registration failed: \(error.localizedDescription)"
         }
     }
 }

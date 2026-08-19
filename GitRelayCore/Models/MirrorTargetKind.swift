@@ -8,8 +8,8 @@ enum MirrorTargetKind: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .gitRemote: return "Git 远程"
-        case .filesystem: return "文件系统归档"
+        case .gitRemote: return "Git Remote"
+        case .filesystem: return "Filesystem Archive"
         }
     }
 }

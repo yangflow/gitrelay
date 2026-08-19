@@ -12,8 +12,8 @@ final class BrowseRemoteRepoViewModel {
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .currentUser:  "我的仓库"
-            case .organization: "组织 / 群组"
+            case .currentUser:  "My Repositories"
+            case .organization: "Organization / Group"
             }
         }
     }
@@ -23,9 +23,9 @@ final class BrowseRemoteRepoViewModel {
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .currentUser:   "当前用户"
-            case .organization:  "组织"
-            case .adminForUser:  "管理员代建到用户"
+            case .currentUser:   "Current User"
+            case .organization:  "Organization"
+            case .adminForUser:  "Administrator Creates for User"
             }
         }
     }
@@ -407,7 +407,7 @@ final class BrowseRemoteRepoViewModel {
 
     private func createAndBuildConfig(for repo: RemoteRepo) async {
         guard let baseURL = resolvedGiteaBaseURL() else {
-            batchResults.append(.failed(repo: repo, message: "目标 API Host 无效"))
+            batchResults.append(.failed(repo: repo, message: "The target API host is invalid"))
             return
         }
         let client = GiteaTargetAPIClient(

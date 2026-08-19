@@ -15,7 +15,7 @@ struct BranchListView: View {
                     .scaleEffect(0.7)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else if branches.isEmpty {
-                Text("未检测到分支(同步后可见)")
+                Text("No Branches Detected (Visible After Sync)")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             } else {

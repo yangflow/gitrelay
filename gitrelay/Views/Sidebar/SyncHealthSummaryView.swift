@@ -22,26 +22,26 @@ struct SyncHealthSummaryView: View {
     }
 
     private var title: some View {
-        Label("今日", systemImage: "calendar")
+        Label("Today", systemImage: "calendar")
             .foregroundStyle(.secondary)
     }
 
     private var metrics: some View {
         HStack(spacing: 8) {
             HealthMetricView(
-                title: "成功",
+                title: "Succeeded",
                 count: summary.succeededToday,
                 systemImage: "checkmark.circle.fill",
                 tint: .green
             )
             HealthMetricView(
-                title: "失败",
+                title: "Failed",
                 count: summary.failedToday,
                 systemImage: "xmark.octagon.fill",
                 tint: summary.hasFailures ? .red : .secondary
             )
             HealthMetricView(
-                title: "未运行",
+                title: "Not Run",
                 count: summary.notRunToday,
                 systemImage: "clock",
                 tint: .secondary
