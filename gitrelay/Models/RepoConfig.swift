@@ -15,6 +15,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
     var lastSuccessfulSyncedAt: Date?
     var lastSyncError: String?
     var consecutiveFailureCount: Int
+    /// Rolling daily sync outcomes keyed by `yyyy-MM-dd` (kept ≤ 35 days).
+    var dailySyncOutcomes: [String: SyncDayOutcome]
     var lastVerifiedAt: Date?
     /// Non-nil when the last integrity check found divergent tree content.
     var divergedDetail: String?
@@ -39,6 +41,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         lastSuccessfulSyncedAt: Date? = nil,
         lastSyncError: String? = nil,
         consecutiveFailureCount: Int = 0,
+        dailySyncOutcomes: [String: SyncDayOutcome] = [:],
         lastVerifiedAt: Date? = nil,
         divergedDetail: String? = nil,
         tags: [String] = []
@@ -56,6 +59,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         self.lastSuccessfulSyncedAt = lastSuccessfulSyncedAt
         self.lastSyncError = lastSyncError
         self.consecutiveFailureCount = max(0, consecutiveFailureCount)
+        self.dailySyncOutcomes = dailySyncOutcomes
         self.lastVerifiedAt = lastVerifiedAt
         self.divergedDetail = divergedDetail
         self.tags = RepoTagGrouping.normalizedTags(tags)
@@ -77,6 +81,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         lastSuccessfulSyncedAt: Date? = nil,
         lastSyncError: String? = nil,
         consecutiveFailureCount: Int = 0,
+        dailySyncOutcomes: [String: SyncDayOutcome] = [:],
         lastVerifiedAt: Date? = nil,
         divergedDetail: String? = nil,
         tags: [String] = []
@@ -95,6 +100,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
             lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
             lastSyncError: lastSyncError,
             consecutiveFailureCount: consecutiveFailureCount,
+            dailySyncOutcomes: dailySyncOutcomes,
             lastVerifiedAt: lastVerifiedAt,
             divergedDetail: divergedDetail,
             tags: tags
@@ -117,6 +123,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         case lastSuccessfulSyncedAt
         case lastSyncError
         case consecutiveFailureCount
+        case dailySyncOutcomes
         case lastVerifiedAt
         case divergedDetail
         case tags
@@ -148,6 +155,10 @@ struct RepoConfig: Codable, Identifiable, Equatable {
             try container.decodeIfPresent(Int.self, forKey: .consecutiveFailureCount)
                 ?? (decodedLastSyncError == nil ? 0 : 1)
         )
+        dailySyncOutcomes = try container.decodeIfPresent(
+            [String: SyncDayOutcome].self,
+            forKey: .dailySyncOutcomes
+        ) ?? [:]
         lastVerifiedAt = try container.decodeIfPresent(Date.self, forKey: .lastVerifiedAt)
         divergedDetail = try container.decodeIfPresent(String.self, forKey: .divergedDetail)
         tags = RepoTagGrouping.normalizedTags(
@@ -179,12 +190,15 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         try container.encodeIfPresent(lastSuccessfulSyncedAt, forKey: .lastSuccessfulSyncedAt)
         try container.encodeIfPresent(lastSyncError, forKey: .lastSyncError)
         try container.encode(consecutiveFailureCount, forKey: .consecutiveFailureCount)
+        if !dailySyncOutcomes.isEmpty {
+            try container.encode(dailySyncOutcomes, forKey: .dailySyncOutcomes)
+        }
         try container.encodeIfPresent(lastVerifiedAt, forKey: .lastVerifiedAt)
         try container.encodeIfPresent(divergedDetail, forKey: .divergedDetail)
         try container.encode(tags, forKey: .tags)
     }
 
-    mutating func recordSyncResult(at date: Date = .now, error: String?) {
+    mutating func recordSyncResult(at date: Date = .now, error: String?, calendar: Calendar = .current) {
         lastSyncedAt = date
         lastSyncError = error
 
@@ -196,6 +210,17 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         } else {
             consecutiveFailureCount = max(0, consecutiveFailureCount) + 1
         }
+
+        let dayKey = SyncHistorySparkline.dayKey(for: date, calendar: calendar)
+        var outcome = dailySyncOutcomes[dayKey] ?? SyncDayOutcome()
+        outcome.recordSync(error: error)
+        dailySyncOutcomes[dayKey] = outcome
+        dailySyncOutcomes = SyncHistorySparkline.pruneDailyOutcomes(
+            dailySyncOutcomes,
+            keepingDays: 35,
+            referenceDate: date,
+            calendar: calendar
+        )
     }
 
     mutating func recordVerificationResult(at date: Date = .now, divergedDetail: String?) {

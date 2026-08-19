@@ -32,6 +32,12 @@ struct RepoDetailView: View {
 
                 Divider()
 
+                SyncHistorySparklineView(
+                    sparkline: SyncHistorySparkline.make(from: repo.dailySyncOutcomes)
+                )
+
+                Divider()
+
                 BranchListView(branches: detailVM.branches, isLoading: detailVM.isLoadingBranches)
 
                 Divider()

@@ -11,11 +11,17 @@ struct SyncRecord: Identifiable {
     var commitsAfter: Int?
     var targetResults: [TargetSyncResult]
 
-    init(repoID: UUID) {
+    init(
+        repoID: UUID,
+        startedAt: Date = Date(),
+        finishedAt: Date? = nil,
+        succeeded: Bool = false
+    ) {
         self.id = UUID()
         self.repoID = repoID
-        self.startedAt = Date()
-        self.succeeded = false
+        self.startedAt = startedAt
+        self.finishedAt = finishedAt
+        self.succeeded = succeeded
         self.logLines = []
         self.targetResults = []
     }

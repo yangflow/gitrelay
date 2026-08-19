@@ -599,6 +599,229 @@ struct SyncHealthSummaryTests {
     }
 }
 
+// MARK: - RepoRowHealthPresentation
+
+struct RepoRowHealthPresentationTests {
+    @Test func captionUsesLastSyncTimeAndMarksStaleAfterThreshold() {
+        let calendar = makeUTCCalendar()
+        let now = makeDate(year: 2026, month: 4, day: 25, hour: 12, calendar: calendar)
+        let recentSuccess = now.addingTimeInterval(-3_600)
+        let staleSuccess = now.addingTimeInterval(-90_000)
+
+        let freshRepo = makeRepo(
+            lastSyncedAt: recentSuccess,
+            lastSuccessfulSyncedAt: recentSuccess
+        )
+        let staleRepo = makeRepo(
+            lastSyncedAt: staleSuccess,
+            lastSuccessfulSyncedAt: staleSuccess
+        )
+        let neverSyncedRepo = makeRepo(lastSyncedAt: nil, lastSuccessfulSyncedAt: nil)
+
+        let freshCaption = RepoRowHealthPresentation.caption(
+            for: freshRepo,
+            status: .idle,
+            now: now
+        )
+        let staleCaption = RepoRowHealthPresentation.caption(
+            for: staleRepo,
+            status: .idle,
+            now: now
+        )
+        let neverSyncedCaption = RepoRowHealthPresentation.caption(
+            for: neverSyncedRepo,
+            status: .unknown,
+            now: now
+        )
+
+        if case .lastSync(let date) = freshCaption.kind {
+            #expect(date == recentSuccess)
+        } else {
+            Issue.record("Expected lastSync caption for fresh repo")
+        }
+        #expect(!freshCaption.isStale)
+
+        if case .lastSync(let date) = staleCaption.kind {
+            #expect(date == staleSuccess)
+        } else {
+            Issue.record("Expected lastSync caption for stale repo")
+        }
+        #expect(staleCaption.isStale)
+        #expect(neverSyncedCaption.kind == .neverSynced)
+        #expect(neverSyncedCaption.isStale)
+    }
+
+    @Test func divergedStatusOverridesSyncCaption() {
+        let now = Date(timeIntervalSince1970: 1_777_080_000)
+        let repo = makeRepo(
+            lastSyncedAt: now,
+            lastSuccessfulSyncedAt: now
+        )
+
+        let caption = RepoRowHealthPresentation.caption(
+            for: repo,
+            status: .diverged("tree mismatch"),
+            now: now.addingTimeInterval(60)
+        )
+
+        #expect(caption.kind == .diverged)
+    }
+
+    @Test func failureBadgeAppearsFromThirdConsecutiveFailure() {
+        let repoBelowThreshold = makeRepo(consecutiveFailureCount: 2)
+        let repoAtThreshold = makeRepo(consecutiveFailureCount: 3)
+        let repoAboveThreshold = makeRepo(consecutiveFailureCount: 5)
+
+        #expect(!RepoRowHealthPresentation.showsFailureBadge(for: repoBelowThreshold))
+        #expect(RepoRowHealthPresentation.failureBadgeCount(for: repoBelowThreshold) == nil)
+
+        #expect(RepoRowHealthPresentation.showsFailureBadge(for: repoAtThreshold))
+        #expect(RepoRowHealthPresentation.failureBadgeCount(for: repoAtThreshold) == 3)
+
+        #expect(RepoRowHealthPresentation.showsFailureBadge(for: repoAboveThreshold))
+        #expect(RepoRowHealthPresentation.failureBadgeCount(for: repoAboveThreshold) == 5)
+    }
+
+    private func makeUTCCalendar() -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        return calendar
+    }
+
+    private func makeDate(
+        year: Int,
+        month: Int,
+        day: Int,
+        hour: Int,
+        calendar: Calendar
+    ) -> Date {
+        calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!
+    }
+
+    private func makeRepo(
+        lastSyncedAt: Date?,
+        lastSuccessfulSyncedAt: Date? = nil,
+        consecutiveFailureCount: Int = 0
+    ) -> RepoConfig {
+        RepoConfig(
+            name: "repo",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            lastSyncedAt: lastSyncedAt,
+            lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
+            consecutiveFailureCount: consecutiveFailureCount
+        )
+    }
+}
+
+// MARK: - SyncHistorySparkline
+
+struct SyncHistorySparklineTests {
+    @Test func buildsThirtyDaySeriesWithZeroFilledDays() {
+        let calendar = makeUTCCalendar()
+        let now = makeDate(year: 2026, month: 4, day: 25, hour: 12, calendar: calendar)
+        let todayKey = SyncHistorySparkline.dayKey(for: now, calendar: calendar)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: now))!
+        let yesterdayKey = SyncHistorySparkline.dayKey(for: yesterday, calendar: calendar)
+
+        let sparkline = SyncHistorySparkline.make(
+            from: [
+                todayKey: SyncDayOutcome(successes: 2, failures: 1),
+                yesterdayKey: SyncDayOutcome(successes: 1, failures: 0),
+            ],
+            now: now,
+            calendar: calendar
+        )
+
+        #expect(sparkline.days.count == 30)
+        #expect(sparkline.days.last?.successes == 2)
+        #expect(sparkline.days.last?.failures == 1)
+        #expect(sparkline.days[sparkline.days.count - 2].successes == 1)
+        #expect(sparkline.days[sparkline.days.count - 2].failures == 0)
+        #expect(sparkline.days.first?.total == 0)
+    }
+
+    @Test func recordSyncResultPersistsDailyOutcomesAndPrunesOldEntries() {
+        let calendar = makeUTCCalendar()
+        let now = makeDate(year: 2026, month: 4, day: 25, hour: 12, calendar: calendar)
+        var repo = RepoConfig(
+            name: "repo",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git"
+        )
+
+        repo.recordSyncResult(at: now, error: nil, calendar: calendar)
+        repo.recordSyncResult(at: now.addingTimeInterval(60), error: "network failed", calendar: calendar)
+
+        let todayKey = SyncHistorySparkline.dayKey(for: now, calendar: calendar)
+        #expect(repo.dailySyncOutcomes[todayKey] == SyncDayOutcome(successes: 1, failures: 1))
+
+        let oldDate = calendar.date(byAdding: .day, value: -40, to: now)!
+        let oldKey = SyncHistorySparkline.dayKey(for: oldDate, calendar: calendar)
+        repo.dailySyncOutcomes[oldKey] = SyncDayOutcome(successes: 9, failures: 0)
+        repo.recordSyncResult(at: now.addingTimeInterval(120), error: nil, calendar: calendar)
+
+        #expect(repo.dailySyncOutcomes[oldKey] == nil)
+        #expect(repo.dailySyncOutcomes[todayKey] == SyncDayOutcome(successes: 2, failures: 1))
+    }
+
+    @Test func aggregatesRecordsIntoDailyBuckets() {
+        let calendar = makeUTCCalendar()
+        let day = makeDate(year: 2026, month: 4, day: 25, hour: 12, calendar: calendar)
+
+        let successRecord = makeRecord(
+            startedAt: day.addingTimeInterval(-600),
+            finishedAt: day.addingTimeInterval(-500),
+            succeeded: true
+        )
+        let failureRecord = makeRecord(
+            startedAt: day.addingTimeInterval(-300),
+            finishedAt: day.addingTimeInterval(-200),
+            succeeded: false
+        )
+
+        let sparkline = SyncHistorySparkline.make(
+            from: [successRecord, failureRecord],
+            now: day,
+            calendar: calendar,
+            dayCount: 1
+        )
+
+        #expect(sparkline.days.count == 1)
+        #expect(sparkline.days[0].successes == 1)
+        #expect(sparkline.days[0].failures == 1)
+    }
+
+    private func makeUTCCalendar() -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        return calendar
+    }
+
+    private func makeDate(
+        year: Int,
+        month: Int,
+        day: Int,
+        hour: Int,
+        calendar: Calendar
+    ) -> Date {
+        calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!
+    }
+
+    private func makeRecord(
+        startedAt: Date,
+        finishedAt: Date,
+        succeeded: Bool
+    ) -> SyncRecord {
+        SyncRecord(
+            repoID: UUID(),
+            startedAt: startedAt,
+            finishedAt: finishedAt,
+            succeeded: succeeded
+        )
+    }
+}
+
 // MARK: - VerificationDecision
 
 struct VerificationDecisionTests {

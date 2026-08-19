@@ -76,6 +76,7 @@ final class AddEditRepoViewModel {
     private let lastSuccessfulSyncedAt: Date?
     private let lastSyncError: String?
     private let consecutiveFailureCount: Int
+    private let dailySyncOutcomes: [String: SyncDayOutcome]
     private let lastVerifiedAt: Date?
     private let divergedDetail: String?
 
@@ -86,6 +87,7 @@ final class AddEditRepoViewModel {
         lastSuccessfulSyncedAt = repo?.lastSuccessfulSyncedAt
         lastSyncError = repo?.lastSyncError
         consecutiveFailureCount = repo?.consecutiveFailureCount ?? 0
+        dailySyncOutcomes = repo?.dailySyncOutcomes ?? [:]
         lastVerifiedAt = repo?.lastVerifiedAt
         divergedDetail = repo?.divergedDetail
         guard let repo else { return }
@@ -169,6 +171,7 @@ final class AddEditRepoViewModel {
             lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
             lastSyncError: lastSyncError,
             consecutiveFailureCount: consecutiveFailureCount,
+            dailySyncOutcomes: dailySyncOutcomes,
             lastVerifiedAt: lastVerifiedAt,
             divergedDetail: divergedDetail,
             tags: RepoTagGrouping.normalizedTags(tags)

@@ -1,0 +1,51 @@
+import Foundation
+
+enum RepoRowHealthPresentation {
+    static let staleThreshold: TimeInterval = 86_400
+    static let failureEscalationThreshold = 3
+
+    enum CaptionKind: Equatable {
+        case diverged
+        case neverSynced
+        case lastSync(Date)
+    }
+
+    struct Caption: Equatable {
+        let kind: CaptionKind
+        let isStale: Bool
+    }
+
+    static func caption(
+        for repo: RepoConfig,
+        status: SyncStatus,
+        now: Date = .now
+    ) -> Caption {
+        let kind: CaptionKind
+        if case .diverged = status {
+            kind = .diverged
+        } else if let lastSyncedAt = repo.lastSyncedAt {
+            kind = .lastSync(lastSyncedAt)
+        } else {
+            kind = .neverSynced
+        }
+
+        return Caption(kind: kind, isStale: isStale(for: repo, now: now))
+    }
+
+    static func isStale(for repo: RepoConfig, now: Date = .now) -> Bool {
+        guard let lastSuccessfulSyncedAt = repo.lastSuccessfulSyncedAt else {
+            return true
+        }
+        return now.timeIntervalSince(lastSuccessfulSyncedAt) > staleThreshold
+    }
+
+    static func showsFailureBadge(for repo: RepoConfig) -> Bool {
+        repo.consecutiveFailureCount >= failureEscalationThreshold
+    }
+
+    static func failureBadgeCount(for repo: RepoConfig) -> Int? {
+        let count = repo.consecutiveFailureCount
+        guard count >= failureEscalationThreshold else { return nil }
+        return count
+    }
+}
