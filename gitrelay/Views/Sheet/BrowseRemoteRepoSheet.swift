@@ -136,9 +136,10 @@ struct BrowseRemoteRepoSheet: View {
             }
 
             Section("Personal Access Token") {
-                SecureField("Used only to fetch the repository list, not for git sync", text: $vm.token)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(.caption, design: .monospaced))
+                GatedSecureTokenField(
+                    placeholder: "Used only to fetch the repository list, not for git sync",
+                    text: $vm.token
+                )
                     .onChange(of: vm.token) { _, _ in
                         vm.sourceScopeValidation = nil
                         vm.refreshCachedSourceScopeValidation()
@@ -345,9 +346,10 @@ struct BrowseRemoteRepoSheet: View {
         }
 
         Section("Gitea API Token") {
-            SecureField("Requires the write:repository scope", text: $vm.targetCreateToken)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(.caption, design: .monospaced))
+            GatedSecureTokenField(
+                placeholder: "Requires the write:repository scope",
+                text: $vm.targetCreateToken
+            )
                 .onChange(of: vm.targetCreateToken) { _, _ in
                     vm.targetScopeValidation = nil
                     vm.refreshCachedTargetScopeValidation()

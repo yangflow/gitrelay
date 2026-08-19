@@ -54,10 +54,12 @@ final class AppViewModel {
     }
 
     let notificationPreferences = NotificationPreferencesStore()
+    let securityPreferences: SecurityPreferencesStore
     let environmentMonitor = SyncEnvironmentMonitor()
     let failureNotifier = SyncFailureNotifier()
     let webhookPreferences: WebhookPreferencesStore
 
+    private let biometricAuthenticator: BiometricAuthenticating
     private let scheduler = SyncScheduler()
     private let verificationScheduler = VerificationScheduler()
     private let releaseMirrorService = ReleaseMirrorService()
@@ -78,13 +80,17 @@ final class AppViewModel {
 
     init(
         verificationPreferencesStore: VerificationPreferencesStore? = nil,
-        webhookPreferencesStore: WebhookPreferencesStore? = nil
+        webhookPreferencesStore: WebhookPreferencesStore? = nil,
+        securityPreferencesStore: SecurityPreferencesStore? = nil,
+        biometricAuthenticator: BiometricAuthenticating? = nil
     ) {
         let store = verificationPreferencesStore ?? VerificationPreferencesStore()
         self.verificationPreferencesStore = store
         self.verificationPreferences = store.preferences
         let webhookStore = webhookPreferencesStore ?? WebhookPreferencesStore()
         self.webhookPreferences = webhookStore
+        self.securityPreferences = securityPreferencesStore ?? SecurityPreferencesStore()
+        self.biometricAuthenticator = biometricAuthenticator ?? LocalAuthenticationClient()
 
         do {
             try MirrorStore.ensureBaseDirectoryExists()
@@ -136,6 +142,14 @@ final class AppViewModel {
         AppIntentBridge.register(self)
         refreshWebhookListener()
         refreshWidgetSnapshot()
+    }
+
+    func authorizeSensitiveAction(_ action: SensitiveAction) async -> Bool {
+        let gate = BiometricGate(
+            policy: SensitiveActionPolicy(preferences: securityPreferences.preferences),
+            authenticator: biometricAuthenticator
+        )
+        return await gate.authorize(action: action)
     }
 
     // MARK: - CRUD

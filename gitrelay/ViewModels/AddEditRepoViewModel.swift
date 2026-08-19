@@ -364,4 +364,20 @@ final class AddEditRepoViewModel {
     private func keychainTag(repoID: UUID, targetID: UUID) -> String {
         keychainTag(repoID: repoID, side: "target-\(targetID.uuidString)")
     }
+
+    /// Git-remote targets whose host changed compared to the saved configuration.
+    func gitRemoteTargetHostChanges(comparedTo original: RepoConfig) -> [(originalURL: String, newURL: String)] {
+        targets.compactMap { draft in
+            guard draft.kind == .gitRemote else { return nil }
+            guard let saved = original.targets.first(where: { $0.id == draft.id }),
+                  saved.kind == .gitRemote else { return nil }
+            let originalURL = saved.url.trimmingCharacters(in: .whitespacesAndNewlines)
+            let newURL = draft.url.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard originalURL != newURL else { return nil }
+            guard let oldHost = GitRemoteHost.host(from: originalURL),
+                  let newHost = GitRemoteHost.host(from: newURL),
+                  oldHost != newHost else { return nil }
+            return (originalURL, newURL)
+        }
+    }
 }

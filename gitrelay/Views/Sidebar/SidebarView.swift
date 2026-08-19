@@ -89,8 +89,7 @@ struct SidebarView: View {
         }
         .alert("Delete Repository", isPresented: $showDeleteAlert, presenting: pendingDeleteID) { id in
             Button("Delete", role: .destructive) {
-                if selectedRepoID == id { selectedRepoID = nil }
-                appVM.deleteRepo(id: id)
+                Task { await confirmDelete(id: id) }
             }
             Button("Cancel", role: .cancel) { }
         } message: { id in
@@ -171,6 +170,12 @@ struct SidebarView: View {
             }
         }
         .disabled(appVM.repos.isEmpty)
+    }
+
+    private func confirmDelete(id: UUID) async {
+        guard await appVM.authorizeSensitiveAction(.deleteRepository) else { return }
+        if selectedRepoID == id { selectedRepoID = nil }
+        appVM.deleteRepo(id: id)
     }
 
     private func repoRow(_ repo: RepoConfig) -> some View {

@@ -2,13 +2,26 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(NotificationPreferencesStore.self) private var preferencesStore
+    @Environment(SecurityPreferencesStore.self) private var securityStore
     @Environment(SyncEnvironmentMonitor.self) private var environmentMonitor
     @Environment(AppViewModel.self) private var appVM
 
     var body: some View {
         @Bindable var store = preferencesStore
+        @Bindable var security = securityStore
         @Bindable var webhookStore = appVM.webhookPreferences
         Form {
+            Section {
+                Toggle(
+                    String(localized: "Require Touch ID or password for sensitive actions"),
+                    isOn: $security.preferences.requireBiometricForSensitive
+                )
+            } header: {
+                Text(String(localized: "Security"))
+            } footer: {
+                Text("When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action.")
+            }
+
             Section {
                 Toggle("Enable sync failure notifications", isOn: $store.preferences.notificationsEnabled)
 
@@ -116,6 +129,7 @@ struct SettingsView: View {
             Section {
                 Button("Restore Defaults") {
                     store.resetToDefaults()
+                    security.resetToDefaults()
                     webhookStore.resetToDefaults()
                 }
             }

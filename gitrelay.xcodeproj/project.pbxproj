@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		BA811CA2E08A4BC6BB387B13 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = D8AC7B573E1A47C69C7EF628 /* Sparkle */; };
+		LA0012F8B6C8F008A7FD2 /* LocalAuthentication.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = LA0022F8B6C8F008A7FD2 /* LocalAuthentication.framework */; };
 		GRC00D2F8B6C8F008A7FD2 /* gitrelayctl in Copy CLI */ = {isa = PBXBuildFile; fileRef = GRC0042F8B6C8F008A7FD2 /* gitrelayctl */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		GRW0112F8B6C8F008A7FD2 /* gitrelayWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = GRW0012F8B6C8F008A7FD2 /* gitrelayWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -49,6 +50,7 @@
 		964A1AF62F8B6C91008A7FD2 /* gitrelayUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = gitrelayUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		GRC0042F8B6C8F008A7FD2 /* gitrelayctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = gitrelayctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		GRW0012F8B6C8F008A7FD2 /* gitrelayWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = gitrelayWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		LA0022F8B6C8F008A7FD2 /* LocalAuthentication.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = LocalAuthentication.framework; path = System/Library/Frameworks/LocalAuthentication.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -113,6 +115,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BA811CA2E08A4BC6BB387B13 /* Sparkle in Frameworks */,
+				LA0012F8B6C8F008A7FD2 /* LocalAuthentication.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
