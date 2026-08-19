@@ -108,6 +108,13 @@ cp -R "$APP_SRC" "$DIST/"
 
 codesign --verify --verbose=2 "$DIST/$APP_NAME"
 
+CLI_BIN="$DIST/$APP_NAME/Contents/MacOS/gitrelayctl"
+if [[ ! -x "$CLI_BIN" ]]; then
+    echo "error: gitrelayctl missing at $CLI_BIN (build the gitrelay scheme so the Copy CLI phase runs)" >&2
+    exit 1
+fi
+echo "==> Verified bundled CLI: $CLI_BIN"
+
 # -----------------------------------------------------------------------------
 # Notarize (optional)
 # -----------------------------------------------------------------------------

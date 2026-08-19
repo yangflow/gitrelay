@@ -361,6 +361,7 @@ final class AppViewModel {
         existing.append(record)
         if existing.count > 200 { existing.removeFirst(existing.count - 200) }
         records[repoID] = existing
+        try? SyncLogStore.append(record, for: repoID)
     }
 
     private func finishSync(repoID: UUID) {
