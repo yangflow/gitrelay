@@ -1,0 +1,22 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSFocusStatusUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitRelay defers sync failure notifications while Focus is on, then sends a combined summary when Focus ends."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitRelay 会在专注模式开启时推迟同步失败通知，并在专注结束后发送聚合摘要。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
