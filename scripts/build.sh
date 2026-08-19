@@ -67,6 +67,13 @@ cp -R "$APP_SRC" "$DIST/"
 echo "==> Verifying signature..."
 codesign --verify --verbose=2 "$DIST/$APP_NAME"
 
+CLI_BIN="$DIST/$APP_NAME/Contents/MacOS/gitrelayctl"
+if [[ -x "$CLI_BIN" ]]; then
+    echo "Bundled CLI: $CLI_BIN"
+else
+    echo "warning: gitrelayctl not found in app bundle (build gitrelay scheme to embed CLI)" >&2
+fi
+
 SIZE=$(du -sh "$DIST/$APP_NAME" | cut -f1)
 echo ""
 echo "Built $DIST/$APP_NAME ($SIZE)"

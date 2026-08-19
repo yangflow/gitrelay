@@ -1863,3 +1863,160 @@ struct AppIntentBridgeTests {
         #expect(snapshot.lastSyncedAt == syncedAt)
     }
 }
+
+// MARK: - GitRelayCLI
+
+struct GitRelayCLIParserTests {
+    @Test func parsesListCommand() {
+        let result = GitRelayCLIParser.parse(["gitrelayctl", "list"])
+        #expect(result == .success(.list))
+    }
+
+    @Test func parsesSyncCommand() {
+        let result = GitRelayCLIParser.parse(["gitrelayctl", "sync", "My Repo"])
+        #expect(result == .success(.sync(name: "My Repo")))
+    }
+
+    @Test func parsesStatusForAllRepos() {
+        let result = GitRelayCLIParser.parse(["gitrelayctl", "status"])
+        #expect(result == .success(.status(name: nil)))
+    }
+
+    @Test func parsesStatusForNamedRepo() {
+        let result = GitRelayCLIParser.parse(["gitrelayctl", "status", "docs"])
+        #expect(result == .success(.status(name: "docs")))
+    }
+
+    @Test func parsesLogsWithTailFlag() {
+        let result = GitRelayCLIParser.parse(["gitrelayctl", "logs", "docs", "--tail", "20"])
+        #expect(result == .success(.logs(name: "docs", tail: 20)))
+    }
+
+    @Test func parsesLogsWithTailEqualsSyntax() {
+        let result = GitRelayCLIParser.parse(["gitrelayctl", "logs", "docs", "--tail=5"])
+        #expect(result == .success(.logs(name: "docs", tail: 5)))
+    }
+
+    @Test func rejectsMissingSubcommand() {
+        let result = GitRelayCLIParser.parse(["gitrelayctl"])
+        guard case .failure(.missingSubcommand) = result else {
+            Issue.record("Expected missingSubcommand")
+            return
+        }
+    }
+
+    @Test func rejectsUnknownSubcommand() {
+        let result = GitRelayCLIParser.parse(["gitrelayctl", "dance"])
+        guard case .failure(.unknownSubcommand("dance")) = result else {
+            Issue.record("Expected unknownSubcommand")
+            return
+        }
+    }
+
+    @Test func rejectsMissingSyncName() {
+        let result = GitRelayCLIParser.parse(["gitrelayctl", "sync"])
+        guard case .failure(.missingRepoName("sync")) = result else {
+            Issue.record("Expected missingRepoName")
+            return
+        }
+    }
+
+    @Test func rejectsInvalidTailValue() {
+        let result = GitRelayCLIParser.parse(["gitrelayctl", "logs", "docs", "--tail", "-1"])
+        guard case .failure(.invalidTailValue("-1")) = result else {
+            Issue.record("Expected invalidTailValue")
+            return
+        }
+    }
+}
+
+struct GitRelayCLIExitCodeTests {
+    @Test func mapsRepoNotFoundToExitCodeThree() {
+        let code = GitRelayCLIExecutor.exitCode(for: HeadlessSyncError.repoNotFound("missing"))
+        #expect(code == .repoNotFound)
+        #expect(code.rawValue == 3)
+    }
+
+    @Test func mapsUsageErrorsToExitCodeTwo() {
+        let code = GitRelayCLIExecutor.exitCode(for: GitRelayCLIParseError.missingSubcommand)
+        #expect(code == .usage)
+        #expect(code.rawValue == 2)
+    }
+
+    @Test func mapsOperationalFailuresToExitCodeOne() {
+        let code = GitRelayCLIExecutor.exitCode(for: HeadlessSyncError.loadFailed("broken json"))
+        #expect(code == .failure)
+        #expect(code.rawValue == 1)
+    }
+}
+
+struct GitRelayCLIStatusJSONTests {
+    @Test func encodesSingleRepoStatusAsJSON() throws {
+        let syncedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        let snapshot = RepoSyncStatusSnapshot(
+            repoName: "Docs",
+            status: .success,
+            lastSyncedAt: syncedAt,
+            message: nil
+        )
+        let json = try GitRelayCLIFormatter.jsonString(
+            GitRelayCLIFormatter.statusEntry(from: snapshot)
+        )
+        #expect(json.contains("\"repoName\" : \"Docs\""))
+        #expect(json.contains("\"status\" : \"success\""))
+        #expect(json.contains("2023-11-14T22:13:20"))
+    }
+
+    @Test func encodesAllRepoStatusesDocument() throws {
+        let document = GitRelayCLIStatusDocument(repos: [
+            GitRelayCLIStatusEntry(
+                repoName: "A",
+                status: .failure,
+                lastSyncedAt: nil,
+                message: "auth denied"
+            ),
+            GitRelayCLIStatusEntry(
+                repoName: "B",
+                status: .unknown,
+                lastSyncedAt: nil,
+                message: nil
+            ),
+        ])
+        let json = try GitRelayCLIFormatter.jsonString(document)
+        #expect(json.contains("\"repoName\" : \"A\""))
+        #expect(json.contains("\"status\" : \"failure\""))
+        #expect(json.contains("\"message\" : \"auth denied\""))
+        #expect(json.contains("\"repoName\" : \"B\""))
+    }
+}
+
+struct SyncLogStoreTests {
+    @Test func appendLoadAndTailLogLines() throws {
+        let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000101")!
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-cli-tests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: base) }
+
+        let originalBase = Constants.baseDirectory
+        setBaseDirectoryForTesting(base)
+
+        defer { setBaseDirectoryForTesting(originalBase) }
+
+        var record = SyncRecord(repoID: repoID, succeeded: true)
+        record.finishedAt = Date(timeIntervalSince1970: 100)
+        record.logLines = (1...5).map { "line \($0)" }
+
+        try SyncLogStore.append(record, for: repoID)
+
+        let loaded = try SyncLogStore.loadRecords(for: repoID)
+        #expect(loaded.count == 1)
+        #expect(loaded[0].logLines.count == 5)
+
+        let tailTwo = try SyncLogStore.formattedLogLines(for: repoID, tail: 2)
+        #expect(tailTwo == ["line 4", "line 5"])
+    }
+}
+
+private func setBaseDirectoryForTesting(_ url: URL) {
+    Constants.setBaseDirectoryForTesting(url)
+}

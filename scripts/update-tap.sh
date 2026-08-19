@@ -54,6 +54,10 @@ cask "gitrelay" do
 
   app "GitRelay.app"
 
+  # CLI shipped inside the app bundle (gitrelayctl target → Contents/MacOS/gitrelayctl).
+  # Uncomment after the release DMG includes gitrelayctl:
+  # binary "#{appdir}/GitRelay.app/Contents/MacOS/gitrelayctl", target: "gitrelayctl"
+
   zap trash: [
     "~/.local/share/gitrelay",
     "~/Library/Caches/com.yangflow.gitrelay",
