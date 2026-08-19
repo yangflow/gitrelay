@@ -51,11 +51,15 @@ final class BrowseRemoteRepoViewModel {
 
     // Phase 1 — connect
     var provider: GitProvider = .github
+    var sourceAccountLabel: String = ProviderAccount.defaultLabel
+    var sourceAccountLabels: [String] = []
+    var newAccountLabelInput: String = ""
+    var accountActionError: String?
     var token: String = ""
     var rememberToken: Bool = true
     var scopeKind: ScopeKind = .currentUser
     var organizationName: String = ""
-    var gitlabHost: String = UserDefaults.standard.string(forKey: "BrowseRemoteRepo.gitlabHost") ?? ""
+    var gitlabHost: String = ""
     var connectError: String?
     var isLoading: Bool = false
     var sourceScopeValidation: TokenScopeValidation?
@@ -84,7 +88,9 @@ final class BrowseRemoteRepoViewModel {
 
     // Phase 3 — target auto-create
     var targetAutoCreate: Bool = false
-    var targetCreateHost: String = UserDefaults.standard.string(forKey: "BrowseRemoteRepo.giteaHost") ?? ""
+    var targetGiteaAccountLabel: String = ProviderAccount.defaultLabel
+    var targetGiteaAccountLabels: [String] = []
+    var targetCreateHost: String = ""
     var targetCreateToken: String = ""
     var rememberTargetCreateToken: Bool = true
     var targetNamespaceKind: NamespaceKind = .currentUser
@@ -146,22 +152,152 @@ final class BrowseRemoteRepoViewModel {
 
     // MARK: - Lifecycle
 
-    init() {}
+    private let accountDefaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.accountDefaults = defaults
+        ProviderAccountStore.migrateIfNeeded(defaults: defaults)
+        refreshSourceAccounts()
+        refreshTargetGiteaAccounts()
+        restoreSourceAccountContext()
+        restoreTargetGiteaAccountContext()
+    }
+
+    func refreshSourceAccounts() {
+        sourceAccountLabels = ProviderAccountStore.accountLabels(for: provider, defaults: accountDefaults)
+        sourceAccountLabel = ProviderAccountStore.selectedLabel(for: provider, defaults: accountDefaults)
+    }
+
+    func refreshTargetGiteaAccounts() {
+        targetGiteaAccountLabels = ProviderAccountStore.accountLabels(for: .gitea, defaults: accountDefaults)
+        targetGiteaAccountLabel = ProviderAccountStore.selectedLabel(for: .gitea, defaults: accountDefaults)
+    }
+
+    func selectSourceAccount(_ label: String) {
+        guard sourceAccountLabels.contains(label) else { return }
+        persistCurrentSourceAccount()
+        sourceAccountLabel = label
+        ProviderAccountStore.setSelectedLabel(label, for: provider, defaults: accountDefaults)
+        restoreSourceAccountContext()
+    }
+
+    func selectTargetGiteaAccount(_ label: String) {
+        guard targetGiteaAccountLabels.contains(label) else { return }
+        persistCurrentTargetGiteaAccount()
+        targetGiteaAccountLabel = label
+        ProviderAccountStore.setSelectedLabel(label, for: .gitea, defaults: accountDefaults)
+        restoreTargetGiteaAccountContext()
+    }
+
+    func createSourceAccount(label raw: String) {
+        accountActionError = nil
+        do {
+            let record = try ProviderAccountStore.addAccount(label: raw, for: provider, defaults: accountDefaults)
+            refreshSourceAccounts()
+            selectSourceAccount(record.label)
+            newAccountLabelInput = ""
+        } catch {
+            accountActionError = error.localizedDescription
+        }
+    }
+
+    func createTargetGiteaAccount(label raw: String) {
+        accountActionError = nil
+        do {
+            let record = try ProviderAccountStore.addAccount(label: raw, for: .gitea, defaults: accountDefaults)
+            refreshTargetGiteaAccounts()
+            selectTargetGiteaAccount(record.label)
+            newAccountLabelInput = ""
+        } catch {
+            accountActionError = error.localizedDescription
+        }
+    }
+
+    func deleteSourceAccount(_ label: String) {
+        accountActionError = nil
+        do {
+            try ProviderAccountStore.removeAccount(label: label, for: provider, defaults: accountDefaults)
+            refreshSourceAccounts()
+            restoreSourceAccountContext()
+        } catch {
+            accountActionError = error.localizedDescription
+        }
+    }
+
+    func deleteTargetGiteaAccount(_ label: String) {
+        accountActionError = nil
+        do {
+            try ProviderAccountStore.removeAccount(label: label, for: .gitea, defaults: accountDefaults)
+            refreshTargetGiteaAccounts()
+            restoreTargetGiteaAccountContext()
+        } catch {
+            accountActionError = error.localizedDescription
+        }
+    }
+
+    var canDeleteSourceAccount: Bool {
+        BrowseRemoteAccountSelection.canDeleteAccount(accountCount: sourceAccountLabels.count)
+    }
+
+    var canDeleteTargetGiteaAccount: Bool {
+        BrowseRemoteAccountSelection.canDeleteAccount(accountCount: targetGiteaAccountLabels.count)
+    }
 
     func restorePersistedToken() {
-        if let saved = ProviderTokenStore.load(provider: provider) {
+        restoreSourceAccountContext()
+    }
+
+    func restorePersistedTargetCreateToken() {
+        restoreTargetGiteaAccountContext()
+    }
+
+    private func restoreSourceAccountContext() {
+        sourceAccountLabel = ProviderAccountStore.selectedLabel(for: provider, defaults: accountDefaults)
+        if let saved = ProviderTokenStore.load(provider: provider, accountLabel: sourceAccountLabel) {
             token = saved
         } else {
             token = ""
         }
+        gitlabHost = ProviderAccountStore.host(for: .gitlab, label: sourceAccountLabel, defaults: accountDefaults) ?? ""
+        sourceScopeValidation = nil
+        refreshCachedSourceScopeValidation()
     }
 
-    func restorePersistedTargetCreateToken() {
-        if let saved = ProviderTokenStore.load(provider: .gitea) {
+    private func restoreTargetGiteaAccountContext() {
+        targetGiteaAccountLabel = ProviderAccountStore.selectedLabel(for: .gitea, defaults: accountDefaults)
+        if let saved = ProviderTokenStore.load(provider: .gitea, accountLabel: targetGiteaAccountLabel) {
             targetCreateToken = saved
         } else {
             targetCreateToken = ""
         }
+        targetCreateHost = ProviderAccountStore.host(for: .gitea, label: targetGiteaAccountLabel, defaults: accountDefaults) ?? ""
+        targetScopeValidation = nil
+        refreshCachedTargetScopeValidation()
+    }
+
+    private func persistCurrentSourceAccount() {
+        if rememberToken, !token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            try? ProviderTokenStore.save(token: token, provider: provider, accountLabel: sourceAccountLabel)
+        }
+        if provider == .gitlab {
+            ProviderAccountStore.setHost(gitlabHost, for: .gitlab, label: sourceAccountLabel, defaults: accountDefaults)
+        }
+    }
+
+    private func persistCurrentTargetGiteaAccount() {
+        if rememberTargetCreateToken, !targetCreateToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            try? ProviderTokenStore.save(
+                token: targetCreateToken,
+                provider: .gitea,
+                accountLabel: targetGiteaAccountLabel
+            )
+        }
+        ProviderAccountStore.setHost(
+            targetCreateHost,
+            for: .gitea,
+            label: targetGiteaAccountLabel,
+            defaults: accountDefaults
+        )
     }
 
     func refreshCachedSourceScopeValidation() {
@@ -256,11 +392,13 @@ final class BrowseRemoteRepoViewModel {
         defer { isLoading = false }
 
         if rememberToken {
-            try? ProviderTokenStore.save(token: token, provider: provider)
+            try? ProviderTokenStore.save(token: token, provider: provider, accountLabel: sourceAccountLabel)
         } else {
-            ProviderTokenStore.delete(provider: provider)
+            ProviderTokenStore.delete(provider: provider, accountLabel: sourceAccountLabel)
         }
-        persistGitLabHost()
+        if provider == .gitlab {
+            ProviderAccountStore.setHost(gitlabHost, for: .gitlab, label: sourceAccountLabel, defaults: accountDefaults)
+        }
 
         await validateSourceTokenScopes()
         guard connectError == nil else { return }
@@ -363,10 +501,19 @@ final class BrowseRemoteRepoViewModel {
         }
 
         if targetAutoCreate, rememberTargetCreateToken {
-            try? ProviderTokenStore.save(token: targetCreateToken, provider: .gitea)
-            persistGiteaHost()
+            try? ProviderTokenStore.save(
+                token: targetCreateToken,
+                provider: .gitea,
+                accountLabel: targetGiteaAccountLabel
+            )
+            ProviderAccountStore.setHost(
+                targetCreateHost,
+                for: .gitea,
+                label: targetGiteaAccountLabel,
+                defaults: accountDefaults
+            )
         } else if targetAutoCreate {
-            ProviderTokenStore.delete(provider: .gitea)
+            ProviderTokenStore.delete(provider: .gitea, accountLabel: targetGiteaAccountLabel)
         }
 
         let selected = selectedRepos
@@ -558,21 +705,16 @@ final class BrowseRemoteRepoViewModel {
     }
 
     func persistGitLabHost() {
-        let raw = gitlabHost.trimmingCharacters(in: .whitespacesAndNewlines)
-        if raw.isEmpty {
-            UserDefaults.standard.removeObject(forKey: "BrowseRemoteRepo.gitlabHost")
-        } else {
-            UserDefaults.standard.set(raw, forKey: "BrowseRemoteRepo.gitlabHost")
-        }
+        ProviderAccountStore.setHost(gitlabHost, for: .gitlab, label: sourceAccountLabel, defaults: accountDefaults)
     }
 
     func persistGiteaHost() {
-        let raw = targetCreateHost.trimmingCharacters(in: .whitespacesAndNewlines)
-        if raw.isEmpty {
-            UserDefaults.standard.removeObject(forKey: "BrowseRemoteRepo.giteaHost")
-        } else {
-            UserDefaults.standard.set(raw, forKey: "BrowseRemoteRepo.giteaHost")
-        }
+        ProviderAccountStore.setHost(
+            targetCreateHost,
+            for: .gitea,
+            label: targetGiteaAccountLabel,
+            defaults: accountDefaults
+        )
     }
 
     private func isValidTemplate(_ t: String) -> Bool {

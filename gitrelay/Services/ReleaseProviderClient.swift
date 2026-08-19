@@ -6,7 +6,7 @@ nonisolated enum ReleaseProviderAuth {
            let token = try? KeychainService.loadToken(tag: tag) {
             return token
         }
-        return ProviderTokenStore.load(provider: provider)
+        return ProviderTokenStore.loadDefault(provider: provider)
     }
 
     static func apiBaseURL(for remoteURL: String, provider: GitProvider) -> URL {

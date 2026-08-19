@@ -17,6 +17,8 @@ struct BrowseRemoteRepoSheet: View {
         .frame(width: 640)
         .frame(minHeight: 560)
         .onAppear {
+            vm.refreshSourceAccounts()
+            vm.refreshTargetGiteaAccounts()
             vm.restorePersistedToken()
             vm.restorePersistedTargetCreateToken()
             vm.refreshCachedSourceScopeValidation()
@@ -91,10 +93,20 @@ struct BrowseRemoteRepoSheet: View {
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: vm.provider) { _, _ in
+                    vm.refreshSourceAccounts()
                     vm.restorePersistedToken()
                     vm.sourceScopeValidation = nil
                     vm.refreshCachedSourceScopeValidation()
                 }
+
+                accountSection(
+                    labels: vm.sourceAccountLabels,
+                    selectedLabel: vm.sourceAccountLabel,
+                    onSelect: { vm.selectSourceAccount($0) },
+                    onCreate: { vm.createSourceAccount(label: $0) },
+                    onDelete: { vm.deleteSourceAccount($0) },
+                    canDelete: vm.canDeleteSourceAccount
+                )
 
                 Text(vm.provider.tokenHelpText)
                     .font(.caption)
@@ -106,9 +118,20 @@ struct BrowseRemoteRepoSheet: View {
                     TextField("https://gitlab.company.com", text: $vm.gitlabHost)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.caption, design: .monospaced))
+                        .onChange(of: vm.gitlabHost) { _, _ in
+                            vm.persistGitLabHost()
+                        }
                     Text("Leave blank to use gitlab.com. The /api/v4 path is appended automatically.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+            }
+
+            if let accountError = vm.accountActionError {
+                Section {
+                    Label(accountError, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
                 }
             }
 
@@ -300,10 +323,22 @@ struct BrowseRemoteRepoSheet: View {
     }
 
     @ViewBuilder private var autoCreateFields: some View {
+        accountSection(
+            labels: vm.targetGiteaAccountLabels,
+            selectedLabel: vm.targetGiteaAccountLabel,
+            onSelect: { vm.selectTargetGiteaAccount($0) },
+            onCreate: { vm.createTargetGiteaAccount(label: $0) },
+            onDelete: { vm.deleteTargetGiteaAccount($0) },
+            canDelete: vm.canDeleteTargetGiteaAccount
+        )
+
         Section("Gitea Host") {
             TextField("https://gitea.company.com", text: $vm.targetCreateHost)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(.caption, design: .monospaced))
+                .onChange(of: vm.targetCreateHost) { _, _ in
+                    vm.persistGiteaHost()
+                }
             Text("The /api/v1 path is appended automatically.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -471,6 +506,58 @@ struct BrowseRemoteRepoSheet: View {
         case .submitting:       break
         case .result:           break
         }
+    }
+
+    @ViewBuilder
+    private func accountSection(
+        labels: [String],
+        selectedLabel: String,
+        onSelect: @escaping (String) -> Void,
+        onCreate: @escaping (String) -> Void,
+        onDelete: @escaping (String) -> Void,
+        canDelete: Bool
+    ) -> some View {
+        Section("Account") {
+            Picker("Account", selection: Binding(
+                get: { selectedLabel },
+                set: { onSelect($0) }
+            )) {
+                ForEach(labels, id: \.self) { label in
+                    Text(displayAccountLabel(label)).tag(label)
+                }
+            }
+
+            HStack(spacing: 8) {
+                TextField("New account name (for example, work)", text: $vm.newAccountLabelInput)
+                    .textFieldStyle(.roundedBorder)
+                Button("Add") {
+                    onCreate(vm.newAccountLabelInput)
+                }
+                .disabled(
+                    BrowseRemoteAccountSelection.validatedNewLabel(
+                        vm.newAccountLabelInput,
+                        existing: labels
+                    ) == nil
+                )
+            }
+
+            if canDelete {
+                Button("Delete Current Account", role: .destructive) {
+                    onDelete(selectedLabel)
+                }
+            } else {
+                Text("At least one account must remain.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func displayAccountLabel(_ label: String) -> String {
+        if label == ProviderAccount.defaultLabel {
+            return String(localized: "Default")
+        }
+        return label
     }
 }
 
