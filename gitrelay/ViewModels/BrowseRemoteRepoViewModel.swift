@@ -164,14 +164,6 @@ final class BrowseRemoteRepoViewModel {
         }
     }
 
-    func restorePersistedTargetCreateToken() {
-        if let saved = ProviderTokenStore.load(provider: .gitea) {
-            targetCreateToken = saved
-        } else {
-            targetCreateToken = ""
-        }
-    }
-
     func refreshCachedSourceScopeValidation() {
         let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else {
