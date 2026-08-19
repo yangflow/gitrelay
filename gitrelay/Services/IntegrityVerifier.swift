@@ -49,7 +49,7 @@ final class IntegrityVerifier {
         do {
             log("Running ls-remote on source repository...")
             let srcSHA = try await runner.lsRemoteTipSHA(url: srcURL, branch: branch, env: srcEnv)
-            log("src tip: \(srcSHA?.truncatingSHA ?? "(缺失)")")
+            log("src tip: \(srcSHA?.truncatingSHA ?? "(missing)")")
 
             var divergedDetails: [VerificationDecision.Detail] = []
             var inconclusiveMessages: [String] = []
@@ -67,7 +67,7 @@ final class IntegrityVerifier {
 
                 targetLog("Running ls-remote on target repository...")
                 let dstSHA = try await runner.lsRemoteTipSHA(url: dstURL, branch: branch, env: dstEnv)
-                targetLog("dst tip: \(dstSHA?.truncatingSHA ?? "(缺失)")")
+                targetLog("dst tip: \(dstSHA?.truncatingSHA ?? "(missing)")")
 
                 var srcTree: String?
                 var dstTree: String?
