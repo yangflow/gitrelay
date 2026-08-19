@@ -315,6 +315,191 @@ struct RepoConfigCodableTests {
         #expect(object["dstURL"] == nil)
         #expect(object["dstAuth"] == nil)
     }
+
+    @Test func tagsDefaultToEmptyArrayOnDecode() throws {
+        let json = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "legacy-repo",
+          "srcURL": "git@github.com:user/repo.git",
+          "dstURL": "git@github.com:user/mirror.git",
+          "srcAuth": { "sshAgent": {} },
+          "dstAuth": { "sshAgent": {} },
+          "frequency": "手动",
+          "createdAt": "2026-04-25T12:00:00Z"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
+
+        #expect(repo.tags.isEmpty)
+    }
+
+    @Test func encodesAndDecodesTags() throws {
+        let repo = RepoConfig(
+            name: "tagged",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            tags: ["work", "oss"]
+        )
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(repo)
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(RepoConfig.self, from: data)
+
+        #expect(decoded.tags == ["work", "oss"])
+    }
+
+    @Test func decodeNormalizesWhitespaceAndDedupesTags() throws {
+        let json = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "tagged",
+          "srcURL": "git@github.com:user/repo.git",
+          "targets": [{ "url": "git@github.com:user/mirror.git", "auth": { "sshAgent": {} } }],
+          "srcAuth": { "sshAgent": {} },
+          "frequency": "手动",
+          "createdAt": "2026-04-25T12:00:00Z",
+          "tags": [" work ", "work", "  ", "oss"]
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
+
+        #expect(repo.tags == ["work", "oss"])
+    }
+}
+
+// MARK: - RepoTagGrouping
+
+struct RepoTagGroupingTests {
+    private func makeRepo(name: String, tags: [String] = []) -> RepoConfig {
+        RepoConfig(
+            name: name,
+            srcURL: "git@github.com:user/\(name).git",
+            dstURL: "git@github.com:user/\(name)-mirror.git",
+            tags: tags
+        )
+    }
+
+    @Test func allUniqueTagsAreSorted() {
+        let repos = [
+            makeRepo(name: "a", tags: ["work", "client"]),
+            makeRepo(name: "b", tags: ["oss"])
+        ]
+
+        #expect(RepoTagGrouping.allUniqueTags(from: repos) == ["client", "oss", "work"])
+    }
+
+    @Test func sectionsIncludeUntaggedBucket() {
+        let repos = [
+            makeRepo(name: "tagged", tags: ["work"]),
+            makeRepo(name: "plain")
+        ]
+
+        let sections = RepoTagGrouping.sections(from: repos)
+
+        #expect(sections.count == 2)
+        #expect(sections[0].title == "work")
+        #expect(sections[0].repos.map(\.name) == ["tagged"])
+        #expect(sections[1].title == "未标记")
+        #expect(sections[1].repos.map(\.name) == ["plain"])
+        #expect(sections[1].tag == nil)
+    }
+
+    @Test func multiTagRepoAppearsInMultipleSections() {
+        let repos = [makeRepo(name: "shared", tags: ["work", "oss"])]
+
+        let sections = RepoTagGrouping.sections(from: repos)
+
+        #expect(sections.count == 2)
+        #expect(sections.allSatisfy { $0.repos.count == 1 })
+        #expect(sections.map(\.title).sorted() == ["oss", "work"])
+    }
+
+    @Test func repoIDsMatchingTagTargetsOnlyGroupMembers() {
+        let work = makeRepo(name: "work-repo", tags: ["work"])
+        let oss = makeRepo(name: "oss-repo", tags: ["oss"])
+        let plain = makeRepo(name: "plain")
+        let repos = [work, oss, plain]
+
+        #expect(RepoTagGrouping.repoIDs(matching: "work", in: repos) == [work.id])
+        #expect(RepoTagGrouping.repoIDs(matching: nil, in: repos) == [plain.id])
+    }
+
+    @Test func matchingSuggestionsFiltersSelectedAndPrefix() {
+        let suggestions = RepoTagGrouping.matchingSuggestions(
+            prefix: "wo",
+            existing: ["work", "oss", "world"],
+            selected: ["work"]
+        )
+
+        #expect(suggestions == ["world"])
+    }
+}
+
+// MARK: - AppViewModel tag batch ops
+
+@MainActor
+struct AppViewModelTagBatchTests {
+    private func makeViewModel() -> AppViewModel {
+        let suite = "gitrelay.tests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        return AppViewModel(verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults))
+    }
+
+    @Test func updateFrequencyAppliesOnlyToMatchingTag() {
+        let vm = makeViewModel()
+        let work = RepoConfig(
+            name: "work-repo",
+            srcURL: "git@github.com:user/work.git",
+            dstURL: "git@github.com:user/work-mirror.git",
+            frequency: .manual,
+            tags: ["work"]
+        )
+        let oss = RepoConfig(
+            name: "oss-repo",
+            srcURL: "git@github.com:user/oss.git",
+            dstURL: "git@github.com:user/oss-mirror.git",
+            frequency: .manual,
+            tags: ["oss"]
+        )
+        vm.addRepo(work)
+        vm.addRepo(oss)
+
+        vm.updateFrequency(matchingTag: "work", frequency: .hour1)
+
+        #expect(vm.repos.first(where: { $0.name == "work-repo" })?.frequency == .hour1)
+        #expect(vm.repos.first(where: { $0.name == "oss-repo" })?.frequency == .manual)
+    }
+
+    @Test func reposMatchingTagReturnsUntaggedBucket() {
+        let vm = makeViewModel()
+        vm.addRepo(RepoConfig(
+            name: "plain",
+            srcURL: "git@github.com:user/plain.git",
+            dstURL: "git@github.com:user/plain-mirror.git"
+        ))
+        vm.addRepo(RepoConfig(
+            name: "tagged",
+            srcURL: "git@github.com:user/tagged.git",
+            dstURL: "git@github.com:user/tagged-mirror.git",
+            tags: ["work"]
+        ))
+
+        #expect(vm.repos(matchingTag: nil).map(\.name) == ["plain"])
+        #expect(vm.repos(matchingTag: "work").map(\.name) == ["tagged"])
+    }
 }
 
 // MARK: - SyncHealthSummary
@@ -755,6 +940,30 @@ struct AddEditRepoValidationTests {
         #expect(repo.targets.count == 2)
         #expect(repo.enabledTargets.count == 1)
         #expect(repo.enabledTargets[0].url.contains("mirror-a"))
+    }
+
+    @Test func buildRepoConfigNormalizesTags() {
+        let vm = AddEditRepoViewModel()
+        vm.name = "tagged"
+        vm.srcURL = "git@github.com:user/repo.git"
+        setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
+        vm.tags = [" work ", "work", "oss", "  "]
+
+        let repo = vm.buildRepoConfig()
+
+        #expect(repo.tags == ["work", "oss"])
+    }
+
+    @Test func editingRepoPreservesTags() {
+        let existingRepo = RepoConfig(
+            name: "tagged",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            tags: ["work", "client"]
+        )
+        let vm = AddEditRepoViewModel(editing: existingRepo)
+
+        #expect(vm.tags == ["work", "client"])
     }
 }
 
