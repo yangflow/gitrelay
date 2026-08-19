@@ -42,6 +42,7 @@ struct gitrelayApp: App {
             }
             .environment(appVM.notificationPreferences)
             .environment(appVM.securityPreferences)
+            .environment(appVM.cachePreferences)
             .environment(appVM.environmentMonitor)
             .environment(appVM)
         }

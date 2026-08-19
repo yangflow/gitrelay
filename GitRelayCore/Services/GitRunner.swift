@@ -119,6 +119,14 @@ actor GitRunner {
         _ = try await run(args: ["fetch", "--prune", "origin"], env: env, cwd: mirrorPath)
     }
 
+    func gcAggressive(mirrorPath: String, env: [String: String] = [:]) async throws {
+        _ = try await run(
+            args: ["gc", "--aggressive", "--prune=now"],
+            env: env,
+            cwd: mirrorPath
+        )
+    }
+
     func fetchDstRefs(mirrorPath: String, dstURL: String, env: [String: String] = [:]) async throws {
         _ = try await run(
             args: ["fetch", dstURL, "+refs/*:refs/dst/*", "--prune"],

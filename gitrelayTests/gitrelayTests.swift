@@ -3746,3 +3746,209 @@ struct AddEditRepoHostChangeDetectionTests {
     }
 }
 
+// MARK: - Mirror cache quota
+
+struct MirrorCacheManagerTests {
+    private let repoA = UUID(uuidString: "00000000-0000-0000-0000-000000000101")!
+    private let repoB = UUID(uuidString: "00000000-0000-0000-0000-000000000102")!
+    private let repoC = UUID(uuidString: "00000000-0000-0000-0000-000000000103")!
+
+    @Test func nilQuotaIsUnlimited() {
+        #expect(MirrorCacheManager.quotaLimitBytes(for: nil) == nil)
+        #expect(!MirrorCacheManager.isOverQuota(usageBytes: 999_999_999_999, quotaGB: nil))
+    }
+
+    @Test func quotaLimitConvertsGigabytesToBytes() {
+        #expect(MirrorCacheManager.quotaLimitBytes(for: 50) == 50 * MirrorCacheManager.bytesPerGB)
+        #expect(MirrorCacheManager.isOverQuota(usageBytes: 51 * MirrorCacheManager.bytesPerGB, quotaGB: 50))
+        #expect(!MirrorCacheManager.isOverQuota(usageBytes: 50 * MirrorCacheManager.bytesPerGB, quotaGB: 50))
+    }
+
+    @Test func lruSortsOldestAccessFirstWithStableTieBreak() {
+        let older = MirrorCacheEntry(repoID: repoB, lastAccessedAt: Date(timeIntervalSince1970: 100), sizeBytes: 10)
+        let newer = MirrorCacheEntry(repoID: repoA, lastAccessedAt: Date(timeIntervalSince1970: 200), sizeBytes: 10)
+        let tiedOlderID = MirrorCacheEntry(repoID: repoA, lastAccessedAt: Date(timeIntervalSince1970: 100), sizeBytes: 10)
+        let tiedNewerID = MirrorCacheEntry(repoID: repoC, lastAccessedAt: Date(timeIntervalSince1970: 100), sizeBytes: 10)
+
+        #expect(MirrorCacheManager.lruSorted([newer, older]).map(\.repoID) == [repoB, repoA])
+        #expect(MirrorCacheManager.lruSorted([tiedNewerID, tiedOlderID]).map(\.repoID) == [repoA, repoC])
+    }
+
+    @Test func cleanupPlanUsesGCThenDeleteForOldestRepo() {
+        let entries = [
+            MirrorCacheEntry(repoID: repoA, lastAccessedAt: Date(timeIntervalSince1970: 300), sizeBytes: 40),
+            MirrorCacheEntry(repoID: repoB, lastAccessedAt: Date(timeIntervalSince1970: 100), sizeBytes: 50)
+        ]
+
+        let plan = MirrorCacheManager.cleanupPlan(
+            entries: entries,
+            quotaGB: 0,
+            totalUsageBytes: 90,
+            sizeAfterGC: { repoID in
+                repoID == repoB ? 45 : 40
+            }
+        )
+
+        #expect(plan.steps.prefix(2) == [.garbageCollect(repoID: repoB), .deleteMirror(repoID: repoB)])
+        #expect(plan.steps.suffix(2) == [.garbageCollect(repoID: repoA), .deleteMirror(repoID: repoA)])
+        #expect(plan.finalUsageBytes == 0)
+    }
+
+    @Test func cleanupPlanDoesNothingWhenUnderQuota() {
+        let entries = [
+            MirrorCacheEntry(repoID: repoA, lastAccessedAt: .distantPast, sizeBytes: 10)
+        ]
+        let plan = MirrorCacheManager.cleanupPlan(
+            entries: entries,
+            quotaGB: 50,
+            totalUsageBytes: 10,
+            sizeAfterGC: { _ in 0 }
+        )
+        #expect(plan.steps.isEmpty)
+        #expect(plan.finalUsageBytes == 10)
+    }
+
+    @Test func lastAccessedPrefersSuccessfulSyncTimestamp() {
+        var repo = RepoConfig(
+            id: repoA,
+            name: "demo",
+            srcURL: "git@github.com:org/src.git",
+            targets: [],
+            createdAt: Date(timeIntervalSince1970: 0)
+        )
+        repo.lastSuccessfulSyncedAt = Date(timeIntervalSince1970: 500)
+        let fallback = Date(timeIntervalSince1970: 100)
+        #expect(MirrorCacheManager.lastAccessedAt(for: repo, mirrorModificationDate: fallback) == Date(timeIntervalSince1970: 500))
+    }
+}
+
+struct CachePreferencesTests {
+    @Test func loadsUnlimitedWhenKeyMissing() {
+        let suite = "gitrelay.tests.cache-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        #expect(CachePreferences.load(from: defaults).cacheQuotaGB == nil)
+    }
+
+    @Test func persistsAndReloadsQuota() {
+        let suite = "gitrelay.tests.cache-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        var prefs = CachePreferences(cacheQuotaGB: 50)
+        prefs.save(to: defaults)
+        #expect(CachePreferences.load(from: defaults).cacheQuotaGB == 50)
+
+        CachePreferences.default.save(to: defaults)
+        #expect(CachePreferences.load(from: defaults).cacheQuotaGB == nil)
+    }
+}
+
+@MainActor
+struct CachePreferencesStoreTests {
+    @Test func resetToDefaultsClearsQuota() {
+        let suite = "gitrelay.tests.cache-store.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = CachePreferencesStore(defaults: defaults)
+        store.preferences = CachePreferences(cacheQuotaGB: 25)
+        store.resetToDefaults()
+        #expect(store.preferences.cacheQuotaGB == nil)
+    }
+}
+
+@MainActor
+struct MirrorCacheServiceTests {
+    private let repoA = UUID(uuidString: "00000000-0000-0000-0000-000000000201")!
+    private let repoB = UUID(uuidString: "00000000-0000-0000-0000-000000000202")!
+
+    @Test func performCleanupRunsGCThenDeleteInLRUOrder() async {
+        final class SizeBox {
+            var values: [UUID: Int64]
+            init(_ values: [UUID: Int64]) { self.values = values }
+        }
+        let sizes = SizeBox([
+            repoA: 80,
+            repoB: 80
+        ])
+        var gcCalls: [UUID] = []
+        var deleteCalls: [UUID] = []
+
+        let repos = [
+            RepoConfig(
+                id: repoA,
+                name: "a",
+                srcURL: "git@github.com:org/a.git",
+                targets: [],
+                createdAt: Date(timeIntervalSince1970: 0),
+                lastSuccessfulSyncedAt: Date(timeIntervalSince1970: 200)
+            ),
+            RepoConfig(
+                id: repoB,
+                name: "b",
+                srcURL: "git@github.com:org/b.git",
+                targets: [],
+                createdAt: Date(timeIntervalSince1970: 0),
+                lastSuccessfulSyncedAt: Date(timeIntervalSince1970: 100)
+            )
+        ]
+
+        let result = await MirrorCacheService.performCleanup(
+            repos: repos,
+            quotaGB: 0,
+            sizeOf: { url in
+                guard let id = UUID(uuidString: url.lastPathComponent) else { return 0 }
+                return sizes.values[id] ?? 0
+            },
+            runGarbageCollection: { repoID in
+                gcCalls.append(repoID)
+            },
+            deleteMirror: { repoID in
+                deleteCalls.append(repoID)
+                sizes.values[repoID] = 0
+            }
+        )
+
+        #expect(gcCalls == [repoB, repoA])
+        #expect(deleteCalls == [repoB, repoA])
+        #expect(result.finalUsageBytes == 0)
+        #expect(result.bytesFreed == 160)
+    }
+
+    @Test func performCleanupNoOpsWhenUnlimited() async {
+        let repos = [
+            RepoConfig(
+                id: repoA,
+                name: "a",
+                srcURL: "git@github.com:org/a.git",
+                targets: [],
+                createdAt: Date(timeIntervalSince1970: 0)
+            )
+        ]
+
+        let result = await MirrorCacheService.performCleanup(
+            repos: repos,
+            quotaGB: nil,
+            sizeOf: { _ in 999_999 }
+        )
+
+        #expect(result.steps.isEmpty)
+        #expect(result.finalUsageBytes == 999_999)
+    }
+
+    @Test func freeMirrorSpaceDeletesAfterGC() async {
+        var deleted = false
+        let freed = await MirrorCacheService.freeMirrorSpace(
+            for: repoA,
+            sizeOf: { _ in 128 },
+            runGarbageCollection: { _ in },
+            deleteMirror: { _ in deleted = true }
+        )
+
+        #expect(freed == 128)
+        #expect(deleted)
+    }
+}
+

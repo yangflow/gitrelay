@@ -6,6 +6,7 @@ struct RepoRowView: View {
     let onSyncNow: () -> Void
     let onVerifyNow: () -> Void
     let onEdit: () -> Void
+    let onFreeSpace: () -> Void
     let onDelete: () -> Void
 
     private var presentation: RepoRowHealthPresentation.Caption {
@@ -32,6 +33,8 @@ struct RepoRowView: View {
             Button("Sync Now", action: onSyncNow)
                 .disabled(status == .syncing)
             Button("Verify Now", action: onVerifyNow)
+                .disabled(status == .syncing)
+            Button(String(localized: "Free Space"), action: onFreeSpace)
                 .disabled(status == .syncing)
             Divider()
             Button("Edit...", action: onEdit)

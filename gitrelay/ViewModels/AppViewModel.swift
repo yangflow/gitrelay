@@ -14,6 +14,8 @@ final class AppViewModel {
     var inProgressSyncIDs: Set<UUID> = []
     var inProgressVerifyIDs: Set<UUID> = []
     var verificationPreferences: VerificationPreferences
+    var mirrorCacheUsageBytes: Int64 = 0
+    var isCleaningMirrorCache = false
 
     /// When opening the main window from the menu bar, select this repo in the sidebar.
     var pendingMainWindowRepoID: UUID?
@@ -55,6 +57,7 @@ final class AppViewModel {
 
     let notificationPreferences = NotificationPreferencesStore()
     let securityPreferences: SecurityPreferencesStore
+    let cachePreferences: CachePreferencesStore
     let environmentMonitor = SyncEnvironmentMonitor()
     let failureNotifier = SyncFailureNotifier()
     let webhookPreferences: WebhookPreferencesStore
@@ -82,6 +85,7 @@ final class AppViewModel {
         verificationPreferencesStore: VerificationPreferencesStore? = nil,
         webhookPreferencesStore: WebhookPreferencesStore? = nil,
         securityPreferencesStore: SecurityPreferencesStore? = nil,
+        cachePreferencesStore: CachePreferencesStore? = nil,
         biometricAuthenticator: BiometricAuthenticating? = nil
     ) {
         let store = verificationPreferencesStore ?? VerificationPreferencesStore()
@@ -90,6 +94,7 @@ final class AppViewModel {
         let webhookStore = webhookPreferencesStore ?? WebhookPreferencesStore()
         self.webhookPreferences = webhookStore
         self.securityPreferences = securityPreferencesStore ?? SecurityPreferencesStore()
+        self.cachePreferences = cachePreferencesStore ?? CachePreferencesStore()
         self.biometricAuthenticator = biometricAuthenticator ?? LocalAuthenticationClient()
 
         do {
@@ -142,6 +147,7 @@ final class AppViewModel {
         AppIntentBridge.register(self)
         refreshWebhookListener()
         refreshWidgetSnapshot()
+        refreshMirrorCacheUsage()
     }
 
     func authorizeSensitiveAction(_ action: SensitiveAction) async -> Bool {
@@ -209,6 +215,7 @@ final class AppViewModel {
         try? FileManager.default.removeItem(at: scratch)
         saveRepos()
         refreshWebhookListener()
+        refreshMirrorCacheUsage()
     }
 
     // MARK: - Sync
@@ -256,6 +263,7 @@ final class AppViewModel {
                 self.patchLastSynced(repoID: repoID, error: nil)
                 self.statuses[repoID] = .idle
                 self.failureNotifier.clearPending(for: repoID)
+                Task { await self.enforceMirrorCacheQuotaIfNeeded(excluding: [repoID]) }
             case .failed(let message, let record):
                 self.appendRecord(record, for: repoID)
                 self.finishSync(repoID: repoID)
@@ -272,6 +280,48 @@ final class AppViewModel {
 
     func triggerSyncAll() {
         repos.forEach { triggerSync(repoID: $0.id) }
+    }
+
+    // MARK: - Mirror cache
+
+    func refreshMirrorCacheUsage() {
+        mirrorCacheUsageBytes = MirrorCacheService.currentUsageBytes(repos: repos)
+    }
+
+    func cleanMirrorCacheNow() async {
+        guard !isCleaningMirrorCache else { return }
+        isCleaningMirrorCache = true
+        defer {
+            isCleaningMirrorCache = false
+            refreshMirrorCacheUsage()
+        }
+
+        _ = await MirrorCacheService.performCleanup(
+            repos: repos,
+            quotaGB: cachePreferences.preferences.cacheQuotaGB,
+            excluding: inProgressSyncIDs
+        )
+    }
+
+    func enforceMirrorCacheQuotaIfNeeded(excluding repoIDs: Set<UUID> = []) async {
+        refreshMirrorCacheUsage()
+        guard MirrorCacheManager.isOverQuota(
+            usageBytes: mirrorCacheUsageBytes,
+            quotaGB: cachePreferences.preferences.cacheQuotaGB
+        ) else { return }
+
+        _ = await MirrorCacheService.performCleanup(
+            repos: repos,
+            quotaGB: cachePreferences.preferences.cacheQuotaGB,
+            excluding: inProgressSyncIDs.union(repoIDs)
+        )
+        refreshMirrorCacheUsage()
+    }
+
+    func freeMirrorSpace(for repoID: UUID) async {
+        guard !inProgressSyncIDs.contains(repoID) else { return }
+        _ = await MirrorCacheService.freeMirrorSpace(for: repoID)
+        refreshMirrorCacheUsage()
     }
 
     /// Handles an inbound webhook request and may queue an immediate sync (bypasses frequency / pause).

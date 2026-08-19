@@ -186,6 +186,9 @@ struct SidebarView: View {
             onSyncNow: { appVM.triggerSync(repoID: repo.id) },
             onVerifyNow: { appVM.triggerVerify(repoID: repo.id) },
             onEdit: { sheetMode = .edit(repo) },
+            onFreeSpace: {
+                Task { await appVM.freeMirrorSpace(for: repo.id) }
+            },
             onDelete: {
                 pendingDeleteID = repo.id
                 showDeleteAlert = true

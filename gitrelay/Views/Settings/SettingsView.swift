@@ -3,12 +3,17 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(NotificationPreferencesStore.self) private var preferencesStore
     @Environment(SecurityPreferencesStore.self) private var securityStore
+    @Environment(CachePreferencesStore.self) private var cacheStore
     @Environment(SyncEnvironmentMonitor.self) private var environmentMonitor
     @Environment(AppViewModel.self) private var appVM
+
+    @State private var limitMirrorCache = false
+    @State private var mirrorCacheQuotaGB = 50
 
     var body: some View {
         @Bindable var store = preferencesStore
         @Bindable var security = securityStore
+        @Bindable var cache = cacheStore
         @Bindable var webhookStore = appVM.webhookPreferences
         Form {
             Section {
@@ -127,16 +132,68 @@ struct SettingsView: View {
             }
 
             Section {
+                Toggle(String(localized: "Limit local mirror cache size"), isOn: $limitMirrorCache)
+                    .onChange(of: limitMirrorCache) { _, enabled in
+                        cache.preferences.cacheQuotaGB = enabled ? mirrorCacheQuotaGB : nil
+                        appVM.refreshMirrorCacheUsage()
+                    }
+
+                if limitMirrorCache {
+                    Stepper(value: $mirrorCacheQuotaGB, in: 1...1000) {
+                        Text(String(format: String(localized: "Cache quota: %lld GB"), mirrorCacheQuotaGB))
+                    }
+                    .onChange(of: mirrorCacheQuotaGB) { _, value in
+                        if limitMirrorCache {
+                            cache.preferences.cacheQuotaGB = value
+                        }
+                    }
+                }
+
+                LabeledContent(String(localized: "Current Usage")) {
+                    Text(MirrorCacheFormatting.usageSummary(
+                        usageBytes: appVM.mirrorCacheUsageBytes,
+                        quotaGB: cache.preferences.cacheQuotaGB
+                    ))
+                }
+
+                Button(String(localized: "Clean Now")) {
+                    Task { await appVM.cleanMirrorCacheNow() }
+                }
+                .disabled(appVM.isCleaningMirrorCache)
+            } header: {
+                Text(String(localized: "Mirror Cache"))
+            } footer: {
+                Text(String(localized: "Bare clones are stored under ~/.local/share/gitrelay/mirrors/. When over quota, GitRelay runs git gc on least-recently synced mirrors first, then deletes entire clones if needed. The next sync rebuilds deleted mirrors."))
+            }
+
+            Section {
                 Button("Restore Defaults") {
                     store.resetToDefaults()
                     security.resetToDefaults()
+                    cache.resetToDefaults()
                     webhookStore.resetToDefaults()
+                    syncCacheControlsFromStore()
+                    appVM.refreshMirrorCacheUsage()
                 }
             }
         }
         .formStyle(.grouped)
         .frame(minWidth: 420, minHeight: 420)
         .padding()
+        .onAppear {
+            syncCacheControlsFromStore()
+            appVM.refreshMirrorCacheUsage()
+        }
+    }
+
+    private func syncCacheControlsFromStore() {
+        if let quota = cacheStore.preferences.cacheQuotaGB {
+            limitMirrorCache = true
+            mirrorCacheQuotaGB = quota
+        } else {
+            limitMirrorCache = false
+            mirrorCacheQuotaGB = 50
+        }
     }
 
     @ViewBuilder
