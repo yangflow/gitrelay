@@ -28,6 +28,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
     var depth: Int?
     /// Fetch refspecs; defaults to all heads and tags.
     var refSpecs: [String]
+    /// When enabled, push webhooks at `/hook/<id>` can trigger an immediate sync.
+    var webhookEnabled: Bool
 
     static let defaultRefSpecs: [String] = [
         "+refs/heads/*:refs/heads/*",
@@ -90,7 +92,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         tags: [String] = [],
         mirrorReleases: Bool = false,
         depth: Int? = nil,
-        refSpecs: [String] = RepoConfig.defaultRefSpecs
+        refSpecs: [String] = RepoConfig.defaultRefSpecs,
+        webhookEnabled: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -114,6 +117,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         self.refSpecs = Self.normalizedRefSpecs(refSpecs).isEmpty
             ? Self.defaultRefSpecs
             : Self.normalizedRefSpecs(refSpecs)
+        self.webhookEnabled = webhookEnabled
     }
 
     /// Convenience for tests and single-target call sites.
@@ -138,7 +142,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         tags: [String] = [],
         mirrorReleases: Bool = false,
         depth: Int? = nil,
-        refSpecs: [String] = RepoConfig.defaultRefSpecs
+        refSpecs: [String] = RepoConfig.defaultRefSpecs,
+        webhookEnabled: Bool = false
     ) {
         self.init(
             id: id,
@@ -160,8 +165,14 @@ struct RepoConfig: Codable, Identifiable, Equatable {
             tags: tags,
             mirrorReleases: mirrorReleases,
             depth: depth,
-            refSpecs: refSpecs
+            refSpecs: refSpecs,
+            webhookEnabled: webhookEnabled
         )
+    }
+
+    /// Path segment used by `POST /hook/<webhookPathID>`.
+    var webhookPathID: String {
+        WebhookPushMapper.pathID(for: id)
     }
 
     enum CodingKeys: String, CodingKey {
@@ -187,6 +198,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         case mirrorReleases
         case depth
         case refSpecs
+        case webhookEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -230,6 +242,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         refSpecs = Self.normalizedRefSpecs(decodedRefSpecs).isEmpty
             ? Self.defaultRefSpecs
             : Self.normalizedRefSpecs(decodedRefSpecs)
+        webhookEnabled = try container.decodeIfPresent(Bool.self, forKey: .webhookEnabled) ?? false
 
         if let decodedTargets = try container.decodeIfPresent([MirrorTarget].self, forKey: .targets),
            !decodedTargets.isEmpty {
@@ -268,6 +281,9 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         try container.encodeIfPresent(depth, forKey: .depth)
         if !Self.refSpecsEqual(refSpecs, Self.defaultRefSpecs) {
             try container.encode(refSpecs, forKey: .refSpecs)
+        }
+        if webhookEnabled {
+            try container.encode(webhookEnabled, forKey: .webhookEnabled)
         }
     }
 

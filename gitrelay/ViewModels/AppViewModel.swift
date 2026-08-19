@@ -56,20 +56,35 @@ final class AppViewModel {
     let notificationPreferences = NotificationPreferencesStore()
     let environmentMonitor = SyncEnvironmentMonitor()
     let failureNotifier = SyncFailureNotifier()
+    let webhookPreferences: WebhookPreferencesStore
 
     private let scheduler = SyncScheduler()
     private let verificationScheduler = VerificationScheduler()
     private let releaseMirrorService = ReleaseMirrorService()
     private let verificationPreferencesStore: VerificationPreferencesStore
+    private let webhookListener = WebhookListener()
     private var activeSyncEngines: [UUID: SyncEngine] = [:]
     private var activeVerifiers: [UUID: IntegrityVerifier] = [:]
     private var focusFlushTask: Task<Void, Never>?
     private var activationObserver: NSObjectProtocol?
 
-    init(verificationPreferencesStore: VerificationPreferencesStore? = nil) {
+    /// Bound loopback port when the webhook listener is running.
+    var webhookListenPort: UInt16? { webhookListener.port }
+
+    var isWebhookListenerRunning: Bool { webhookListener.isRunning }
+
+    /// Override in tests to avoid Keychain. Production loads HMAC secrets from Keychain only.
+    var webhookSecretProvider: (UUID) -> String? = { WebhookSecretStore.loadSecret(repoID: $0) }
+
+    init(
+        verificationPreferencesStore: VerificationPreferencesStore? = nil,
+        webhookPreferencesStore: WebhookPreferencesStore? = nil
+    ) {
         let store = verificationPreferencesStore ?? VerificationPreferencesStore()
         self.verificationPreferencesStore = store
         self.verificationPreferences = store.preferences
+        let webhookStore = webhookPreferencesStore ?? WebhookPreferencesStore()
+        self.webhookPreferences = webhookStore
 
         do {
             try MirrorStore.ensureBaseDirectoryExists()
@@ -96,6 +111,16 @@ final class AppViewModel {
             self?.verificationPreferences = prefs
             self?.verificationScheduler.reschedule(frequency: prefs.frequency)
         }
+        webhookStore.onPreferencesChange = { [weak self] _ in
+            self?.refreshWebhookListener()
+        }
+
+        webhookListener.onRequest = { [weak self] request in
+            await MainActor.run {
+                self?.handleWebhookRequest(request)
+                    ?? WebhookHTTPResponse.plain(503, "Service Unavailable", message: "unavailable\n")
+            }
+        }
 
         for repo in repos {
             statuses[repo.id] = initialStatus(for: repo)
@@ -109,6 +134,7 @@ final class AppViewModel {
         startFocusFlushLoop()
         observeAppActivation()
         AppIntentBridge.register(self)
+        refreshWebhookListener()
     }
 
     // MARK: - CRUD
@@ -119,6 +145,7 @@ final class AppViewModel {
         records[repo.id]  = []
         scheduler.schedule(repo: repo)
         saveRepos()
+        refreshWebhookListener()
     }
 
     func addRepos(_ newRepos: [RepoConfig], triggerSync: Bool = false) {
@@ -130,6 +157,7 @@ final class AppViewModel {
             scheduler.schedule(repo: repo)
         }
         saveRepos()
+        refreshWebhookListener()
         if triggerSync {
             for repo in newRepos {
                 self.triggerSync(repoID: repo.id)
@@ -147,6 +175,7 @@ final class AppViewModel {
         }
         scheduler.reschedule(repo: updated)
         saveRepos()
+        refreshWebhookListener()
     }
 
     func deleteRepo(id: UUID) {
@@ -157,12 +186,14 @@ final class AppViewModel {
         statuses.removeValue(forKey: id)
         records.removeValue(forKey: id)
         failureNotifier.clearPending(for: id)
+        WebhookSecretStore.deleteSecret(repoID: id)
         try? MirrorStore.deleteMirror(for: id)
         let scratch = Constants.baseDirectory
             .appendingPathComponent("verify-scratch")
             .appendingPathComponent(id.uuidString)
         try? FileManager.default.removeItem(at: scratch)
         saveRepos()
+        refreshWebhookListener()
     }
 
     // MARK: - Sync
@@ -224,6 +255,52 @@ final class AppViewModel {
 
     func triggerSyncAll() {
         repos.forEach { triggerSync(repoID: $0.id) }
+    }
+
+    /// Handles an inbound webhook request and may queue an immediate sync (bypasses frequency / pause).
+    func handleWebhookRequest(_ request: WebhookHTTPRequest) -> WebhookHTTPResponse {
+        let targets = repos.map {
+            WebhookPushMapper.HookTarget(
+                repoID: $0.id,
+                pathID: $0.webhookPathID,
+                enabled: $0.webhookEnabled
+            )
+        }
+        let result = WebhookPushMapper.decide(
+            request: request,
+            targets: targets,
+            secretForRepo: { [webhookSecretProvider] in webhookSecretProvider($0) }
+        )
+        if let repoID = result.syncRepoID {
+            triggerSync(repoID: repoID)
+        }
+        return result.httpResponse
+    }
+
+    func webhookURL(for repo: RepoConfig) -> String {
+        WebhookURLTemplate.displayURL(
+            preferences: webhookPreferences.preferences,
+            port: webhookListenPort,
+            pathID: repo.webhookPathID
+        )
+    }
+
+    func refreshWebhookListener() {
+        let enabled = webhookPreferences.preferences.listenerEnabled
+        if !enabled {
+            webhookListener.stop()
+            return
+        }
+        do {
+            if webhookListener.isRunning {
+                // Already bound — keep the port stable across repo edits.
+                return
+            }
+            try webhookListener.start()
+        } catch {
+            errorMessage = "Webhook 监听启动失败：\(error.localizedDescription)"
+            webhookListener.stop()
+        }
     }
 
     func repos(matchingTag tag: String?) -> [RepoConfig] {

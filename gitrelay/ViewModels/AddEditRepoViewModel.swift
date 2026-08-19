@@ -88,6 +88,11 @@ final class AddEditRepoViewModel {
     var mirrorReleases: Bool = false
     var depthText: String = ""
     var refSpecsText: String = RepoConfig.defaultRefSpecs.joined(separator: "\n")
+    var webhookEnabled: Bool = false
+    var registerWebhookOnSave: Bool = false
+    var webhookRegistrationToken: String = ""
+    var webhookRegistrationMessage: String?
+    var webhookScopeValidation: TokenScopeValidation?
 
     var nameError: String?
     var srcError: String?
@@ -125,6 +130,7 @@ final class AddEditRepoViewModel {
         mirrorReleases = repo.mirrorReleases
         depthText = repo.depth.map(String.init) ?? ""
         refSpecsText = repo.resolvedRefSpecs.joined(separator: "\n")
+        webhookEnabled = repo.webhookEnabled
         populate(auth: repo.srcAuth, mode: &srcAuthMode, keyPath: &srcKeyPath, token: &srcToken)
     }
 
@@ -219,7 +225,8 @@ final class AddEditRepoViewModel {
             tags: RepoTagGrouping.normalizedTags(tags),
             mirrorReleases: mirrorReleases,
             depth: parsedDepth(),
-            refSpecs: parsedRefSpecs()
+            refSpecs: parsedRefSpecs(),
+            webhookEnabled: webhookEnabled
         )
     }
 
@@ -232,6 +239,9 @@ final class AddEditRepoViewModel {
                 target.token,
                 tag: keychainTag(repoID: repoID, targetID: target.id)
             )
+        }
+        if webhookEnabled {
+            try? WebhookSecretStore.ensureSecret(repoID: repoID)
         }
     }
 

@@ -426,6 +426,40 @@ struct RepoConfigCodableTests {
             "+refs/tags/v*:refs/tags/v*"
         ])
     }
+
+    @Test func webhookEnabledDefaultsFalseOnDecode() throws {
+        let json = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "legacy-repo",
+          "srcURL": "git@github.com:user/repo.git",
+          "dstURL": "git@github.com:user/mirror.git",
+          "srcAuth": { "sshAgent": {} },
+          "dstAuth": { "sshAgent": {} },
+          "frequency": "手动",
+          "createdAt": "2026-04-25T12:00:00Z"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
+        #expect(repo.webhookEnabled == false)
+    }
+
+    @Test func encodesWebhookEnabledWhenTrue() throws {
+        let repo = RepoConfig(
+            name: "hooked",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            webhookEnabled: true
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(repo)
+        let object = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        #expect(object["webhookEnabled"] as? Bool == true)
+    }
 }
 
 // MARK: - GitSyncArguments
@@ -612,7 +646,10 @@ struct AppViewModelTagBatchTests {
     private func makeViewModel() -> AppViewModel {
         let suite = "gitrelay.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
-        return AppViewModel(verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults))
+        return AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults)
+        )
     }
 
     @Test func updateFrequencyAppliesOnlyToMatchingTag() {
@@ -2074,7 +2111,10 @@ struct AppIntentBridgeTests {
     private func makeViewModel() -> AppViewModel {
         let suite = "gitrelay.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
-        return AppViewModel(verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults))
+        return AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults)
+        )
     }
 
     @Test func triggerSyncReportsMissingRepository() {
@@ -2754,3 +2794,431 @@ struct FilesystemTargetValidationTests {
         #expect(vm.buildRepoConfig().enabledTargets.count == 2)
     }
 }
+
+// MARK: - Webhook HMAC
+
+struct WebhookHMACVerifierTests {
+    @Test func githubSignatureIsDeterministicHex() {
+        let payload = Data("{\"ref\":\"refs/heads/main\"}".utf8)
+        let secret = "test-secret"
+        let header = WebhookHMACVerifier.githubSignatureHeader(payload: payload, secret: secret)
+        #expect(header.hasPrefix("sha256="))
+        #expect(header.count == "sha256=".count + 64)
+        #expect(
+            WebhookHMACVerifier.verifyGitHubSignature(
+                payload: payload,
+                secret: secret,
+                signatureHeader: header
+            )
+        )
+    }
+
+    @Test func githubSignatureRejectsTamperedPayload() {
+        let secret = "test-secret"
+        let good = Data("{\"ref\":\"refs/heads/main\"}".utf8)
+        let header = WebhookHMACVerifier.githubSignatureHeader(payload: good, secret: secret)
+        let bad = Data("{\"ref\":\"refs/heads/other\"}".utf8)
+        #expect(
+            !WebhookHMACVerifier.verifyGitHubSignature(
+                payload: bad,
+                secret: secret,
+                signatureHeader: header
+            )
+        )
+    }
+
+    @Test func githubSignatureRejectsWrongSecret() {
+        let payload = Data("{}".utf8)
+        let header = WebhookHMACVerifier.githubSignatureHeader(payload: payload, secret: "a")
+        #expect(
+            !WebhookHMACVerifier.verifyGitHubSignature(
+                payload: payload,
+                secret: "b",
+                signatureHeader: header
+            )
+        )
+    }
+
+    @Test func gitlabTokenEquality() {
+        #expect(WebhookHMACVerifier.verifyGitLabToken(secret: "s3cret", tokenHeader: "s3cret"))
+        #expect(!WebhookHMACVerifier.verifyGitLabToken(secret: "s3cret", tokenHeader: "nope"))
+        #expect(!WebhookHMACVerifier.verifyGitLabToken(secret: "s3cret", tokenHeader: nil))
+    }
+
+    @Test func verifyPrefersGitHubHeaderWhenPresent() {
+        let payload = Data("hi".utf8)
+        let secret = "abc"
+        let sig = WebhookHMACVerifier.githubSignatureHeader(payload: payload, secret: secret)
+        #expect(
+            WebhookHMACVerifier.verify(
+                payload: payload,
+                secret: secret,
+                githubSignatureHeader: sig,
+                gitlabTokenHeader: "wrong"
+            )
+        )
+        #expect(
+            !WebhookHMACVerifier.verify(
+                payload: payload,
+                secret: secret,
+                githubSignatureHeader: "sha256=deadbeef",
+                gitlabTokenHeader: secret
+            )
+        )
+    }
+
+    @Test func generateSecretIsNonEmpty() {
+        let a = WebhookHMACVerifier.generateSecret()
+        let b = WebhookHMACVerifier.generateSecret()
+        #expect(!a.isEmpty)
+        #expect(!b.isEmpty)
+        #expect(a != b)
+    }
+}
+
+// MARK: - Webhook HTTP routing
+
+struct WebhookRouteTests {
+    @Test func parsesHookPath() {
+        #expect(WebhookRoute.parse(method: "POST", path: "/hook/abc-123") == .hook(id: "abc-123"))
+        #expect(WebhookRoute.parse(method: "POST", path: "/hook/abc-123/") == .hook(id: "abc-123"))
+        #expect(WebhookRoute.parse(method: "POST", path: "/hook/abc-123?x=1") == .hook(id: "abc-123"))
+    }
+
+    @Test func rejectsNestedOrEmptyHookPath() {
+        #expect(WebhookRoute.parse(method: "POST", path: "/hook/") == .notFound)
+        #expect(WebhookRoute.parse(method: "POST", path: "/hook/a/b") == .notFound)
+        #expect(WebhookRoute.parse(method: "POST", path: "/hooks/abc") == .notFound)
+    }
+
+    @Test func parsesHealth() {
+        #expect(WebhookRoute.parse(method: "GET", path: "/health") == .health)
+        #expect(WebhookRoute.parse(method: "GET", path: "/healthz") == .health)
+    }
+}
+
+struct WebhookHTTPParserTests {
+    @Test func parsesPostWithBodyAndHeaders() throws {
+        let body = "{\"ref\":\"refs/heads/main\"}"
+        let raw = Data(
+            """
+            POST /hook/deadbeef HTTP/1.1\r
+            Host: 127.0.0.1\r
+            Content-Type: application/json\r
+            X-GitHub-Event: push\r
+            Content-Length: \(body.utf8.count)\r
+            \r
+            \(body)
+            """.utf8
+        )
+        let request = try #require(WebhookHTTPParser.parse(raw))
+        #expect(request.method == "POST")
+        #expect(request.path == "/hook/deadbeef")
+        #expect(request.header("X-GitHub-Event") == "push")
+        #expect(String(data: request.body, encoding: .utf8) == body)
+    }
+
+    @Test func returnsNilWhenBodyIncomplete() {
+        let raw = Data("POST /hook/x HTTP/1.1\r\nContent-Length: 10\r\n\r\nshort".utf8)
+        #expect(WebhookHTTPParser.parse(raw) == nil)
+    }
+}
+
+// MARK: - Webhook push → sync mapping
+
+struct WebhookPushMapperTests {
+    private let repoID = UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE")!
+
+    private func targets(enabled: Bool = true) -> [WebhookPushMapper.HookTarget] {
+        [
+            .init(
+                repoID: repoID,
+                pathID: WebhookPushMapper.pathID(for: repoID),
+                enabled: enabled
+            )
+        ]
+    }
+
+    private func signedPushRequest(
+        pathID: String,
+        secret: String,
+        event: String = "push",
+        body: String = "{\"ref\":\"refs/heads/main\",\"commits\":[]}"
+    ) -> WebhookHTTPRequest {
+        let data = Data(body.utf8)
+        let signature = WebhookHMACVerifier.githubSignatureHeader(payload: data, secret: secret)
+        return WebhookHTTPRequest(
+            method: "POST",
+            path: "/hook/\(pathID)",
+            headers: [
+                "X-GitHub-Event": event,
+                "X-Hub-Signature-256": signature,
+                "Content-Type": "application/json"
+            ],
+            body: data
+        )
+    }
+
+    @Test func pushEventMapsToAcceptedSync() {
+        let secret = "hook-secret"
+        let request = signedPushRequest(
+            pathID: WebhookPushMapper.pathID(for: repoID),
+            secret: secret
+        )
+        let result = WebhookPushMapper.decide(
+            request: request,
+            targets: targets(),
+            secretForRepo: { $0 == repoID ? secret : nil }
+        )
+        #expect(result == .acceptedSync(repoID: repoID))
+        #expect(result.shouldTriggerSync)
+        #expect(result.syncRepoID == repoID)
+        #expect(result.httpResponse.statusCode == 202)
+    }
+
+    @Test func pingDoesNotTriggerSync() {
+        let secret = "hook-secret"
+        let request = signedPushRequest(
+            pathID: WebhookPushMapper.pathID(for: repoID),
+            secret: secret,
+            event: "ping",
+            body: "{}"
+        )
+        let result = WebhookPushMapper.decide(
+            request: request,
+            targets: targets(),
+            secretForRepo: { _ in secret }
+        )
+        #expect(result == .pingAcknowledged)
+        #expect(!result.shouldTriggerSync)
+    }
+
+    @Test func invalidSignatureIsUnauthorized() {
+        let request = signedPushRequest(
+            pathID: WebhookPushMapper.pathID(for: repoID),
+            secret: "correct"
+        )
+        let result = WebhookPushMapper.decide(
+            request: request,
+            targets: targets(),
+            secretForRepo: { _ in "wrong" }
+        )
+        #expect(result == .unauthorized)
+    }
+
+    @Test func unknownPathIsNotFound() {
+        let secret = "s"
+        let request = signedPushRequest(pathID: "missing-id", secret: secret)
+        let result = WebhookPushMapper.decide(
+            request: request,
+            targets: targets(),
+            secretForRepo: { _ in secret }
+        )
+        #expect(result == .notFound)
+    }
+
+    @Test func disabledRepoIsIgnored() {
+        let secret = "s"
+        let request = signedPushRequest(
+            pathID: WebhookPushMapper.pathID(for: repoID),
+            secret: secret
+        )
+        let result = WebhookPushMapper.decide(
+            request: request,
+            targets: targets(enabled: false),
+            secretForRepo: { _ in secret }
+        )
+        #expect(result == .ignored(reason: "webhook disabled for repo"))
+        #expect(!result.shouldTriggerSync)
+    }
+
+    @Test func getHookIsMethodNotAllowed() {
+        let request = WebhookHTTPRequest(
+            method: "GET",
+            path: "/hook/\(WebhookPushMapper.pathID(for: repoID))",
+            headers: [:],
+            body: Data()
+        )
+        let result = WebhookPushMapper.decide(
+            request: request,
+            targets: targets(),
+            secretForRepo: { _ in "s" }
+        )
+        #expect(result == .methodNotAllowed)
+    }
+
+    @Test func gitlabPushHookAccepted() {
+        let secret = "gl-secret"
+        let body = Data("{\"ref\":\"refs/heads/main\"}".utf8)
+        let request = WebhookHTTPRequest(
+            method: "POST",
+            path: "/hook/\(WebhookPushMapper.pathID(for: repoID))",
+            headers: [
+                "X-Gitlab-Event": "Push Hook",
+                "X-Gitlab-Token": secret
+            ],
+            body: body
+        )
+        let result = WebhookPushMapper.decide(
+            request: request,
+            targets: targets(),
+            secretForRepo: { _ in secret }
+        )
+        #expect(result == .acceptedSync(repoID: repoID))
+    }
+}
+
+@MainActor
+struct WebhookSyncTriggerTests {
+    @Test func handleWebhookRequestQueuesSyncIndependentlyOfFrequency() {
+        let suite = "gitrelay.tests.webhook.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        let vm = AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults)
+        )
+        let repoID = UUID()
+        let secret = "unit-test-secret"
+        vm.webhookSecretProvider = { $0 == repoID ? secret : nil }
+
+        let repo = RepoConfig(
+            id: repoID,
+            name: "hooked",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            frequency: .manual,
+            webhookEnabled: true
+        )
+        vm.addRepo(repo)
+
+        let body = Data("{\"ref\":\"refs/heads/main\"}".utf8)
+        let signature = WebhookHMACVerifier.githubSignatureHeader(payload: body, secret: secret)
+        let request = WebhookHTTPRequest(
+            method: "POST",
+            path: "/hook/\(repo.webhookPathID)",
+            headers: [
+                "X-GitHub-Event": "push",
+                "X-Hub-Signature-256": signature
+            ],
+            body: body
+        )
+
+        let response = vm.handleWebhookRequest(request)
+        #expect(response.statusCode == 202)
+        #expect(vm.inProgressSyncIDs.contains(repoID) || vm.statuses[repoID] == .syncing)
+        vm.cancelSync(repoID: repoID)
+    }
+}
+
+struct WebhookURLTemplateTests {
+    @Test func localAndPublicURLs() {
+        let id = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        #expect(
+            WebhookURLTemplate.localURL(port: 4567, pathID: id)
+                == "http://127.0.0.1:4567/hook/\(id)"
+        )
+        #expect(
+            WebhookURLTemplate.publicURL(baseURL: "https://abc.trycloudflare.com/", pathID: id)
+                == "https://abc.trycloudflare.com/hook/\(id)"
+        )
+    }
+
+    @Test func displayFallsBackToModeTemplate() {
+        let prefs = WebhookPreferences(
+            listenerEnabled: true,
+            exposureMode: .cloudflareTunnel,
+            publicBaseURL: ""
+        )
+        let url = WebhookURLTemplate.displayURL(preferences: prefs, port: 9, pathID: "x")
+        #expect(url.contains("cloudflare-tunnel-host"))
+        #expect(url.hasSuffix("/hook/x"))
+    }
+}
+
+struct WebhookTunnelToolDetectorTests {
+    @Test func detectsExecutableViaInjectedProbe() {
+        #expect(
+            WebhookTunnelToolDetector.isCloudflaredAvailable { path in
+                path.hasSuffix("/cloudflared")
+            }
+        )
+        #expect(
+            !WebhookTunnelToolDetector.isTailscaleAvailable { _ in false }
+        )
+    }
+}
+
+@MainActor
+struct WebhookPreferencesStoreTests {
+    @Test func defaultsAreOff() {
+        let suite = "gitrelay.tests.webhook-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = WebhookPreferencesStore(defaults: defaults)
+        #expect(store.preferences.listenerEnabled == false)
+        #expect(store.preferences.exposureMode == .off)
+    }
+
+    @Test func persistsExposureMode() {
+        let suite = "gitrelay.tests.webhook-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = WebhookPreferencesStore(defaults: defaults)
+        var prefs = store.preferences
+        prefs.listenerEnabled = true
+        prefs.exposureMode = .tailscaleFunnel
+        prefs.publicBaseURL = "https://host.example/"
+        store.preferences = prefs
+
+        let reloaded = WebhookPreferencesStore(defaults: defaults)
+        #expect(reloaded.preferences.listenerEnabled)
+        #expect(reloaded.preferences.exposureMode == .tailscaleFunnel)
+        #expect(reloaded.preferences.publicBaseURL == "https://host.example")
+    }
+}
+
+struct ProviderTokenWebhookScopeTests {
+    @Test func webhookRegistrationRequiresAdminRepoHook() {
+        let missing = ProviderTokenScope.validate(
+            grantedScopes: ["public_repo"],
+            usage: .webhookRegistration(provider: .github)
+        )
+        #expect(!missing.isFullyAuthorized)
+        #expect(missing.missingRequiredScopes == ["admin:repo_hook"])
+
+        let ok = ProviderTokenScope.validate(
+            grantedScopes: ["repo"],
+            usage: .webhookRegistration(provider: .github)
+        )
+        #expect(ok.isFullyAuthorized)
+    }
+
+    @Test func disclosureTextIsPresent() {
+        let text = ProviderTokenUsage.webhookRegistration(provider: .github).disclosureText
+        #expect(text?.contains("admin:repo_hook") == true)
+    }
+}
+
+struct AddEditRepoWebhookTests {
+    @Test func buildRepoConfigIncludesWebhookFlag() {
+        let vm = AddEditRepoViewModel()
+        vm.name = "w"
+        vm.srcURL = "git@github.com:user/repo.git"
+        vm.targets[0].url = "git@github.com:user/mirror.git"
+        vm.webhookEnabled = true
+        #expect(vm.validate())
+        #expect(vm.buildRepoConfig().webhookEnabled)
+    }
+
+    @Test func loadsWebhookEnabledFromExistingRepo() {
+        let repo = RepoConfig(
+            name: "w",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            webhookEnabled: true
+        )
+        let vm = AddEditRepoViewModel(editing: repo)
+        #expect(vm.webhookEnabled)
+    }
+}
+
