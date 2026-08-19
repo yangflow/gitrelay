@@ -6,6 +6,8 @@ struct RepoStatusSectionView: View {
     let isSyncing: Bool
     let isVerifying: Bool
     let records: [SyncRecord]
+    let syncPhase: SyncPhase?
+    let liveSyncLogLine: String?
     let nextFireDate: Date?
     let onSyncNow: () -> Void
     let onVerifyNow: () -> Void
@@ -15,7 +17,8 @@ struct RepoStatusSectionView: View {
         VStack(alignment: .leading, spacing: 10) {
             if isSyncing {
                 RepoSyncingRowView(
-                    latestLogLine: records.last?.logLines.last,
+                    statusTitle: syncPhase?.statusTitle ?? "正在同步...",
+                    latestLogLine: liveSyncLogLine ?? records.last?.logLines.last,
                     onCancel: onCancel
                 )
             } else if case .failed(let message) = status {

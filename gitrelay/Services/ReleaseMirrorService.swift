@@ -14,6 +14,7 @@ final class ReleaseMirrorService {
         log: @escaping (String) -> Void
     ) async throws {
         guard repo.mirrorReleases else { return }
+        guard target.kind == .gitRemote else { return }
 
         guard let srcPath = GitRemoteRepoPath.parse(from: repo.srcURL),
               let dstPath = GitRemoteRepoPath.parse(from: target.url) else {
@@ -137,7 +138,9 @@ final class ReleaseMirrorService {
     func loadStatus(repo: RepoConfig) -> [ReleaseTargetMirrorStatus] {
         let stored = ReleaseMirrorResumeStore.loadStatus(repoID: repo.id)
         if stored.isEmpty {
-            return repo.enabledTargets.map {
+            return repo.enabledTargets
+                .filter { $0.kind == .gitRemote }
+                .map {
                 ReleaseTargetMirrorStatus(targetID: $0.id, targetURL: $0.url)
             }
         }

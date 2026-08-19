@@ -2,6 +2,7 @@ import Foundation
 
 enum SyncEvent {
     case started
+    case phase(SyncPhase)
     case log(String)
     case statusChanged(SyncStatus)
     case completed(SyncRecord)
@@ -12,6 +13,7 @@ enum SyncEvent {
 final class SyncEngine {
     private let repo: RepoConfig
     private let runner = GitRunner()
+    private let archiveService = FilesystemArchiveService()
     private var record: SyncRecord
 
     var onEvent: ((SyncEvent) -> Void)?
@@ -40,6 +42,7 @@ final class SyncEngine {
         let enabledTargets = repo.enabledTargets
 
         do {
+            emit(.phase(.fetchingSource))
             // 1. Clone or fetch from src once
             if MirrorStore.mirrorExists(for: repo.id) {
                 log("Fetching from source...")
@@ -60,10 +63,10 @@ final class SyncEngine {
                 throw SyncEngineError.noEnabledTargets
             }
 
-            // 2. Push to each enabled target independently
+            // 2. Sync each enabled target independently
             var targetResults: [TargetSyncResult] = []
             for target in enabledTargets {
-                let result = await pushToTarget(target, mirrorPath: mirrorPath)
+                let result = await syncToTarget(target, mirrorPath: mirrorPath)
                 targetResults.append(result)
             }
             record.targetResults = targetResults
@@ -104,13 +107,55 @@ final class SyncEngine {
     }
 
     func cancel() {
-        Task { await runner.cancel() }
+        Task {
+            await runner.cancel()
+            await archiveService.cancel()
+        }
     }
 
     // MARK: - Private
 
+    private func syncToTarget(_ target: MirrorTarget, mirrorPath: String) async -> TargetSyncResult {
+        switch target.kind {
+        case .gitRemote:
+            return await pushToTarget(target, mirrorPath: mirrorPath)
+        case .filesystem:
+            return await archiveToTarget(target, mirrorPath: mirrorPath)
+        }
+    }
+
+    private func archiveToTarget(_ target: MirrorTarget, mirrorPath: String) async -> TargetSyncResult {
+        let label = target.displayLabel
+        var result = TargetSyncResult(targetID: target.id, targetURL: label)
+
+        func targetLog(_ line: String) {
+            result.logLines.append(line)
+            emit(.log("[\(label)] \(line)"))
+        }
+
+        emit(.phase(.archivingTarget(label)))
+        targetLog("Target: \(label) (filesystem archive)")
+
+        do {
+            _ = try await archiveService.archiveMirror(
+                repo: repo,
+                target: target,
+                mirrorPath: mirrorPath,
+                log: targetLog
+            )
+            result.succeeded = true
+        } catch {
+            let message = classifyError(error)
+            targetLog("Error: \(message)")
+            result.error = message
+            result.succeeded = false
+        }
+
+        return result
+    }
+
     private func pushToTarget(_ target: MirrorTarget, mirrorPath: String) async -> TargetSyncResult {
-        var result = TargetSyncResult(targetID: target.id, targetURL: target.url)
+        var result = TargetSyncResult(targetID: target.id, targetURL: target.displayLabel)
         let rawDstURL = target.url
         let dstURL = authenticatedURL(url: rawDstURL, auth: target.auth)
         let dstEnv = buildEnv(for: target.auth)
@@ -120,6 +165,7 @@ final class SyncEngine {
             emit(.log("[\(rawDstURL)] \(line)"))
         }
 
+        emit(.phase(.syncingTarget(rawDstURL)))
         targetLog("Target: \(rawDstURL)")
 
         do {
@@ -207,6 +253,9 @@ final class SyncEngine {
         }
         if let destructivePushError = error as? DestructivePushError {
             return destructivePushError.localizedDescription
+        }
+        if let archiveError = error as? ArchiveError {
+            return archiveError.localizedDescription ?? "Archive failed"
         }
 
         let raw = SyncEngine.redactCredentials(error.localizedDescription)

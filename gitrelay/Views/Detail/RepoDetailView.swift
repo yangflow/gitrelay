@@ -70,6 +70,8 @@ struct RepoDetailView: View {
                 isSyncing: isSyncing,
                 isVerifying: isVerifying,
                 records: records,
+                syncPhase: appVM.syncPhases[repo.id],
+                liveSyncLogLine: appVM.liveSyncLogLines[repo.id],
                 nextFireDate: appVM.nextFireDate(for: repo.id),
                 onSyncNow: { appVM.triggerSync(repoID: repo.id) },
                 onVerifyNow: { appVM.triggerVerify(repoID: repo.id) },

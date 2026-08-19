@@ -4,6 +4,7 @@ import Observation
 
 struct MirrorTargetDraft: Identifiable, Equatable {
     let id: UUID
+    var kind: MirrorTargetKind
     var url: String
     var authMode: AuthMode
     var keyPath: String
@@ -11,18 +12,28 @@ struct MirrorTargetDraft: Identifiable, Equatable {
     var enabled: Bool
     var isExpanded: Bool
     let preservedAuth: AuthConfig?
+    var filesystemPath: String
+    var archiveFormat: ArchiveFormat
+    var filenameTemplate: String
+    var retentionCount: String
 
     init(
         id: UUID = UUID(),
+        kind: MirrorTargetKind = .gitRemote,
         url: String = "",
         authMode: AuthMode = .sshAgent,
         keyPath: String = "",
         token: String = "",
         enabled: Bool = true,
         isExpanded: Bool = true,
-        preservedAuth: AuthConfig? = nil
+        preservedAuth: AuthConfig? = nil,
+        filesystemPath: String = "",
+        archiveFormat: ArchiveFormat = .tarGz,
+        filenameTemplate: String = "",
+        retentionCount: String = ""
     ) {
         self.id = id
+        self.kind = kind
         self.url = url
         self.authMode = authMode
         self.keyPath = keyPath
@@ -30,16 +41,25 @@ struct MirrorTargetDraft: Identifiable, Equatable {
         self.enabled = enabled
         self.isExpanded = isExpanded
         self.preservedAuth = preservedAuth
+        self.filesystemPath = filesystemPath
+        self.archiveFormat = archiveFormat
+        self.filenameTemplate = filenameTemplate
+        self.retentionCount = retentionCount
     }
 
     init(from target: MirrorTarget, isExpanded: Bool = true) {
         self.id = target.id
+        self.kind = target.kind
         self.url = target.url
         self.enabled = target.enabled
         self.isExpanded = isExpanded
         self.preservedAuth = target.auth
         self.keyPath = ""
         self.token = ""
+        self.filesystemPath = target.filesystemPath ?? ""
+        self.archiveFormat = target.resolvedArchiveFormat
+        self.filenameTemplate = target.filenameTemplate ?? ""
+        self.retentionCount = target.retentionCount.map(String.init) ?? ""
         switch target.auth {
         case .sshAgent:
             self.authMode = .sshAgent
@@ -118,15 +138,26 @@ final class AddEditRepoViewModel {
         }
 
         for target in targets {
-            let trimmed = target.url.trimmingCharacters(in: .whitespaces)
-            if trimmed.isEmpty {
-                targetErrors[target.id] = "请输入有效的 Git URL"
-            } else if !isValidGitURL(trimmed) {
-                targetErrors[target.id] = "请输入有效的 Git URL"
+            switch target.kind {
+            case .gitRemote:
+                let trimmed = target.url.trimmingCharacters(in: .whitespaces)
+                if trimmed.isEmpty {
+                    targetErrors[target.id] = "请输入有效的 Git URL"
+                } else if !isValidGitURL(trimmed) {
+                    targetErrors[target.id] = "请输入有效的 Git URL"
+                }
+            case .filesystem:
+                let trimmed = target.filesystemPath.trimmingCharacters(in: .whitespaces)
+                if trimmed.isEmpty {
+                    targetErrors[target.id] = "请选择归档目录"
+                }
+                if let retention = parsedRetentionCount(for: target), retention < 1 {
+                    targetErrors[target.id] = "保留份数须为正整数"
+                }
             }
         }
 
-        if targets.filter({ isValidGitURL($0.url) }).allSatisfy({ !$0.enabled }) {
+        if targets.filter(isTargetConfigured).allSatisfy({ !$0.enabled }) {
             if targetErrors.isEmpty {
                 targetErrors[targets[0].id] = "至少启用一个目标"
             }
@@ -148,16 +179,7 @@ final class AddEditRepoViewModel {
     func buildRepoConfig() -> RepoConfig {
         let id = editingID ?? UUID()
         let mirrorTargets = targets.map { draft in
-            MirrorTarget(
-                id: draft.id,
-                url: draft.url.trimmingCharacters(in: .whitespaces),
-                auth: buildAuth(
-                    draft: draft,
-                    repoID: id,
-                    targetID: draft.id
-                ),
-                enabled: draft.enabled
-            )
+            buildMirrorTarget(draft: draft, repoID: id)
         }
         return RepoConfig(
             id: id,
@@ -185,7 +207,7 @@ final class AddEditRepoViewModel {
         if srcAuthMode == .httpsToken, !srcToken.isEmpty {
             try? KeychainService.saveToken(srcToken, tag: keychainTag(repoID: repoID, side: "src"))
         }
-        for target in targets where target.authMode == .httpsToken && !target.token.isEmpty {
+        for target in targets where target.kind == .gitRemote && target.authMode == .httpsToken && !target.token.isEmpty {
             try? KeychainService.saveToken(
                 target.token,
                 tag: keychainTag(repoID: repoID, targetID: target.id)
@@ -194,6 +216,50 @@ final class AddEditRepoViewModel {
     }
 
     // MARK: - Private
+
+    private func isTargetConfigured(_ target: MirrorTargetDraft) -> Bool {
+        switch target.kind {
+        case .gitRemote:
+            return isValidGitURL(target.url)
+        case .filesystem:
+            return !target.filesystemPath.trimmingCharacters(in: .whitespaces).isEmpty
+        }
+    }
+
+    private func parsedRetentionCount(for target: MirrorTargetDraft) -> Int? {
+        let trimmed = target.retentionCount.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+        return Int(trimmed)
+    }
+
+    private func buildMirrorTarget(draft: MirrorTargetDraft, repoID: UUID) -> MirrorTarget {
+        switch draft.kind {
+        case .gitRemote:
+            return MirrorTarget(
+                id: draft.id,
+                kind: .gitRemote,
+                url: draft.url.trimmingCharacters(in: .whitespaces),
+                auth: buildAuth(
+                    draft: draft,
+                    repoID: repoID,
+                    targetID: draft.id
+                ),
+                enabled: draft.enabled
+            )
+        case .filesystem:
+            let template = draft.filenameTemplate.trimmingCharacters(in: .whitespaces)
+            return MirrorTarget(
+                id: draft.id,
+                kind: .filesystem,
+                auth: .sshAgent,
+                enabled: draft.enabled,
+                filesystemPath: draft.filesystemPath.trimmingCharacters(in: .whitespaces),
+                archiveFormat: draft.archiveFormat,
+                filenameTemplate: template.isEmpty ? nil : template,
+                retentionCount: parsedRetentionCount(for: draft)
+            )
+        }
+    }
 
     private func isValidGitURL(_ url: String) -> Bool {
         let trimmed = url.trimmingCharacters(in: .whitespaces)

@@ -30,13 +30,20 @@ final class IntegrityVerifier {
         let srcURL = authenticatedURL(url: repo.srcURL, auth: repo.srcAuth)
         let srcEnv = buildEnv(for: repo.srcAuth)
         let enabledTargets = repo.enabledTargets
+        let verifiableTargets = enabledTargets.filter { $0.kind == .gitRemote }
 
-        guard !enabledTargets.isEmpty else {
-            let message = SyncEngineError.noEnabledTargets.localizedDescription ?? "No enabled mirror targets"
+        guard !verifiableTargets.isEmpty else {
+            let message = enabledTargets.isEmpty
+                ? (SyncEngineError.noEnabledTargets.localizedDescription ?? "No enabled mirror targets")
+                : "No git remote targets to verify (filesystem archive targets skipped)"
             log("错误: \(message)")
             record.finishedAt = Date()
             emit(.failed(message, record))
             return
+        }
+
+        if verifiableTargets.count < enabledTargets.count {
+            log("跳过 \(enabledTargets.count - verifiableTargets.count) 个文件系统归档目标。")
         }
 
         do {
@@ -48,14 +55,14 @@ final class IntegrityVerifier {
             var inconclusiveMessages: [String] = []
             var matchedCount = 0
 
-            for target in enabledTargets {
-                var targetResult = TargetSyncResult(targetID: target.id, targetURL: target.url)
+            for target in verifiableTargets {
+                var targetResult = TargetSyncResult(targetID: target.id, targetURL: target.displayLabel)
                 let dstURL = authenticatedURL(url: target.url, auth: target.auth)
                 let dstEnv = buildEnv(for: target.auth)
 
                 func targetLog(_ line: String) {
                     targetResult.logLines.append(line)
-                    emit(.log("[\(target.url)] \(line)"))
+                    emit(.log("[\(target.displayLabel)] \(line)"))
                 }
 
                 targetLog("ls-remote 目标仓库...")
@@ -118,7 +125,7 @@ final class IntegrityVerifier {
                     let redacted = SyncEngine.redactCredentials(message)
                     targetResult.error = redacted
                     targetLog("无法判定: \(redacted)")
-                    inconclusiveMessages.append("\(target.url): \(redacted)")
+                    inconclusiveMessages.append("\(target.displayLabel): \(redacted)")
                 }
 
                 record.targetResults.append(targetResult)
@@ -146,7 +153,7 @@ final class IntegrityVerifier {
                 return
             }
 
-            record.succeeded = matchedCount == enabledTargets.count
+            record.succeeded = matchedCount == verifiableTargets.count
             log("全部 \(matchedCount) 个目标校验通过。")
             emit(.completed(.matched(reason: .identicalCommitSHA), record))
 
