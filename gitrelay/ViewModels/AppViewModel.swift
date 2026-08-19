@@ -221,7 +221,7 @@ final class AppViewModel {
         }
 
         engine.mirrorReleases = { [releaseMirrorService] repo, target, log in
-            try await releaseMirrorService.mirrorReleases(repo: repo, target: target, log: log)
+            try await releaseMirrorService.mirrorReleases(repo: repo, target: target, log: { log($0) })
         }
 
         engine.onEvent = { [weak self] event in
