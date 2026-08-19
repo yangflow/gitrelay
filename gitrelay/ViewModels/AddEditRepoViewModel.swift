@@ -10,7 +10,7 @@ struct MirrorTargetDraft: Identifiable, Equatable {
     var token: String
     var enabled: Bool
     var isExpanded: Bool
-    private let preservedAuth: AuthConfig?
+    let preservedAuth: AuthConfig?
 
     init(
         id: UUID = UUID(),
