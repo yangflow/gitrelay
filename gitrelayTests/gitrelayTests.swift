@@ -646,6 +646,10 @@ struct AppViewModelTagBatchTests {
     private func makeViewModel() -> AppViewModel {
         let suite = "gitrelay.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-vm-tests-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        Constants.setBaseDirectoryForTesting(base)
         return AppViewModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults)
@@ -2111,6 +2115,10 @@ struct AppIntentBridgeTests {
     private func makeViewModel() -> AppViewModel {
         let suite = "gitrelay.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-intent-tests-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        Constants.setBaseDirectoryForTesting(base)
         return AppViewModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults)

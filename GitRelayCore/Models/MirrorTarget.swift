@@ -83,7 +83,7 @@ struct MirrorTarget: Codable, Identifiable, Equatable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         kind = try container.decodeIfPresent(MirrorTargetKind.self, forKey: .kind) ?? .gitRemote
         url = try container.decodeIfPresent(String.self, forKey: .url) ?? ""
         auth = try container.decodeIfPresent(AuthConfig.self, forKey: .auth) ?? .sshAgent
