@@ -16,6 +16,10 @@ struct ContentView: View {
             )
         }
         .frame(minWidth: 720, minHeight: 500)
+        .onAppear(perform: applyPendingMainWindowSelection)
+        .onChange(of: appVM.pendingMainWindowRepoID) { _, _ in
+            applyPendingMainWindowSelection()
+        }
         .sheet(item: $sheetMode) { mode in
             switch mode {
             case .add:
@@ -50,5 +54,11 @@ struct ContentView: View {
             )
             .interactiveDismissDisabled()
         }
+    }
+
+    private func applyPendingMainWindowSelection() {
+        guard let repoID = appVM.pendingMainWindowRepoID else { return }
+        selectedRepoID = repoID
+        appVM.pendingMainWindowRepoID = nil
     }
 }

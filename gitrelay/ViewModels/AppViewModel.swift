@@ -13,6 +13,9 @@ final class AppViewModel {
     var inProgressVerifyIDs: Set<UUID> = []
     var verificationPreferences: VerificationPreferences
 
+    /// When opening the main window from the menu bar, select this repo in the sidebar.
+    var pendingMainWindowRepoID: UUID?
+
     var errorMessage: String?
     /// FIFO queue: parallel syncs may each need a destructive-push prompt.
     var pendingDestructiveConfirmations: [DestructivePushConfirmationRequest] = []
