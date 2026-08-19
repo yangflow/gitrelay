@@ -15,7 +15,7 @@ enum MirrorCacheService {
         repos: [RepoConfig],
         mirrorsDirectory: URL = Constants.mirrorsDirectory,
         fileManager: FileManager = .default,
-        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.directorySize(at:)
+        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider
     ) -> Int64 {
         MirrorDirectorySizer.mirrorsUsage(
             repos: repos,
@@ -29,7 +29,7 @@ enum MirrorCacheService {
         repos: [RepoConfig],
         mirrorsDirectory: URL = Constants.mirrorsDirectory,
         fileManager: FileManager = .default,
-        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.directorySize(at:)
+        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider
     ) -> [MirrorCacheEntry] {
         MirrorDirectorySizer.mirrorEntries(
             repos: repos,
@@ -46,7 +46,7 @@ enum MirrorCacheService {
         excluding repoIDs: Set<UUID> = [],
         mirrorsDirectory: URL = Constants.mirrorsDirectory,
         fileManager: FileManager = .default,
-        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.directorySize(at:),
+        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider,
         runGarbageCollection: (UUID) async throws -> Void = defaultGarbageCollection,
         deleteMirror: (UUID) throws -> Void = MirrorStore.deleteMirror(for:)
     ) async -> MirrorCacheCleanupResult {
@@ -79,7 +79,7 @@ enum MirrorCacheService {
             guard let candidate = ordered.first else { break }
 
             let beforeGC = candidate.sizeBytes
-            steps.append(.garbageCollect(candidate.repoID))
+            steps.append(.garbageCollect(repoID: candidate.repoID))
 
             if beforeGC > 0 {
                 try? await runGarbageCollection(candidate.repoID)
@@ -93,7 +93,7 @@ enum MirrorCacheService {
             guard MirrorCacheManager.isOverQuota(usageBytes: usage, quotaGB: quotaGB) else { break }
             guard afterGC > 0 else { continue }
 
-            steps.append(.deleteMirror(candidate.repoID))
+            steps.append(.deleteMirror(repoID: candidate.repoID))
             try? deleteMirror(candidate.repoID)
             usage -= afterGC
             entries = updateEntrySize(entries, repoID: candidate.repoID, sizeBytes: 0)
@@ -111,7 +111,7 @@ enum MirrorCacheService {
         for repoID: UUID,
         mirrorsDirectory: URL = Constants.mirrorsDirectory,
         fileManager: FileManager = .default,
-        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.directorySize(at:),
+        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider,
         runGarbageCollection: (UUID) async throws -> Void = defaultGarbageCollection,
         deleteMirror: (UUID) throws -> Void = MirrorStore.deleteMirror(for:)
     ) async -> Int64 {
