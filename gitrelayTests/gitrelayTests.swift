@@ -3231,6 +3231,155 @@ struct AddEditRepoWebhookTests {
     }
 }
 
+// MARK: - ProviderAccount
+
+struct ProviderAccountTests {
+    @Test func normalizeLabelAcceptsFriendlyNames() {
+        #expect(ProviderAccount.normalizeLabel("Work") == "work")
+        #expect(ProviderAccount.normalizeLabel(" personal ") == "personal")
+        #expect(ProviderAccount.normalizeLabel("my_team-2") == "my_team-2")
+    }
+
+    @Test func normalizeLabelRejectsInvalidInput() {
+        #expect(ProviderAccount.normalizeLabel("") == nil)
+        #expect(ProviderAccount.normalizeLabel("   ") == nil)
+        #expect(ProviderAccount.normalizeLabel("bad/name") == nil)
+        #expect(ProviderAccount.normalizeLabel(String(repeating: "a", count: 33)) == nil)
+    }
+
+    @Test func accountIdentityCombinesProviderAndLabel() {
+        let account = ProviderAccount(provider: .github, label: "work")
+        #expect(account.id == "github-work")
+        #expect(ProviderAccount.id(provider: .gitlab, label: "default") == "gitlab-default")
+    }
+}
+
+struct BrowseRemoteAccountSelectionTests {
+    @Test func validatedNewLabelRejectsDuplicates() {
+        #expect(BrowseRemoteAccountSelection.validatedNewLabel("Work", existing: ["work"]) == nil)
+        #expect(BrowseRemoteAccountSelection.validatedNewLabel("Personal", existing: ["default"]) == "personal")
+    }
+
+    @Test func cannotDeleteLastAccount() {
+        #expect(!BrowseRemoteAccountSelection.canDeleteAccount(accountCount: 1))
+        #expect(BrowseRemoteAccountSelection.canDeleteAccount(accountCount: 2))
+    }
+
+    @Test func selectedLabelAfterDeletePrefersDefault() {
+        let next = BrowseRemoteAccountSelection.selectedLabelAfterDelete(
+            deleted: "work",
+            current: "work",
+            remaining: ["default", "personal"]
+        )
+        #expect(next == ProviderAccount.defaultLabel)
+    }
+
+    @Test func selectedLabelAfterDeleteKeepsCurrentWhenNotDeleted() {
+        let next = BrowseRemoteAccountSelection.selectedLabelAfterDelete(
+            deleted: "work",
+            current: "personal",
+            remaining: ["default", "personal"]
+        )
+        #expect(next == "personal")
+    }
+}
+
+struct ProviderTokenStoreMigrationTests {
+    @Test func legacyTagMigratesToDefaultAccountTag() throws {
+        let provider = GitProvider.github
+        let legacy = ProviderTokenStore.legacyTag(for: provider)
+        let migrated = ProviderTokenStore.tag(for: provider, accountLabel: ProviderAccount.defaultLabel)
+        defer {
+            try? KeychainService.deleteToken(tag: legacy)
+            try? KeychainService.deleteToken(tag: migrated)
+        }
+
+        try KeychainService.saveToken("legacy-token", tag: legacy)
+        ProviderTokenStore.migrateLegacyTokenIfNeeded(for: provider)
+
+        #expect(try KeychainService.loadToken(tag: migrated) == "legacy-token")
+        #expect((try? KeychainService.loadToken(tag: legacy)) == nil)
+    }
+
+    @Test func namespacedTagIncludesProviderAndAccount() {
+        #expect(ProviderTokenStore.tag(for: .gitea, accountLabel: "work") == "provider-api-gitea-work")
+        #expect(ProviderTokenStore.legacyTag(for: .gitea) == "provider-api-gitea")
+    }
+}
+
+struct ProviderAccountStoreTests {
+    @Test func migrateLegacyHostIntoDefaultAccount() {
+        let suite = "gitrelay.tests.provider-accounts.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        defaults.set("https://gitlab.company.com", forKey: "BrowseRemoteRepo.gitlabHost")
+        ProviderAccountStore.migrateIfNeeded(defaults: defaults)
+
+        #expect(
+            ProviderAccountStore.host(for: .gitlab, label: ProviderAccount.defaultLabel, defaults: defaults)
+                == "https://gitlab.company.com"
+        )
+        #expect(defaults.string(forKey: "BrowseRemoteRepo.gitlabHost") == nil)
+    }
+
+    @Test func addSwitchAndDeleteAccounts() throws {
+        let suite = "gitrelay.tests.provider-accounts.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        ProviderAccountStore.migrateIfNeeded(defaults: defaults)
+        _ = try ProviderAccountStore.addAccount(label: "Work", for: .github, defaults: defaults)
+        ProviderAccountStore.setSelectedLabel("work", for: .github, defaults: defaults)
+
+        #expect(ProviderAccountStore.selectedLabel(for: .github, defaults: defaults) == "work")
+        #expect(ProviderAccountStore.accountLabels(for: .github, defaults: defaults).contains("work"))
+
+        try ProviderAccountStore.removeAccount(label: "work", for: .github, defaults: defaults)
+        #expect(!ProviderAccountStore.accountLabels(for: .github, defaults: defaults).contains("work"))
+        #expect(ProviderAccountStore.selectedLabel(for: .github, defaults: defaults) == ProviderAccount.defaultLabel)
+    }
+}
+
+@MainActor
+struct BrowseRemoteRepoViewModelAccountTests {
+    @Test func switchingAccountsRestoresSeparateTokensAndHosts() throws {
+        let suite = "gitrelay.tests.browse-vm.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer {
+            defaults.removePersistentDomain(forName: suite)
+            for provider in GitProvider.allCases {
+                for label in ["default", "work"] {
+                    try? KeychainService.deleteToken(
+                        tag: ProviderTokenStore.tag(for: provider, accountLabel: label)
+                    )
+                }
+                try? KeychainService.deleteToken(tag: ProviderTokenStore.legacyTag(for: provider))
+            }
+        }
+
+        ProviderAccountStore.migrateIfNeeded(defaults: defaults)
+        _ = try ProviderAccountStore.addAccount(label: "Work", for: .gitlab, defaults: defaults)
+
+        try ProviderTokenStore.save(token: "default-token", provider: .gitlab, accountLabel: "default")
+        try ProviderTokenStore.save(token: "work-token", provider: .gitlab, accountLabel: "work")
+        ProviderAccountStore.setHost("https://gitlab.com", for: .gitlab, label: "default", defaults: defaults)
+        ProviderAccountStore.setHost("https://gitlab.company.com", for: .gitlab, label: "work", defaults: defaults)
+
+        let vm = BrowseRemoteRepoViewModel(defaults: defaults)
+        vm.provider = .gitlab
+        vm.refreshSourceAccounts()
+
+        vm.selectSourceAccount("default")
+        #expect(vm.token == "default-token")
+        #expect(vm.gitlabHost == "https://gitlab.com")
+
+        vm.selectSourceAccount("work")
+        #expect(vm.token == "work-token")
+        #expect(vm.gitlabHost == "https://gitlab.company.com")
+    }
+}
+
 // MARK: - Localization
 
 struct LocalizationTests {
