@@ -166,9 +166,14 @@ final class AppViewModel {
         inProgressSyncIDs.insert(repoID)
         statuses[repoID] = .syncing
 
-        engine.confirmDestructivePush = { [weak self] plan in
+        engine.confirmDestructivePush = { [weak self] plan, target in
             guard let self else { return false }
-            return await self.requestDestructiveConfirmation(repoID: repoID, repoName: repo.name, plan: plan)
+            return await self.requestDestructiveConfirmation(
+                repoID: repoID,
+                repoName: repo.name,
+                targetURL: target.url,
+                plan: plan
+            )
         }
 
         engine.onEvent = { [weak self] event in
@@ -344,6 +349,7 @@ final class AppViewModel {
     private func requestDestructiveConfirmation(
         repoID: UUID,
         repoName: String,
+        targetURL: String?,
         plan: DestructivePushPlan
     ) async -> Bool {
         denyPendingDestructiveConfirmation(for: repoID)
@@ -353,6 +359,7 @@ final class AppViewModel {
             let request = DestructivePushConfirmationRequest(
                 repoID: repoID,
                 repoName: repoName,
+                targetURL: targetURL,
                 plan: plan,
                 continuation: continuation
             )

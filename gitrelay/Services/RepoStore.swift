@@ -18,13 +18,21 @@ struct RepoStore {
         let url = Constants.reposFile
         guard FileManager.default.fileExists(atPath: url.path) else { return [] }
         let data = try Data(contentsOf: url)
-        return try decoder.decode([RepoConfig].self, from: data)
+        return try decodeRepos(from: data)
     }
 
     static func save(_ repos: [RepoConfig]) throws {
-        let data = try encoder.encode(repos)
+        let document = ReposDocument(repos: repos)
+        let data = try encoder.encode(document)
         let tmp = Constants.reposFile.appendingPathExtension("tmp")
         try data.write(to: tmp, options: .atomic)
         _ = try FileManager.default.replaceItemAt(Constants.reposFile, withItemAt: tmp)
+    }
+
+    static func decodeRepos(from data: Data) throws -> [RepoConfig] {
+        if let document = try? decoder.decode(ReposDocument.self, from: data) {
+            return document.repos
+        }
+        return try decoder.decode([RepoConfig].self, from: data)
     }
 }

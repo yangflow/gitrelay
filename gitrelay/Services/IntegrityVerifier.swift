@@ -28,74 +28,127 @@ final class IntegrityVerifier {
         log("完整性校验开始（分支: \(branch)）...")
 
         let srcURL = authenticatedURL(url: repo.srcURL, auth: repo.srcAuth)
-        let dstURL = authenticatedURL(url: repo.dstURL, auth: repo.dstAuth)
         let srcEnv = buildEnv(for: repo.srcAuth)
-        let dstEnv = buildEnv(for: repo.dstAuth)
+        let enabledTargets = repo.enabledTargets
+
+        guard !enabledTargets.isEmpty else {
+            let message = SyncEngineError.noEnabledTargets.localizedDescription ?? "No enabled mirror targets"
+            log("错误: \(message)")
+            record.finishedAt = Date()
+            emit(.failed(message, record))
+            return
+        }
 
         do {
             log("ls-remote 源仓库...")
             let srcSHA = try await runner.lsRemoteTipSHA(url: srcURL, branch: branch, env: srcEnv)
             log("src tip: \(srcSHA?.truncatingSHA ?? "(缺失)")")
 
-            log("ls-remote 目标仓库...")
-            let dstSHA = try await runner.lsRemoteTipSHA(url: dstURL, branch: branch, env: dstEnv)
-            log("dst tip: \(dstSHA?.truncatingSHA ?? "(缺失)")")
+            var divergedDetails: [VerificationDecision.Detail] = []
+            var inconclusiveMessages: [String] = []
+            var matchedCount = 0
 
-            var srcTree: String?
-            var dstTree: String?
+            for target in enabledTargets {
+                var targetResult = TargetSyncResult(targetID: target.id, targetURL: target.url)
+                let dstURL = authenticatedURL(url: target.url, auth: target.auth)
+                let dstEnv = buildEnv(for: target.auth)
 
-            if let srcSHA, let dstSHA, srcSHA != dstSHA {
-                log("commit SHA 不一致，拉取对象以比较 tree hash...")
-                let workPath = try await prepareWorkRepo()
-                srcTree = try await fetchTreeHash(
-                    workPath: workPath,
-                    remoteURL: srcURL,
-                    commitSHA: srcSHA,
-                    env: srcEnv,
-                    label: "src"
+                func targetLog(_ line: String) {
+                    targetResult.logLines.append(line)
+                    emit(.log("[\(target.url)] \(line)"))
+                }
+
+                targetLog("ls-remote 目标仓库...")
+                let dstSHA = try await runner.lsRemoteTipSHA(url: dstURL, branch: branch, env: dstEnv)
+                targetLog("dst tip: \(dstSHA?.truncatingSHA ?? "(缺失)")")
+
+                var srcTree: String?
+                var dstTree: String?
+
+                if let srcSHA, let dstSHA, srcSHA != dstSHA {
+                    targetLog("commit SHA 不一致，拉取对象以比较 tree hash...")
+                    let workPath = try await prepareWorkRepo()
+                    srcTree = try await fetchTreeHash(
+                        workPath: workPath,
+                        remoteURL: srcURL,
+                        commitSHA: srcSHA,
+                        env: srcEnv,
+                        label: "src",
+                        log: targetLog
+                    )
+                    dstTree = try await fetchTreeHash(
+                        workPath: workPath,
+                        remoteURL: dstURL,
+                        commitSHA: dstSHA,
+                        env: dstEnv,
+                        label: "dst",
+                        log: targetLog
+                    )
+                }
+
+                let decision = VerificationDecision.decide(
+                    branch: branch,
+                    srcCommitSHA: srcSHA,
+                    dstCommitSHA: dstSHA,
+                    srcTreeHash: srcTree,
+                    dstTreeHash: dstTree
                 )
-                dstTree = try await fetchTreeHash(
-                    workPath: workPath,
-                    remoteURL: dstURL,
-                    commitSHA: dstSHA,
-                    env: dstEnv,
-                    label: "dst"
-                )
+
+                switch decision {
+                case .matched(let reason):
+                    targetResult.succeeded = true
+                    switch reason {
+                    case .identicalCommitSHA:
+                        targetLog("两侧 tip 一致 — 校验通过。")
+                    case .identicalTreeHash:
+                        targetLog("commit SHA 不同但 tree hash 一致 — 校验通过。")
+                    }
+                    matchedCount += 1
+
+                case .diverged(let detail):
+                    targetResult.succeeded = false
+                    targetResult.error = detail.summary
+                    targetLog("⚠ 检测到内容分歧: \(detail.summary)")
+                    targetLog("  src tree: \(detail.srcTreeHash.truncatingSHA)")
+                    targetLog("  dst tree: \(detail.dstTreeHash.truncatingSHA)")
+                    divergedDetails.append(detail)
+
+                case .inconclusive(let message):
+                    targetResult.succeeded = false
+                    let redacted = SyncEngine.redactCredentials(message)
+                    targetResult.error = redacted
+                    targetLog("无法判定: \(redacted)")
+                    inconclusiveMessages.append("\(target.url): \(redacted)")
+                }
+
+                record.targetResults.append(targetResult)
             }
-
-            let decision = VerificationDecision.decide(
-                branch: branch,
-                srcCommitSHA: srcSHA,
-                dstCommitSHA: dstSHA,
-                srcTreeHash: srcTree,
-                dstTreeHash: dstTree
-            )
 
             record.finishedAt = Date()
-            switch decision {
-            case .matched(let reason):
-                record.succeeded = true
-                switch reason {
-                case .identicalCommitSHA:
-                    log("两侧 tip 一致 — 校验通过。")
-                case .identicalTreeHash:
-                    log("commit SHA 不同但 tree hash 一致 — 校验通过。")
+
+            if let firstDiverged = divergedDetails.first {
+                record.succeeded = false
+                let summary = multiTargetDivergenceSummary(details: divergedDetails)
+                log("⚠ 检测到内容分歧: \(summary)")
+                var detail = firstDiverged
+                if divergedDetails.count > 1 {
+                    detail.summaryOverride = summary
                 }
-                emit(.completed(decision, record))
-
-            case .diverged(let detail):
-                record.succeeded = false
-                log("⚠ 检测到内容分歧: \(detail.summary)")
-                log("  src tree: \(detail.srcTreeHash.truncatingSHA)")
-                log("  dst tree: \(detail.dstTreeHash.truncatingSHA)")
-                emit(.completed(decision, record))
-
-            case .inconclusive(let message):
-                record.succeeded = false
-                let redacted = SyncEngine.redactCredentials(message)
-                log("无法判定: \(redacted)")
-                emit(.failed(redacted, record))
+                emit(.completed(.diverged(detail), record))
+                return
             }
+
+            if !inconclusiveMessages.isEmpty {
+                record.succeeded = false
+                let message = inconclusiveMessages.joined(separator: "; ")
+                log("无法判定: \(message)")
+                emit(.failed(message, record))
+                return
+            }
+
+            record.succeeded = matchedCount == enabledTargets.count
+            log("全部 \(matchedCount) 个目标校验通过。")
+            emit(.completed(.matched(reason: .identicalCommitSHA), record))
 
         } catch GitError.cancelled {
             log("完整性校验已取消。")
@@ -116,11 +169,15 @@ final class IntegrityVerifier {
 
     // MARK: - Private
 
+    private func multiTargetDivergenceSummary(details: [VerificationDecision.Detail]) -> String {
+        guard details.count > 1 else { return details[0].summary }
+        return "\(details.count) 个目标内容分歧: \(details[0].summary)"
+    }
+
     private func prepareWorkRepo() async throws -> String {
         if MirrorStore.mirrorExists(for: repo.id) {
             return MirrorStore.mirrorPath(for: repo.id).path
         }
-        // Do not seed the real mirror path — SyncEngine treats HEAD as a full mirror clone.
         let scratch = Constants.baseDirectory
             .appendingPathComponent("verify-scratch")
             .appendingPathComponent(repo.id.uuidString)
@@ -133,7 +190,8 @@ final class IntegrityVerifier {
         remoteURL: String,
         commitSHA: String,
         env: [String: String],
-        label: String
+        label: String,
+        log: (String) -> Void
     ) async throws -> String {
         log("拉取 \(label) commit \(commitSHA.truncatingSHA)...")
         try await runner.fetchCommit(
