@@ -36,5 +36,6 @@ nonisolated struct RemoteRepoPage: Sendable {
 
 protocol ProviderAPIClient: Sendable {
     nonisolated var provider: GitProvider { get }
+    nonisolated func fetchTokenScopes() async throws -> Set<String>
     nonisolated func fetchRepos(scope: RemoteRepoScope, page: Int, perPage: Int) async throws -> RemoteRepoPage
 }

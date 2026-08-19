@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 struct GiteaTargetAPIClient: TargetProviderAPIClient {
@@ -9,6 +10,17 @@ struct GiteaTargetAPIClient: TargetProviderAPIClient {
     nonisolated init(baseURL: URL, token: String) {
         self.baseURL = baseURL
         self.token = token
+    }
+
+    nonisolated func fetchTokenScopes() async throws -> Set<String> {
+        let me: GiteaUserDTO = try await get(path: "/user")
+        let encodedLogin = me.login.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? me.login
+        let tokens: [GiteaAccessTokenDTO] = try await get(path: "/users/\(encodedLogin)/tokens")
+        let tokenHash = Self.sha1Hex(token)
+        if let match = tokens.first(where: { $0.sha1.lowercased() == tokenHash.lowercased() }) {
+            return ProviderTokenScope.parseGiteaTokenScopes(match.scopes)
+        }
+        return []
     }
 
     nonisolated func createRepo(
@@ -112,6 +124,11 @@ struct GiteaTargetAPIClient: TargetProviderAPIClient {
         }
     }
 
+    private nonisolated static func sha1Hex(_ value: String) -> String {
+        let digest = Insecure.SHA1.hash(data: Data(value.utf8))
+        return digest.map { String(format: "%02x", $0) }.joined()
+    }
+
     private nonisolated static func validate(status: Int, data: Data) throws {
         guard (200..<300).contains(status) else {
             let message = Self.extractMessage(from: data)
@@ -152,6 +169,11 @@ private nonisolated struct GiteaRepoDTO: Decodable {
     let full_name: String
     let clone_url: String
     let ssh_url: String
+}
+
+private nonisolated struct GiteaAccessTokenDTO: Decodable {
+    let sha1: String
+    let scopes: [String]
 }
 
 private nonisolated struct GiteaUserDTO: Decodable {

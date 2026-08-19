@@ -11,6 +11,14 @@ struct GitLabAPIClient: ProviderAPIClient {
         self.baseURL = baseURL ?? GitProvider.gitlab.apiBaseURL
     }
 
+    nonisolated func fetchTokenScopes() async throws -> Set<String> {
+        let dto: GitLabPersonalAccessTokenSelfDTO = try await request(
+            path: "/personal_access_tokens/self",
+            query: []
+        )
+        return ProviderTokenScope.parseGitLabScopes(dto.scopes)
+    }
+
     nonisolated func fetchRepos(scope: RemoteRepoScope, page: Int, perPage: Int) async throws -> RemoteRepoPage {
         let path: String
         var query: [URLQueryItem] = [
@@ -111,6 +119,10 @@ private nonisolated struct GitLabProjectDTO: Decodable {
     let http_url_to_repo: String
     let ssh_url_to_repo: String
     let default_branch: String?
+}
+
+private nonisolated struct GitLabPersonalAccessTokenSelfDTO: Decodable {
+    let scopes: [String]
 }
 
 private nonisolated struct GitLabErrorDTO: Decodable {

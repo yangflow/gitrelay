@@ -5,6 +5,14 @@ struct GitHubAPIClient: ProviderAPIClient {
     nonisolated let token: String
     private nonisolated let session: URLSession = .shared
 
+    nonisolated func fetchTokenScopes() async throws -> Set<String> {
+        let (_, response) = try await rawRequest(path: "/user", query: [])
+        guard let http = response as? HTTPURLResponse else {
+            throw ProviderAPIError.http(status: -1, message: nil)
+        }
+        return ProviderTokenScope.parseGitHubOAuthScopesHeader(http.value(forHTTPHeaderField: "X-OAuth-Scopes"))
+    }
+
     nonisolated func fetchRepos(scope: RemoteRepoScope, page: Int, perPage: Int) async throws -> RemoteRepoPage {
         let path: String
         var query: [URLQueryItem] = [
@@ -30,6 +38,15 @@ struct GitHubAPIClient: ProviderAPIClient {
     // MARK: - Private
 
     private nonisolated func request<T: Decodable & Sendable>(path: String, query: [URLQueryItem]) async throws -> T {
+        let (data, _) = try await rawRequest(path: path, query: query)
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw ProviderAPIError.decoding(error)
+        }
+    }
+
+    private nonisolated func rawRequest(path: String, query: [URLQueryItem]) async throws -> (Data, URLResponse) {
         var components = URLComponents(string: provider.apiBaseURL.absoluteString + path)!
         components.queryItems = query
         var req = URLRequest(url: components.url!)
@@ -50,12 +67,7 @@ struct GitHubAPIClient: ProviderAPIClient {
             throw ProviderAPIError.http(status: -1, message: nil)
         }
         try Self.validate(status: http.statusCode, data: data)
-
-        do {
-            return try JSONDecoder().decode(T.self, from: data)
-        } catch {
-            throw ProviderAPIError.decoding(error)
-        }
+        return (data, response)
     }
 
     private nonisolated static func validate(status: Int, data: Data) throws {
