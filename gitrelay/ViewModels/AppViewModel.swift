@@ -135,6 +135,7 @@ final class AppViewModel {
         observeAppActivation()
         AppIntentBridge.register(self)
         refreshWebhookListener()
+        refreshWidgetSnapshot()
     }
 
     // MARK: - CRUD
@@ -207,6 +208,7 @@ final class AppViewModel {
         activeSyncEngines[repoID] = engine
         inProgressSyncIDs.insert(repoID)
         statuses[repoID] = .syncing
+        refreshWidgetSnapshot()
         syncPhases[repoID] = .fetchingSource
         liveSyncLogLines.removeValue(forKey: repoID)
 
@@ -229,6 +231,7 @@ final class AppViewModel {
             switch event {
             case .statusChanged(let status):
                 self.statuses[repoID] = status
+                self.refreshWidgetSnapshot()
             case .phase(let phase):
                 self.syncPhases[repoID] = phase
             case .log(let line):
@@ -532,9 +535,18 @@ final class AppViewModel {
     private func saveRepos() {
         do {
             try RepoStore.save(repos)
+            refreshWidgetSnapshot()
         } catch {
             errorMessage = String(localized: "Failed to save repository configuration: \(error.localizedDescription)")
         }
+    }
+
+    private func refreshWidgetSnapshot() {
+        WidgetSnapshotPublisher.publish(
+            repos: repos,
+            statuses: statuses,
+            inProgressSyncIDs: inProgressSyncIDs
+        )
     }
 
     private func startFocusFlushLoop() {

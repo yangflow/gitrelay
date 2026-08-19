@@ -10,5 +10,16 @@
 	<string>GitRelay defers sync failure notifications while Focus is on, then sends a combined summary when Focus ends.</string>
 	<key>NSAppIntentsPackage</key>
 	<string>GitRelay</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.yangflow.gitrelay.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>gitrelay</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

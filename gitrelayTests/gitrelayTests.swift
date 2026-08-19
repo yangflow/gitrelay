@@ -797,6 +797,166 @@ struct SyncHealthSummaryTests {
     }
 }
 
+// MARK: - WidgetHealthSnapshot
+
+struct WidgetHealthSnapshotTests {
+    @Test func builderShapesTodayCountsFromSyncHealthSummary() {
+        let calendar = makeUTCCalendar()
+        let now = makeDate(year: 2026, month: 4, day: 25, hour: 12, calendar: calendar)
+        let yesterday = makeDate(year: 2026, month: 4, day: 24, hour: 12, calendar: calendar)
+
+        let successRepo = makeRepo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000021")!,
+            lastSyncedAt: now,
+            lastSuccessfulSyncedAt: now
+        )
+        let failedRepo = makeRepo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000022")!,
+            lastSyncedAt: now,
+            lastSyncError: "network failed"
+        )
+        let notRunRepo = makeRepo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000023")!,
+            lastSyncedAt: yesterday,
+            lastSuccessfulSyncedAt: yesterday
+        )
+
+        let snapshot = WidgetHealthSnapshotBuilder.make(
+            repos: [successRepo, failedRepo, notRunRepo],
+            statuses: [:],
+            inProgressSyncIDs: [],
+            now: now,
+            calendar: calendar
+        )
+
+        #expect(snapshot.summary.succeededToday == 1)
+        #expect(snapshot.summary.failedToday == 1)
+        #expect(snapshot.summary.notRunToday == 1)
+        #expect(snapshot.updatedAt == now)
+    }
+
+    @Test func attentionReposPrioritizeRecentFailuresThenStaleRepos() {
+        let calendar = makeUTCCalendar()
+        let now = makeDate(year: 2026, month: 4, day: 25, hour: 12, calendar: calendar)
+        let recentFailure = now.addingTimeInterval(-300)
+        let olderFailure = now.addingTimeInterval(-3_600)
+        let staleSuccess = now.addingTimeInterval(-90_000)
+
+        let recentFailureRepo = makeRepo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000031")!,
+            name: "recent-failure",
+            lastSyncedAt: recentFailure,
+            lastSyncError: "timeout"
+        )
+        let olderFailureRepo = makeRepo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000032")!,
+            name: "older-failure",
+            lastSyncedAt: olderFailure,
+            lastSyncError: "auth failed"
+        )
+        let staleRepo = makeRepo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000033")!,
+            name: "stale-success",
+            lastSyncedAt: staleSuccess,
+            lastSuccessfulSyncedAt: staleSuccess
+        )
+        let healthyRepo = makeRepo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000034")!,
+            name: "healthy",
+            lastSyncedAt: now,
+            lastSuccessfulSyncedAt: now
+        )
+
+        let attention = WidgetHealthSnapshotBuilder.attentionRepos(
+            repos: [healthyRepo, staleRepo, olderFailureRepo, recentFailureRepo],
+            statuses: [:],
+            inProgressSyncIDs: [],
+            now: now,
+            limit: 3
+        )
+
+        #expect(attention.map(\.name) == ["recent-failure", "older-failure", "stale-success"])
+        #expect(attention[0].status == .failure)
+        #expect(attention[2].status == .success)
+    }
+
+    @Test func snapshotStoreRoundTripsJSONWithoutCredentials() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("widget-snapshot-\(UUID().uuidString)", isDirectory: true)
+        defer {
+            WidgetHealthSnapshotStore.setContainerURLForTesting(nil)
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+        WidgetHealthSnapshotStore.setContainerURLForTesting(tempDir)
+
+        let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000041")!
+        let snapshot = WidgetHealthSnapshot(
+            updatedAt: Date(timeIntervalSince1970: 1_777_000_000),
+            summary: WidgetHealthSummaryPayload(succeededToday: 2, failedToday: 1, notRunToday: 0),
+            attentionRepos: [
+                WidgetAttentionRepo(
+                    id: repoID,
+                    name: "core-api",
+                    status: .failure,
+                    lastSyncedAt: Date(timeIntervalSince1970: 1_777_000_000),
+                    message: "network failed"
+                )
+            ]
+        )
+
+        try WidgetHealthSnapshotStore.write(snapshot)
+        let loaded = WidgetHealthSnapshotStore.read()
+        #expect(loaded == snapshot)
+
+        let rawJSON = try String(contentsOf: WidgetHealthSnapshotStore.snapshotURL!, encoding: .utf8)
+        #expect(!rawJSON.localizedCaseInsensitiveContains("token"))
+        #expect(!rawJSON.localizedCaseInsensitiveContains("secret"))
+        #expect(!rawJSON.localizedCaseInsensitiveContains("password"))
+    }
+
+    @Test func deepLinkParsesRepoUUID() {
+        let repoID = UUID(uuidString: "11111111-2222-3333-4444-555555555555")!
+        let url = WidgetDeepLink.repoURL(id: repoID)
+
+        #expect(WidgetDeepLink.repoID(from: url) == repoID)
+        #expect(WidgetDeepLink.repoID(from: WidgetDeepLink.openAppURL()) == nil)
+    }
+
+    private func makeUTCCalendar() -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        return calendar
+    }
+
+    private func makeDate(
+        year: Int,
+        month: Int,
+        day: Int,
+        hour: Int,
+        calendar: Calendar
+    ) -> Date {
+        calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!
+    }
+
+    private func makeRepo(
+        id: UUID,
+        name: String = "repo",
+        lastSyncedAt: Date?,
+        lastSuccessfulSyncedAt: Date? = nil,
+        lastSyncError: String? = nil
+    ) -> RepoConfig {
+        RepoConfig(
+            id: id,
+            name: name,
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            lastSyncedAt: lastSyncedAt,
+            lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
+            lastSyncError: lastSyncError
+        )
+    }
+}
+
 // MARK: - RepoRowHealthPresentation
 
 struct RepoRowHealthPresentationTests {

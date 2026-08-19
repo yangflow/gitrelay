@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		BA811CA2E08A4BC6BB387B13 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = D8AC7B573E1A47C69C7EF628 /* Sparkle */; };
 		GRC00D2F8B6C8F008A7FD2 /* gitrelayctl in Copy CLI */ = {isa = PBXBuildFile; fileRef = GRC0042F8B6C8F008A7FD2 /* gitrelayctl */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		GRW0112F8B6C8F008A7FD2 /* gitrelayWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = GRW0012F8B6C8F008A7FD2 /* gitrelayWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,6 +34,13 @@
 			remoteGlobalIDString = GRC0032F8B6C8F008A7FD2 /* gitrelayctl */;
 			remoteInfo = gitrelayctl;
 		};
+		GRW0122F8B6C8F008A7FD2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 964A1AD72F8B6C8F008A7FD2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = GRW0032F8B6C8F008A7FD2 /* gitrelayWidget */;
+			remoteInfo = gitrelayWidget;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +48,7 @@
 		964A1AEC2F8B6C91008A7FD2 /* gitrelayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = gitrelayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		964A1AF62F8B6C91008A7FD2 /* gitrelayUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = gitrelayUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		GRC0042F8B6C8F008A7FD2 /* gitrelayctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = gitrelayctl; sourceTree = BUILT_PRODUCTS_DIR; };
+		GRW0012F8B6C8F008A7FD2 /* gitrelayWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = gitrelayWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -49,6 +58,13 @@
 				Info.plist,
 			);
 			target = 964A1ADE2F8B6C8F008A7FD2 /* gitrelay */;
+		};
+		GRW0142F8B6C8F008A7FD2 /* Exceptions for "gitrelayWidget" folder in "gitrelayWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = GRW0032F8B6C8F008A7FD2 /* gitrelayWidget */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -79,6 +95,14 @@
 		GRC0022F8B6C8F008A7FD2 /* gitrelayctl */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = gitrelayctl;
+			sourceTree = "<group>";
+		};
+		GRW0022F8B6C8F008A7FD2 /* gitrelayWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				GRW0142F8B6C8F008A7FD2 /* Exceptions for "gitrelayWidget" folder in "gitrelayWidget" target */,
+			);
+			path = gitrelayWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -113,6 +137,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		GRW0052F8B6C8F008A7FD2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -122,6 +153,7 @@
 				GRC0012F8B6C8F008A7FD2 /* GitRelayCore */,
 				964A1AE12F8B6C8F008A7FD2 /* gitrelay */,
 				GRC0022F8B6C8F008A7FD2 /* gitrelayctl */,
+				GRW0022F8B6C8F008A7FD2 /* gitrelayWidget */,
 				964A1AEF2F8B6C91008A7FD2 /* gitrelayTests */,
 				964A1AF92F8B6C91008A7FD2 /* gitrelayUITests */,
 				964A1AE02F8B6C8F008A7FD2 /* Products */,
@@ -135,6 +167,7 @@
 				GRC0042F8B6C8F008A7FD2 /* gitrelayctl */,
 				964A1AEC2F8B6C91008A7FD2 /* gitrelayTests.xctest */,
 				964A1AF62F8B6C91008A7FD2 /* gitrelayUITests.xctest */,
+				GRW0012F8B6C8F008A7FD2 /* gitrelayWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -150,11 +183,13 @@
 				964A1ADC2F8B6C8F008A7FD2 /* Frameworks */,
 				964A1ADD2F8B6C8F008A7FD2 /* Resources */,
 				GRC00C2F8B6C8F008A7FD2 /* Copy CLI */,
+				GRW0102F8B6C8F008A7FD2 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				GRC00B2F8B6C8F008A7FD2 /* PBXTargetDependency */,
+				GRW0132F8B6C8F008A7FD2 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				GRC0012F8B6C8F008A7FD2 /* GitRelayCore */,
@@ -236,6 +271,29 @@
 			productReference = GRC0042F8B6C8F008A7FD2 /* gitrelayctl */;
 			productType = "com.apple.product-type.tool";
 		};
+		GRW0032F8B6C8F008A7FD2 /* gitrelayWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = GRW0072F8B6C8F008A7FD2 /* Build configuration list for PBXNativeTarget "gitrelayWidget" */;
+			buildPhases = (
+				GRW0042F8B6C8F008A7FD2 /* Sources */,
+				GRW0052F8B6C8F008A7FD2 /* Frameworks */,
+				GRW0062F8B6C8F008A7FD2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				GRC0012F8B6C8F008A7FD2 /* GitRelayCore */,
+				GRW0022F8B6C8F008A7FD2 /* gitrelayWidget */,
+			);
+			name = gitrelayWidget;
+			packageProductDependencies = (
+			);
+			productName = gitrelayWidget;
+			productReference = GRW0012F8B6C8F008A7FD2 /* gitrelayWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -260,6 +318,9 @@
 					GRC0032F8B6C8F008A7FD2 = {
 						CreatedOnToolsVersion = 26.4;
 					};
+					GRW0032F8B6C8F008A7FD2 = {
+						CreatedOnToolsVersion = 26.4;
+					};
 				};
 			};
 			buildConfigurationList = 964A1ADA2F8B6C8F008A7FD2 /* Build configuration list for PBXProject "gitrelay" */;
@@ -282,6 +343,7 @@
 			targets = (
 				964A1ADE2F8B6C8F008A7FD2 /* gitrelay */,
 				GRC0032F8B6C8F008A7FD2 /* gitrelayctl */,
+				GRW0032F8B6C8F008A7FD2 /* gitrelayWidget */,
 				964A1AEB2F8B6C91008A7FD2 /* gitrelayTests */,
 				964A1AF52F8B6C91008A7FD2 /* gitrelayUITests */,
 			);
@@ -310,6 +372,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		GRW0062F8B6C8F008A7FD2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -322,6 +391,17 @@
 				GRC00D2F8B6C8F008A7FD2 /* gitrelayctl in Copy CLI */,
 			);
 			name = "Copy CLI";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		GRW0102F8B6C8F008A7FD2 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				GRW0112F8B6C8F008A7FD2 /* gitrelayWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -355,6 +435,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		GRW0042F8B6C8F008A7FD2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -372,6 +459,11 @@
 			isa = PBXTargetDependency;
 			target = GRC0032F8B6C8F008A7FD2 /* gitrelayctl */;
 			targetProxy = GRC00A2F8B6C8F008A7FD2 /* PBXContainerItemProxy */;
+		};
+		GRW0132F8B6C8F008A7FD2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = GRW0032F8B6C8F008A7FD2 /* gitrelayWidget */;
+			targetProxy = GRW0122F8B6C8F008A7FD2 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -499,6 +591,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = gitrelay/gitrelay.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 9;
@@ -530,6 +623,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = gitrelay/gitrelay.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 9;
@@ -668,6 +762,66 @@
 			};
 			name = Release;
 		};
+		GRW0082F8B6C8F008A7FD2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = gitrelayWidget/gitrelayWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 9;
+				ENABLE_APP_SANDBOX = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = gitrelayWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = GitRelay;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.3.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yangflow.gitrelay.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		GRW0092F8B6C8F008A7FD2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = gitrelayWidget/gitrelayWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 9;
+				ENABLE_APP_SANDBOX = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = gitrelayWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = GitRelay;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.3.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yangflow.gitrelay.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -712,6 +866,15 @@
 			buildConfigurations = (
 				GRC0082F8B6C8F008A7FD2 /* Debug */,
 				GRC0092F8B6C8F008A7FD2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		GRW0072F8B6C8F008A7FD2 /* Build configuration list for PBXNativeTarget "gitrelayWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				GRW0082F8B6C8F008A7FD2 /* Debug */,
+				GRW0092F8B6C8F008A7FD2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
