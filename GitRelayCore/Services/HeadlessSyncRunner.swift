@@ -43,7 +43,7 @@ enum HeadlessSyncRunner {
             case .failed(let message, let record):
                 latestRecord = record
                 failureMessage = message
-            case .started, .log, .statusChanged:
+            case .started, .log, .statusChanged, .phase:
                 break
             }
         }

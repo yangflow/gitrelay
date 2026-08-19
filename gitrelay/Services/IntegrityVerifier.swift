@@ -25,7 +25,7 @@ final class IntegrityVerifier {
     func run() async {
         emit(.started)
         let branch = RepoConfig.normalizedBranch(repo.defaultBranch)
-        log("完整性校验开始（分支: \(branch)）...")
+        log(String(localized: "Integrity verification started (branch: \(branch))..."))
 
         let srcURL = authenticatedURL(url: repo.srcURL, auth: repo.srcAuth)
         let srcEnv = buildEnv(for: repo.srcAuth)
@@ -36,20 +36,20 @@ final class IntegrityVerifier {
             let message = enabledTargets.isEmpty
                 ? (SyncEngineError.noEnabledTargets.localizedDescription ?? "No enabled mirror targets")
                 : "No git remote targets to verify (filesystem archive targets skipped)"
-            log("错误: \(message)")
+            log(String(localized: "Error: \(message)"))
             record.finishedAt = Date()
             emit(.failed(message, record))
             return
         }
 
         if verifiableTargets.count < enabledTargets.count {
-            log("跳过 \(enabledTargets.count - verifiableTargets.count) 个文件系统归档目标。")
+            log(String(localized: "Skipped \(enabledTargets.count - verifiableTargets.count) filesystem archive targets."))
         }
 
         do {
-            log("ls-remote 源仓库...")
+            log(String(localized: "Running ls-remote on source repository..."))
             let srcSHA = try await runner.lsRemoteTipSHA(url: srcURL, branch: branch, env: srcEnv)
-            log("src tip: \(srcSHA?.truncatingSHA ?? "(缺失)")")
+            log("src tip: \(srcSHA?.truncatingSHA ?? "(missing)")")
 
             var divergedDetails: [VerificationDecision.Detail] = []
             var inconclusiveMessages: [String] = []
@@ -65,15 +65,15 @@ final class IntegrityVerifier {
                     emit(.log("[\(target.displayLabel)] \(line)"))
                 }
 
-                targetLog("ls-remote 目标仓库...")
+                targetLog(String(localized: "Running ls-remote on target repository..."))
                 let dstSHA = try await runner.lsRemoteTipSHA(url: dstURL, branch: branch, env: dstEnv)
-                targetLog("dst tip: \(dstSHA?.truncatingSHA ?? "(缺失)")")
+                targetLog("dst tip: \(dstSHA?.truncatingSHA ?? "(missing)")")
 
                 var srcTree: String?
                 var dstTree: String?
 
                 if let srcSHA, let dstSHA, srcSHA != dstSHA {
-                    targetLog("commit SHA 不一致，拉取对象以比较 tree hash...")
+                    targetLog(String(localized: "Commit SHAs differ; fetching objects to compare tree hashes..."))
                     let workPath = try await prepareWorkRepo()
                     srcTree = try await fetchTreeHash(
                         workPath: workPath,
@@ -106,16 +106,16 @@ final class IntegrityVerifier {
                     targetResult.succeeded = true
                     switch reason {
                     case .identicalCommitSHA:
-                        targetLog("两侧 tip 一致 — 校验通过。")
+                        targetLog(String(localized: "Tips match — verification passed."))
                     case .identicalTreeHash:
-                        targetLog("commit SHA 不同但 tree hash 一致 — 校验通过。")
+                        targetLog(String(localized: "Commit SHAs differ but tree hashes match — verification passed."))
                     }
                     matchedCount += 1
 
                 case .diverged(let detail):
                     targetResult.succeeded = false
                     targetResult.error = detail.summary
-                    targetLog("⚠ 检测到内容分歧: \(detail.summary)")
+                    targetLog(String(localized: "⚠ Content divergence detected: \(detail.summary)"))
                     targetLog("  src tree: \(detail.srcTreeHash.truncatingSHA)")
                     targetLog("  dst tree: \(detail.dstTreeHash.truncatingSHA)")
                     divergedDetails.append(detail)
@@ -124,7 +124,7 @@ final class IntegrityVerifier {
                     targetResult.succeeded = false
                     let redacted = SyncEngine.redactCredentials(message)
                     targetResult.error = redacted
-                    targetLog("无法判定: \(redacted)")
+                    targetLog(String(localized: "Inconclusive: \(redacted)"))
                     inconclusiveMessages.append("\(target.displayLabel): \(redacted)")
                 }
 
@@ -136,7 +136,7 @@ final class IntegrityVerifier {
             if let firstDiverged = divergedDetails.first {
                 record.succeeded = false
                 let summary = multiTargetDivergenceSummary(details: divergedDetails)
-                log("⚠ 检测到内容分歧: \(summary)")
+                log(String(localized: "⚠ Content divergence detected: \(summary)"))
                 var detail = firstDiverged
                 if divergedDetails.count > 1 {
                     detail.summaryOverride = summary
@@ -148,23 +148,23 @@ final class IntegrityVerifier {
             if !inconclusiveMessages.isEmpty {
                 record.succeeded = false
                 let message = inconclusiveMessages.joined(separator: "; ")
-                log("无法判定: \(message)")
+                log(String(localized: "Inconclusive: \(message)"))
                 emit(.failed(message, record))
                 return
             }
 
             record.succeeded = matchedCount == verifiableTargets.count
-            log("全部 \(matchedCount) 个目标校验通过。")
+            log(String(localized: "All \(matchedCount) targets passed verification."))
             emit(.completed(.matched(reason: .identicalCommitSHA), record))
 
         } catch GitError.cancelled {
-            log("完整性校验已取消。")
+            log(String(localized: "Integrity verification canceled."))
             record.finishedAt = Date()
             emit(.failed("Cancelled", record))
 
         } catch {
             let message = SyncEngine.redactCredentials(error.localizedDescription)
-            log("错误: \(message)")
+            log(String(localized: "Error: \(message)"))
             record.finishedAt = Date()
             emit(.failed(message, record))
         }
@@ -178,7 +178,7 @@ final class IntegrityVerifier {
 
     private func multiTargetDivergenceSummary(details: [VerificationDecision.Detail]) -> String {
         guard details.count > 1 else { return details[0].summary }
-        return "\(details.count) 个目标内容分歧: \(details[0].summary)"
+        return String(localized: "\(details.count) targets have content divergence: \(details[0].summary)")
     }
 
     private func prepareWorkRepo() async throws -> String {
@@ -200,7 +200,7 @@ final class IntegrityVerifier {
         label: String,
         log: (String) -> Void
     ) async throws -> String {
-        log("拉取 \(label) commit \(commitSHA.truncatingSHA)...")
+        log(String(localized: "Fetching \(label) commit \(commitSHA.truncatingSHA)..."))
         try await runner.fetchCommit(
             repoPath: workPath,
             remoteURL: remoteURL,

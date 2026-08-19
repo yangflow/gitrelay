@@ -10,13 +10,13 @@ struct EditTagGroupFrequencySheet: View {
     @State private var frequency: SyncFrequency = .manual
 
     private var groupTitle: String {
-        tag ?? "未标记"
+        tag ?? String(localized: "Untagged")
     }
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("编辑组内同步频率")
+                Text("Edit Group Sync Frequency")
                     .font(.headline)
                 Spacer()
             }
@@ -27,7 +27,7 @@ struct EditTagGroupFrequencySheet: View {
 
             Form {
                 Section {
-                    Text("将「\(groupTitle)」组内 \(repoCount) 个仓库的同步频率统一设为：")
+                    Text("Set the sync frequency for all \(repoCount) repositories in “\(groupTitle)” to:")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     FrequencyPickerView(frequency: $frequency)
@@ -39,9 +39,9 @@ struct EditTagGroupFrequencySheet: View {
 
             HStack {
                 Spacer()
-                Button("取消") { dismiss() }
+                Button("Cancel") { dismiss() }
                     .keyboardShortcut(.escape)
-                Button("保存") {
+                Button("Save") {
                     appVM.updateFrequency(matchingTag: tag, frequency: frequency)
                     dismiss()
                 }

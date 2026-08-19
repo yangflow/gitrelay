@@ -6,7 +6,7 @@ struct SyncHistorySparklineView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("近 30 天同步")
+                Text("Syncs in the Last 30 Days")
                     .font(.headline)
                 Spacer()
                 legend
@@ -27,8 +27,8 @@ struct SyncHistorySparklineView: View {
 
     private var legend: some View {
         HStack(spacing: 10) {
-            legendItem(title: "成功", color: .green)
-            legendItem(title: "失败", color: .red)
+            legendItem(title: "Succeeded", color: .green)
+            legendItem(title: "Failed", color: .red)
         }
         .font(.caption2)
         .foregroundStyle(.secondary)
@@ -74,14 +74,14 @@ struct SyncHistorySparklineView: View {
     private func dayHelp(for day: SyncHistorySparkline.Day) -> String {
         let dateText = day.date.formatted(.dateTime.month(.abbreviated).day())
         if day.total == 0 {
-            return "\(dateText): 无同步"
+            return String(localized: "\(dateText): No Syncs")
         }
-        return "\(dateText): 成功 \(day.successes)，失败 \(day.failures)"
+        return String(localized: "\(dateText): \(day.successes) succeeded, \(day.failures) failed")
     }
 
     private var accessibilitySummary: String {
         let successes = sparkline.days.reduce(0) { $0 + $1.successes }
         let failures = sparkline.days.reduce(0) { $0 + $1.failures }
-        return "近 30 天共成功 \(successes) 次，失败 \(failures) 次"
+        return String(localized: "Over the last 30 days, \(successes) succeeded and \(failures) failed")
     }
 }

@@ -5,13 +5,13 @@ struct SyncLogView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("同步日志")
+            Text("Sync Log")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.bottom, 2)
 
             if records.isEmpty {
-                Text("暂无记录")
+                Text("No Records")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             } else {

@@ -31,11 +31,11 @@ struct ContentView: View {
             }
         }
         .alert(
-            "发生错误",
+            "An Error Occurred",
             isPresented: $appVM.isShowingError,
             presenting: appVM.errorMessage
         ) { _ in
-            Button("确定", role: .cancel) { }
+            Button("OK", role: .cancel) { }
         } message: { message in
             Text(message)
         }

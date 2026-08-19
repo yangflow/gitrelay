@@ -9,15 +9,15 @@ struct ReleaseMirrorStatusView: View {
         VStack(alignment: .leading, spacing: 16) {
             if !repo.mirrorReleases {
                 ContentUnavailableView {
-                    Label("Release 镜像未启用", systemImage: "shippingbox")
+                    Label("Release Mirroring Is Disabled", systemImage: "shippingbox")
                 } description: {
-                    Text("在编辑仓库中开启「镜像 Releases 及二进制 assets」，同步时会将 Release 附件复制到每个已启用目标。")
+                    Text("Enable “Mirror Releases and Binary Assets” when editing the repository to copy Release attachments to each enabled target during sync.")
                 }
             } else if statuses.isEmpty {
                 ContentUnavailableView {
-                    Label("尚无 Release 同步记录", systemImage: "clock")
+                    Label("No Release Sync Records Yet", systemImage: "clock")
                 } description: {
-                    Text("执行一次同步后，此处会显示各目标的 Release 与 asset 进度。")
+                    Text("After a sync, the Release and asset progress for each target will appear here.")
                 }
             } else {
                 ForEach(statuses, id: \.targetID) { status in
@@ -40,7 +40,7 @@ struct ReleaseMirrorStatusView: View {
                     ProgressView()
                         .controlSize(.small)
                 } else if let lastSyncedAt = status.lastSyncedAt {
-                    Text("上次 \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))")
+                    Text("Last \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -53,7 +53,7 @@ struct ReleaseMirrorStatusView: View {
             }
 
             if status.tags.isEmpty {
-                Text("等待首次 Release 同步…")
+                Text("Waiting for the First Release Sync…")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
@@ -80,7 +80,7 @@ struct ReleaseMirrorStatusView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("无附件")
+                    Text("No Attachments")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -119,11 +119,11 @@ struct ReleaseMirrorStatusView: View {
 
     private func label(for state: ReleaseTagSyncState) -> String {
         switch state {
-        case .pending:  "待同步"
-        case .syncing:  "同步中"
-        case .synced:   "已同步"
-        case .partial:  "部分完成"
-        case .failed:   "失败"
+        case .pending:  String(localized: "Pending")
+        case .syncing:  String(localized: "Syncing")
+        case .synced:   String(localized: "Synced")
+        case .partial:  String(localized: "Partially Completed")
+        case .failed:   String(localized: "Failed")
         }
     }
 }

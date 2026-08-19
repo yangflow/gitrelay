@@ -41,7 +41,7 @@ struct StatusIconView: View {
             case .diverged:
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.yellow)
-                    .help("备份内容与源仓库不一致")
+                    .help("Backup content differs from the source repository")
             case .failed:
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.yellow)

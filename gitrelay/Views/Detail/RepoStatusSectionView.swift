@@ -17,7 +17,7 @@ struct RepoStatusSectionView: View {
         VStack(alignment: .leading, spacing: 10) {
             if isSyncing {
                 RepoSyncingRowView(
-                    statusTitle: syncPhase?.statusTitle ?? "正在同步...",
+                    statusTitle: syncPhase?.statusTitle ?? "Syncing...",
                     latestLogLine: liveSyncLogLine ?? records.last?.logLines.last,
                     onCancel: onCancel
                 )

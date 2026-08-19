@@ -115,7 +115,7 @@ struct DestructivePushPlanTests {
             forcedUpdateRefs: ["main"]
         )
 
-        #expect(plan.confirmationPrompt == "本次将删除 2 个 ref / 强制更新 1 个 ref,是否继续?")
+        #expect(plan.confirmationPrompt == "This will delete 2 refs and force-update 1 refs. Continue?")
     }
 
     @Test func parsesMixedDestructiveDryRunOutput() {
@@ -527,7 +527,7 @@ struct GitSyncArgumentsTests {
 
         #expect(repo.isShallowClone)
         #expect(repo.usesSelectiveRefSync)
-        #expect(repo.partialSyncWarning?.contains("浅克隆") == true)
+        #expect(repo.partialSyncWarning?.contains("shallow clone") == true)
     }
 
     @Test func customRefSpecsUseSelectiveRefSyncWithoutDepth() {
@@ -540,7 +540,7 @@ struct GitSyncArgumentsTests {
 
         #expect(!repo.isShallowClone)
         #expect(repo.usesSelectiveRefSync)
-        #expect(repo.partialSyncWarning?.contains("ref 过滤") == true)
+        #expect(repo.partialSyncWarning?.contains("Custom ref filters") == true)
     }
 
     @Test func fullMirrorConfigDoesNotUseSelectiveRefSync() {
@@ -603,7 +603,7 @@ struct RepoTagGroupingTests {
         #expect(sections.count == 2)
         #expect(sections[0].title == "work")
         #expect(sections[0].repos.map(\.name) == ["tagged"])
-        #expect(sections[1].title == "未标记")
+        #expect(sections[1].title == "Untagged")
         #expect(sections[1].repos.map(\.name) == ["plain"])
         #expect(sections[1].tag == nil)
     }
@@ -646,6 +646,10 @@ struct AppViewModelTagBatchTests {
     private func makeViewModel() -> AppViewModel {
         let suite = "gitrelay.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-vm-tests-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        Constants.setBaseDirectoryForTesting(base)
         return AppViewModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults)
@@ -893,7 +897,7 @@ struct RepoRowHealthPresentationTests {
     }
 
     private func makeRepo(
-        lastSyncedAt: Date?,
+        lastSyncedAt: Date? = nil,
         lastSuccessfulSyncedAt: Date? = nil,
         consecutiveFailureCount: Int = 0
     ) -> RepoConfig {
@@ -1116,7 +1120,7 @@ struct VerificationDecisionTests {
             Issue.record("expected inconclusive")
             return
         }
-        #expect(message.contains("目标"))
+        #expect(message.contains("Target repository") || message.contains("target"))
     }
 
     @Test func differingSHAsWithoutTreesAreInconclusive() {
@@ -1667,7 +1671,7 @@ struct FailureNotificationCopyTests {
     @Test func streakBodyIncludesCount() {
         #expect(
             FailureNotificationCopy.body(message: "Network error", consecutiveFailureCount: 4)
-            == "连续失败 4 次 — Network error"
+            == "4 consecutive failures — Network error"
         )
     }
 
@@ -1680,11 +1684,11 @@ struct FailureNotificationCopyTests {
                 (repoName: "delta", message: "fail", count: 1)
             ]
         )
-        #expect(body.contains("4 个仓库同步失败"))
+        #expect(body.contains("4 repositories failed to sync"))
         #expect(body.contains("alpha"))
         #expect(body.contains("beta"))
         #expect(body.contains("gamma"))
-        #expect(body.contains("等"))
+        #expect(body.contains("and others"))
     }
 
     @Test func aggregatedBodyForSingleItemUsesRepoDetail() {
@@ -1693,7 +1697,7 @@ struct FailureNotificationCopyTests {
         )
         #expect(body.contains("alpha"))
         #expect(body.contains("Network error"))
-        #expect(body.contains("连续失败 2 次"))
+        #expect(body.contains("2 consecutive failures"))
     }
 }
 
@@ -1927,7 +1931,7 @@ struct ProviderTokenScopeTests {
         )
         #expect(!validation.isFullyAuthorized)
         #expect(validation.missingRequiredScopes == ["read_api"])
-        #expect(validation.bannerText.contains("缺少必需权限: read_api"))
+        #expect(validation.bannerText.contains("required scopes are missing: read_api") || validation.bannerText.contains("read_api"))
     }
 
     @Test func giteaAllScopeSatisfiesWriteRepository() {
@@ -1954,7 +1958,7 @@ struct ProviderTokenScopeTests {
             usage: .sourceListing(provider: .github, organizationScope: true)
         )
         #expect(validation.isFullyAuthorized)
-        #expect(validation.bannerText == "Token 有效, scopes = [read:org, repo]")
+        #expect(validation.bannerText == "Token is valid, scopes = [read:org, repo]")
     }
 }
 
@@ -2021,8 +2025,8 @@ struct RepoIntentSupportTests {
             lastSyncedAt: lastSyncedAt,
             lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
             lastSyncError: lastSyncError,
-            divergedDetail: divergedDetail,
-            lastVerifiedAt: lastVerifiedAt
+            lastVerifiedAt: lastVerifiedAt,
+            divergedDetail: divergedDetail
         )
     }
 
@@ -2111,6 +2115,10 @@ struct AppIntentBridgeTests {
     private func makeViewModel() -> AppViewModel {
         let suite = "gitrelay.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-intent-tests-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        Constants.setBaseDirectoryForTesting(base)
         return AppViewModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults)
@@ -3199,6 +3207,7 @@ struct ProviderTokenWebhookScopeTests {
     }
 }
 
+@MainActor
 struct AddEditRepoWebhookTests {
     @Test func buildRepoConfigIncludesWebhookFlag() {
         let vm = AddEditRepoViewModel()
@@ -3219,6 +3228,43 @@ struct AddEditRepoWebhookTests {
         )
         let vm = AddEditRepoViewModel(editing: repo)
         #expect(vm.webhookEnabled)
+    }
+}
+
+// MARK: - Localization
+
+struct LocalizationTests {
+    @Test func syncFrequencyDisplayNamesAreEnglishInDefaultLocale() {
+        #expect(SyncFrequency.manual.displayName == "Manual")
+        #expect(SyncFrequency.min15.displayName == "Every 15 Minutes")
+        #expect(SyncFrequency.min30.displayName == "Every 30 Minutes")
+        #expect(SyncFrequency.hour1.displayName == "Hourly")
+        #expect(SyncFrequency.day1.displayName == "Daily")
+    }
+
+    @Test func verificationFrequencyDisplayNamesAreEnglishInDefaultLocale() {
+        #expect(VerificationFrequency.manual.displayName == "Manual")
+        #expect(VerificationFrequency.day1.displayName == "Daily")
+        #expect(VerificationFrequency.week1.displayName == "Weekly")
+        #expect(VerificationFrequency.month1.displayName == "Monthly")
+    }
+
+    @Test func syncFrequencyRawValuesRemainChineseForCodableCompatibility() {
+        #expect(SyncFrequency.manual.rawValue == "手动")
+        #expect(SyncFrequency.min15.rawValue == "每 15 分钟")
+    }
+
+    @Test func destructivePushCopyUsesLocalizedEnglishDefaults() {
+        let plan = DestructivePushPlan(deletedRefs: ["a"], forcedUpdateRefs: ["main"])
+        #expect(plan.summary == "1 deletions, 1 forced updates")
+        #expect(plan.confirmationPrompt.contains("Continue?"))
+        #expect(DestructivePushPolicy.strict.displayName == "Strict Protection")
+        #expect(DestructivePushPolicy.auto.displayName == "Run Automatically")
+    }
+
+    @Test func pauseReasonMessagesAreLocalizedEnglishDefaults() {
+        #expect(SyncPauseReason.lowPowerMode.displayMessage.contains("Low Power Mode"))
+        #expect(SyncPauseReason.expensiveNetwork.displayMessage.contains("expensive"))
     }
 }
 

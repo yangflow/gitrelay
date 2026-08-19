@@ -17,8 +17,8 @@ nonisolated enum RemoteRepoScope: Hashable, Sendable {
 
     var displayLabel: String {
         switch self {
-        case .currentUser:           "我的仓库"
-        case .organization(let org): "组织: \(org)"
+        case .currentUser:           String(localized: "My Repositories")
+        case .organization(let org): String(localized: "Organization: \(org)")
         }
     }
 }

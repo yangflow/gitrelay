@@ -20,7 +20,7 @@ struct RepoSyncingRowView: View {
                 }
             }
             Spacer()
-            Button("取消", action: onCancel)
+            Button("Cancel", action: onCancel)
                 .buttonStyle(.bordered)
                 .controlSize(.small)
         }

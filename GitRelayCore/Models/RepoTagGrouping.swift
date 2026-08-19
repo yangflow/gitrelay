@@ -46,13 +46,13 @@ enum RepoTagGrouping {
             Section(
                 title: tag,
                 tag: tag,
-                repos: repos(withTag: tag, in: repos)
+                repos: Self.repos(withTag: tag, in: repos)
             )
         }
 
         let untagged = untaggedRepos(in: repos)
         if !untagged.isEmpty {
-            sections.append(Section(title: "未标记", tag: nil, repos: untagged))
+            sections.append(Section(title: String(localized: "Untagged"), tag: nil, repos: untagged))
         }
         return sections
     }
@@ -71,13 +71,13 @@ enum RepoTagGrouping {
 
     static func repos(matching tag: String?, in repos: [RepoConfig]) -> [RepoConfig] {
         if let tag {
-            return repos(withTag: tag, in: repos)
+            return Self.repos(withTag: tag, in: repos)
         }
         return untaggedRepos(in: repos)
     }
 
     static func repoIDs(matching tag: String?, in repos: [RepoConfig]) -> [UUID] {
-        repos(matching: tag, in: repos).map(\.id)
+        Self.repos(matching: tag, in: repos).map(\.id)
     }
 
     static func matchingSuggestions(

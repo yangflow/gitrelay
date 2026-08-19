@@ -11,14 +11,14 @@ struct SSHPublicKeyPreviewSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("公钥预览")
+                Text("Public Key Preview")
                     .font(.headline)
                 Text(publicKeyPath)
                     .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                 if didCopy {
-                    Label("已复制到剪贴板", systemImage: "checkmark.circle.fill")
+                    Label("Copied to Clipboard", systemImage: "checkmark.circle.fill")
                         .font(.caption)
                         .foregroundStyle(.green)
                 }
@@ -39,12 +39,12 @@ struct SSHPublicKeyPreviewSheet: View {
             Divider()
 
             HStack {
-                Button("复制公钥") {
+                Button("Copy Public Key") {
                     ClipboardService.copy(publicKey)
                     didCopy = true
                 }
                 Spacer()
-                Button("关闭") { dismiss() }
+                Button("Close") { dismiss() }
                     .keyboardShortcut(.escape)
             }
             .padding(16)

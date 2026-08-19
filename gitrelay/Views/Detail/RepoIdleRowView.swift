@@ -14,27 +14,27 @@ struct RepoIdleRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 RepoStatusLabel(status: status)
                 if let lastSyncedAt {
-                    Text("上次同步：\(lastSyncedAt.formatted(.dateTime.year().month().day().hour().minute()))")
+                    Text("Last synced: \(lastSyncedAt.formatted(.dateTime.year().month().day().hour().minute()))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 if let lastVerifiedAt {
-                    Text("上次校验：\(lastVerifiedAt.formatted(.relative(presentation: .named)))")
+                    Text("Last verified: \(lastVerifiedAt.formatted(.relative(presentation: .named)))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 if let nextFireDate {
-                    Text("下次同步：\(nextFireDate.formatted(.relative(presentation: .named)))(需 App 保持运行)")
+                    Text("Next sync: \(nextFireDate.formatted(.relative(presentation: .named))) (the app must remain running)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
             Spacer()
             VStack(spacing: 6) {
-                Button("立即校验", action: onVerifyNow)
+                Button("Verify Now", action: onVerifyNow)
                     .buttonStyle(.bordered)
                     .disabled(isVerifying || status == .syncing)
-                Button("立即同步", action: onSyncNow)
+                Button("Sync Now", action: onSyncNow)
                     .buttonStyle(.borderedProminent)
                     .disabled(isVerifying || status == .syncing)
             }

@@ -17,7 +17,7 @@ struct SyncLogRecordView: View {
 
             if !record.targetResults.isEmpty {
                 if !record.logLines.isEmpty {
-                    logBlock(title: "源", lines: record.logLines)
+                    logBlock(title: "Source", lines: record.logLines)
                 }
                 ForEach(record.targetResults) { result in
                     targetBlock(result)
@@ -70,8 +70,17 @@ struct SyncLogRecordView: View {
     }
 
     private var isDivergenceRecord: Bool {
-        record.logLines.contains { $0.contains("内容分歧") || $0.contains("Divergence detected") }
-            || record.targetResults.contains { ($0.error ?? "").contains("内容分歧") }
+        // Legacy zh-Hans log lines before string externalization.
+        let legacyDivergence = "\u{5185}\u{5BB9}\u{5206}\u{6B67}"
+        return record.logLines.contains {
+            $0.contains("Content divergence")
+                || $0.contains(legacyDivergence)
+                || $0.contains("Divergence detected")
+        }
+            || record.targetResults.contains {
+                let error = $0.error ?? ""
+                return error.contains("Content divergence") || error.contains(legacyDivergence)
+            }
     }
 
     private var iconName: String {

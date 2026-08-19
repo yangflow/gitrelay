@@ -8,17 +8,17 @@ enum DestructivePushPolicy: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .strict: return "严格保护"
-        case .auto:   return "自动执行"
+        case .strict: return String(localized: "Strict Protection")
+        case .auto:   return String(localized: "Run Automatically")
         }
     }
 
     var description: String {
         switch self {
         case .strict:
-            return "dry-run 检测到目标侧 ref 删除或强制更新时弹出确认,取消则阻断同步。"
+            return String(localized: "Show a confirmation when the dry run detects ref deletions or forced updates on the target; canceling blocks the sync.")
         case .auto:
-            return "检测到删除或强制更新也继续推送,适合临时镜像或已确认的目标仓库。"
+            return String(localized: "Continue pushing when deletions or forced updates are detected. Suitable for temporary mirrors or confirmed target repositories.")
         }
     }
 

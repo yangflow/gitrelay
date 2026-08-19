@@ -33,9 +33,9 @@ struct gitrelayApp: App {
         Settings {
             TabView {
                 SettingsView()
-                    .tabItem { Label("同步", systemImage: "arrow.triangle.2.circlepath") }
+                    .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
                 VerificationSettingsView()
-                    .tabItem { Label("校验", systemImage: "checkmark.shield") }
+                    .tabItem { Label("Verify", systemImage: "checkmark.shield") }
             }
             .environment(appVM.notificationPreferences)
             .environment(appVM.environmentMonitor)

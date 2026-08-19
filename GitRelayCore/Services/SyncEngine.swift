@@ -23,7 +23,7 @@ final class SyncEngine {
     var confirmDestructivePush: ((DestructivePushPlan, MirrorTarget) async -> Bool)?
 
     /// Called after a successful git mirror push when `repo.mirrorReleases` is enabled.
-    var mirrorReleases: ((RepoConfig, MirrorTarget, @Sendable (String) -> Void) async throws -> Void)?
+    var mirrorReleases: ((RepoConfig, MirrorTarget, @escaping @Sendable (String) -> Void) async throws -> Void)?
 
     init(repo: RepoConfig) {
         self.repo = repo
@@ -115,7 +115,7 @@ final class SyncEngine {
                 emit(.statusChanged(.idle))
                 emit(.completed(record))
             } else if let message = SyncRecord.aggregateErrorMessage(from: targetResults) {
-                log("Error: \(message)")
+                log(String(localized: "Error: \(message)"))
                 emit(.failed(message, record))
                 emit(.statusChanged(.failed(message)))
             } else {
@@ -132,7 +132,7 @@ final class SyncEngine {
 
         } catch {
             let message = classifyError(error)
-            log("Error: \(message)")
+            log(String(localized: "Error: \(message)"))
             record.finishedAt = Date()
             emit(.failed(message, record))
             emit(.statusChanged(.failed(message)))
@@ -179,7 +179,7 @@ final class SyncEngine {
             result.succeeded = true
         } catch {
             let message = classifyError(error)
-            targetLog("Error: \(message)")
+            targetLog(String(localized: "Error: \(message)"))
             result.error = message
             result.succeeded = false
         }
@@ -276,7 +276,7 @@ final class SyncEngine {
             result.succeeded = true
         } catch {
             let message = classifyError(error)
-            targetLog("Error: \(message)")
+            targetLog(String(localized: "Error: \(message)"))
             result.error = message
             result.succeeded = false
         }

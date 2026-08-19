@@ -14,9 +14,9 @@ struct DestructivePushConfirmationSheet: View {
                     .font(.title2)
                     .foregroundStyle(.yellow)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("破坏性镜像推送确认")
+                    Text("Confirm Destructive Mirror Push")
                         .font(.headline)
-                    Text("「\(repoName)」")
+                    Text(repoName)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     if let targetURL {
@@ -38,7 +38,7 @@ struct DestructivePushConfirmationSheet: View {
                 VStack(alignment: .leading, spacing: 16) {
                     if !plan.deletedRefs.isEmpty {
                         refSection(
-                            title: "将删除 \(plan.deletedRefs.count) 个 ref",
+                            title: "Delete \(plan.deletedRefs.count) refs",
                             refs: plan.deletedRefs,
                             symbol: "trash",
                             tint: .red
@@ -46,7 +46,7 @@ struct DestructivePushConfirmationSheet: View {
                     }
                     if !plan.forcedUpdateRefs.isEmpty {
                         refSection(
-                            title: "将强制更新 \(plan.forcedUpdateRefs.count) 个 ref",
+                            title: "Force-update \(plan.forcedUpdateRefs.count) refs",
                             refs: plan.forcedUpdateRefs,
                             symbol: "arrow.triangle.2.circlepath",
                             tint: .orange
@@ -62,9 +62,9 @@ struct DestructivePushConfirmationSheet: View {
 
             HStack {
                 Spacer()
-                Button("取消", action: onCancel)
+                Button("Cancel", action: onCancel)
                     .keyboardShortcut(.escape)
-                Button("继续", action: onConfirm)
+                Button("Continue", action: onConfirm)
                     .buttonStyle(.borderedProminent)
                     .tint(.orange)
                     .keyboardShortcut(.return)

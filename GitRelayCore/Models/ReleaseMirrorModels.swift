@@ -97,7 +97,14 @@ enum ReleaseMirrorDiff {
         for release in source.sorted(by: { $0.tagName < $1.tagName }) {
             let completed = resume.completedAssets(for: release.tagName)
             let targetRelease = targetByTag[release.tagName]
-            let targetAssetNames = Set(targetRelease?.assets.map(\.name) ?? [])
+
+            guard let targetRelease else {
+                let missing = release.assets.map(\.name).filter { !completed.contains($0) }
+                plans.append(ReleaseMirrorPlan(release: release, missingAssetNames: missing))
+                continue
+            }
+
+            let targetAssetNames = Set(targetRelease.assets.map(\.name))
 
             let missing = release.assets.map(\.name).filter { name in
                 !targetAssetNames.contains(name) && !completed.contains(name)

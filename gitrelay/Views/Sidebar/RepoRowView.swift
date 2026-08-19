@@ -29,13 +29,13 @@ struct RepoRowView: View {
         }
         .padding(.vertical, 3)
         .contextMenu {
-            Button("立即同步", action: onSyncNow)
+            Button("Sync Now", action: onSyncNow)
                 .disabled(status == .syncing)
-            Button("立即校验", action: onVerifyNow)
+            Button("Verify Now", action: onVerifyNow)
                 .disabled(status == .syncing)
             Divider()
-            Button("编辑...", action: onEdit)
-            Button("删除...", role: .destructive, action: onDelete)
+            Button("Edit...", action: onEdit)
+            Button("Delete...", role: .destructive, action: onDelete)
         }
     }
 

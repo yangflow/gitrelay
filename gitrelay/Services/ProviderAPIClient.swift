@@ -11,19 +11,19 @@ nonisolated enum ProviderAPIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unauthorized(let msg):
-            let base = "鉴权失败(401)：请确认 Token 未过期且包含正确权限(GitHub 需 repo + read:org，GitLab 需 read_api)"
-            return msg.map { "\(base)。服务器信息：\($0)" } ?? base
+            let base = String(localized: "Authentication failed (401): Make sure the token has not expired and has the correct scopes (repo + read:org for GitHub, read_api for GitLab)")
+            return msg.map { String(localized: "\(base). Server message: \($0)") } ?? base
         case .forbidden(let msg):
-            return msg.map { "无权限或被限流(403)：\($0)" } ?? "无权限或被限流(403)"
+            return msg.map { String(localized: "Permission denied or rate limited (403): \($0)") } ?? String(localized: "Permission denied or rate limited (403)")
         case .notFound(let msg):
-            let base = "资源不存在(404)：检查用户名或组织/群组名是否正确"
-            return msg.map { "\(base)。服务器信息：\($0)" } ?? base
+            let base = String(localized: "Resource not found (404): Check that the username, organization, or group name is correct")
+            return msg.map { String(localized: "\(base). Server message: \($0)") } ?? base
         case .network(let e):
-            return "网络请求失败：\(e.localizedDescription)"
+            return String(localized: "Network request failed: \(e.localizedDescription)")
         case .decoding(let e):
-            return "响应解析失败：\(e.localizedDescription)"
+            return String(localized: "Failed to parse response: \(e.localizedDescription)")
         case .http(let s, let m):
-            return m.map { "HTTP \(s)：\($0)" } ?? "HTTP \(s)"
+            return m.map { String(localized: "HTTP \(s): \($0)") } ?? String(localized: "HTTP \(s)")
         }
     }
 }

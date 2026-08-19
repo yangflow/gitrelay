@@ -1,0 +1,5990 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    " and others": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " and others"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " 等"
+          }
+        }
+      }
+    },
+    "%@ Authentication": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Authentication"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 认证"
+          }
+        }
+      }
+    },
+    "%@ detected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ detected"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已检测到 %@"
+          }
+        }
+      }
+    },
+    "%@ not detected (you can install it manually)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ not detected (you can install it manually)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未检测到 %@（可手动安装后使用）"
+          }
+        }
+      }
+    },
+    "%@. Server message: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@. Server message: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@。服务器信息：%@"
+          }
+        }
+      }
+    },
+    "%@: %lld succeeded, %lld failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %lld succeeded, %lld failed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: 成功 %lld，失败 %lld"
+          }
+        }
+      }
+    },
+    "%@: No Syncs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: No Syncs"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: 无同步"
+          }
+        }
+      }
+    },
+    "%lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法在 127.0.0.1 上绑定 webhook 监听端口"
+          }
+        }
+      }
+    },
+    "%lld consecutive failures": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld consecutive failures"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连续失败 %lld 次"
+          }
+        }
+      }
+    },
+    "%lld consecutive failures — %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld consecutive failures — %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连续失败 %lld 次 — %@"
+          }
+        }
+      }
+    },
+    "%lld deletions, %lld forced updates": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld deletions, %lld forced updates"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个删除, %lld 个强制更新"
+          }
+        }
+      }
+    },
+    "%lld repositories failed to sync: %@%@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld repositories failed to sync: %@%@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个仓库同步失败：%@%@"
+          }
+        }
+      }
+    },
+    "%lld repositories selected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld repositories selected"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %lld 个仓库"
+          }
+        }
+      }
+    },
+    "%lld targets have content divergence: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld targets have content divergence: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个目标内容分歧: %@"
+          }
+        }
+      }
+    },
+    "%lld%lld%@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%lld%@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连续失败 %lld 次 — %@"
+          }
+        }
+      }
+    },
+    "%lld/%lld targets failed (%lld succeeded): %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld/%lld targets failed (%lld succeeded): %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld/%lld 个目标失败（%lld 个成功）: %@"
+          }
+        }
+      }
+    },
+    "(missing)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(missing)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(缺失)"
+          }
+        }
+      }
+    },
+    "A future Cloudflare Worker or GitHub App could relay to this Mac using long polling. This version provides configuration only and does not deploy hosted infrastructure.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A future Cloudflare Worker or GitHub App could relay to this Mac using long polling. This version provides configuration only and does not deploy hosted infrastructure."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未来可由 Cloudflare Worker / GitHub App 长轮询中继到本机；本版本仅保留配置入口，不部署托管基础设施。"
+          }
+        }
+      }
+    },
+    "A key file already exists at: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A key file already exists at: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "密钥文件已存在：%@"
+          }
+        }
+      }
+    },
+    "A shallow clone cannot perform a complete push --mirror. Only the selected refs will sync, so this is not a complete backup.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A shallow clone cannot perform a complete push --mirror. Only the selected refs will sync, so this is not a complete backup."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浅克隆无法完整 push --mirror，将仅同步所选 ref，不构成完整备份。"
+          }
+        }
+      }
+    },
+    "A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同一源仓库可镜像到多个目标；可选择 Git 远程或文件系统归档 (tar.gz / zip / git bundle)。禁用的目标在同步时跳过。"
+          }
+        }
+      }
+    },
+    "About GitRelay": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About GitRelay"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关于 GitRelay"
+          }
+        }
+      }
+    },
+    "Add %lld Repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add %lld Repositories"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加 %lld 个仓库"
+          }
+        }
+      }
+    },
+    "Add %lld to Sync List": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add %lld to Sync List"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加 %lld 个到同步列表"
+          }
+        }
+      }
+    },
+    "Add Manually": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Manually"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手动添加"
+          }
+        }
+      }
+    },
+    "Add Repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Repository"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加仓库"
+          }
+        }
+      }
+    },
+    "Add Target": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Target"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加目标"
+          }
+        }
+      }
+    },
+    "Add Your First Repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Your First Repository"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加第一个仓库"
+          }
+        }
+      }
+    },
+    "Add a Repository Manually": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a Repository Manually"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手动添加仓库"
+          }
+        }
+      }
+    },
+    "Add and Start Syncing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add and Start Syncing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加并开始同步"
+          }
+        }
+      }
+    },
+    "Add the public key to %@ to use SSH authentication.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add the public key to %@ to use SSH authentication."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将公钥添加到 %@ 后即可使用 SSH 认证。"
+          }
+        }
+      }
+    },
+    "Administrator Creates for User": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Administrator Creates for User"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理员代建到用户"
+          }
+        }
+      }
+    },
+    "Administrator → User: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Administrator → User: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理员 → 用户: %@"
+          }
+        }
+      }
+    },
+    "Advanced Options": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Advanced Options"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "高级选项"
+          }
+        }
+      }
+    },
+    "After a sync, the Release and asset progress for each target will appear here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After a sync, the Release and asset progress for each target will appear here."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "执行一次同步后，此处会显示各目标的 Release 与 asset 进度。"
+          }
+        }
+      }
+    },
+    "After syncing the git repository, incrementally copy source Release tags, titles, bodies, and attachments such as .dmg and .tar.gz files to each enabled target. A GitHub or GitLab API token is required.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After syncing the git repository, incrementally copy source Release tags, titles, bodies, and attachments such as .dmg and .tar.gz files to each enabled target. A GitHub or GitLab API token is required."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步 git 仓库后，将源仓库 Release 的 tag/title/body 与 .dmg、.tar.gz 等附件增量复制到每个已启用目标。需要 GitHub/GitLab API Token。"
+          }
+        }
+      }
+    },
+    "All": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有"
+          }
+        }
+      }
+    },
+    "All %lld targets passed verification.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All %lld targets passed verification."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部 %lld 个目标校验通过。"
+          }
+        }
+      }
+    },
+    "Allow Instant Webhook Sync": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Instant Webhook Sync"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许 Webhook 即时同步"
+          }
+        }
+      }
+    },
+    "Allow time-sensitive notifications to interrupt Focus, subject to system settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow time-sensitive notifications to interrupt Focus, subject to system settings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许在专注模式下以时效性通知打断（仍受系统设置约束）。"
+          }
+        }
+      }
+    },
+    "An Error Occurred": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An Error Occurred"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发生错误"
+          }
+        }
+      }
+    },
+    "Archive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "归档"
+          }
+        }
+      }
+    },
+    "Archive Format": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive Format"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "归档格式"
+          }
+        }
+      }
+    },
+    "Archiving...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archiving..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在归档..."
+          }
+        }
+      }
+    },
+    "Authentication failed (401)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authentication failed (401)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鉴权失败(401)"
+          }
+        }
+      }
+    },
+    "Authentication failed (401): %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authentication failed (401): %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鉴权失败(401)：%@"
+          }
+        }
+      }
+    },
+    "Authentication failed (401): Make sure the token has not expired and has the correct scopes (repo + read:org for GitHub, read_api for GitLab)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authentication failed (401): Make sure the token has not expired and has the correct scopes (repo + read:org for GitHub, read_api for GitLab)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鉴权失败(401)：请确认 Token 未过期且包含正确权限(GitHub 需 repo + read:org，GitLab 需 read_api)"
+          }
+        }
+      }
+    },
+    "Automatic webhook registration failed: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic webhook registration failed: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook 自动注册失败：%@"
+          }
+        }
+      }
+    },
+    "Automatic webhook registration was skipped because no GitHub token was provided.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic webhook registration was skipped because no GitHub token was provided."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook 自动注册已跳过：未提供 GitHub Token。"
+          }
+        }
+      }
+    },
+    "Automatic webhook registration was skipped because owner/repo could not be parsed from the source URL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic webhook registration was skipped because owner/repo could not be parsed from the source URL."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook 自动注册已跳过：无法从源 URL 解析 owner/repo。"
+          }
+        }
+      }
+    },
+    "Automatic webhook registration was skipped because the token lacks admin:repo_hook.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic webhook registration was skipped because the token lacks admin:repo_hook."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook 自动注册已跳过：Token 缺少 admin:repo_hook。"
+          }
+        }
+      }
+    },
+    "Automatically Create Repositories on the Target (Gitea)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically Create Repositories on the Target (Gitea)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在目标端自动创建仓库 (Gitea)"
+          }
+        }
+      }
+    },
+    "Automatically registering a webhook on GitLab requires the api scope. Grant it only if you trust this local app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically registering a webhook on GitLab requires the api scope. Grant it only if you trust this local app."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GitLab 上自动注册 webhook 需要 api 权限。请仅在信任本机应用时授予。"
+          }
+        }
+      }
+    },
+    "Automatically registering a webhook on Gitea requires the write:repository scope. Grant it only if you trust this local app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically registering a webhook on Gitea requires the write:repository scope. Grant it only if you trust this local app."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Gitea 上自动注册 webhook 需要 write:repository 权限。请仅在信任本机应用时授予。"
+          }
+        }
+      }
+    },
+    "Automatically registering a webhook with the provider requires the additional admin:repo_hook scope, beyond what routine mirror sync needs. Grant it only if you trust this local app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically registering a webhook with the provider requires the additional admin:repo_hook scope, beyond what routine mirror sync needs. Grant it only if you trust this local app."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Provider 上自动注册 webhook 需要额外的 admin:repo_hook 权限（超出日常镜像同步所需）。请仅在信任本机应用时授予。"
+          }
+        }
+      }
+    },
+    "Available placeholders: {name}, {date} (yyyy-MM-dd)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available placeholders: {name}, {date} (yyyy-MM-dd)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用占位符: {name}、{date} (yyyy-MM-dd)"
+          }
+        }
+      }
+    },
+    "Back": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一步"
+          }
+        }
+      }
+    },
+    "Backup Integrity Verification": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backup Integrity Verification"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "备份可信度校验"
+          }
+        }
+      }
+    },
+    "Backup content differs from the source repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backup content differs from the source repository"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "备份内容与源仓库不一致"
+          }
+        }
+      }
+    },
+    "Backup content may have diverged from the source repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backup content may have diverged from the source repository"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "备份内容可能已偏离源仓库"
+          }
+        }
+      }
+    },
+    "Binding port…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Binding port…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在绑定端口…"
+          }
+        }
+      }
+    },
+    "Browse Remote Repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse Remote Repositories"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览远端仓库"
+          }
+        }
+      }
+    },
+    "Browse and Select Remote Repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse and Select Remote Repositories"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览并选择远端仓库"
+          }
+        }
+      }
+    },
+    "Browse and select from GitHub or GitLab": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse and select from GitHub or GitLab"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从 GitHub / GitLab 浏览并选择"
+          }
+        }
+      }
+    },
+    "By default, all branches and tags are synced. You can limit this to main and v* tags, for example:\\n+refs/heads/main:refs/heads/main\\n+refs/tags/v*:refs/tags/v*": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By default, all branches and tags are synced. You can limit this to main and v* tags, for example:\\n+refs/heads/main:refs/heads/main\\n+refs/tags/v*:refs/tags/v*"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认同步所有分支与 tag。可改为仅 main + v* tag，例如：\\n+refs/heads/main:refs/heads/main\\n+refs/tags/v*:refs/tags/v*"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        }
+      }
+    },
+    "Check for Updates": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for Updates"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新"
+          }
+        }
+      }
+    },
+    "Choose": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择"
+          }
+        }
+      }
+    },
+    "Choose an archive directory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an archive directory"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请选择归档目录"
+          }
+        }
+      }
+    },
+    "Choose an archive output directory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an archive output directory"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择归档输出目录"
+          }
+        }
+      }
+    },
+    "Choose...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择..."
+          }
+        }
+      }
+    },
+    "Choose…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择…"
+          }
+        }
+      }
+    },
+    "Clear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
+          }
+        }
+      }
+    },
+    "Clone Depth (Blank = Full History)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clone Depth (Blank = Full History)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "克隆深度（留空 = 全量历史）"
+          }
+        }
+      }
+    },
+    "Close": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
+          }
+        }
+      }
+    },
+    "Commit SHAs differ but tree hashes match — verification passed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commit SHAs differ but tree hashes match — verification passed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "commit SHA 不同但 tree hash 一致 — 校验通过。"
+          }
+        }
+      }
+    },
+    "Commit SHAs differ, but the tree hashes could not be obtained from both sides": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commit SHAs differ, but the tree hashes could not be obtained from both sides"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "commit SHA 不一致，但未能取得两侧 tree hash"
+          }
+        }
+      }
+    },
+    "Commit SHAs differ; fetching objects to compare tree hashes...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commit SHAs differ; fetching objects to compare tree hashes..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "commit SHA 不一致，拉取对象以比较 tree hash..."
+          }
+        }
+      }
+    },
+    "Configure Target Repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure Target Repositories"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置目标仓库"
+          }
+        }
+      }
+    },
+    "Confirm Destructive Mirror Push": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm Destructive Mirror Push"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "破坏性镜像推送确认"
+          }
+        }
+      }
+    },
+    "Consecutive failure threshold: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consecutive failure threshold: %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连续失败阈值：%lld 次"
+          }
+        }
+      }
+    },
+    "Content divergence": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Content divergence"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内容分歧"
+          }
+        }
+      }
+    },
+    "Content divergence on branch %@: src %@ / dst %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Content divergence on branch %@: src %@ / dst %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分支 %@ 内容分歧：src %@ / dst %@"
+          }
+        }
+      }
+    },
+    "Continue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "继续"
+          }
+        }
+      }
+    },
+    "Continue pushing when deletions or forced updates are detected. Suitable for temporary mirrors or confirmed target repositories.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue pushing when deletions or forced updates are detected. Suitable for temporary mirrors or confirmed target repositories."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检测到删除或强制更新也继续推送,适合临时镜像或已确认的目标仓库。"
+          }
+        }
+      }
+    },
+    "Copied to Clipboard": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied to Clipboard"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已复制到剪贴板"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制"
+          }
+        }
+      }
+    },
+    "Copy Public Key": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Public Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制公钥"
+          }
+        }
+      }
+    },
+    "Copy Secret": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Secret"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制密钥"
+          }
+        }
+      }
+    },
+    "Copy URL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy URL"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制 URL"
+          }
+        }
+      }
+    },
+    "Create a Personal Access Token (classic) with the repo and read:org scopes. https://github.com/settings/tokens": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a Personal Access Token (classic) with the repo and read:org scopes. https://github.com/settings/tokens"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建 Personal Access Token(classic)，勾选 repo / read:org 权限。https://github.com/settings/tokens"
+          }
+        }
+      }
+    },
+    "Create a Personal Access Token with the read_api scope. https://gitlab.com/-/user_settings/personal_access_tokens": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a Personal Access Token with the read_api scope. https://gitlab.com/-/user_settings/personal_access_tokens"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建 Personal Access Token，勾选 read_api 权限。https://gitlab.com/-/user_settings/personal_access_tokens"
+          }
+        }
+      }
+    },
+    "Create a token with the write:repository scope (required to create repositories). Visit <your-gitea-host>/user/settings/applications": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a token with the write:repository scope (required to create repositories). Visit <your-gitea-host>/user/settings/applications"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建 Token,勾选 write:repository(创建仓库需要)。访问 <your-gitea-host>/user/settings/applications"
+          }
+        }
+      }
+    },
+    "Create and Add %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create and Add %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建并添加 %lld 个"
+          }
+        }
+      }
+    },
+    "Create as Private Repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create as Private Repositories"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建为 Private 仓库"
+          }
+        }
+      }
+    },
+    "Created Successfully": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created Successfully"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建成功"
+          }
+        }
+      }
+    },
+    "Creating Target Repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creating Target Repositories"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在创建目标仓库"
+          }
+        }
+      }
+    },
+    "Current User": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current User"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前用户"
+          }
+        }
+      }
+    },
+    "Custom ref filters are set. Only the selected refs will sync, so this is not a complete backup.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom ref filters are set. Only the selected refs will sync, so this is not a complete backup."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已自定义 ref 过滤，将仅同步所选 ref，不构成完整备份。"
+          }
+        }
+      }
+    },
+    "Daily": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每天"
+          }
+        }
+      }
+    },
+    "Delete": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除"
+          }
+        }
+      }
+    },
+    "Delete %lld refs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %lld refs"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将删除 %lld 个 ref"
+          }
+        }
+      }
+    },
+    "Delete Repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Repository"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除仓库"
+          }
+        }
+      }
+    },
+    "Delete Target": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Target"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除目标"
+          }
+        }
+      }
+    },
+    "Delete “%@”? The local mirror cache will also be deleted. This action cannot be undone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete “%@”? The local mirror cache will also be deleted. This action cannot be undone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确认删除「%@」?本地镜像缓存也将被删除,此操作不可撤销。"
+          }
+        }
+      }
+    },
+    "Delete...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除..."
+          }
+        }
+      }
+    },
+    "Depth must be a positive integer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Depth must be a positive integer"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "深度须为正整数"
+          }
+        }
+      }
+    },
+    "Destructive Push Protection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destructive Push Protection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "破坏性推送保护"
+          }
+        }
+      }
+    },
+    "Destructive mirror push blocked: %@. Sync again and choose Continue in the confirmation dialog, or change the policy to Run Automatically.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destructive mirror push blocked: %@. Sync again and choose Continue in the confirmation dialog, or change the policy to Run Automatically."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已阻断破坏性镜像推送: %@。可再次同步并在确认弹窗中选择继续,或将策略改为自动执行。"
+          }
+        }
+      }
+    },
+    "Detail Page": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detail Page"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "详情页"
+          }
+        }
+      }
+    },
+    "Details": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "详情"
+          }
+        }
+      }
+    },
+    "Disabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disabled"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已禁用"
+          }
+        }
+      }
+    },
+    "Display": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示"
+          }
+        }
+      }
+    },
+    "Done": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        }
+      }
+    },
+    "Edit Frequency for All Repositories in Group...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Frequency for All Repositories in Group..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑组内所有仓库频率..."
+          }
+        }
+      }
+    },
+    "Edit Group Sync Frequency": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Group Sync Frequency"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑组内同步频率"
+          }
+        }
+      }
+    },
+    "Edit Repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Repository"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑仓库"
+          }
+        }
+      }
+    },
+    "Edit...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑..."
+          }
+        }
+      }
+    },
+    "Enable at least one target": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable at least one target"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "至少启用一个目标"
+          }
+        }
+      }
+    },
+    "Enable local webhook listener": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable local webhook listener"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用本机 Webhook 监听"
+          }
+        }
+      }
+    },
+    "Enable sync failure notifications": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable sync failure notifications"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用同步失败通知"
+          }
+        }
+      }
+    },
+    "Enable “Mirror Releases and Binary Assets” when editing the repository to copy Release attachments to each enabled target during sync.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable “Mirror Releases and Binary Assets” when editing the repository to copy Release attachments to each enabled target during sync."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在编辑仓库中开启「镜像 Releases 及二进制 assets」，同步时会将 Release 附件复制到每个已启用目标。"
+          }
+        }
+      }
+    },
+    "Enabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enabled"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用"
+          }
+        }
+      }
+    },
+    "Encrypt the private key with a passphrase": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encrypt the private key with a passphrase"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 passphrase 加密私钥"
+          }
+        }
+      }
+    },
+    "Enter a name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a name"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入名称"
+          }
+        }
+      }
+    },
+    "Enter a tag and press Return to add it": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a tag and press Return to add it"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入标签后按回车添加"
+          }
+        }
+      }
+    },
+    "Enter a valid Git URL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid Git URL"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入有效的 Git URL"
+          }
+        }
+      }
+    },
+    "Error: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误: %@"
+          }
+        }
+      }
+    },
+    "Every 15 Minutes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every 15 Minutes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每 15 分钟"
+          }
+        }
+      }
+    },
+    "Every 30 Minutes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every 30 Minutes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每 30 分钟"
+          }
+        }
+      }
+    },
+    "External Access": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "External Access"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外网暴露"
+          }
+        }
+      }
+    },
+    "Failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失败"
+          }
+        }
+      }
+    },
+    "Failed %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失败 %@"
+          }
+        }
+      }
+    },
+    "Failed to load repository configuration: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to load repository configuration: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载仓库配置失败：%@"
+          }
+        }
+      }
+    },
+    "Failed to parse response: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to parse response: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "响应解析失败：%@"
+          }
+        }
+      }
+    },
+    "Failed to save repository configuration: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to save repository configuration: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存仓库配置失败:%@"
+          }
+        }
+      }
+    },
+    "Failed to start the webhook listener: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to start the webhook listener: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook 监听启动失败：%@"
+          }
+        }
+      }
+    },
+    "Failure Notifications": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failure Notifications"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失败通知"
+          }
+        }
+      }
+    },
+    "Fetch Refspecs (One per Line)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetch Refspecs (One per Line)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetch refspecs（每行一条）"
+          }
+        }
+      }
+    },
+    "Fetching %@ commit %@...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetching %@ commit %@..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拉取 %@ commit %@..."
+          }
+        }
+      }
+    },
+    "Filename Template": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filename Template"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件名模板"
+          }
+        }
+      }
+    },
+    "Filesystem Archive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filesystem Archive"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件系统归档"
+          }
+        }
+      }
+    },
+    "For example: my-project": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For example: my-project"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "例如:my-project"
+          }
+        }
+      }
+    },
+    "Force-update %lld refs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Force-update %lld refs"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将强制更新 %lld 个 ref"
+          }
+        }
+      }
+    },
+    "Generate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generate"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生成"
+          }
+        }
+      }
+    },
+    "Generate New Key": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generate New Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生成新密钥"
+          }
+        }
+      }
+    },
+    "Generate SSH Key": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generate SSH Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生成 SSH 密钥"
+          }
+        }
+      }
+    },
+    "Git Remote": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Git Remote"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Git 远程"
+          }
+        }
+      }
+    },
+    "GitHub Token (Requires admin:repo_hook)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Token (Requires admin:repo_hook)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Token（需 admin:repo_hook）"
+          }
+        }
+      }
+    },
+    "GitLab Host (Self-Hosted Instance Optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitLab Host (Self-Hosted Instance Optional)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitLab Host(自建实例可选)"
+          }
+        }
+      }
+    },
+    "GitRelay performs a dry run first. Strict Protection asks for confirmation before deletions or forced updates; canceling blocks the sync and records a failure. Run Automatically preserves traditional mirror behavior.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitRelay performs a dry run first. Strict Protection asks for confirmation before deletions or forced updates; canceling blocks the sync and records a failure. Run Automatically preserves traditional mirror behavior."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitRelay 会先执行 dry-run。严格保护会在删除或强制更新前弹出确认弹窗;取消则阻断并记失败。自动执行保留传统 mirror 行为。"
+          }
+        }
+      }
+    },
+    "Gitea (the open-source edition of Gitee)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gitea (the open-source edition of Gitee)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gitea (Gitee 开源版)"
+          }
+        }
+      }
+    },
+    "Group Actions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group Actions"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组操作"
+          }
+        }
+      }
+    },
+    "Group by Tag": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group by Tag"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按标签分组"
+          }
+        }
+      }
+    },
+    "Group path (for example, gitlab-org/charts)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group path (for example, gitlab-org/charts)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群组路径 (如 gitlab-org/charts)"
+          }
+        }
+      }
+    },
+    "HMAC secret saved in Keychain": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HMAC secret saved in Keychain"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HMAC 密钥已存入 Keychain"
+          }
+        }
+      }
+    },
+    "Hourly": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hourly"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每小时"
+          }
+        }
+      }
+    },
+    "Inconclusive: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inconclusive: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法判定: %@"
+          }
+        }
+      }
+    },
+    "Instant Webhook Sync": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instant Webhook Sync"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook 即时同步"
+          }
+        }
+      }
+    },
+    "Integrity verification canceled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Integrity verification canceled."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完整性校验已取消。"
+          }
+        }
+      }
+    },
+    "Integrity verification compares this branch's tip and tree hash on src and dst.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Integrity verification compares this branch's tip and tree hash on src and dst."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完整性校验比对 src/dst 上该分支的 tip 与 tree hash。"
+          }
+        }
+      }
+    },
+    "Integrity verification started (branch: %@)...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Integrity verification started (branch: %@)..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完整性校验开始（分支: %@）..."
+          }
+        }
+      }
+    },
+    "Invalid parameters (422)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid parameters (422)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "参数错误(422)"
+          }
+        }
+      }
+    },
+    "Invalid parameters: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid parameters: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "参数错误：%@"
+          }
+        }
+      }
+    },
+    "Last %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上次 %@"
+          }
+        }
+      }
+    },
+    "Last Sync Failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last Sync Failed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上次同步失败"
+          }
+        }
+      }
+    },
+    "Last success: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last success: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近成功：%@"
+          }
+        }
+      }
+    },
+    "Last synced %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last synced %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近同步 %@"
+          }
+        }
+      }
+    },
+    "Last synced: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last synced: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上次同步：%@"
+          }
+        }
+      }
+    },
+    "Last verified: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last verified: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上次校验：%@"
+          }
+        }
+      }
+    },
+    "Leave blank to keep old archives indefinitely.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave blank to keep old archives indefinitely."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "留空表示不自动清理旧归档。"
+          }
+        }
+      }
+    },
+    "Leave blank to use gitlab.com. The /api/v4 path is appended automatically.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave blank to use gitlab.com. The /api/v4 path is appended automatically."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "留空则使用 gitlab.com。会自动追加 /api/v4 路径。"
+          }
+        }
+      }
+    },
+    "Listener Not Running": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listener Not Running"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "监听未运行"
+          }
+        }
+      }
+    },
+    "Listening Address": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening Address"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "监听地址"
+          }
+        }
+      }
+    },
+    "Load More": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load More"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载更多"
+          }
+        }
+      }
+    },
+    "Load Repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load Repositories"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载仓库"
+          }
+        }
+      }
+    },
+    "Loading...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载中..."
+          }
+        }
+      }
+    },
+    "Local Only (127.0.0.1)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local Only (127.0.0.1)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅本机 (127.0.0.1)"
+          }
+        }
+      }
+    },
+    "Location": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位置"
+          }
+        }
+      }
+    },
+    "Low Power Mode is on and the network is expensive; scheduled sync is paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low Power Mode is on and the network is expensive; scheduled sync is paused"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "低电量模式且网络昂贵，计划同步已暂停"
+          }
+        }
+      }
+    },
+    "Low Power Mode is on; scheduled sync is paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low Power Mode is on; scheduled sync is paused"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "低电量模式已开启，计划同步已暂停"
+          }
+        }
+      }
+    },
+    "Manual": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手动"
+          }
+        }
+      }
+    },
+    "Mirror Releases and Binary Assets": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mirror Releases and Binary Assets"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "镜像 Releases 及二进制 assets"
+          }
+        }
+      }
+    },
+    "Mirror any Git repository to another repository\\nGitLab → GitHub · Gitea · Gitee": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mirror any Git repository to another repository\\nGitLab → GitHub · Gitea · Gitee"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "把任意 Git 仓库镜像同步到另一个仓库\\nGitLab → GitHub · Gitea · Gitee"
+          }
+        }
+      }
+    },
+    "Monthly": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每月"
+          }
+        }
+      }
+    },
+    "Most recent verification: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most recent verification: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近校验：%@"
+          }
+        }
+      }
+    },
+    "My Repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Repositories"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我的仓库"
+          }
+        }
+      }
+    },
+    "Name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称"
+          }
+        }
+      }
+    },
+    "Name Prefix (Optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name Prefix (Optional)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称前缀(可选)"
+          }
+        }
+      }
+    },
+    "Namespace": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Namespace"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "命名空间"
+          }
+        }
+      }
+    },
+    "Naming & Frequency": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naming & Frequency"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "命名 & 频率"
+          }
+        }
+      }
+    },
+    "Network error: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network error: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网络错误：%@"
+          }
+        }
+      }
+    },
+    "Network request failed: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network request failed: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网络请求失败：%@"
+          }
+        }
+      }
+    },
+    "Next (%lld)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next (%lld)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步 (%lld)"
+          }
+        }
+      }
+    },
+    "Next Sample": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next Sample"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下次抽样"
+          }
+        }
+      }
+    },
+    "Next sync: %@ (the app must remain running)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next sync: %@ (the app must remain running)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下次同步：%@(需 App 保持运行)"
+          }
+        }
+      }
+    },
+    "No Attachments": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Attachments"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无附件"
+          }
+        }
+      }
+    },
+    "No Branches Detected (Visible After Sync)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Branches Detected (Visible After Sync)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未检测到分支(同步后可见)"
+          }
+        }
+      }
+    },
+    "No Matching Repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Matching Repositories"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无匹配仓库"
+          }
+        }
+      }
+    },
+    "No Records": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Records"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无记录"
+          }
+        }
+      }
+    },
+    "No Release Sync Records Yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Release Sync Records Yet"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚无 Release 同步记录"
+          }
+        }
+      }
+    },
+    "No Repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Repositories"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无仓库"
+          }
+        }
+      }
+    },
+    "Not Run": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Run"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未运行"
+          }
+        }
+      }
+    },
+    "Not Synced": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Synced"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未同步"
+          }
+        }
+      }
+    },
+    "Notification Level": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification Level"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通知级别"
+          }
+        }
+      }
+    },
+    "Notify on the first failure": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify on the first failure"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首次失败时通知"
+          }
+        }
+      }
+    },
+    "Notify only on the first failure (optional), or when consecutive failures reach the threshold and its multiples, to avoid alerts from brief network interruptions. Notifications are deferred while Focus is on and combined into a summary afterward.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify only on the first failure (optional), or when consecutive failures reach the threshold and its multiples, to avoid alerts from brief network interruptions. Notifications are deferred while Focus is on and combined into a summary afterward."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅在首次失败（可选）或连续失败达到阈值（及其倍数）时推送，避免短暂网络抖动刷屏。专注模式开启时会暂存，解除后发送聚合摘要。"
+          }
+        }
+      }
+    },
+    "Number to Keep (Optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number to Keep (Optional)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留份数 (可选)"
+          }
+        }
+      }
+    },
+    "OK": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定"
+          }
+        }
+      }
+    },
+    "Off by default. When enabled, a random port on 127.0.0.1 accepts POST /hook/<id>. The HMAC secret is stored only in Keychain. Cloudflare and Tailscale are optional runtime dependencies that must be installed locally.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off by default. When enabled, a random port on 127.0.0.1 accepts POST /hook/<id>. The HMAC secret is stored only in Keychain. Cloudflare and Tailscale are optional runtime dependencies that must be installed locally."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认关闭。开启后在 127.0.0.1 随机端口接收 POST /hook/<id>；HMAC 密钥仅存 Keychain。Cloudflare / Tailscale 为可选运行时依赖，需你本机已安装。"
+          }
+        }
+      }
+    },
+    "Open %@ SSH Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open %@ SSH Settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 %@ SSH 设置"
+          }
+        }
+      }
+    },
+    "Open Main Window": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Main Window"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开主窗口"
+          }
+        }
+      }
+    },
+    "Organization": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organization"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组织"
+          }
+        }
+      }
+    },
+    "Organization / Group": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organization / Group"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组织 / 群组"
+          }
+        }
+      }
+    },
+    "Organization Name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organization Name"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组织名称"
+          }
+        }
+      }
+    },
+    "Organization name (for example, anthropic)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organization name (for example, anthropic)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组织名称 (如 anthropic)"
+          }
+        }
+      }
+    },
+    "Organization: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organization: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组织: %@"
+          }
+        }
+      }
+    },
+    "Over the last 30 days, %lld succeeded and %lld failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over the last 30 days, %lld succeeded and %lld failed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "近 30 天共成功 %lld 次，失败 %lld 次"
+          }
+        }
+      }
+    },
+    "Overview": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overview"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概览"
+          }
+        }
+      }
+    },
+    "Partial ref sync (not a complete backup)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partial ref sync (not a complete backup)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "部分 ref 同步（非完整备份）"
+          }
+        }
+      }
+    },
+    "Partially Completed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partially Completed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "部分完成"
+          }
+        }
+      }
+    },
+    "Passive (Does Not Interrupt Focus)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passive (Does Not Interrupt Focus)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "被动（不打断专注）"
+          }
+        }
+      }
+    },
+    "Path: /hook/%@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Path: /hook/%@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "路径：/hook/%@"
+          }
+        }
+      }
+    },
+    "Pause scheduled sync in Low Power Mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause scheduled sync in Low Power Mode"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "低电量模式时暂停计划同步"
+          }
+        }
+      }
+    },
+    "Pause scheduled sync on expensive networks or hotspots": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause scheduled sync on expensive networks or hotspots"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "昂贵网络 / 热点时暂停计划同步"
+          }
+        }
+      }
+    },
+    "Pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "待同步"
+          }
+        }
+      }
+    },
+    "Periodically compare the src/dst tip SHA and tree hash for a random sample of repositories. Mismatches are marked as content divergence.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periodically compare the src/dst tip SHA and tree hash for a random sample of repositories. Mismatches are marked as content divergence."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "周期性对随机抽样的仓库执行 src/dst tip SHA 与 tree hash 比对。不一致时标记为内容分歧。"
+          }
+        }
+      }
+    },
+    "Permission denied (403)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission denied (403)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无权限(403)"
+          }
+        }
+      }
+    },
+    "Permission denied (403): %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission denied (403): %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无权限(403)：%@"
+          }
+        }
+      }
+    },
+    "Permission denied or rate limited (403)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission denied or rate limited (403)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无权限或被限流(403)"
+          }
+        }
+      }
+    },
+    "Permission denied or rate limited (403): %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission denied or rate limited (403): %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无权限或被限流(403)：%@"
+          }
+        }
+      }
+    },
+    "Policy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Policy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "策略"
+          }
+        }
+      }
+    },
+    "Preview (First 3)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview (First 3)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "预览(前 3 条)"
+          }
+        }
+      }
+    },
+    "Private Key Path": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private Key Path"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "私钥路径"
+          }
+        }
+      }
+    },
+    "Processing %lld / %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Processing %lld / %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在处理 %lld / %lld"
+          }
+        }
+      }
+    },
+    "Processing…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Processing…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "处理中…"
+          }
+        }
+      }
+    },
+    "Public Base URL (Optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Public Base URL (Optional)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "公共 Base URL（可选）"
+          }
+        }
+      }
+    },
+    "Public Key Preview": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Public Key Preview"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "公钥预览"
+          }
+        }
+      }
+    },
+    "Public key file not found: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Public key file not found: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到公钥文件：%@"
+          }
+        }
+      }
+    },
+    "Quit GitRelay": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit GitRelay"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出 GitRelay"
+          }
+        }
+      }
+    },
+    "Registered webhook #%@ on GitHub.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registered webhook #%@ on GitHub."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已在 GitHub 注册 webhook #%@。"
+          }
+        }
+      }
+    },
+    "Relay Fallback (Example)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relay Fallback (Example)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中继回落 (示意)"
+          }
+        }
+      }
+    },
+    "Relay mode is a configuration example only. A Worker or GitHub App can forward to the local listener using long polling; this version does not deploy a hosted service.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relay mode is a configuration example only. A Worker or GitHub App can forward to the local listener using long polling; this version does not deploy a hosted service."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中继模式仅作配置示意：可用 Worker/GitHub App 长轮询转发到本机监听端口，本版本不部署托管服务。"
+          }
+        }
+      }
+    },
+    "Release Mirroring": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release Mirroring"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release 镜像"
+          }
+        }
+      }
+    },
+    "Release Mirroring Is Disabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release Mirroring Is Disabled"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release 镜像未启用"
+          }
+        }
+      }
+    },
+    "Releases": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Releases"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Releases"
+          }
+        }
+      }
+    },
+    "Remote already exists and will be reused": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remote already exists and will be reused"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "远端已存在,将复用"
+          }
+        }
+      }
+    },
+    "Remove Tag": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Tag"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除标签"
+          }
+        }
+      }
+    },
+    "Repositories will be created under the username associated with the current token.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repositories will be created under the username associated with the current token."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将创建在当前 Token 所属用户名下。"
+          }
+        }
+      }
+    },
+    "Requires the write:repository scope": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requires the write:repository scope"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要 write:repository 权限"
+          }
+        }
+      }
+    },
+    "Resource not found (404): Check that the username, organization, or group name is correct": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resource not found (404): Check that the username, organization, or group name is correct"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "资源不存在(404)：检查用户名或组织/群组名是否正确"
+          }
+        }
+      }
+    },
+    "Restore Defaults": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Defaults"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复默认设置"
+          }
+        }
+      }
+    },
+    "Results": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Results"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "执行结果"
+          }
+        }
+      }
+    },
+    "Retry": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试"
+          }
+        }
+      }
+    },
+    "Reused %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reused %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复用 %@"
+          }
+        }
+      }
+    },
+    "Run Automatically": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run Automatically"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动执行"
+          }
+        }
+      }
+    },
+    "Running ls-remote on source repository...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running ls-remote on source repository..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ls-remote 源仓库..."
+          }
+        }
+      }
+    },
+    "Running ls-remote on target repository...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running ls-remote on target repository..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ls-remote 目标仓库..."
+          }
+        }
+      }
+    },
+    "SSH Key Generated": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SSH Key Generated"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SSH 密钥已生成"
+          }
+        }
+      }
+    },
+    "Sample %lld repositories each time": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sample %lld repositories each time"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每次抽样 %lld 个仓库"
+          }
+        }
+      }
+    },
+    "Save": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存"
+          }
+        }
+      }
+    },
+    "Save to Keychain (Autofill Next Time)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save to Keychain (Autofill Next Time)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存到 Keychain(下次自动填充)"
+          }
+        }
+      }
+    },
+    "Saving generates a /hook/<repo-id> path and an HMAC secret stored in Keychain. Also enable the local listener in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving generates a /hook/<repo-id> path and an HMAC secret stored in Keychain. Also enable the local listener in Settings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存后生成路径 /hook/<repo-id> 与 HMAC 密钥（写入 Keychain）。请同时在设置中启用本机监听。"
+          }
+        }
+      }
+    },
+    "Scheduled Sync Pausing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled Sync Pausing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "计划同步暂停"
+          }
+        }
+      }
+    },
+    "Scope": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scope"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "范围"
+          }
+        }
+      }
+    },
+    "Search Names or Descriptions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Names or Descriptions"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索名称或描述"
+          }
+        }
+      }
+    },
+    "Search Repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Repositories"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索仓库"
+          }
+        }
+      }
+    },
+    "Select All Visible": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select All Visible"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全选当前"
+          }
+        }
+      }
+    },
+    "Select Repositories to Mirror": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Repositories to Mirror"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择要镜像的仓库"
+          }
+        }
+      }
+    },
+    "Select Scope": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Scope"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择范围"
+          }
+        }
+      }
+    },
+    "Separate multiple tags with commas or Return. Existing tags are suggested as you type.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Separate multiple tags with commas or Return. Existing tags are suggested as you type."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用逗号或回车分隔多个标签；输入时会自动补全已有标签。"
+          }
+        }
+      }
+    },
+    "Set the sync frequency for all %lld repositories in “%@” to:": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set the sync frequency for all %lld repositories in “%@” to:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将「%lld」组内 %@ 个仓库的同步频率统一设为："
+          }
+        }
+      }
+    },
+    "Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置"
+          }
+        }
+      }
+    },
+    "Show a confirmation when the dry run detects ref deletions or forced updates on the target; canceling blocks the sync.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show a confirmation when the dry run detects ref deletions or forced updates on the target; canceling blocks the sync."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dry-run 检测到目标侧 ref 删除或强制更新时弹出确认,取消则阻断同步。"
+          }
+        }
+      }
+    },
+    "Show only in Notification Center without interrupting the current Focus.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show only in Notification Center without interrupting the current Focus."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅在通知中心展示，不会打断当前专注模式。"
+          }
+        }
+      }
+    },
+    "Skipped %lld filesystem archive targets.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skipped %lld filesystem archive targets."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跳过 %lld 个文件系统归档目标。"
+          }
+        }
+      }
+    },
+    "Some repositories failed to sync.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some repositories failed to sync."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有仓库同步失败。"
+          }
+        }
+      }
+    },
+    "Source": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "源"
+          }
+        }
+      }
+    },
+    "Source Repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source Repository"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source(源仓库)"
+          }
+        }
+      }
+    },
+    "Source Repository Authentication (for git clone/fetch)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source Repository Authentication (for git clone/fetch)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "源仓库认证(用于 git clone/fetch)"
+          }
+        }
+      }
+    },
+    "Source URLs are generated from the selected repositories (choose SSH or HTTPS with the source authentication option below)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source URLs are generated from the selected repositories (choose SSH or HTTPS with the source authentication option below)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "源 URL 由所选仓库自动生成(按下方的源认证方式选择 SSH 或 HTTPS)"
+          }
+        }
+      }
+    },
+    "Source repository is missing branch %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source repository is missing branch %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "源仓库缺少分支 %@"
+          }
+        }
+      }
+    },
+    "Specify a path for the private key.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Specify a path for the private key."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请指定私钥保存路径。"
+          }
+        }
+      }
+    },
+    "Standard": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标准"
+          }
+        }
+      }
+    },
+    "Strict Protection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strict Protection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "严格保护"
+          }
+        }
+      }
+    },
+    "Succeeded": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Succeeded"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成功"
+          }
+        }
+      }
+    },
+    "Succeeded %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Succeeded %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成功 %lld"
+          }
+        }
+      }
+    },
+    "Sync": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步"
+          }
+        }
+      }
+    },
+    "Sync All": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync All"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部同步"
+          }
+        }
+      }
+    },
+    "Sync Failed: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync Failed: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步失败：%@"
+          }
+        }
+      }
+    },
+    "Sync Frequency": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync Frequency"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步频率"
+          }
+        }
+      }
+    },
+    "Sync Log": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync Log"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步日志"
+          }
+        }
+      }
+    },
+    "Sync Now": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync Now"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即同步"
+          }
+        }
+      }
+    },
+    "Sync Summary After Focus": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync Summary After Focus"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "专注模式结束后的同步摘要"
+          }
+        }
+      }
+    },
+    "Sync This Group": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync This Group"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步此组"
+          }
+        }
+      }
+    },
+    "Sync immediately after receiving a verified push event, independent of the frequency schedule. Enable the local listener in Settings → Webhook. Cloudflare Tunnel or Tailscale Funnel can optionally provide external access.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync immediately after receiving a verified push event, independent of the frequency schedule. Enable the local listener in Settings → Webhook. Cloudflare Tunnel or Tailscale Funnel can optionally provide external access."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收到校验通过的 push 事件后立即同步，不受频率调度限制。需在「设置 → Webhook」启用本机监听；外网暴露使用 Cloudflare Tunnel / Tailscale Funnel（可选）。"
+          }
+        }
+      }
+    },
+    "Synced": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已同步"
+          }
+        }
+      }
+    },
+    "Syncing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syncing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步中"
+          }
+        }
+      }
+    },
+    "Syncing...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syncing..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在同步..."
+          }
+        }
+      }
+    },
+    "Syncs in the Last 30 Days": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syncs in the Last 30 Days"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "近 30 天同步"
+          }
+        }
+      }
+    },
+    "Tags": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tags"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标签"
+          }
+        }
+      }
+    },
+    "Tailscale must be installed locally with Funnel enabled. Example: tailscale funnel <port>, then enter the Funnel HTTPS host in Public Base URL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tailscale must be installed locally with Funnel enabled. Example: tailscale funnel <port>, then enter the Funnel HTTPS host in Public Base URL."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需本机已安装 tailscale 并启用 Funnel。示例：tailscale funnel <port>，再把 Funnel HTTPS 主机填入公共 Base URL。"
+          }
+        }
+      }
+    },
+    "Target %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标 %lld"
+          }
+        }
+      }
+    },
+    "Target Repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target Repository"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标仓库"
+          }
+        }
+      }
+    },
+    "Target Repository Authentication (for git push)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target Repository Authentication (for git push)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标仓库认证(用于 git push)"
+          }
+        }
+      }
+    },
+    "Target URL Template": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target URL Template"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标 URL 模板"
+          }
+        }
+      }
+    },
+    "Target Username (Token Must Be an Administrator)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target Username (Token Must Be an Administrator)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标用户名(Token 需为管理员)"
+          }
+        }
+      }
+    },
+    "Target repositories must already exist; URLs are generated with the {name} template.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target repositories must already exist; URLs are generated with the {name} template."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标仓库需要预先存在; 使用 {name} 模板生成 URL。"
+          }
+        }
+      }
+    },
+    "Target repository is missing branch %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target repository is missing branch %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标仓库缺少分支 %@"
+          }
+        }
+      }
+    },
+    "Targets": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Targets"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Targets(目标仓库)"
+          }
+        }
+      }
+    },
+    "The /api/v1 path is appended automatically.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The /api/v1 path is appended automatically."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动追加 /api/v1 路径。"
+          }
+        }
+      }
+    },
+    "The current network is a cellular hotspot or an expensive network; scheduled sync is paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current network is a cellular hotspot or an expensive network; scheduled sync is paused"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前为蜂窝热点 / 昂贵网络，计划同步已暂停"
+          }
+        }
+      }
+    },
+    "The default path is %@. The public key will be written to a .pub file at the same path.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The default path is %@. The public key will be written to a .pub file at the same path."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认保存为 %@。公钥将写入同路径的 .pub 文件。"
+          }
+        }
+      }
+    },
+    "The number to keep must be a positive integer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The number to keep must be a positive integer"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留份数须为正整数"
+          }
+        }
+      }
+    },
+    "The target API host is invalid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The target API host is invalid"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标 API Host 无效"
+          }
+        }
+      }
+    },
+    "The token will be encrypted in the system Keychain": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The token will be encrypted in the system Keychain"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token 将加密存储在系统 Keychain 中"
+          }
+        }
+      }
+    },
+    "The webhook listens only on the local loopback address. You can verify it locally with curl; external access requires an exposure mode below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The webhook listens only on the local loopback address. You can verify it locally with curl; external access requires an exposure mode below."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook 仅监听本机回环地址。可用 curl 本地验证；外网需要开启下方暴露模式。"
+          }
+        }
+      }
+    },
+    "This affects only syncs triggered automatically by frequency. Manual sync and instant webhook sync are unaffected.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This affects only syncs triggered automatically by frequency. Manual sync and instant webhook sync are unaffected."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅影响按频率自动触发的同步；手动同步与 webhook 即时同步不受影响。"
+          }
+        }
+      }
+    },
+    "This will delete %lld refs and force-update %lld refs. Continue?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will delete %lld refs and force-update %lld refs. Continue?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本次将删除 %lld 个 ref / 强制更新 %lld 个 ref,是否继续?"
+          }
+        }
+      }
+    },
+    "Time Sensitive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time Sensitive"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "时效性"
+          }
+        }
+      }
+    },
+    "Tips match — verification passed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tips match — verification passed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "两侧 tip 一致 — 校验通过。"
+          }
+        }
+      }
+    },
+    "Today": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今日"
+          }
+        }
+      }
+    },
+    "Token is valid, but its scopes could not be read; required scopes are missing: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token is valid, but its scopes could not be read; required scopes are missing: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token 有效, 但无法读取 scopes; 缺少必需权限: %@"
+          }
+        }
+      }
+    },
+    "Token is valid, scopes = [%@]": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token is valid, scopes = [%@]"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token 有效, scopes = [%@]"
+          }
+        }
+      }
+    },
+    "Token is valid, scopes = [%@]; required scopes are missing: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token is valid, scopes = [%@]; required scopes are missing: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token 有效, scopes = [%@]; 缺少必需权限: %@"
+          }
+        }
+      }
+    },
+    "Try to Register the Webhook Through the GitHub API When Saving": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try to Register the Webhook Through the GitHub API When Saving"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存时尝试通过 GitHub API 注册 webhook"
+          }
+        }
+      }
+    },
+    "Type": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "类型"
+          }
+        }
+      }
+    },
+    "Unable to bind the webhook listener port on 127.0.0.1": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to bind the webhook listener port on 127.0.0.1"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法在 127.0.0.1 上绑定 webhook 监听端口"
+          }
+        }
+      }
+    },
+    "Unknown Status": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown Status"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知状态"
+          }
+        }
+      }
+    },
+    "Untagged": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untagged"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未标记"
+          }
+        }
+      }
+    },
+    "Updating local mirror...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updating local mirror..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在更新本地镜像..."
+          }
+        }
+      }
+    },
+    "Use System SSH Agent (~/.ssh/config)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use System SSH Agent (~/.ssh/config)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用系统 SSH Agent(~/.ssh/config)"
+          }
+        }
+      }
+    },
+    "Use the Gitea API to create the selected repositories in a batch; reuse existing repositories when names conflict.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the Gitea API to create the selected repositories in a batch; reuse existing repositories when names conflict."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Gitea API 按所选仓库批量创建; 名称冲突时复用已存在仓库。"
+          }
+        }
+      }
+    },
+    "Use the system's default notification behavior; notifications usually do not interrupt while Focus is on.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the system's default notification behavior; notifications usually do not interrupt while Focus is on."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统默认通知行为；专注模式开启时通常不会打断。"
+          }
+        }
+      }
+    },
+    "Use {name} as the repository name placeholder.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use {name} as the repository name placeholder."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 {name} 作为仓库名占位符。"
+          }
+        }
+      }
+    },
+    "Used only to fetch the repository list, not for git sync": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used only to fetch the repository list, not for git sync"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅用于拉取仓库列表,不用于 git 同步"
+          }
+        }
+      }
+    },
+    "Verification Branch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification Branch"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "校验分支"
+          }
+        }
+      }
+    },
+    "Verification Frequency": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification Frequency"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "校验频率"
+          }
+        }
+      }
+    },
+    "Verify": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "校验"
+          }
+        }
+      }
+    },
+    "Verify Now": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify Now"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即校验"
+          }
+        }
+      }
+    },
+    "Verify This Group": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify This Group"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "校验此组"
+          }
+        }
+      }
+    },
+    "Verify a Sample Now": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify a Sample Now"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即抽样校验"
+          }
+        }
+      }
+    },
+    "View Key": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看密钥"
+          }
+        }
+      }
+    },
+    "Waiting for the First Release Sync…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for the First Release Sync…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待首次 Release 同步…"
+          }
+        }
+      }
+    },
+    "Weekly": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每周"
+          }
+        }
+      }
+    },
+    "cloudflared must be installed locally. Example: cloudflared tunnel --url http://127.0.0.1:<port>, then enter the generated HTTPS host in Public Base URL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cloudflared must be installed locally. Example: cloudflared tunnel --url http://127.0.0.1:<port>, then enter the generated HTTPS host in Public Base URL."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需本机已安装 cloudflared。示例：cloudflared tunnel --url http://127.0.0.1:<port>，再把生成的 https 主机填入公共 Base URL。"
+          }
+        }
+      }
+    },
+    "src is %lld commits ahead": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "src is %lld commits ahead"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "src 领先 %lld 个 commit"
+          }
+        }
+      }
+    },
+    "ssh-keygen failed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ssh-keygen failed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ssh-keygen 执行失败。"
+          }
+        }
+      }
+    },
+    "ssh-keygen was not found. Make sure the macOS Command Line Tools are installed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ssh-keygen was not found. Make sure the macOS Command Line Tools are installed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到 ssh-keygen，请确认 macOS 命令行工具已安装。"
+          }
+        }
+      }
+    },
+    "⚠ Content divergence detected: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⚠ Content divergence detected: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⚠ 检测到内容分歧: %@"
+          }
+        }
+      }
+    },
+    "HTTP %@: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@: %@"
+          }
+        }
+      }
+    },
+    "HTTP %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

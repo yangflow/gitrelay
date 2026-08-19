@@ -13,7 +13,7 @@ struct FailureCountBadge: View {
             .padding(.horizontal, 6)
             .frame(minWidth: 28, minHeight: 18)
             .background(.red, in: .capsule)
-            .help("连续失败 \(count) 次")
-            .accessibilityLabel("连续失败 \(count) 次")
+            .help("\(count) consecutive failures")
+            .accessibilityLabel("\(count) consecutive failures")
     }
 }

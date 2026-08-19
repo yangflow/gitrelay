@@ -57,20 +57,20 @@ enum NotificationInterruptionPreference: String, CaseIterable, Identifiable, Sen
 
     var displayName: String {
         switch self {
-        case .passive: return "被动（不打断专注）"
-        case .active: return "标准"
-        case .timeSensitive: return "时效性"
+        case .passive: return String(localized: "Passive (Does Not Interrupt Focus)")
+        case .active: return String(localized: "Standard")
+        case .timeSensitive: return String(localized: "Time Sensitive")
         }
     }
 
     var helpText: String {
         switch self {
         case .passive:
-            return "仅在通知中心展示，不会打断当前专注模式。"
+            return String(localized: "Show only in Notification Center without interrupting the current Focus.")
         case .active:
-            return "系统默认通知行为；专注模式开启时通常不会打断。"
+            return String(localized: "Use the system's default notification behavior; notifications usually do not interrupt while Focus is on.")
         case .timeSensitive:
-            return "允许在专注模式下以时效性通知打断（仍受系统设置约束）。"
+            return String(localized: "Allow time-sensitive notifications to interrupt Focus, subject to system settings.")
         }
     }
 }
