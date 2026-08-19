@@ -75,6 +75,13 @@ struct AddEditRepoSheet: View {
                     FrequencyPickerView(frequency: $vm.frequency)
                 }
 
+                Section("标签") {
+                    TagTokenInputView(
+                        tags: $vm.tags,
+                        suggestions: appVM.allKnownTags
+                    )
+                }
+
                 Section("校验分支") {
                     TextField("main", text: $vm.defaultBranch)
                         .font(.system(.body, design: .monospaced))

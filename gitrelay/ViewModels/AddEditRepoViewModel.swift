@@ -64,6 +64,7 @@ final class AddEditRepoViewModel {
     var frequency: SyncFrequency = .manual
     var destructivePushPolicy: DestructivePushPolicy = .strict
     var defaultBranch: String = "main"
+    var tags: [String] = []
 
     var nameError: String?
     var srcError: String?
@@ -94,6 +95,7 @@ final class AddEditRepoViewModel {
         frequency = repo.frequency
         destructivePushPolicy = repo.destructivePushPolicy
         defaultBranch = repo.defaultBranch
+        tags = repo.tags
         populate(auth: repo.srcAuth, mode: &srcAuthMode, keyPath: &srcKeyPath, token: &srcToken)
     }
 
@@ -168,7 +170,8 @@ final class AddEditRepoViewModel {
             lastSyncError: lastSyncError,
             consecutiveFailureCount: consecutiveFailureCount,
             lastVerifiedAt: lastVerifiedAt,
-            divergedDetail: divergedDetail
+            divergedDetail: divergedDetail,
+            tags: RepoTagGrouping.normalizedTags(tags)
         )
     }
 

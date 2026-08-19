@@ -18,6 +18,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
     var lastVerifiedAt: Date?
     /// Non-nil when the last integrity check found divergent tree content.
     var divergedDetail: String?
+    /// Loose grouping labels; a repo may belong to multiple tags.
+    var tags: [String]
 
     var enabledTargets: [MirrorTarget] {
         targets.filter(\.enabled)
@@ -38,7 +40,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         lastSyncError: String? = nil,
         consecutiveFailureCount: Int = 0,
         lastVerifiedAt: Date? = nil,
-        divergedDetail: String? = nil
+        divergedDetail: String? = nil,
+        tags: [String] = []
     ) {
         self.id = id
         self.name = name
@@ -55,6 +58,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         self.consecutiveFailureCount = max(0, consecutiveFailureCount)
         self.lastVerifiedAt = lastVerifiedAt
         self.divergedDetail = divergedDetail
+        self.tags = RepoTagGrouping.normalizedTags(tags)
     }
 
     /// Convenience for tests and single-target call sites.
@@ -74,7 +78,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         lastSyncError: String? = nil,
         consecutiveFailureCount: Int = 0,
         lastVerifiedAt: Date? = nil,
-        divergedDetail: String? = nil
+        divergedDetail: String? = nil,
+        tags: [String] = []
     ) {
         self.init(
             id: id,
@@ -91,7 +96,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
             lastSyncError: lastSyncError,
             consecutiveFailureCount: consecutiveFailureCount,
             lastVerifiedAt: lastVerifiedAt,
-            divergedDetail: divergedDetail
+            divergedDetail: divergedDetail,
+            tags: tags
         )
     }
 
@@ -113,6 +119,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         case consecutiveFailureCount
         case lastVerifiedAt
         case divergedDetail
+        case tags
     }
 
     init(from decoder: Decoder) throws {
@@ -143,6 +150,9 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         )
         lastVerifiedAt = try container.decodeIfPresent(Date.self, forKey: .lastVerifiedAt)
         divergedDetail = try container.decodeIfPresent(String.self, forKey: .divergedDetail)
+        tags = RepoTagGrouping.normalizedTags(
+            try container.decodeIfPresent([String].self, forKey: .tags) ?? []
+        )
 
         if let decodedTargets = try container.decodeIfPresent([MirrorTarget].self, forKey: .targets),
            !decodedTargets.isEmpty {
@@ -171,6 +181,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         try container.encode(consecutiveFailureCount, forKey: .consecutiveFailureCount)
         try container.encodeIfPresent(lastVerifiedAt, forKey: .lastVerifiedAt)
         try container.encodeIfPresent(divergedDetail, forKey: .divergedDetail)
+        try container.encode(tags, forKey: .tags)
     }
 
     mutating func recordSyncResult(at date: Date = .now, error: String?) {

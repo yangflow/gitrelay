@@ -39,6 +39,10 @@ final class AppViewModel {
         SyncHealthSummary.make(repos: repos, statuses: statuses)
     }
 
+    var allKnownTags: [String] {
+        RepoTagGrouping.allUniqueTags(from: repos)
+    }
+
     /// Current reason scheduled syncs are paused, if any.
     var scheduledSyncPauseReason: SyncPauseReason? {
         environmentMonitor.pauseReason(using: notificationPreferences.preferences.pausePolicy)
@@ -203,6 +207,29 @@ final class AppViewModel {
 
     func triggerSyncAll() {
         repos.forEach { triggerSync(repoID: $0.id) }
+    }
+
+    func repos(matchingTag tag: String?) -> [RepoConfig] {
+        RepoTagGrouping.repos(matching: tag, in: repos)
+    }
+
+    func triggerSync(matchingTag tag: String?) {
+        repos(matchingTag: tag).forEach { triggerSync(repoID: $0.id) }
+    }
+
+    func triggerVerify(matchingTag tag: String?) {
+        repos(matchingTag: tag).forEach { triggerVerify(repoID: $0.id) }
+    }
+
+    func updateFrequency(matchingTag tag: String?, frequency: SyncFrequency) {
+        let targetIDs = Set(RepoTagGrouping.repoIDs(matching: tag, in: repos))
+        guard !targetIDs.isEmpty else { return }
+
+        for index in repos.indices where targetIDs.contains(repos[index].id) {
+            repos[index].frequency = frequency
+            scheduler.reschedule(repo: repos[index])
+        }
+        saveRepos()
     }
 
     func cancelSync(repoID: UUID) {
