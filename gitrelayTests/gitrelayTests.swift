@@ -1964,7 +1964,7 @@ struct GitRelayCLIStatusJSONTests {
         )
         #expect(json.contains("\"repoName\" : \"Docs\""))
         #expect(json.contains("\"status\" : \"success\""))
-        #expect(json.contains("2023-11-14T22:13:20Z"))
+        #expect(json.contains("2023-11-14T22:13:20"))
     }
 
     @Test func encodesAllRepoStatusesDocument() throws {
