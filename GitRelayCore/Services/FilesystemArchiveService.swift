@@ -132,7 +132,7 @@ struct FilesystemArchiveService {
         log("Archive created: \(outputURL.lastPathComponent)")
 
         if let retentionCount = target.retentionCount, retentionCount > 0 {
-            let prefix = archivePrefix(from: target.resolvedFilenameTemplate(), repoName: repo.name)
+            let prefix = Self.archivePrefix(from: target.resolvedFilenameTemplate(), repoName: repo.name)
             let stale = ArchiveRetention.archivesToDelete(
                 in: URL(fileURLWithPath: outputDirectory, isDirectory: true),
                 matchingPrefix: prefix,
