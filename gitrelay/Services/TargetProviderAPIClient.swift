@@ -41,6 +41,7 @@ nonisolated enum TargetProviderAPIError: LocalizedError {
 
 protocol TargetProviderAPIClient: Sendable {
     nonisolated var provider: GitProvider { get }
+    nonisolated func fetchTokenScopes() async throws -> Set<String>
     nonisolated func createRepo(
         name: String,
         namespace: TargetNamespace,

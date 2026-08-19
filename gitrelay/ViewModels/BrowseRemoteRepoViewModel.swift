@@ -58,6 +58,9 @@ final class BrowseRemoteRepoViewModel {
     var gitlabHost: String = UserDefaults.standard.string(forKey: "BrowseRemoteRepo.gitlabHost") ?? ""
     var connectError: String?
     var isLoading: Bool = false
+    var sourceScopeValidation: TokenScopeValidation?
+    var targetScopeValidation: TokenScopeValidation?
+    var isValidatingScopes: Bool = false
 
     // Phase 2 — selecting
     var repos: [RemoteRepo] = []
@@ -161,6 +164,98 @@ final class BrowseRemoteRepoViewModel {
         }
     }
 
+    func restorePersistedTargetCreateToken() {
+        if let saved = ProviderTokenStore.load(provider: .gitea) {
+            targetCreateToken = saved
+        } else {
+            targetCreateToken = ""
+        }
+    }
+
+    func refreshCachedSourceScopeValidation() {
+        let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else {
+            sourceScopeValidation = nil
+            return
+        }
+        let key = sourceScopeCacheKey(token: clean)
+        if let cached = ProviderTokenScopeCache.load(key: key) {
+            sourceScopeValidation = ProviderTokenScope.validate(
+                grantedScopes: cached,
+                usage: sourceTokenUsage
+            )
+        } else {
+            sourceScopeValidation = nil
+        }
+    }
+
+    func refreshCachedTargetScopeValidation() {
+        let clean = targetCreateToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else {
+            targetScopeValidation = nil
+            return
+        }
+        let key = targetScopeCacheKey(token: clean)
+        if let cached = ProviderTokenScopeCache.load(key: key) {
+            targetScopeValidation = ProviderTokenScope.validate(
+                grantedScopes: cached,
+                usage: .giteaTargetCreate
+            )
+        } else {
+            targetScopeValidation = nil
+        }
+    }
+
+    func validateSourceTokenScopes(forceRefresh: Bool = false) async {
+        let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else {
+            sourceScopeValidation = nil
+            return
+        }
+
+        isValidatingScopes = true
+        defer { isValidatingScopes = false }
+
+        do {
+            sourceScopeValidation = try await ProviderTokenScope.resolveScopes(
+                usage: sourceTokenUsage,
+                cacheKey: sourceScopeCacheKey(token: clean),
+                forceRefresh: forceRefresh
+            ) {
+                try await self.client(for: clean).fetchTokenScopes()
+            }
+        } catch {
+            sourceScopeValidation = nil
+            if connectError == nil {
+                connectError = (error as? ProviderAPIError)?.errorDescription ?? error.localizedDescription
+            }
+        }
+    }
+
+    func validateTargetTokenScopes(forceRefresh: Bool = false) async {
+        let clean = targetCreateToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, let baseURL = resolvedGiteaBaseURL() else {
+            targetScopeValidation = nil
+            return
+        }
+
+        isValidatingScopes = true
+        defer { isValidatingScopes = false }
+
+        do {
+            targetScopeValidation = try await ProviderTokenScope.resolveScopes(
+                usage: .giteaTargetCreate,
+                cacheKey: targetScopeCacheKey(token: clean),
+                forceRefresh: forceRefresh
+            ) {
+                let client = GiteaTargetAPIClient(baseURL: baseURL, token: clean)
+                return try await client.fetchTokenScopes()
+            }
+        } catch {
+            targetScopeValidation = nil
+        }
+    }
+
     // MARK: - Load
 
     func loadFirstPage() async {
@@ -175,13 +270,17 @@ final class BrowseRemoteRepoViewModel {
         }
         persistGitLabHost()
 
+        await validateSourceTokenScopes()
+        guard connectError == nil else { return }
+
         repos = []
         selectedIDs = []
         nextPage = 1
         hasMore = false
 
         do {
-            let page = try await client().fetchRepos(scope: currentScope, page: nextPage, perPage: perPage)
+            let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
+            let page = try await client(for: clean).fetchRepos(scope: currentScope, page: nextPage, perPage: perPage)
             repos = page.repos
             hasMore = page.hasMore
             nextPage = page.nextPage
@@ -197,12 +296,21 @@ final class BrowseRemoteRepoViewModel {
         defer { isLoading = false }
 
         do {
-            let page = try await client().fetchRepos(scope: currentScope, page: nextPage, perPage: perPage)
+            let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
+            let page = try await client(for: clean).fetchRepos(scope: currentScope, page: nextPage, perPage: perPage)
             repos.append(contentsOf: page.repos)
             hasMore = page.hasMore
             nextPage = page.nextPage
         } catch {
             connectError = (error as? ProviderAPIError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func prepareTargetConfiguration() async {
+        if targetAutoCreate {
+            await validateTargetTokenScopes()
+        } else {
+            targetScopeValidation = nil
         }
     }
 
@@ -257,6 +365,10 @@ final class BrowseRemoteRepoViewModel {
         batchResults = []
         submitProgress = 0
         submitTotal = selectedRepos.count
+
+        if targetAutoCreate {
+            await validateTargetTokenScopes()
+        }
 
         if targetAutoCreate, rememberTargetCreateToken {
             try? ProviderTokenStore.save(token: targetCreateToken, provider: .gitea)
@@ -377,16 +489,42 @@ final class BrowseRemoteRepoViewModel {
         }
     }
 
-    private func client() -> any ProviderAPIClient {
-        let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
+    private var sourceTokenUsage: ProviderTokenUsage {
+        .sourceListing(
+            provider: provider,
+            organizationScope: scopeKind == .organization
+        )
+    }
+
+    private func sourceScopeCacheKey(token: String) -> String {
+        ProviderTokenScopeCache.cacheKey(
+            provider: provider,
+            token: token,
+            baseURL: provider == .gitlab ? resolvedGitLabBaseURL() : nil
+        )
+    }
+
+    private func targetScopeCacheKey(token: String) -> String {
+        ProviderTokenScopeCache.cacheKey(
+            provider: .gitea,
+            token: token,
+            baseURL: resolvedGiteaBaseURL()
+        )
+    }
+
+    private func client(for token: String) -> any ProviderAPIClient {
         switch provider {
         case .github:
-            return GitHubAPIClient(token: clean)
+            return GitHubAPIClient(token: token)
         case .gitlab:
-            return GitLabAPIClient(token: clean, baseURL: resolvedGitLabBaseURL())
+            return GitLabAPIClient(token: token, baseURL: resolvedGitLabBaseURL())
         case .gitea:
             preconditionFailure("Gitea is target-only; source picker must use GitProvider.listingCases.")
         }
+    }
+
+    private func client() -> any ProviderAPIClient {
+        client(for: token.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     private func resolvedGitLabBaseURL() -> URL? {

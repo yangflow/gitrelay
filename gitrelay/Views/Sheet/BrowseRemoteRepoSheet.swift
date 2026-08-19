@@ -8,6 +8,7 @@ struct BrowseRemoteRepoSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            scopeBanner
             Divider()
             content
             Divider()
@@ -18,6 +19,19 @@ struct BrowseRemoteRepoSheet: View {
         .onAppear {
             vm.restorePersistedToken()
             vm.restorePersistedTargetCreateToken()
+            vm.refreshCachedSourceScopeValidation()
+            vm.refreshCachedTargetScopeValidation()
+        }
+    }
+
+    @ViewBuilder private var scopeBanner: some View {
+        switch vm.phase {
+        case .connect:
+            TokenScopeBannerView(validation: vm.sourceScopeValidation)
+        case .configureTarget where vm.targetAutoCreate:
+            TokenScopeBannerView(validation: vm.targetScopeValidation)
+        default:
+            EmptyView()
         }
     }
 
@@ -76,7 +90,11 @@ struct BrowseRemoteRepoSheet: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .onChange(of: vm.provider) { _, _ in vm.restorePersistedToken() }
+                .onChange(of: vm.provider) { _, _ in
+                    vm.restorePersistedToken()
+                    vm.sourceScopeValidation = nil
+                    vm.refreshCachedSourceScopeValidation()
+                }
 
                 Text(vm.provider.tokenHelpText)
                     .font(.caption)
@@ -98,6 +116,10 @@ struct BrowseRemoteRepoSheet: View {
                 SecureField("仅用于拉取仓库列表,不用于 git 同步", text: $vm.token)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.caption, design: .monospaced))
+                    .onChange(of: vm.token) { _, _ in
+                        vm.sourceScopeValidation = nil
+                        vm.refreshCachedSourceScopeValidation()
+                    }
                 Toggle("保存到 Keychain(下次自动填充)", isOn: $vm.rememberToken)
             }
 
@@ -108,6 +130,9 @@ struct BrowseRemoteRepoSheet: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .onChange(of: vm.scopeKind) { _, _ in
+                    vm.refreshCachedSourceScopeValidation()
+                }
 
                 if vm.scopeKind == .organization {
                     TextField(vm.provider == .github ? "组织名称 (如 anthropic)" : "群组路径 (如 gitlab-org/charts)",
@@ -195,6 +220,13 @@ struct BrowseRemoteRepoSheet: View {
 
             Section("目标仓库") {
                 Toggle("在目标端自动创建仓库 (Gitea)", isOn: $vm.targetAutoCreate)
+                    .onChange(of: vm.targetAutoCreate) { _, enabled in
+                        if enabled {
+                            Task { await vm.prepareTargetConfiguration() }
+                        } else {
+                            vm.targetScopeValidation = nil
+                        }
+                    }
                 Text(vm.targetAutoCreate
                      ? "使用 Gitea API 按所选仓库批量创建; 名称冲突时复用已存在仓库。"
                      : "目标仓库需要预先存在; 使用 {name} 模板生成 URL。")
@@ -271,7 +303,15 @@ struct BrowseRemoteRepoSheet: View {
             SecureField("需要 write:repository 权限", text: $vm.targetCreateToken)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(.caption, design: .monospaced))
+                .onChange(of: vm.targetCreateToken) { _, _ in
+                    vm.targetScopeValidation = nil
+                    vm.refreshCachedTargetScopeValidation()
+                }
             Toggle("保存到 Keychain(下次自动填充)", isOn: $vm.rememberTargetCreateToken)
+        }
+        .onChange(of: vm.targetCreateHost) { _, _ in
+            vm.targetScopeValidation = nil
+            vm.refreshCachedTargetScopeValidation()
         }
 
         Section("命名空间") {
@@ -383,6 +423,7 @@ struct BrowseRemoteRepoSheet: View {
         case .selecting:
             Button("下一步 (\(vm.selectedIDs.count))") {
                 vm.phase = .configureTarget
+                Task { await vm.prepareTargetConfiguration() }
             }
             .buttonStyle(.borderedProminent)
             .disabled(vm.selectedIDs.isEmpty)

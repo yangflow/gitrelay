@@ -1579,3 +1579,137 @@ struct SyncFailureNotifierFocusTests {
         #expect(notifier.pendingDuringFocus.isEmpty)
     }
 }
+
+// MARK: - ProviderTokenScope
+
+struct ProviderTokenScopeTests {
+    @Test func parseGitHubOAuthScopesHeader() {
+        let scopes = ProviderTokenScope.parseGitHubOAuthScopesHeader("repo, read:org, user")
+        #expect(scopes == Set(["repo", "read:org", "user"]))
+    }
+
+    @Test func parseGitHubOAuthScopesHeaderIgnoresWhitespace() {
+        let scopes = ProviderTokenScope.parseGitHubOAuthScopesHeader(" repo , read:org ")
+        #expect(scopes == Set(["repo", "read:org"]))
+    }
+
+    @Test func parseGitHubOAuthScopesHeaderEmptyReturnsEmptySet() {
+        #expect(ProviderTokenScope.parseGitHubOAuthScopesHeader(nil).isEmpty)
+        #expect(ProviderTokenScope.parseGitHubOAuthScopesHeader("").isEmpty)
+        #expect(ProviderTokenScope.parseGitHubOAuthScopesHeader("   ").isEmpty)
+    }
+
+    @Test func parseGitLabScopesNormalizesValues() {
+        let scopes = ProviderTokenScope.parseGitLabScopes([" read_api ", "read_user", ""])
+        #expect(scopes == Set(["read_api", "read_user"]))
+    }
+
+    @Test func githubRepoScopeAcceptsPublicRepoFallback() {
+        let validation = ProviderTokenScope.validate(
+            grantedScopes: ["public_repo"],
+            usage: .sourceListing(provider: .github, organizationScope: false)
+        )
+        #expect(validation.isFullyAuthorized)
+        #expect(validation.missingRequiredScopes.isEmpty)
+    }
+
+    @Test func githubOrganizationRequiresReadOrg() {
+        let validation = ProviderTokenScope.validate(
+            grantedScopes: ["repo"],
+            usage: .sourceListing(provider: .github, organizationScope: true)
+        )
+        #expect(!validation.isFullyAuthorized)
+        #expect(validation.missingRequiredScopes == ["read:org"])
+        #expect(validation.bannerText.contains("read:org"))
+    }
+
+    @Test func gitlabApiScopeSatisfiesReadApiRequirement() {
+        let validation = ProviderTokenScope.validate(
+            grantedScopes: ["api"],
+            usage: .sourceListing(provider: .gitlab, organizationScope: false)
+        )
+        #expect(validation.isFullyAuthorized)
+    }
+
+    @Test func gitlabMissingReadApiShowsWarningCopy() {
+        let validation = ProviderTokenScope.validate(
+            grantedScopes: ["read_user"],
+            usage: .sourceListing(provider: .gitlab, organizationScope: false)
+        )
+        #expect(!validation.isFullyAuthorized)
+        #expect(validation.missingRequiredScopes == ["read_api"])
+        #expect(validation.bannerText.contains("缺少必需权限: read_api"))
+    }
+
+    @Test func giteaAllScopeSatisfiesWriteRepository() {
+        let validation = ProviderTokenScope.validate(
+            grantedScopes: ["all"],
+            usage: .giteaTargetCreate
+        )
+        #expect(validation.isFullyAuthorized)
+    }
+
+    @Test func giteaMissingWriteRepositoryShowsWarningCopy() {
+        let validation = ProviderTokenScope.validate(
+            grantedScopes: ["read:repository"],
+            usage: .giteaTargetCreate
+        )
+        #expect(!validation.isFullyAuthorized)
+        #expect(validation.missingRequiredScopes == ["write:repository"])
+        #expect(validation.bannerText.contains("write:repository"))
+    }
+
+    @Test func fullyAuthorizedBannerListsScopes() {
+        let validation = ProviderTokenScope.validate(
+            grantedScopes: ["repo", "read:org"],
+            usage: .sourceListing(provider: .github, organizationScope: true)
+        )
+        #expect(validation.isFullyAuthorized)
+        #expect(validation.bannerText == "Token 有效, scopes = [read:org, repo]")
+    }
+}
+
+// MARK: - ProviderTokenScopeCache
+
+struct ProviderTokenScopeCacheTests {
+    @Test func cachesScopesForTwentyFourHours() {
+        let key = "test-cache-\(UUID().uuidString)"
+        let fetchedAt = Date(timeIntervalSince1970: 1_000_000)
+        ProviderTokenScopeCache.save(key: key, scopes: ["repo", "read:org"], fetchedAt: fetchedAt)
+
+        let loaded = ProviderTokenScopeCache.load(
+            key: key,
+            now: fetchedAt.addingTimeInterval(ProviderTokenScope.cacheLifetime - 1)
+        )
+
+        #expect(loaded == Set(["repo", "read:org"]))
+        ProviderTokenScopeCache.remove(key: key)
+    }
+
+    @Test func expiresCacheAfterTwentyFourHours() {
+        let key = "test-cache-\(UUID().uuidString)"
+        let fetchedAt = Date(timeIntervalSince1970: 2_000_000)
+        ProviderTokenScopeCache.save(key: key, scopes: ["read_api"], fetchedAt: fetchedAt)
+
+        let loaded = ProviderTokenScopeCache.load(
+            key: key,
+            now: fetchedAt.addingTimeInterval(ProviderTokenScope.cacheLifetime)
+        )
+
+        #expect(loaded == nil)
+    }
+
+    @Test func cacheKeyDiffersByProviderAndBaseURL() {
+        let token = "secret-token"
+        let githubKey = ProviderTokenScopeCache.cacheKey(provider: .github, token: token)
+        let gitlabKey = ProviderTokenScopeCache.cacheKey(
+            provider: .gitlab,
+            token: token,
+            baseURL: URL(string: "https://gitlab.example.com/api/v4")!
+        )
+        let gitlabDefaultKey = ProviderTokenScopeCache.cacheKey(provider: .gitlab, token: token)
+
+        #expect(githubKey != gitlabKey)
+        #expect(gitlabKey != gitlabDefaultKey)
+    }
+}
