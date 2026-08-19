@@ -9,11 +9,11 @@ final class VerificationPreferencesStore {
         didSet {
             guard preferences != oldValue else { return }
             persist()
-            onChange?(preferences)
+            onPreferencesChange?(preferences)
         }
     }
 
-    var onChange: ((VerificationPreferences) -> Void)?
+    var onPreferencesChange: ((VerificationPreferences) -> Void)?
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
