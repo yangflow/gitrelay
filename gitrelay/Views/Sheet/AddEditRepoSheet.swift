@@ -112,6 +112,63 @@ struct AddEditRepoSheet: View {
                 }
 
                 Section {
+                    Toggle("允许 Webhook 即时同步", isOn: $vm.webhookEnabled)
+                    if vm.webhookEnabled {
+                        if let editing = editingRepo {
+                            Text("路径：/hook/\(editing.webhookPathID)")
+                                .font(.system(.caption, design: .monospaced))
+                                .textSelection(.enabled)
+
+                            let url = appVM.webhookURL(for: editing)
+                            HStack {
+                                Text(url)
+                                    .font(.system(.caption, design: .monospaced))
+                                    .textSelection(.enabled)
+                                    .lineLimit(2)
+                                Spacer()
+                                Button("复制 URL") { ClipboardService.copy(url) }
+                                    .font(.caption)
+                            }
+
+                            if let secret = WebhookSecretStore.loadSecret(repoID: editing.id) {
+                                HStack {
+                                    Text("HMAC 密钥已存入 Keychain")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button("复制密钥") { ClipboardService.copy(secret) }
+                                        .font(.caption)
+                                }
+                            }
+                        } else {
+                            Text("保存后生成路径 /hook/<repo-id> 与 HMAC 密钥（写入 Keychain）。请同时在设置中启用本机监听。")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Toggle("保存时尝试通过 GitHub API 注册 webhook", isOn: $vm.registerWebhookOnSave)
+                        if vm.registerWebhookOnSave {
+                            if let disclosure = ProviderTokenUsage.webhookRegistration(provider: .github).disclosureText {
+                                Text(disclosure)
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                            }
+                            SecureField("GitHub Token（需 admin:repo_hook）", text: $vm.webhookRegistrationToken)
+                            TokenScopeBannerView(validation: vm.webhookScopeValidation)
+                            if let message = vm.webhookRegistrationMessage {
+                                Text(message)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Webhook")
+                } footer: {
+                    Text("收到校验通过的 push 事件后立即同步，不受频率调度限制。需在「设置 → Webhook」启用本机监听；外网暴露使用 Cloudflare Tunnel / Tailscale Funnel（可选）。")
+                }
+
+                Section {
                     DisclosureGroup("高级选项") {
                         TextField("克隆深度（留空 = 全量历史）", text: $vm.depthText)
                             .font(.system(.body, design: .monospaced))
@@ -194,6 +251,58 @@ struct AddEditRepoSheet: View {
             appVM.addRepo(config)
             appVM.triggerSync(repoID: config.id)
         }
+
+        if vm.webhookEnabled, vm.registerWebhookOnSave {
+            let hookURL = appVM.webhookURL(for: config)
+            let token = vm.webhookRegistrationToken
+            Task {
+                let message = await Self.registerGitHubWebhook(
+                    repo: config,
+                    hookURL: hookURL,
+                    token: token
+                )
+                await MainActor.run {
+                    if let message {
+                        appVM.errorMessage = message
+                    }
+                }
+            }
+        }
         dismiss()
+    }
+
+    private static func registerGitHubWebhook(
+        repo: RepoConfig,
+        hookURL: String,
+        token: String
+    ) async -> String? {
+        let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return "Webhook 自动注册已跳过：未提供 GitHub Token。"
+        }
+        guard let path = GitRemoteRepoPath.parse(from: repo.srcURL), !path.namespace.isEmpty else {
+            return "Webhook 自动注册已跳过：无法从源 URL 解析 owner/repo。"
+        }
+        let client = GitHubWebhookAPIClient(token: trimmed)
+        do {
+            let scopes = try await client.fetchTokenScopes()
+            let validation = ProviderTokenScope.validate(
+                grantedScopes: scopes,
+                usage: .webhookRegistration(provider: .github)
+            )
+            guard validation.isFullyAuthorized else {
+                return "Webhook 自动注册已跳过：Token 缺少 admin:repo_hook。"
+            }
+            let secret = try WebhookSecretStore.ensureSecret(repoID: repo.id)
+            let registration = try await client.createPushHook(
+                owner: path.namespace,
+                repo: path.name,
+                hookURL: hookURL,
+                secret: secret
+            )
+            return "已在 GitHub 注册 webhook #\(registration.id)。"
+        } catch {
+            return "Webhook 自动注册失败：\(error.localizedDescription)"
+        }
     }
 }

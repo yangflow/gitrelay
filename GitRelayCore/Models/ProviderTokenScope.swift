@@ -26,6 +26,8 @@ nonisolated struct TokenScopeValidation: Hashable, Sendable {
 nonisolated enum ProviderTokenUsage: Hashable, Sendable {
     case sourceListing(provider: GitProvider, organizationScope: Bool)
     case giteaTargetCreate
+    /// Register / manage repository webhooks (extra scope — must be disclosed in UI).
+    case webhookRegistration(provider: GitProvider)
 
     var requiredScopes: [String] {
         switch self {
@@ -43,6 +45,28 @@ nonisolated enum ProviderTokenUsage: Hashable, Sendable {
             }
         case .giteaTargetCreate:
             return ["write:repository"]
+        case .webhookRegistration(let provider):
+            switch provider {
+            case .github:
+                return ["admin:repo_hook"]
+            case .gitlab:
+                return ["api"]
+            case .gitea:
+                return ["write:repository"]
+            }
+        }
+    }
+
+    var disclosureText: String? {
+        switch self {
+        case .webhookRegistration(.github):
+            return "在 Provider 上自动注册 webhook 需要额外的 admin:repo_hook 权限（超出日常镜像同步所需）。请仅在信任本机应用时授予。"
+        case .webhookRegistration(.gitlab):
+            return "在 GitLab 上自动注册 webhook 需要 api 权限。请仅在信任本机应用时授予。"
+        case .webhookRegistration(.gitea):
+            return "在 Gitea 上自动注册 webhook 需要 write:repository 权限。请仅在信任本机应用时授予。"
+        default:
+            return nil
         }
     }
 }
@@ -66,6 +90,10 @@ nonisolated enum ProviderTokenScope {
             return granted.contains("admin:org") || granted.contains("read:org")
         case "write:repository":
             return granted.contains("all")
+        case "admin:repo_hook":
+            return granted.contains("admin:repo_hook")
+                || granted.contains("write:repo_hook")
+                || granted.contains("repo")
         default:
             return false
         }
