@@ -893,7 +893,7 @@ struct RepoRowHealthPresentationTests {
     }
 
     private func makeRepo(
-        lastSyncedAt: Date?,
+        lastSyncedAt: Date? = nil,
         lastSuccessfulSyncedAt: Date? = nil,
         consecutiveFailureCount: Int = 0
     ) -> RepoConfig {
@@ -2021,8 +2021,8 @@ struct RepoIntentSupportTests {
             lastSyncedAt: lastSyncedAt,
             lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
             lastSyncError: lastSyncError,
-            divergedDetail: divergedDetail,
-            lastVerifiedAt: lastVerifiedAt
+            lastVerifiedAt: lastVerifiedAt,
+            divergedDetail: divergedDetail
         )
     }
 
@@ -3199,6 +3199,7 @@ struct ProviderTokenWebhookScopeTests {
     }
 }
 
+@MainActor
 struct AddEditRepoWebhookTests {
     @Test func buildRepoConfigIncludesWebhookFlag() {
         let vm = AddEditRepoViewModel()
