@@ -20,6 +20,9 @@ final class SyncEngine {
     /// Return `true` to proceed with the destructive push, `false` to block.
     var confirmDestructivePush: ((DestructivePushPlan, MirrorTarget) async -> Bool)?
 
+    /// Called after a successful git mirror push when `repo.mirrorReleases` is enabled.
+    var mirrorReleases: ((RepoConfig, MirrorTarget, @Sendable (String) -> Void) async throws -> Void)?
+
     init(repo: RepoConfig) {
         self.repo = repo
         self.record = SyncRecord(repoID: repo.id)
@@ -155,6 +158,21 @@ final class SyncEngine {
             targetLog("Pushing to destination...")
             try await runner.pushMirror(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
             targetLog("Push complete. ✓")
+
+            if repo.mirrorReleases, let mirrorReleases {
+                targetLog("Mirroring releases...")
+                do {
+                    try await mirrorReleases(repo, target, targetLog)
+                    targetLog("Release mirror complete. ✓")
+                } catch {
+                    let message = classifyError(error)
+                    targetLog("Release mirror error: \(message)")
+                    result.error = message
+                    result.succeeded = false
+                    return result
+                }
+            }
+
             result.succeeded = true
         } catch {
             let message = classifyError(error)

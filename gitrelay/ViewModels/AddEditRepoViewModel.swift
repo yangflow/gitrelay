@@ -65,6 +65,7 @@ final class AddEditRepoViewModel {
     var destructivePushPolicy: DestructivePushPolicy = .strict
     var defaultBranch: String = "main"
     var tags: [String] = []
+    var mirrorReleases: Bool = false
 
     var nameError: String?
     var srcError: String?
@@ -98,6 +99,7 @@ final class AddEditRepoViewModel {
         destructivePushPolicy = repo.destructivePushPolicy
         defaultBranch = repo.defaultBranch
         tags = repo.tags
+        mirrorReleases = repo.mirrorReleases
         populate(auth: repo.srcAuth, mode: &srcAuthMode, keyPath: &srcKeyPath, token: &srcToken)
     }
 
@@ -174,7 +176,8 @@ final class AddEditRepoViewModel {
             dailySyncOutcomes: dailySyncOutcomes,
             lastVerifiedAt: lastVerifiedAt,
             divergedDetail: divergedDetail,
-            tags: RepoTagGrouping.normalizedTags(tags)
+            tags: RepoTagGrouping.normalizedTags(tags),
+            mirrorReleases: mirrorReleases
         )
     }
 

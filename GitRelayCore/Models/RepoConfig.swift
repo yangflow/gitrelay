@@ -22,6 +22,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
     var divergedDetail: String?
     /// Loose grouping labels; a repo may belong to multiple tags.
     var tags: [String]
+    /// When enabled, mirror GitHub/GitLab release metadata and binary assets to each target.
+    var mirrorReleases: Bool
 
     var enabledTargets: [MirrorTarget] {
         targets.filter(\.enabled)
@@ -44,7 +46,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         dailySyncOutcomes: [String: SyncDayOutcome] = [:],
         lastVerifiedAt: Date? = nil,
         divergedDetail: String? = nil,
-        tags: [String] = []
+        tags: [String] = [],
+        mirrorReleases: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -63,6 +66,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         self.lastVerifiedAt = lastVerifiedAt
         self.divergedDetail = divergedDetail
         self.tags = RepoTagGrouping.normalizedTags(tags)
+        self.mirrorReleases = mirrorReleases
     }
 
     /// Convenience for tests and single-target call sites.
@@ -84,7 +88,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         dailySyncOutcomes: [String: SyncDayOutcome] = [:],
         lastVerifiedAt: Date? = nil,
         divergedDetail: String? = nil,
-        tags: [String] = []
+        tags: [String] = [],
+        mirrorReleases: Bool = false
     ) {
         self.init(
             id: id,
@@ -103,7 +108,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
             dailySyncOutcomes: dailySyncOutcomes,
             lastVerifiedAt: lastVerifiedAt,
             divergedDetail: divergedDetail,
-            tags: tags
+            tags: tags,
+            mirrorReleases: mirrorReleases
         )
     }
 
@@ -127,6 +133,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         case lastVerifiedAt
         case divergedDetail
         case tags
+        case mirrorReleases
     }
 
     init(from decoder: Decoder) throws {
@@ -164,6 +171,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         tags = RepoTagGrouping.normalizedTags(
             try container.decodeIfPresent([String].self, forKey: .tags) ?? []
         )
+        mirrorReleases = try container.decodeIfPresent(Bool.self, forKey: .mirrorReleases) ?? false
 
         if let decodedTargets = try container.decodeIfPresent([MirrorTarget].self, forKey: .targets),
            !decodedTargets.isEmpty {
@@ -196,6 +204,9 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         try container.encodeIfPresent(lastVerifiedAt, forKey: .lastVerifiedAt)
         try container.encodeIfPresent(divergedDetail, forKey: .divergedDetail)
         try container.encode(tags, forKey: .tags)
+        if mirrorReleases {
+            try container.encode(mirrorReleases, forKey: .mirrorReleases)
+        }
     }
 
     mutating func recordSyncResult(at date: Date = .now, error: String?, calendar: Calendar = .current) {
