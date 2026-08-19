@@ -378,6 +378,163 @@ struct RepoConfigCodableTests {
 
         #expect(repo.tags == ["work", "oss"])
     }
+
+    @Test func depthAndRefSpecsDefaultOnDecode() throws {
+        let json = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "legacy-repo",
+          "srcURL": "git@github.com:user/repo.git",
+          "dstURL": "git@github.com:user/mirror.git",
+          "srcAuth": { "sshAgent": {} },
+          "dstAuth": { "sshAgent": {} },
+          "frequency": "手动",
+          "createdAt": "2026-04-25T12:00:00Z"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
+
+        #expect(repo.depth == nil)
+        #expect(repo.resolvedRefSpecs == RepoConfig.defaultRefSpecs)
+        #expect(!repo.usesSelectiveRefSync)
+    }
+
+    @Test func encodesDepthAndCustomRefSpecs() throws {
+        let repo = RepoConfig(
+            name: "partial",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            depth: 50,
+            refSpecs: [
+                "+refs/heads/main:refs/heads/main",
+                "+refs/tags/v*:refs/tags/v*"
+            ]
+        )
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(repo)
+        let object = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+
+        #expect(object["depth"] as? Int == 50)
+        #expect(object["refSpecs"] as? [String] == [
+            "+refs/heads/main:refs/heads/main",
+            "+refs/tags/v*:refs/tags/v*"
+        ])
+    }
+}
+
+// MARK: - GitSyncArguments
+
+struct GitSyncArgumentsTests {
+    @Test func defaultRefSpecsMatchGitMirrorConvention() {
+        #expect(RepoConfig.defaultRefSpecs == [
+            "+refs/heads/*:refs/heads/*",
+            "+refs/tags/*:refs/tags/*"
+        ])
+    }
+
+    @Test func fetchArgsIncludeDepthWhenShallow() {
+        let args = GitSyncArguments.fetchArgs(
+            depth: 50,
+            refSpecs: RepoConfig.defaultRefSpecs
+        )
+
+        #expect(args == [
+            "fetch",
+            "--prune",
+            "--depth",
+            "50",
+            "origin",
+            "+refs/heads/*:refs/heads/*",
+            "+refs/tags/*:refs/tags/*"
+        ])
+    }
+
+    @Test func fetchArgsOmitDepthForFullClone() {
+        let args = GitSyncArguments.fetchArgs(
+            depth: nil,
+            refSpecs: RepoConfig.defaultRefSpecs
+        )
+
+        #expect(args == [
+            "fetch",
+            "--prune",
+            "origin",
+            "+refs/heads/*:refs/heads/*",
+            "+refs/tags/*:refs/tags/*"
+        ])
+        #expect(!args.contains("--depth"))
+    }
+
+    @Test func pushRefSpecsDeriveFromFetchRefSpecs() {
+        let pushSpecs = GitSyncArguments.pushRefSpecs(from: [
+            "+refs/heads/main:refs/heads/main",
+            "+refs/tags/v*:refs/tags/v*"
+        ])
+
+        #expect(pushSpecs == [
+            "refs/heads/main:refs/heads/main",
+            "refs/tags/v*:refs/tags/v*"
+        ])
+    }
+
+    @Test func shallowCloneUsesSelectiveRefSync() {
+        let repo = RepoConfig(
+            name: "shallow",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            depth: 100
+        )
+
+        #expect(repo.isShallowClone)
+        #expect(repo.usesSelectiveRefSync)
+        #expect(repo.partialSyncWarning?.contains("浅克隆") == true)
+    }
+
+    @Test func customRefSpecsUseSelectiveRefSyncWithoutDepth() {
+        let repo = RepoConfig(
+            name: "filtered",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            refSpecs: ["+refs/heads/main:refs/heads/main"]
+        )
+
+        #expect(!repo.isShallowClone)
+        #expect(repo.usesSelectiveRefSync)
+        #expect(repo.partialSyncWarning?.contains("ref 过滤") == true)
+    }
+
+    @Test func fullMirrorConfigDoesNotUseSelectiveRefSync() {
+        let repo = RepoConfig(
+            name: "full",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git"
+        )
+
+        #expect(!repo.usesSelectiveRefSync)
+        #expect(repo.partialSyncWarning == nil)
+    }
+
+    @Test func selectivePushArgsDoNotUseMirrorFlag() {
+        let args = GitSyncArguments.pushSelectiveArgs(
+            dstURL: "git@github.com:user/mirror.git",
+            refSpecs: ["refs/heads/main:refs/heads/main"],
+            dryRun: true
+        )
+
+        #expect(args == [
+            "push",
+            "--dry-run",
+            "git@github.com:user/mirror.git",
+            "refs/heads/main:refs/heads/main"
+        ])
+        #expect(!args.contains("--mirror"))
+    }
 }
 
 // MARK: - RepoTagGrouping
@@ -1223,6 +1380,53 @@ struct AddEditRepoValidationTests {
         let repo = vm.buildRepoConfig()
 
         #expect(repo.tags == ["work", "oss"])
+    }
+
+    @Test func buildRepoConfigPersistsDepthAndRefSpecs() {
+        let vm = AddEditRepoViewModel()
+        vm.name = "partial"
+        vm.srcURL = "git@github.com:user/repo.git"
+        setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
+        vm.depthText = "50"
+        vm.refSpecsText = """
+        +refs/heads/main:refs/heads/main
+        +refs/tags/v*:refs/tags/v*
+        """
+
+        let repo = vm.buildRepoConfig()
+
+        #expect(repo.depth == 50)
+        #expect(repo.resolvedRefSpecs == [
+            "+refs/heads/main:refs/heads/main",
+            "+refs/tags/v*:refs/tags/v*"
+        ])
+        #expect(repo.usesSelectiveRefSync)
+    }
+
+    @Test func invalidDepthIsRejected() {
+        let vm = AddEditRepoViewModel()
+        vm.name = "partial"
+        vm.srcURL = "git@github.com:user/repo.git"
+        setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
+        vm.depthText = "0"
+
+        #expect(!vm.validate())
+        #expect(vm.depthError != nil)
+    }
+
+    @Test func editingRepoLoadsAdvancedOptions() {
+        let existingRepo = RepoConfig(
+            name: "partial",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            depth: 25,
+            refSpecs: ["+refs/heads/main:refs/heads/main"]
+        )
+        let vm = AddEditRepoViewModel(editing: existingRepo)
+
+        #expect(vm.depthText == "25")
+        #expect(vm.refSpecsText == "+refs/heads/main:refs/heads/main")
+        #expect(vm.partialSyncWarning != nil)
     }
 
     @Test func editingRepoPreservesTags() {

@@ -44,7 +44,40 @@ final class SyncEngine {
         do {
             emit(.phase(.fetchingSource))
             // 1. Clone or fetch from src once
-            if MirrorStore.mirrorExists(for: repo.id) {
+            if repo.usesSelectiveRefSync {
+                log(GitSyncArguments.partialSyncLogLine)
+                if MirrorStore.mirrorExists(for: repo.id) {
+                    log("Fetching selected refs from source...")
+                    try await runner.fetchSource(
+                        mirrorPath: mirrorPath,
+                        depth: repo.depth,
+                        refSpecs: repo.resolvedRefSpecs,
+                        env: srcEnv
+                    )
+                    log("Fetch complete.")
+                } else {
+                    log("Initializing partial mirror (first time)...")
+                    do {
+                        try await runner.initBareMirror(at: mirrorPath, env: srcEnv)
+                        try await runner.addRemote(
+                            mirrorPath: mirrorPath,
+                            name: "origin",
+                            url: srcURL,
+                            env: srcEnv
+                        )
+                        try await runner.fetchSource(
+                            mirrorPath: mirrorPath,
+                            depth: repo.depth,
+                            refSpecs: repo.resolvedRefSpecs,
+                            env: srcEnv
+                        )
+                    } catch {
+                        try? MirrorStore.deleteMirror(for: repo.id)
+                        throw error
+                    }
+                    log("Partial clone complete.")
+                }
+            } else if MirrorStore.mirrorExists(for: repo.id) {
                 log("Fetching from source...")
                 try await runner.fetchPrune(mirrorPath: mirrorPath, env: srcEnv)
                 log("Fetch complete.")
@@ -181,7 +214,19 @@ final class SyncEngine {
             result.commitsBefore = commitsBefore
 
             targetLog("Checking mirror push impact...")
-            let plan = try await runner.pushMirrorDryRun(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
+            let pushRefSpecs = GitSyncArguments.pushRefSpecs(from: repo.resolvedRefSpecs)
+            let plan: DestructivePushPlan
+            if repo.usesSelectiveRefSync {
+                targetLog("Using selective ref push (not a complete mirror backup).")
+                plan = try await runner.pushSelectiveRefsDryRun(
+                    mirrorPath: mirrorPath,
+                    dstURL: dstURL,
+                    refSpecs: pushRefSpecs,
+                    env: dstEnv
+                )
+            } else {
+                plan = try await runner.pushMirrorDryRun(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
+            }
             if plan.isDestructive {
                 targetLog("Dry-run detected destructive changes: \(plan.summary).")
                 plan.deletedRefs.forEach { targetLog("  delete: \($0)") }
@@ -202,7 +247,16 @@ final class SyncEngine {
             }
 
             targetLog("Pushing to destination...")
-            try await runner.pushMirror(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
+            if repo.usesSelectiveRefSync {
+                try await runner.pushSelectiveRefs(
+                    mirrorPath: mirrorPath,
+                    dstURL: dstURL,
+                    refSpecs: pushRefSpecs,
+                    env: dstEnv
+                )
+            } else {
+                try await runner.pushMirror(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
+            }
             targetLog("Push complete. ✓")
 
             if repo.mirrorReleases, let mirrorReleases {

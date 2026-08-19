@@ -86,9 +86,12 @@ final class AddEditRepoViewModel {
     var defaultBranch: String = "main"
     var tags: [String] = []
     var mirrorReleases: Bool = false
+    var depthText: String = ""
+    var refSpecsText: String = RepoConfig.defaultRefSpecs.joined(separator: "\n")
 
     var nameError: String?
     var srcError: String?
+    var depthError: String?
     var targetErrors: [UUID: String] = [:]
 
     let editingID: UUID?
@@ -120,17 +123,32 @@ final class AddEditRepoViewModel {
         defaultBranch = repo.defaultBranch
         tags = repo.tags
         mirrorReleases = repo.mirrorReleases
+        depthText = repo.depth.map(String.init) ?? ""
+        refSpecsText = repo.resolvedRefSpecs.joined(separator: "\n")
         populate(auth: repo.srcAuth, mode: &srcAuthMode, keyPath: &srcKeyPath, token: &srcToken)
     }
 
+    var partialSyncWarning: String? {
+        let depth = parsedDepth()
+        let refSpecs = parsedRefSpecs()
+        let isShallow = depth != nil
+        let isCustomRefs = !RepoConfig.refSpecsEqual(refSpecs, RepoConfig.defaultRefSpecs)
+        guard isShallow || isCustomRefs else { return nil }
+        if isShallow {
+            return "浅克隆无法完整 push --mirror，将仅同步所选 ref，不构成完整备份。"
+        }
+        return "已自定义 ref 过滤，将仅同步所选 ref，不构成完整备份。"
+    }
+
     var isValid: Bool {
-        nameError == nil && srcError == nil && targetErrors.isEmpty
+        nameError == nil && srcError == nil && depthError == nil && targetErrors.isEmpty
     }
 
     @discardableResult
     func validate() -> Bool {
         nameError = name.trimmingCharacters(in: .whitespaces).isEmpty ? "请输入名称" : nil
         srcError  = isValidGitURL(srcURL) ? nil : "请输入有效的 Git URL"
+        depthError = validateDepthText()
 
         targetErrors = [:]
         guard !targets.isEmpty else {
@@ -199,7 +217,9 @@ final class AddEditRepoViewModel {
             lastVerifiedAt: lastVerifiedAt,
             divergedDetail: divergedDetail,
             tags: RepoTagGrouping.normalizedTags(tags),
-            mirrorReleases: mirrorReleases
+            mirrorReleases: mirrorReleases,
+            depth: parsedDepth(),
+            refSpecs: parsedRefSpecs()
         )
     }
 
@@ -216,6 +236,29 @@ final class AddEditRepoViewModel {
     }
 
     // MARK: - Private
+
+    private func validateDepthText() -> String? {
+        let trimmed = depthText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        guard let value = Int(trimmed), value > 0 else {
+            return "深度须为正整数"
+        }
+        return nil
+    }
+
+    private func parsedDepth() -> Int? {
+        let trimmed = depthText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let value = Int(trimmed), value > 0 else { return nil }
+        return value
+    }
+
+    private func parsedRefSpecs() -> [String] {
+        let lines = refSpecsText
+            .split(whereSeparator: \.isNewline)
+            .map(String.init)
+        let normalized = RepoConfig.normalizedRefSpecs(lines)
+        return normalized.isEmpty ? RepoConfig.defaultRefSpecs : normalized
+    }
 
     private func isTargetConfigured(_ target: MirrorTargetDraft) -> Bool {
         switch target.kind {
