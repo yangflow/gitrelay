@@ -3845,6 +3845,7 @@ struct CachePreferencesTests {
     }
 }
 
+@MainActor
 struct CachePreferencesStoreTests {
     @Test func resetToDefaultsClearsQuota() {
         let suite = "gitrelay.tests.cache-store.\(UUID().uuidString)"
