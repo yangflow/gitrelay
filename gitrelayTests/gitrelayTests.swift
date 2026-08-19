@@ -3789,8 +3789,8 @@ struct MirrorCacheManagerTests {
             }
         )
 
-        #expect(plan.steps.prefix(2) == [.garbageCollect(repoB), .deleteMirror(repoB)])
-        #expect(plan.steps.suffix(2) == [.garbageCollect(repoA), .deleteMirror(repoA)])
+        #expect(plan.steps.prefix(2) == [.garbageCollect(repoID: repoB), .deleteMirror(repoID: repoB)])
+        #expect(plan.steps.suffix(2) == [.garbageCollect(repoID: repoA), .deleteMirror(repoID: repoA)])
         #expect(plan.finalUsageBytes == 0)
     }
 

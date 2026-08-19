@@ -65,14 +65,14 @@ enum MirrorCacheManager {
             let beforeGC = sizes[entry.repoID, default: 0]
             guard beforeGC > 0 else { continue }
 
-            steps.append(.garbageCollect(entry.repoID))
+            steps.append(.garbageCollect(repoID: entry.repoID))
             let afterGC = min(beforeGC, max(0, sizeAfterGC(entry.repoID)))
             usage = usage - beforeGC + afterGC
             sizes[entry.repoID] = afterGC
 
             guard isOverQuota(usageBytes: usage, quotaGB: quotaGB) else { break }
 
-            steps.append(.deleteMirror(entry.repoID))
+            steps.append(.deleteMirror(repoID: entry.repoID))
             usage -= afterGC
             sizes[entry.repoID] = 0
         }
