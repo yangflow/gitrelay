@@ -36,27 +36,27 @@ struct FailureNotificationPolicy: Equatable, Sendable {
 /// Builds copy for single-repo and aggregated Focus-flush notifications.
 enum FailureNotificationCopy {
     static func title(repoName: String) -> String {
-        "Sync Failed: \(repoName)"
+        String(localized: "Sync Failed: \(repoName)")
     }
 
     static func body(message: String, consecutiveFailureCount: Int) -> String {
         if consecutiveFailureCount > 1 {
-            return "\(consecutiveFailureCount) consecutive failures — \(message)"
+            return String(localized: "\(consecutiveFailureCount) consecutive failures — \(message)")
         }
         return message
     }
 
     static func aggregatedTitle(failureCount: Int) -> String {
-        "Sync Summary After Focus"
+        String(localized: "Sync Summary After Focus")
     }
 
     static func aggregatedBody(items: [(repoName: String, message: String, count: Int)]) -> String {
-        guard !items.isEmpty else { return "Some repositories failed to sync." }
+        guard !items.isEmpty else { return String(localized: "Some repositories failed to sync.") }
         if items.count == 1, let only = items.first {
-            return body(message: "\(only.repoName)：\(only.message)", consecutiveFailureCount: only.count)
+            return body(message: "\(only.repoName): \(only.message)", consecutiveFailureCount: only.count)
         }
-        let preview = items.prefix(3).map(\.repoName).joined(separator: "、")
-        let suffix = items.count > 3 ? " and others" : ""
-        return "\(items.count) repositories failed to sync: \(preview)\(suffix)"
+        let preview = items.prefix(3).map(\.repoName).joined(separator: ", ")
+        let suffix = items.count > 3 ? String(localized: " and others") : ""
+        return String(localized: "\(items.count) repositories failed to sync: \(preview)\(suffix)")
     }
 }

@@ -4,7 +4,7 @@
 
 GitRelay 是一款原生 macOS 应用，用于管理多个 Git 托管平台之间的单向镜像同步。填写源仓库和目标仓库，选择同步频率，剩下的交给它：`git clone --mirror`、`git fetch --prune`、`git push --mirror`，安静地在后台运行，不打扰你的工作。
 
-支持 GitLab、GitHub、Gitea、Gitee、Bitbucket 或自托管 Git 服务器的任意组合，内置 SSH Agent、SSH 密钥和 HTTPS Token 三种认证方式。
+支持 GitLab、GitHub、Gitea、Gitee、Bitbucket 或自托管 Git 服务器的任意组合，内置 SSH Agent、SSH 密钥和 HTTPS Token 三种认证方式。界面语言跟随系统（英文 / 简体中文）。
 
 [English](./README.md)
 

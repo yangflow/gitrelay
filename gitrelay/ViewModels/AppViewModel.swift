@@ -90,7 +90,7 @@ final class AppViewModel {
             try MirrorStore.ensureBaseDirectoryExists()
             repos = try RepoStore.load()
         } catch {
-            errorMessage = "Failed to load repository configuration: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to load repository configuration: \(error.localizedDescription)")
         }
 
         failureNotifier.onRetry = { [weak self] id in
@@ -169,7 +169,7 @@ final class AppViewModel {
         guard let index = repos.firstIndex(where: { $0.id == updated.id }) else { return }
         repos[index] = updated
         if updated.isDiverged {
-            statuses[updated.id] = .diverged(updated.divergedDetail ?? "Content divergence")
+            statuses[updated.id] = .diverged(updated.divergedDetail ?? String(localized: "Content divergence"))
         } else if case .diverged = statuses[updated.id] {
             statuses[updated.id] = updated.lastSyncError.map(SyncStatus.failed) ?? .unknown
         }
@@ -298,7 +298,7 @@ final class AppViewModel {
             }
             try webhookListener.start()
         } catch {
-            errorMessage = "Failed to start the webhook listener: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to start the webhook listener: \(error.localizedDescription)")
             webhookListener.stop()
         }
     }
@@ -533,7 +533,7 @@ final class AppViewModel {
         do {
             try RepoStore.save(repos)
         } catch {
-            errorMessage = "Failed to save repository configuration: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to save repository configuration: \(error.localizedDescription)")
         }
     }
 

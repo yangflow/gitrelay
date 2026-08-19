@@ -9,12 +9,12 @@ struct DestructivePushPlan: Equatable {
     }
 
     var summary: String {
-        "\(deletedRefs.count) deletions, \(forcedUpdateRefs.count) forced updates"
+        String(localized: "\(deletedRefs.count) deletions, \(forcedUpdateRefs.count) forced updates")
     }
 
-    /// 确认弹窗主文案:「本次将删除 N 个 ref / 强制更新 M 个 ref,是否继续?」
+    /// Confirmation dialog body: delete / force-update counts.
     var confirmationPrompt: String {
-        "This will delete \(deletedRefs.count) refs and force-update \(forcedUpdateRefs.count) refs. Continue?"
+        String(localized: "This will delete \(deletedRefs.count) refs and force-update \(forcedUpdateRefs.count) refs. Continue?")
     }
 
     static let empty = DestructivePushPlan(deletedRefs: [], forcedUpdateRefs: [])

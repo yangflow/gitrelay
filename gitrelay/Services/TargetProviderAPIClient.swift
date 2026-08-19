@@ -7,9 +7,9 @@ nonisolated enum TargetNamespace: Hashable, Sendable {
 
     var displayLabel: String {
         switch self {
-        case .currentUser:              "Current User"
-        case .organization(let org):    "Organization: \(org)"
-        case .adminForUser(let user):   "Administrator → User: \(user)"
+        case .currentUser:              String(localized: "Current User")
+        case .organization(let org):    String(localized: "Organization: \(org)")
+        case .adminForUser(let user):   String(localized: "Administrator → User: \(user)")
         }
     }
 }
@@ -29,12 +29,12 @@ nonisolated enum TargetProviderAPIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unauthorized(let m): return m.map { "Authentication failed (401): \($0)" } ?? "Authentication failed (401)"
-        case .forbidden(let m):    return m.map { "Permission denied (403): \($0)" } ?? "Permission denied (403)"
-        case .validation(let m):   return m.map { "Invalid parameters: \($0)" } ?? "Invalid parameters (422)"
-        case .network(let e):      return "Network error: \(e.localizedDescription)"
-        case .decoding(let e):     return "Failed to parse response: \(e.localizedDescription)"
-        case .http(let s, let m):  return m.map { "HTTP \(s)：\($0)" } ?? "HTTP \(s)"
+        case .unauthorized(let m): return m.map { String(localized: "Authentication failed (401): \($0)") } ?? String(localized: "Authentication failed (401)")
+        case .forbidden(let m):    return m.map { String(localized: "Permission denied (403): \($0)") } ?? String(localized: "Permission denied (403)")
+        case .validation(let m):   return m.map { String(localized: "Invalid parameters: \($0)") } ?? String(localized: "Invalid parameters (422)")
+        case .network(let e):      return String(localized: "Network error: \(e.localizedDescription)")
+        case .decoding(let e):     return String(localized: "Failed to parse response: \(e.localizedDescription)")
+        case .http(let s, let m):  return m.map { String(localized: "HTTP \(s): \($0)") } ?? String(localized: "HTTP \(s)")
         }
     }
 }

@@ -65,7 +65,7 @@ struct SettingsView: View {
                                 .textSelection(.enabled)
                         }
                     } else {
-                        Text(appVM.isWebhookListenerRunning ? "Binding port…" : "Listener Not Running")
+                        Text(appVM.isWebhookListenerRunning ? String(localized: "Binding port…") : String(localized: "Listener Not Running"))
                             .foregroundStyle(.secondary)
                     }
 
@@ -129,7 +129,7 @@ struct SettingsView: View {
     private func tunnelHint(available: Bool, tool: String, command: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Label(
-                available ? "\(tool) detected" : "\(tool) not detected (you can install it manually)",
+                available ? String(localized: "\(tool) detected") : String(localized: "\(tool) not detected (you can install it manually)"),
                 systemImage: available ? "checkmark.circle" : "questionmark.circle"
             )
             .font(.caption)

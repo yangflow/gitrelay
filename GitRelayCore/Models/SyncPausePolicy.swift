@@ -29,11 +29,11 @@ enum SyncPauseReason: Equatable, Sendable {
     var displayMessage: String {
         switch self {
         case .lowPowerMode:
-            return "Low Power Mode is on; scheduled sync is paused"
+            return String(localized: "Low Power Mode is on; scheduled sync is paused")
         case .expensiveNetwork:
-            return "The current network is a cellular hotspot or an expensive network; scheduled sync is paused"
+            return String(localized: "The current network is a cellular hotspot or an expensive network; scheduled sync is paused")
         case .lowPowerAndExpensiveNetwork:
-            return "Low Power Mode is on and the network is expensive; scheduled sync is paused"
+            return String(localized: "Low Power Mode is on and the network is expensive; scheduled sync is paused")
         }
     }
 }

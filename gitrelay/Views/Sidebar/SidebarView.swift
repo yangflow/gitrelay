@@ -26,7 +26,7 @@ struct SidebarView: View {
         VStack(spacing: 0) {
             Picker("Display", selection: $displayMode) {
                 ForEach(SidebarDisplayMode.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    Text(LocalizedStringKey(mode.rawValue)).tag(mode)
                 }
             }
             .pickerStyle(.segmented)

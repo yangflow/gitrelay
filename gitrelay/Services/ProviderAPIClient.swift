@@ -11,19 +11,19 @@ nonisolated enum ProviderAPIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unauthorized(let msg):
-            let base = "Authentication failed (401): Make sure the token has not expired and has the correct scopes (repo + read:org for GitHub, read_api for GitLab)"
-            return msg.map { "\(base). Server message: \($0)" } ?? base
+            let base = String(localized: "Authentication failed (401): Make sure the token has not expired and has the correct scopes (repo + read:org for GitHub, read_api for GitLab)")
+            return msg.map { String(localized: "\(base). Server message: \($0)") } ?? base
         case .forbidden(let msg):
-            return msg.map { "Permission denied or rate limited (403): \($0)" } ?? "Permission denied or rate limited (403)"
+            return msg.map { String(localized: "Permission denied or rate limited (403): \($0)") } ?? String(localized: "Permission denied or rate limited (403)")
         case .notFound(let msg):
-            let base = "Resource not found (404): Check that the username, organization, or group name is correct"
-            return msg.map { "\(base). Server message: \($0)" } ?? base
+            let base = String(localized: "Resource not found (404): Check that the username, organization, or group name is correct")
+            return msg.map { String(localized: "\(base). Server message: \($0)") } ?? base
         case .network(let e):
-            return "Network request failed: \(e.localizedDescription)"
+            return String(localized: "Network request failed: \(e.localizedDescription)")
         case .decoding(let e):
-            return "Failed to parse response: \(e.localizedDescription)"
+            return String(localized: "Failed to parse response: \(e.localizedDescription)")
         case .http(let s, let m):
-            return m.map { "HTTP \(s)：\($0)" } ?? "HTTP \(s)"
+            return m.map { String(localized: "HTTP \(s): \($0)") } ?? String(localized: "HTTP \(s)")
         }
     }
 }

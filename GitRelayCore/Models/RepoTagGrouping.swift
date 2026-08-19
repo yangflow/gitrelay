@@ -52,7 +52,7 @@ enum RepoTagGrouping {
 
         let untagged = untaggedRepos(in: repos)
         if !untagged.isEmpty {
-            sections.append(Section(title: "Untagged", tag: nil, repos: untagged))
+            sections.append(Section(title: String(localized: "Untagged"), tag: nil, repos: untagged))
         }
         return sections
     }

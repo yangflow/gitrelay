@@ -16,7 +16,7 @@ struct DestructivePushConfirmationSheet: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Confirm Destructive Mirror Push")
                         .font(.headline)
-                    Text("「\(repoName)」")
+                    Text(repoName)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     if let targetURL {

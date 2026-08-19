@@ -28,6 +28,12 @@ jobs:
           xcodebuild -version
           swift --version
 
+      - name: Check for unlocalized Chinese strings
+        run: python3 scripts/check_unlocalized_strings.py
+
+      - name: Validate string catalog
+        run: python3 scripts/check_string_catalog.py
+
       - name: Build & run unit tests
         run: |
           set -o pipefail

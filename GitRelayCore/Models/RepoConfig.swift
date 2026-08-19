@@ -58,9 +58,9 @@ struct RepoConfig: Codable, Identifiable, Equatable {
     var partialSyncWarning: String? {
         guard usesSelectiveRefSync else { return nil }
         if isShallowClone {
-            return "A shallow clone cannot perform a complete push --mirror. Only the selected refs will sync, so this is not a complete backup."
+            return String(localized: "A shallow clone cannot perform a complete push --mirror. Only the selected refs will sync, so this is not a complete backup.")
         }
-        return "Custom ref filters are set. Only the selected refs will sync, so this is not a complete backup."
+        return String(localized: "Custom ref filters are set. Only the selected refs will sync, so this is not a complete backup.")
     }
 
     static func normalizedRefSpecs(_ raw: [String]) -> [String] {

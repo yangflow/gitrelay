@@ -8,6 +8,16 @@ enum VerificationFrequency: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Localized label for UI. Raw values stay Chinese for Codable compatibility.
+    var displayName: String {
+        switch self {
+        case .manual: String(localized: "Manual")
+        case .day1:   String(localized: "Daily")
+        case .week1:  String(localized: "Weekly")
+        case .month1: String(localized: "Monthly")
+        }
+    }
+
     var interval: TimeInterval? {
         switch self {
         case .manual: return nil

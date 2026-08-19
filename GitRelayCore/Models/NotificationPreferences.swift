@@ -57,20 +57,20 @@ enum NotificationInterruptionPreference: String, CaseIterable, Identifiable, Sen
 
     var displayName: String {
         switch self {
-        case .passive: return "Passive (Does Not Interrupt Focus)"
-        case .active: return "Standard"
-        case .timeSensitive: return "Time Sensitive"
+        case .passive: return String(localized: "Passive (Does Not Interrupt Focus)")
+        case .active: return String(localized: "Standard")
+        case .timeSensitive: return String(localized: "Time Sensitive")
         }
     }
 
     var helpText: String {
         switch self {
         case .passive:
-            return "Show only in Notification Center without interrupting the current Focus."
+            return String(localized: "Show only in Notification Center without interrupting the current Focus.")
         case .active:
-            return "Use the system's default notification behavior; notifications usually do not interrupt while Focus is on."
+            return String(localized: "Use the system's default notification behavior; notifications usually do not interrupt while Focus is on.")
         case .timeSensitive:
-            return "Allow time-sensitive notifications to interrupt Focus, subject to system settings."
+            return String(localized: "Allow time-sensitive notifications to interrupt Focus, subject to system settings.")
         }
     }
 }

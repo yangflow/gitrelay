@@ -12,8 +12,8 @@ final class BrowseRemoteRepoViewModel {
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .currentUser:  "My Repositories"
-            case .organization: "Organization / Group"
+            case .currentUser:  String(localized: "My Repositories")
+            case .organization: String(localized: "Organization / Group")
             }
         }
     }
@@ -23,9 +23,9 @@ final class BrowseRemoteRepoViewModel {
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .currentUser:   "Current User"
-            case .organization:  "Organization"
-            case .adminForUser:  "Administrator Creates for User"
+            case .currentUser:   String(localized: "Current User")
+            case .organization:  String(localized: "Organization")
+            case .adminForUser:  String(localized: "Administrator Creates for User")
             }
         }
     }
@@ -407,7 +407,7 @@ final class BrowseRemoteRepoViewModel {
 
     private func createAndBuildConfig(for repo: RemoteRepo) async {
         guard let baseURL = resolvedGiteaBaseURL() else {
-            batchResults.append(.failed(repo: repo, message: "The target API host is invalid"))
+            batchResults.append(.failed(repo: repo, message: String(localized: "The target API host is invalid")))
             return
         }
         let client = GiteaTargetAPIClient(

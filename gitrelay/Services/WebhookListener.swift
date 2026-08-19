@@ -153,7 +153,7 @@ enum WebhookListenerError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .bindFailed:
-            return "Unable to bind the webhook listener port on 127.0.0.1"
+            return String(localized: "Unable to bind the webhook listener port on 127.0.0.1")
         }
     }
 }

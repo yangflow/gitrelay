@@ -49,11 +49,11 @@ struct BrowseRemoteRepoSheet: View {
 
     private var headerTitle: String {
         switch vm.phase {
-        case .connect:          "Browse and Select Remote Repositories"
-        case .selecting:        "Select Repositories to Mirror"
-        case .configureTarget:  "Configure Target Repositories"
-        case .submitting:       "Creating Target Repositories"
-        case .result:           "Results"
+        case .connect:          String(localized: "Browse and Select Remote Repositories")
+        case .selecting:        String(localized: "Select Repositories to Mirror")
+        case .configureTarget:  String(localized: "Configure Target Repositories")
+        case .submitting:       String(localized: "Creating Target Repositories")
+        case .result:           String(localized: "Results")
         }
     }
 
@@ -62,8 +62,8 @@ struct BrowseRemoteRepoSheet: View {
         case .connect:          "1 / 3"
         case .selecting:        "2 / 3"
         case .configureTarget:  "3 / 3"
-        case .submitting:       "Processing…"
-        case .result:           "Done"
+        case .submitting:       String(localized: "Processing…")
+        case .result:           String(localized: "Done")
         }
     }
 

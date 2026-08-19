@@ -8,7 +8,7 @@ struct VerificationSettingsView: View {
             Section {
                 Picker("Verification Frequency", selection: frequencyBinding) {
                     ForEach(VerificationFrequency.allCases) { frequency in
-                        Text(frequency.rawValue).tag(frequency)
+                        Text(frequency.displayName).tag(frequency)
                     }
                 }
 

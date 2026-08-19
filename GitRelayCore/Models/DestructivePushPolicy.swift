@@ -8,17 +8,17 @@ enum DestructivePushPolicy: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .strict: return "Strict Protection"
-        case .auto:   return "Run Automatically"
+        case .strict: return String(localized: "Strict Protection")
+        case .auto:   return String(localized: "Run Automatically")
         }
     }
 
     var description: String {
         switch self {
         case .strict:
-            return "Show a confirmation when the dry run detects ref deletions or forced updates on the target; canceling blocks the sync."
+            return String(localized: "Show a confirmation when the dry run detects ref deletions or forced updates on the target; canceling blocks the sync.")
         case .auto:
-            return "Continue pushing when deletions or forced updates are detected. Suitable for temporary mirrors or confirmed target repositories."
+            return String(localized: "Continue pushing when deletions or forced updates are detected. Suitable for temporary mirrors or confirmed target repositories.")
         }
     }
 

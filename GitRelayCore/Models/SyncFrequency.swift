@@ -9,6 +9,17 @@ enum SyncFrequency: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Localized label for UI. Raw values stay Chinese for Codable compatibility.
+    var displayName: String {
+        switch self {
+        case .manual: String(localized: "Manual")
+        case .min15:  String(localized: "Every 15 Minutes")
+        case .min30:  String(localized: "Every 30 Minutes")
+        case .hour1:  String(localized: "Hourly")
+        case .day1:   String(localized: "Daily")
+        }
+    }
+
     var interval: TimeInterval? {
         switch self {
         case .manual: return nil

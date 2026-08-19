@@ -13,13 +13,13 @@ nonisolated struct TokenScopeValidation: Hashable, Sendable {
     var bannerText: String {
         let scopeList = sortedGrantedScopes.joined(separator: ", ")
         if isFullyAuthorized {
-            return "Token is valid, scopes = [\(scopeList)]"
+            return String(localized: "Token is valid, scopes = [\(scopeList)]")
         }
         let missing = missingRequiredScopes.joined(separator: ", ")
         if scopeList.isEmpty {
-            return "Token is valid, but its scopes could not be read; required scopes are missing: \(missing)"
+            return String(localized: "Token is valid, but its scopes could not be read; required scopes are missing: \(missing)")
         }
-        return "Token is valid, scopes = [\(scopeList)]; required scopes are missing: \(missing)"
+        return String(localized: "Token is valid, scopes = [\(scopeList)]; required scopes are missing: \(missing)")
     }
 }
 
@@ -60,11 +60,11 @@ nonisolated enum ProviderTokenUsage: Hashable, Sendable {
     var disclosureText: String? {
         switch self {
         case .webhookRegistration(.github):
-            return "Automatically registering a webhook with the provider requires the additional admin:repo_hook scope, beyond what routine mirror sync needs. Grant it only if you trust this local app."
+            return String(localized: "Automatically registering a webhook with the provider requires the additional admin:repo_hook scope, beyond what routine mirror sync needs. Grant it only if you trust this local app.")
         case .webhookRegistration(.gitlab):
-            return "Automatically registering a webhook on GitLab requires the api scope. Grant it only if you trust this local app."
+            return String(localized: "Automatically registering a webhook on GitLab requires the api scope. Grant it only if you trust this local app.")
         case .webhookRegistration(.gitea):
-            return "Automatically registering a webhook on Gitea requires the write:repository scope. Grant it only if you trust this local app."
+            return String(localized: "Automatically registering a webhook on Gitea requires the write:repository scope. Grant it only if you trust this local app.")
         default:
             return nil
         }

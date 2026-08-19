@@ -2,6 +2,7 @@
   "sourceLanguage": "en",
   "strings": {
     " and others": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -18,6 +19,7 @@
       }
     },
     "%@ Authentication": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -33,55 +35,8 @@
         }
       }
     },
-    "%@ consecutive failures": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ consecutive failures"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "连续失败 %@ 次"
-          }
-        }
-      }
-    },
-    "%@ consecutive failures — %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ consecutive failures — %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "连续失败 %@ 次 — %@"
-          }
-        }
-      }
-    },
-    "%@ deletions, %@ forced updates": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ deletions, %@ forced updates"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 个删除, %@ 个强制更新"
-          }
-        }
-      }
-    },
     "%@ detected": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -98,6 +53,7 @@
       }
     },
     "%@ not detected (you can install it manually)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -113,55 +69,8 @@
         }
       }
     },
-    "%@ repositories failed to sync: %@%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ repositories failed to sync: %@%@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 个仓库同步失败：%@%@"
-          }
-        }
-      }
-    },
-    "%@ repositories selected": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ repositories selected"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已选择 %@ 个仓库"
-          }
-        }
-      }
-    },
-    "%@ targets have content divergence: %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ targets have content divergence: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 个目标内容分歧: %@"
-          }
-        }
-      }
-    },
     "%@. Server message: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -177,39 +86,25 @@
         }
       }
     },
-    "%@/%@ targets failed (%@ succeeded): %@": {
+    "%@: %lld succeeded, %lld failed": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@/%@ targets failed (%@ succeeded): %@"
+            "value": "%@: %lld succeeded, %lld failed"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@/%@ 个目标失败（%@ 个成功）: %@"
-          }
-        }
-      }
-    },
-    "%@: %@ succeeded, %@ failed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@: %@ succeeded, %@ failed"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@: 成功 %@，失败 %@"
+            "value": "%@: 成功 %lld，失败 %lld"
           }
         }
       }
     },
     "%@: No Syncs": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -225,7 +120,161 @@
         }
       }
     },
+    "%lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法在 127.0.0.1 上绑定 webhook 监听端口"
+          }
+        }
+      }
+    },
+    "%lld consecutive failures": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld consecutive failures"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连续失败 %lld 次"
+          }
+        }
+      }
+    },
+    "%lld consecutive failures — %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld consecutive failures — %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连续失败 %lld 次 — %@"
+          }
+        }
+      }
+    },
+    "%lld deletions, %lld forced updates": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld deletions, %lld forced updates"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个删除, %lld 个强制更新"
+          }
+        }
+      }
+    },
+    "%lld repositories failed to sync: %@%@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld repositories failed to sync: %@%@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个仓库同步失败：%@%@"
+          }
+        }
+      }
+    },
+    "%lld repositories selected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld repositories selected"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择 %lld 个仓库"
+          }
+        }
+      }
+    },
+    "%lld targets have content divergence: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld targets have content divergence: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个目标内容分歧: %@"
+          }
+        }
+      }
+    },
+    "%lld%lld%@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%lld%@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连续失败 %lld 次 — %@"
+          }
+        }
+      }
+    },
+    "%lld/%lld targets failed (%lld succeeded): %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld/%lld targets failed (%lld succeeded): %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld/%lld 个目标失败（%lld 个成功）: %@"
+          }
+        }
+      }
+    },
     "(missing)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -242,6 +291,7 @@
       }
     },
     "A future Cloudflare Worker or GitHub App could relay to this Mac using long polling. This version provides configuration only and does not deploy hosted infrastructure.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -258,6 +308,7 @@
       }
     },
     "A key file already exists at: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -274,6 +325,7 @@
       }
     },
     "A shallow clone cannot perform a complete push --mirror. Only the selected refs will sync, so this is not a complete backup.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -290,6 +342,7 @@
       }
     },
     "A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -306,6 +359,7 @@
       }
     },
     "About GitRelay": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -321,39 +375,42 @@
         }
       }
     },
-    "Add %@ Repositories": {
+    "Add %lld Repositories": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add %@ Repositories"
+            "value": "Add %lld Repositories"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "添加 %@ 个仓库"
+            "value": "添加 %lld 个仓库"
           }
         }
       }
     },
-    "Add %@ to Sync List": {
+    "Add %lld to Sync List": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add %@ to Sync List"
+            "value": "Add %lld to Sync List"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "添加 %@ 个到同步列表"
+            "value": "添加 %lld 个到同步列表"
           }
         }
       }
     },
     "Add Manually": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -370,6 +427,7 @@
       }
     },
     "Add Repository": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -386,6 +444,7 @@
       }
     },
     "Add Target": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -402,6 +461,7 @@
       }
     },
     "Add Your First Repository": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -418,6 +478,7 @@
       }
     },
     "Add a Repository Manually": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -434,6 +495,7 @@
       }
     },
     "Add and Start Syncing": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -450,6 +512,7 @@
       }
     },
     "Add the public key to %@ to use SSH authentication.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -466,6 +529,7 @@
       }
     },
     "Administrator Creates for User": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -482,6 +546,7 @@
       }
     },
     "Administrator → User: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -498,6 +563,7 @@
       }
     },
     "Advanced Options": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -514,6 +580,7 @@
       }
     },
     "After a sync, the Release and asset progress for each target will appear here.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -530,6 +597,7 @@
       }
     },
     "After syncing the git repository, incrementally copy source Release tags, titles, bodies, and attachments such as .dmg and .tar.gz files to each enabled target. A GitHub or GitLab API token is required.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -546,6 +614,7 @@
       }
     },
     "All": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -561,23 +630,25 @@
         }
       }
     },
-    "All %@ targets passed verification.": {
+    "All %lld targets passed verification.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "All %@ targets passed verification."
+            "value": "All %lld targets passed verification."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "全部 %@ 个目标校验通过。"
+            "value": "全部 %lld 个目标校验通过。"
           }
         }
       }
     },
     "Allow Instant Webhook Sync": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -594,6 +665,7 @@
       }
     },
     "Allow time-sensitive notifications to interrupt Focus, subject to system settings.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -610,6 +682,7 @@
       }
     },
     "An Error Occurred": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -626,6 +699,7 @@
       }
     },
     "Archive": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -642,6 +716,7 @@
       }
     },
     "Archive Format": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -658,6 +733,7 @@
       }
     },
     "Archiving...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -674,6 +750,7 @@
       }
     },
     "Authentication failed (401)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -690,6 +767,7 @@
       }
     },
     "Authentication failed (401): %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -706,6 +784,7 @@
       }
     },
     "Authentication failed (401): Make sure the token has not expired and has the correct scopes (repo + read:org for GitHub, read_api for GitLab)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -722,6 +801,7 @@
       }
     },
     "Automatic webhook registration failed: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -738,6 +818,7 @@
       }
     },
     "Automatic webhook registration was skipped because no GitHub token was provided.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -754,6 +835,7 @@
       }
     },
     "Automatic webhook registration was skipped because owner/repo could not be parsed from the source URL.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -770,6 +852,7 @@
       }
     },
     "Automatic webhook registration was skipped because the token lacks admin:repo_hook.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -786,6 +869,7 @@
       }
     },
     "Automatically Create Repositories on the Target (Gitea)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -802,6 +886,7 @@
       }
     },
     "Automatically registering a webhook on GitLab requires the api scope. Grant it only if you trust this local app.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -818,6 +903,7 @@
       }
     },
     "Automatically registering a webhook on Gitea requires the write:repository scope. Grant it only if you trust this local app.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -834,6 +920,7 @@
       }
     },
     "Automatically registering a webhook with the provider requires the additional admin:repo_hook scope, beyond what routine mirror sync needs. Grant it only if you trust this local app.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -850,6 +937,7 @@
       }
     },
     "Available placeholders: {name}, {date} (yyyy-MM-dd)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -866,6 +954,7 @@
       }
     },
     "Back": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -882,6 +971,7 @@
       }
     },
     "Backup Integrity Verification": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -898,6 +988,7 @@
       }
     },
     "Backup content differs from the source repository": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -914,6 +1005,7 @@
       }
     },
     "Backup content may have diverged from the source repository": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -930,6 +1022,7 @@
       }
     },
     "Binding port…": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -946,6 +1039,7 @@
       }
     },
     "Browse Remote Repositories": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -962,6 +1056,7 @@
       }
     },
     "Browse and Select Remote Repositories": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -978,6 +1073,7 @@
       }
     },
     "Browse and select from GitHub or GitLab": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -994,6 +1090,7 @@
       }
     },
     "By default, all branches and tags are synced. You can limit this to main and v* tags, for example:\\n+refs/heads/main:refs/heads/main\\n+refs/tags/v*:refs/tags/v*": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1010,6 +1107,7 @@
       }
     },
     "Cancel": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1026,6 +1124,7 @@
       }
     },
     "Check for Updates": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1042,6 +1141,7 @@
       }
     },
     "Choose": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1058,6 +1158,7 @@
       }
     },
     "Choose an archive directory": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1074,6 +1175,7 @@
       }
     },
     "Choose an archive output directory": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1090,6 +1192,7 @@
       }
     },
     "Choose...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1106,6 +1209,7 @@
       }
     },
     "Choose…": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1122,6 +1226,7 @@
       }
     },
     "Clear": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1138,6 +1243,7 @@
       }
     },
     "Clone Depth (Blank = Full History)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1154,6 +1260,7 @@
       }
     },
     "Close": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1170,6 +1277,7 @@
       }
     },
     "Commit SHAs differ but tree hashes match — verification passed.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1186,6 +1294,7 @@
       }
     },
     "Commit SHAs differ, but the tree hashes could not be obtained from both sides": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1202,6 +1311,7 @@
       }
     },
     "Commit SHAs differ; fetching objects to compare tree hashes...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1218,6 +1328,7 @@
       }
     },
     "Configure Target Repositories": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1234,6 +1345,7 @@
       }
     },
     "Confirm Destructive Mirror Push": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1249,23 +1361,25 @@
         }
       }
     },
-    "Consecutive failure threshold: %@": {
+    "Consecutive failure threshold: %lld": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Consecutive failure threshold: %@"
+            "value": "Consecutive failure threshold: %lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "连续失败阈值：%@ 次"
+            "value": "连续失败阈值：%lld 次"
           }
         }
       }
     },
     "Content divergence": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1282,6 +1396,7 @@
       }
     },
     "Content divergence on branch %@: src %@ / dst %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1298,6 +1413,7 @@
       }
     },
     "Continue": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1314,6 +1430,7 @@
       }
     },
     "Continue pushing when deletions or forced updates are detected. Suitable for temporary mirrors or confirmed target repositories.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1330,6 +1447,7 @@
       }
     },
     "Copied to Clipboard": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1346,6 +1464,7 @@
       }
     },
     "Copy": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1362,6 +1481,7 @@
       }
     },
     "Copy Public Key": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1378,6 +1498,7 @@
       }
     },
     "Copy Secret": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1394,6 +1515,7 @@
       }
     },
     "Copy URL": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1410,6 +1532,7 @@
       }
     },
     "Create a Personal Access Token (classic) with the repo and read:org scopes. https://github.com/settings/tokens": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1426,6 +1549,7 @@
       }
     },
     "Create a Personal Access Token with the read_api scope. https://gitlab.com/-/user_settings/personal_access_tokens": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1442,6 +1566,7 @@
       }
     },
     "Create a token with the write:repository scope (required to create repositories). Visit <your-gitea-host>/user/settings/applications": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1457,23 +1582,25 @@
         }
       }
     },
-    "Create and Add %@": {
+    "Create and Add %lld": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Create and Add %@"
+            "value": "Create and Add %lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "创建并添加 %@ 个"
+            "value": "创建并添加 %lld 个"
           }
         }
       }
     },
     "Create as Private Repositories": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1490,6 +1617,7 @@
       }
     },
     "Created Successfully": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1506,6 +1634,7 @@
       }
     },
     "Creating Target Repositories": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1522,6 +1651,7 @@
       }
     },
     "Current User": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1538,6 +1668,7 @@
       }
     },
     "Custom ref filters are set. Only the selected refs will sync, so this is not a complete backup.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1554,6 +1685,7 @@
       }
     },
     "Daily": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1570,6 +1702,7 @@
       }
     },
     "Delete": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1585,23 +1718,25 @@
         }
       }
     },
-    "Delete %@ refs": {
+    "Delete %lld refs": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete %@ refs"
+            "value": "Delete %lld refs"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "将删除 %@ 个 ref"
+            "value": "将删除 %lld 个 ref"
           }
         }
       }
     },
     "Delete Repository": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1618,6 +1753,7 @@
       }
     },
     "Delete Target": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1634,6 +1770,7 @@
       }
     },
     "Delete “%@”? The local mirror cache will also be deleted. This action cannot be undone.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1650,6 +1787,7 @@
       }
     },
     "Delete...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1666,6 +1804,7 @@
       }
     },
     "Depth must be a positive integer": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1682,6 +1821,7 @@
       }
     },
     "Destructive Push Protection": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1698,6 +1838,7 @@
       }
     },
     "Destructive mirror push blocked: %@. Sync again and choose Continue in the confirmation dialog, or change the policy to Run Automatically.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1714,6 +1855,7 @@
       }
     },
     "Detail Page": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1730,6 +1872,7 @@
       }
     },
     "Details": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1746,6 +1889,7 @@
       }
     },
     "Disabled": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1762,6 +1906,7 @@
       }
     },
     "Display": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1778,6 +1923,7 @@
       }
     },
     "Done": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1794,6 +1940,7 @@
       }
     },
     "Edit Frequency for All Repositories in Group...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1810,6 +1957,7 @@
       }
     },
     "Edit Group Sync Frequency": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1826,6 +1974,7 @@
       }
     },
     "Edit Repository": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1842,6 +1991,7 @@
       }
     },
     "Edit...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1858,6 +2008,7 @@
       }
     },
     "Enable at least one target": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1874,6 +2025,7 @@
       }
     },
     "Enable local webhook listener": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1890,6 +2042,7 @@
       }
     },
     "Enable sync failure notifications": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1906,6 +2059,7 @@
       }
     },
     "Enable “Mirror Releases and Binary Assets” when editing the repository to copy Release attachments to each enabled target during sync.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1922,6 +2076,7 @@
       }
     },
     "Enabled": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1938,6 +2093,7 @@
       }
     },
     "Encrypt the private key with a passphrase": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1954,6 +2110,7 @@
       }
     },
     "Enter a name": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1970,6 +2127,7 @@
       }
     },
     "Enter a tag and press Return to add it": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1986,6 +2144,7 @@
       }
     },
     "Enter a valid Git URL": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2002,6 +2161,7 @@
       }
     },
     "Error: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2018,6 +2178,7 @@
       }
     },
     "Every 15 Minutes": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2034,6 +2195,7 @@
       }
     },
     "Every 30 Minutes": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2050,6 +2212,7 @@
       }
     },
     "External Access": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2066,6 +2229,7 @@
       }
     },
     "Failed": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2082,6 +2246,7 @@
       }
     },
     "Failed %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2098,6 +2263,7 @@
       }
     },
     "Failed to load repository configuration: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2114,6 +2280,7 @@
       }
     },
     "Failed to parse response: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2130,6 +2297,7 @@
       }
     },
     "Failed to save repository configuration: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2146,6 +2314,7 @@
       }
     },
     "Failed to start the webhook listener: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2162,6 +2331,7 @@
       }
     },
     "Failure Notifications": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2178,6 +2348,7 @@
       }
     },
     "Fetch Refspecs (One per Line)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2194,6 +2365,7 @@
       }
     },
     "Fetching %@ commit %@...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2210,6 +2382,7 @@
       }
     },
     "Filename Template": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2226,6 +2399,7 @@
       }
     },
     "Filesystem Archive": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2242,6 +2416,7 @@
       }
     },
     "For example: my-project": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2257,23 +2432,25 @@
         }
       }
     },
-    "Force-update %@ refs": {
+    "Force-update %lld refs": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Force-update %@ refs"
+            "value": "Force-update %lld refs"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "将强制更新 %@ 个 ref"
+            "value": "将强制更新 %lld 个 ref"
           }
         }
       }
     },
     "Generate": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2290,6 +2467,7 @@
       }
     },
     "Generate New Key": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2306,6 +2484,7 @@
       }
     },
     "Generate SSH Key": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2322,6 +2501,7 @@
       }
     },
     "Git Remote": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2338,6 +2518,7 @@
       }
     },
     "GitHub Token (Requires admin:repo_hook)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2354,6 +2535,7 @@
       }
     },
     "GitLab Host (Self-Hosted Instance Optional)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2370,6 +2552,7 @@
       }
     },
     "GitRelay performs a dry run first. Strict Protection asks for confirmation before deletions or forced updates; canceling blocks the sync and records a failure. Run Automatically preserves traditional mirror behavior.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2386,6 +2569,7 @@
       }
     },
     "Gitea (the open-source edition of Gitee)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2402,6 +2586,7 @@
       }
     },
     "Group Actions": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2418,6 +2603,7 @@
       }
     },
     "Group by Tag": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2434,6 +2620,7 @@
       }
     },
     "Group path (for example, gitlab-org/charts)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2450,6 +2637,7 @@
       }
     },
     "HMAC secret saved in Keychain": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2466,6 +2654,7 @@
       }
     },
     "Hourly": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2482,6 +2671,7 @@
       }
     },
     "Inconclusive: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2498,6 +2688,7 @@
       }
     },
     "Instant Webhook Sync": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2514,6 +2705,7 @@
       }
     },
     "Integrity verification canceled.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2530,6 +2722,7 @@
       }
     },
     "Integrity verification compares this branch's tip and tree hash on src and dst.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2546,6 +2739,7 @@
       }
     },
     "Integrity verification started (branch: %@)...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2562,6 +2756,7 @@
       }
     },
     "Invalid parameters (422)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2578,6 +2773,7 @@
       }
     },
     "Invalid parameters: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2594,6 +2790,7 @@
       }
     },
     "Last %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2610,6 +2807,7 @@
       }
     },
     "Last Sync Failed": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2626,6 +2824,7 @@
       }
     },
     "Last success: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2642,6 +2841,7 @@
       }
     },
     "Last synced %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2658,6 +2858,7 @@
       }
     },
     "Last synced: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2674,6 +2875,7 @@
       }
     },
     "Last verified: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2690,6 +2892,7 @@
       }
     },
     "Leave blank to keep old archives indefinitely.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2706,6 +2909,7 @@
       }
     },
     "Leave blank to use gitlab.com. The /api/v4 path is appended automatically.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2722,6 +2926,7 @@
       }
     },
     "Listener Not Running": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2738,6 +2943,7 @@
       }
     },
     "Listening Address": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2754,6 +2960,7 @@
       }
     },
     "Load More": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2770,6 +2977,7 @@
       }
     },
     "Load Repositories": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2786,6 +2994,7 @@
       }
     },
     "Loading...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2802,6 +3011,7 @@
       }
     },
     "Local Only (127.0.0.1)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2818,6 +3028,7 @@
       }
     },
     "Location": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2834,6 +3045,7 @@
       }
     },
     "Low Power Mode is on and the network is expensive; scheduled sync is paused": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2850,6 +3062,7 @@
       }
     },
     "Low Power Mode is on; scheduled sync is paused": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2866,6 +3079,7 @@
       }
     },
     "Manual": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2882,6 +3096,7 @@
       }
     },
     "Mirror Releases and Binary Assets": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2898,6 +3113,7 @@
       }
     },
     "Mirror any Git repository to another repository\\nGitLab → GitHub · Gitea · Gitee": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2914,6 +3130,7 @@
       }
     },
     "Monthly": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2930,6 +3147,7 @@
       }
     },
     "Most recent verification: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2946,6 +3164,7 @@
       }
     },
     "My Repositories": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2962,6 +3181,7 @@
       }
     },
     "Name": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2978,6 +3198,7 @@
       }
     },
     "Name Prefix (Optional)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2994,6 +3215,7 @@
       }
     },
     "Namespace": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3010,6 +3232,7 @@
       }
     },
     "Naming & Frequency": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3026,6 +3249,7 @@
       }
     },
     "Network error: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3042,6 +3266,7 @@
       }
     },
     "Network request failed: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3057,23 +3282,25 @@
         }
       }
     },
-    "Next (%@)": {
+    "Next (%lld)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Next (%@)"
+            "value": "Next (%lld)"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "下一步 (%@)"
+            "value": "下一步 (%lld)"
           }
         }
       }
     },
     "Next Sample": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3090,6 +3317,7 @@
       }
     },
     "Next sync: %@ (the app must remain running)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3106,6 +3334,7 @@
       }
     },
     "No Attachments": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3122,6 +3351,7 @@
       }
     },
     "No Branches Detected (Visible After Sync)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3138,6 +3368,7 @@
       }
     },
     "No Matching Repositories": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3154,6 +3385,7 @@
       }
     },
     "No Records": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3170,6 +3402,7 @@
       }
     },
     "No Release Sync Records Yet": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3186,6 +3419,7 @@
       }
     },
     "No Repositories": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3202,6 +3436,7 @@
       }
     },
     "Not Run": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3218,6 +3453,7 @@
       }
     },
     "Not Synced": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3234,6 +3470,7 @@
       }
     },
     "Notification Level": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3250,6 +3487,7 @@
       }
     },
     "Notify on the first failure": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3266,6 +3504,7 @@
       }
     },
     "Notify only on the first failure (optional), or when consecutive failures reach the threshold and its multiples, to avoid alerts from brief network interruptions. Notifications are deferred while Focus is on and combined into a summary afterward.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3282,6 +3521,7 @@
       }
     },
     "Number to Keep (Optional)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3298,6 +3538,7 @@
       }
     },
     "OK": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3314,6 +3555,7 @@
       }
     },
     "Off by default. When enabled, a random port on 127.0.0.1 accepts POST /hook/<id>. The HMAC secret is stored only in Keychain. Cloudflare and Tailscale are optional runtime dependencies that must be installed locally.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3330,6 +3572,7 @@
       }
     },
     "Open %@ SSH Settings": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3346,6 +3589,7 @@
       }
     },
     "Open Main Window": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3362,6 +3606,7 @@
       }
     },
     "Organization": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3378,6 +3623,7 @@
       }
     },
     "Organization / Group": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3394,6 +3640,7 @@
       }
     },
     "Organization Name": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3410,6 +3657,7 @@
       }
     },
     "Organization name (for example, anthropic)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3426,6 +3674,7 @@
       }
     },
     "Organization: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3441,23 +3690,25 @@
         }
       }
     },
-    "Over the last 30 days, %@ succeeded and %@ failed": {
+    "Over the last 30 days, %lld succeeded and %lld failed": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Over the last 30 days, %@ succeeded and %@ failed"
+            "value": "Over the last 30 days, %lld succeeded and %lld failed"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "近 30 天共成功 %@ 次，失败 %@ 次"
+            "value": "近 30 天共成功 %lld 次，失败 %lld 次"
           }
         }
       }
     },
     "Overview": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3474,6 +3725,7 @@
       }
     },
     "Partial ref sync (not a complete backup)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3490,6 +3742,7 @@
       }
     },
     "Partially Completed": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3506,6 +3759,7 @@
       }
     },
     "Passive (Does Not Interrupt Focus)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3522,6 +3776,7 @@
       }
     },
     "Path: /hook/%@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3538,6 +3793,7 @@
       }
     },
     "Pause scheduled sync in Low Power Mode": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3554,6 +3810,7 @@
       }
     },
     "Pause scheduled sync on expensive networks or hotspots": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3570,6 +3827,7 @@
       }
     },
     "Pending": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3586,6 +3844,7 @@
       }
     },
     "Periodically compare the src/dst tip SHA and tree hash for a random sample of repositories. Mismatches are marked as content divergence.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3602,6 +3861,7 @@
       }
     },
     "Permission denied (403)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3618,6 +3878,7 @@
       }
     },
     "Permission denied (403): %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3634,6 +3895,7 @@
       }
     },
     "Permission denied or rate limited (403)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3650,6 +3912,7 @@
       }
     },
     "Permission denied or rate limited (403): %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3666,6 +3929,7 @@
       }
     },
     "Policy": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3682,6 +3946,7 @@
       }
     },
     "Preview (First 3)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3698,6 +3963,7 @@
       }
     },
     "Private Key Path": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3713,23 +3979,25 @@
         }
       }
     },
-    "Processing %@ / %@": {
+    "Processing %lld / %lld": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Processing %@ / %@"
+            "value": "Processing %lld / %lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在处理 %@ / %@"
+            "value": "正在处理 %lld / %lld"
           }
         }
       }
     },
     "Processing…": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3746,6 +4014,7 @@
       }
     },
     "Public Base URL (Optional)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3762,6 +4031,7 @@
       }
     },
     "Public Key Preview": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3778,6 +4048,7 @@
       }
     },
     "Public key file not found: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3794,6 +4065,7 @@
       }
     },
     "Quit GitRelay": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3810,6 +4082,7 @@
       }
     },
     "Registered webhook #%@ on GitHub.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3826,6 +4099,7 @@
       }
     },
     "Relay Fallback (Example)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3842,6 +4116,7 @@
       }
     },
     "Relay mode is a configuration example only. A Worker or GitHub App can forward to the local listener using long polling; this version does not deploy a hosted service.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3858,6 +4133,7 @@
       }
     },
     "Release Mirroring": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3874,6 +4150,7 @@
       }
     },
     "Release Mirroring Is Disabled": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3889,7 +4166,25 @@
         }
       }
     },
+    "Releases": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Releases"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Releases"
+          }
+        }
+      }
+    },
     "Remote already exists and will be reused": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3906,6 +4201,7 @@
       }
     },
     "Remove Tag": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3922,6 +4218,7 @@
       }
     },
     "Repositories will be created under the username associated with the current token.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3938,6 +4235,7 @@
       }
     },
     "Requires the write:repository scope": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3954,6 +4252,7 @@
       }
     },
     "Resource not found (404): Check that the username, organization, or group name is correct": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3970,6 +4269,7 @@
       }
     },
     "Restore Defaults": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3986,6 +4286,7 @@
       }
     },
     "Results": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4002,6 +4303,7 @@
       }
     },
     "Retry": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4018,6 +4320,7 @@
       }
     },
     "Reused %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4034,6 +4337,7 @@
       }
     },
     "Run Automatically": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4050,6 +4354,7 @@
       }
     },
     "Running ls-remote on source repository...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4066,6 +4371,7 @@
       }
     },
     "Running ls-remote on target repository...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4082,6 +4388,7 @@
       }
     },
     "SSH Key Generated": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4097,23 +4404,25 @@
         }
       }
     },
-    "Sample %@ repositories each time": {
+    "Sample %lld repositories each time": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sample %@ repositories each time"
+            "value": "Sample %lld repositories each time"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "每次抽样 %@ 个仓库"
+            "value": "每次抽样 %lld 个仓库"
           }
         }
       }
     },
     "Save": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4130,6 +4439,7 @@
       }
     },
     "Save to Keychain (Autofill Next Time)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4146,6 +4456,7 @@
       }
     },
     "Saving generates a /hook/<repo-id> path and an HMAC secret stored in Keychain. Also enable the local listener in Settings.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4162,6 +4473,7 @@
       }
     },
     "Scheduled Sync Pausing": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4178,6 +4490,7 @@
       }
     },
     "Scope": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4194,6 +4507,7 @@
       }
     },
     "Search Names or Descriptions": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4210,6 +4524,7 @@
       }
     },
     "Search Repositories": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4226,6 +4541,7 @@
       }
     },
     "Select All Visible": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4242,6 +4558,7 @@
       }
     },
     "Select Repositories to Mirror": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4258,6 +4575,7 @@
       }
     },
     "Select Scope": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4274,6 +4592,7 @@
       }
     },
     "Separate multiple tags with commas or Return. Existing tags are suggested as you type.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4289,23 +4608,25 @@
         }
       }
     },
-    "Set the sync frequency for all %@ repositories in “%@” to:": {
+    "Set the sync frequency for all %lld repositories in “%@” to:": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Set the sync frequency for all %@ repositories in “%@” to:"
+            "value": "Set the sync frequency for all %lld repositories in “%@” to:"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "将「%@」组内 %@ 个仓库的同步频率统一设为："
+            "value": "将「%lld」组内 %@ 个仓库的同步频率统一设为："
           }
         }
       }
     },
     "Settings": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4322,6 +4643,7 @@
       }
     },
     "Show a confirmation when the dry run detects ref deletions or forced updates on the target; canceling blocks the sync.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4338,6 +4660,7 @@
       }
     },
     "Show only in Notification Center without interrupting the current Focus.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4353,23 +4676,25 @@
         }
       }
     },
-    "Skipped %@ filesystem archive targets.": {
+    "Skipped %lld filesystem archive targets.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Skipped %@ filesystem archive targets."
+            "value": "Skipped %lld filesystem archive targets."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "跳过 %@ 个文件系统归档目标。"
+            "value": "跳过 %lld 个文件系统归档目标。"
           }
         }
       }
     },
     "Some repositories failed to sync.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4386,6 +4711,7 @@
       }
     },
     "Source": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4402,6 +4728,7 @@
       }
     },
     "Source Repository": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4418,6 +4745,7 @@
       }
     },
     "Source Repository Authentication (for git clone/fetch)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4434,6 +4762,7 @@
       }
     },
     "Source URLs are generated from the selected repositories (choose SSH or HTTPS with the source authentication option below)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4450,6 +4779,7 @@
       }
     },
     "Source repository is missing branch %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4466,6 +4796,7 @@
       }
     },
     "Specify a path for the private key.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4482,6 +4813,7 @@
       }
     },
     "Standard": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4498,6 +4830,7 @@
       }
     },
     "Strict Protection": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4514,6 +4847,7 @@
       }
     },
     "Succeeded": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4529,23 +4863,25 @@
         }
       }
     },
-    "Succeeded %@": {
+    "Succeeded %lld": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Succeeded %@"
+            "value": "Succeeded %lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "成功 %@"
+            "value": "成功 %lld"
           }
         }
       }
     },
     "Sync": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4562,6 +4898,7 @@
       }
     },
     "Sync All": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4578,6 +4915,7 @@
       }
     },
     "Sync Failed: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4594,6 +4932,7 @@
       }
     },
     "Sync Frequency": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4610,6 +4949,7 @@
       }
     },
     "Sync Log": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4626,6 +4966,7 @@
       }
     },
     "Sync Now": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4642,6 +4983,7 @@
       }
     },
     "Sync Summary After Focus": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4658,6 +5000,7 @@
       }
     },
     "Sync This Group": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4674,6 +5017,7 @@
       }
     },
     "Sync immediately after receiving a verified push event, independent of the frequency schedule. Enable the local listener in Settings → Webhook. Cloudflare Tunnel or Tailscale Funnel can optionally provide external access.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4690,6 +5034,7 @@
       }
     },
     "Synced": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4706,6 +5051,7 @@
       }
     },
     "Syncing": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4722,6 +5068,7 @@
       }
     },
     "Syncing...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4738,6 +5085,7 @@
       }
     },
     "Syncs in the Last 30 Days": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4754,6 +5102,7 @@
       }
     },
     "Tags": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4770,6 +5119,7 @@
       }
     },
     "Tailscale must be installed locally with Funnel enabled. Example: tailscale funnel <port>, then enter the Funnel HTTPS host in Public Base URL.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4785,23 +5135,25 @@
         }
       }
     },
-    "Target %@": {
+    "Target %lld": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Target %@"
+            "value": "Target %lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "目标 %@"
+            "value": "目标 %lld"
           }
         }
       }
     },
     "Target Repository": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4818,6 +5170,7 @@
       }
     },
     "Target Repository Authentication (for git push)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4834,6 +5187,7 @@
       }
     },
     "Target URL Template": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4850,6 +5204,7 @@
       }
     },
     "Target Username (Token Must Be an Administrator)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4866,6 +5221,7 @@
       }
     },
     "Target repositories must already exist; URLs are generated with the {name} template.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4882,6 +5238,7 @@
       }
     },
     "Target repository is missing branch %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4898,6 +5255,7 @@
       }
     },
     "Targets": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4914,6 +5272,7 @@
       }
     },
     "The /api/v1 path is appended automatically.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4930,6 +5289,7 @@
       }
     },
     "The current network is a cellular hotspot or an expensive network; scheduled sync is paused": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4946,6 +5306,7 @@
       }
     },
     "The default path is %@. The public key will be written to a .pub file at the same path.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4962,6 +5323,7 @@
       }
     },
     "The number to keep must be a positive integer": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4978,6 +5340,7 @@
       }
     },
     "The target API host is invalid": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4994,6 +5357,7 @@
       }
     },
     "The token will be encrypted in the system Keychain": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5010,6 +5374,7 @@
       }
     },
     "The webhook listens only on the local loopback address. You can verify it locally with curl; external access requires an exposure mode below.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5026,6 +5391,7 @@
       }
     },
     "This affects only syncs triggered automatically by frequency. Manual sync and instant webhook sync are unaffected.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5041,23 +5407,25 @@
         }
       }
     },
-    "This will delete %@ refs and force-update %@ refs. Continue?": {
+    "This will delete %lld refs and force-update %lld refs. Continue?": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This will delete %@ refs and force-update %@ refs. Continue?"
+            "value": "This will delete %lld refs and force-update %lld refs. Continue?"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "本次将删除 %@ 个 ref / 强制更新 %@ 个 ref,是否继续?"
+            "value": "本次将删除 %lld 个 ref / 强制更新 %lld 个 ref,是否继续?"
           }
         }
       }
     },
     "Time Sensitive": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5074,6 +5442,7 @@
       }
     },
     "Tips match — verification passed.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5090,6 +5459,7 @@
       }
     },
     "Today": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5106,6 +5476,7 @@
       }
     },
     "Token is valid, but its scopes could not be read; required scopes are missing: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5122,6 +5493,7 @@
       }
     },
     "Token is valid, scopes = [%@]": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5138,6 +5510,7 @@
       }
     },
     "Token is valid, scopes = [%@]; required scopes are missing: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5154,6 +5527,7 @@
       }
     },
     "Try to Register the Webhook Through the GitHub API When Saving": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5170,6 +5544,7 @@
       }
     },
     "Type": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5186,6 +5561,7 @@
       }
     },
     "Unable to bind the webhook listener port on 127.0.0.1": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5202,6 +5578,7 @@
       }
     },
     "Unknown Status": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5218,6 +5595,7 @@
       }
     },
     "Untagged": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5234,6 +5612,7 @@
       }
     },
     "Updating local mirror...": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5250,6 +5629,7 @@
       }
     },
     "Use System SSH Agent (~/.ssh/config)": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5266,6 +5646,7 @@
       }
     },
     "Use the Gitea API to create the selected repositories in a batch; reuse existing repositories when names conflict.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5282,6 +5663,7 @@
       }
     },
     "Use the system's default notification behavior; notifications usually do not interrupt while Focus is on.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5298,6 +5680,7 @@
       }
     },
     "Use {name} as the repository name placeholder.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5314,6 +5697,7 @@
       }
     },
     "Used only to fetch the repository list, not for git sync": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5330,6 +5714,7 @@
       }
     },
     "Verification Branch": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5346,6 +5731,7 @@
       }
     },
     "Verification Frequency": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5362,6 +5748,7 @@
       }
     },
     "Verify": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5378,6 +5765,7 @@
       }
     },
     "Verify Now": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5394,6 +5782,7 @@
       }
     },
     "Verify This Group": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5410,6 +5799,7 @@
       }
     },
     "Verify a Sample Now": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5426,6 +5816,7 @@
       }
     },
     "View Key": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5442,6 +5833,7 @@
       }
     },
     "Waiting for the First Release Sync…": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5458,6 +5850,7 @@
       }
     },
     "Weekly": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5474,6 +5867,7 @@
       }
     },
     "cloudflared must be installed locally. Example: cloudflared tunnel --url http://127.0.0.1:<port>, then enter the generated HTTPS host in Public Base URL.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5489,23 +5883,25 @@
         }
       }
     },
-    "src is %@ commits ahead": {
+    "src is %lld commits ahead": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "src is %@ commits ahead"
+            "value": "src is %lld commits ahead"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "src 领先 %@ 个 commit"
+            "value": "src 领先 %lld 个 commit"
           }
         }
       }
     },
     "ssh-keygen failed.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5522,6 +5918,7 @@
       }
     },
     "ssh-keygen was not found. Make sure the macOS Command Line Tools are installed.": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5538,6 +5935,7 @@
       }
     },
     "⚠ Content divergence detected: %@": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5549,6 +5947,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "⚠ 检测到内容分歧: %@"
+          }
+        }
+      }
+    },
+    "HTTP %@: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@: %@"
+          }
+        }
+      }
+    },
+    "HTTP %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@"
           }
         }
       }

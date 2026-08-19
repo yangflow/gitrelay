@@ -74,14 +74,14 @@ struct SyncHistorySparklineView: View {
     private func dayHelp(for day: SyncHistorySparkline.Day) -> String {
         let dateText = day.date.formatted(.dateTime.month(.abbreviated).day())
         if day.total == 0 {
-            return "\(dateText): No Syncs"
+            return String(localized: "\(dateText): No Syncs")
         }
-        return "\(dateText): \(day.successes) succeeded, \(day.failures) failed"
+        return String(localized: "\(dateText): \(day.successes) succeeded, \(day.failures) failed")
     }
 
     private var accessibilitySummary: String {
         let successes = sparkline.days.reduce(0) { $0 + $1.successes }
         let failures = sparkline.days.reduce(0) { $0 + $1.failures }
-        return "Over the last 30 days, \(successes) succeeded and \(failures) failed"
+        return String(localized: "Over the last 30 days, \(successes) succeeded and \(failures) failed")
     }
 }

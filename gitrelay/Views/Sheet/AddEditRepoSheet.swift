@@ -12,8 +12,8 @@ struct AddEditRepoSheet: View {
         _vm = State(initialValue: AddEditRepoViewModel(editing: repo))
     }
 
-    private var title: String { editingRepo == nil ? "Add Repository" : "Edit Repository" }
-    private var primaryActionTitle: String { editingRepo == nil ? "Add and Start Syncing" : "Save" }
+    private var title: String { editingRepo == nil ? String(localized: "Add Repository") : String(localized: "Edit Repository") }
+    private var primaryActionTitle: String { editingRepo == nil ? String(localized: "Add and Start Syncing") : String(localized: "Save") }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -278,10 +278,10 @@ struct AddEditRepoSheet: View {
     ) async -> String? {
         let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            return "Automatic webhook registration was skipped because no GitHub token was provided."
+            return String(localized: "Automatic webhook registration was skipped because no GitHub token was provided.")
         }
         guard let path = GitRemoteRepoPath.parse(from: repo.srcURL), !path.namespace.isEmpty else {
-            return "Automatic webhook registration was skipped because owner/repo could not be parsed from the source URL."
+            return String(localized: "Automatic webhook registration was skipped because owner/repo could not be parsed from the source URL.")
         }
         let client = GitHubWebhookAPIClient(token: trimmed)
         do {
@@ -291,7 +291,7 @@ struct AddEditRepoSheet: View {
                 usage: .webhookRegistration(provider: .github)
             )
             guard validation.isFullyAuthorized else {
-                return "Automatic webhook registration was skipped because the token lacks admin:repo_hook."
+                return String(localized: "Automatic webhook registration was skipped because the token lacks admin:repo_hook.")
             }
             let secret = try WebhookSecretStore.ensureSecret(repoID: repo.id)
             let registration = try await client.createPushHook(
@@ -300,9 +300,9 @@ struct AddEditRepoSheet: View {
                 hookURL: hookURL,
                 secret: secret
             )
-            return "Registered webhook #\(registration.id) on GitHub."
+            return String(localized: "Registered webhook #\(registration.id) on GitHub.")
         } catch {
-            return "Automatic webhook registration failed: \(error.localizedDescription)"
+            return String(localized: "Automatic webhook registration failed: \(error.localizedDescription)")
         }
     }
 }

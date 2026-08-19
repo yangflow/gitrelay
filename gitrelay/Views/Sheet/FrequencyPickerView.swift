@@ -6,7 +6,7 @@ struct FrequencyPickerView: View {
     var body: some View {
         Picker("Sync Frequency", selection: $frequency) {
             ForEach(SyncFrequency.allCases) { freq in
-                Text(freq.rawValue).tag(freq)
+                Text(freq.displayName).tag(freq)
             }
         }
         .pickerStyle(.menu)

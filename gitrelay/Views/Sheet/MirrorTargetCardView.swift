@@ -56,10 +56,10 @@ struct MirrorTargetCardView: View {
         switch target.kind {
         case .gitRemote:
             let trimmed = target.url.trimmingCharacters(in: .whitespaces)
-            return trimmed.isEmpty ? "Git Remote" : trimmed
+            return trimmed.isEmpty ? String(localized: "Git Remote") : trimmed
         case .filesystem:
             let trimmed = target.filesystemPath.trimmingCharacters(in: .whitespaces)
-            return trimmed.isEmpty ? "Filesystem Archive" : trimmed
+            return trimmed.isEmpty ? String(localized: "Filesystem Archive") : trimmed
         }
     }
 
@@ -116,8 +116,8 @@ struct MirrorTargetCardView: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.prompt = "Choose"
-        panel.message = "Choose an archive output directory"
+        panel.prompt = String(localized: "Choose")
+        panel.message = String(localized: "Choose an archive output directory")
         if panel.runModal() == .OK, let url = panel.url {
             target.filesystemPath = url.path
         }

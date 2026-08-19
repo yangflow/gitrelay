@@ -119,11 +119,11 @@ struct ReleaseMirrorStatusView: View {
 
     private func label(for state: ReleaseTagSyncState) -> String {
         switch state {
-        case .pending:  "Pending"
-        case .syncing:  "Syncing"
-        case .synced:   "Synced"
-        case .partial:  "Partially Completed"
-        case .failed:   "Failed"
+        case .pending:  String(localized: "Pending")
+        case .syncing:  String(localized: "Syncing")
+        case .synced:   String(localized: "Synced")
+        case .partial:  String(localized: "Partially Completed")
+        case .failed:   String(localized: "Failed")
         }
     }
 }

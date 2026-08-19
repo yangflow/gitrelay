@@ -141,9 +141,9 @@ final class AddEditRepoViewModel {
         let isCustomRefs = !RepoConfig.refSpecsEqual(refSpecs, RepoConfig.defaultRefSpecs)
         guard isShallow || isCustomRefs else { return nil }
         if isShallow {
-            return "A shallow clone cannot perform a complete push --mirror. Only the selected refs will sync, so this is not a complete backup."
+            return String(localized: "A shallow clone cannot perform a complete push --mirror. Only the selected refs will sync, so this is not a complete backup.")
         }
-        return "Custom ref filters are set. Only the selected refs will sync, so this is not a complete backup."
+        return String(localized: "Custom ref filters are set. Only the selected refs will sync, so this is not a complete backup.")
     }
 
     var isValid: Bool {
@@ -152,8 +152,8 @@ final class AddEditRepoViewModel {
 
     @discardableResult
     func validate() -> Bool {
-        nameError = name.trimmingCharacters(in: .whitespaces).isEmpty ? "Enter a name" : nil
-        srcError  = isValidGitURL(srcURL) ? nil : "Enter a valid Git URL"
+        nameError = name.trimmingCharacters(in: .whitespaces).isEmpty ? String(localized: "Enter a name") : nil
+        srcError  = isValidGitURL(srcURL) ? nil : String(localized: "Enter a valid Git URL")
         depthError = validateDepthText()
 
         targetErrors = [:]
@@ -166,24 +166,24 @@ final class AddEditRepoViewModel {
             case .gitRemote:
                 let trimmed = target.url.trimmingCharacters(in: .whitespaces)
                 if trimmed.isEmpty {
-                    targetErrors[target.id] = "Enter a valid Git URL"
+                    targetErrors[target.id] = String(localized: "Enter a valid Git URL")
                 } else if !isValidGitURL(trimmed) {
-                    targetErrors[target.id] = "Enter a valid Git URL"
+                    targetErrors[target.id] = String(localized: "Enter a valid Git URL")
                 }
             case .filesystem:
                 let trimmed = target.filesystemPath.trimmingCharacters(in: .whitespaces)
                 if trimmed.isEmpty {
-                    targetErrors[target.id] = "Choose an archive directory"
+                    targetErrors[target.id] = String(localized: "Choose an archive directory")
                 }
                 if let retention = parsedRetentionCount(for: target), retention < 1 {
-                    targetErrors[target.id] = "The number to keep must be a positive integer"
+                    targetErrors[target.id] = String(localized: "The number to keep must be a positive integer")
                 }
             }
         }
 
         if targets.filter(isTargetConfigured).allSatisfy({ !$0.enabled }) {
             if targetErrors.isEmpty {
-                targetErrors[targets[0].id] = "Enable at least one target"
+                targetErrors[targets[0].id] = String(localized: "Enable at least one target")
             }
         }
 
@@ -251,7 +251,7 @@ final class AddEditRepoViewModel {
         let trimmed = depthText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         guard let value = Int(trimmed), value > 0 else {
-            return "Depth must be a positive integer"
+            return String(localized: "Depth must be a positive integer")
         }
         return nil
     }

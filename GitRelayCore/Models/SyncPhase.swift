@@ -8,11 +8,11 @@ enum SyncPhase: Equatable {
     var statusTitle: String {
         switch self {
         case .fetchingSource:
-            return "Updating local mirror..."
+            return String(localized: "Updating local mirror...")
         case .syncingTarget:
-            return "Syncing..."
+            return String(localized: "Syncing...")
         case .archivingTarget:
-            return "Archiving..."
+            return String(localized: "Archiving...")
         }
     }
 }

@@ -113,7 +113,7 @@ final class SyncFailureNotifier: NSObject {
     private func registerCategories() {
         let retry = UNNotificationAction(
             identifier: Self.retryActionIdentifier,
-            title: "Retry",
+            title: String(localized: "Retry"),
             options: [.foreground]
         )
         let failure = UNNotificationCategory(

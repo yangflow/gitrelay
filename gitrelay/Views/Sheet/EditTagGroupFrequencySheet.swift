@@ -10,7 +10,7 @@ struct EditTagGroupFrequencySheet: View {
     @State private var frequency: SyncFrequency = .manual
 
     private var groupTitle: String {
-        tag ?? "Untagged"
+        tag ?? String(localized: "Untagged")
     }
 
     var body: some View {

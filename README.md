@@ -4,7 +4,7 @@ Mirror any Git repository to any other Git repository, automatically — from yo
 
 GitRelay is a native macOS app that manages one-way mirror syncs between Git hosting platforms. Point it at a source and a destination, choose a schedule, and it handles the rest: `git clone --mirror`, `git fetch --prune`, `git push --mirror`, all running quietly in the background while you work.
 
-It supports any combination of GitLab, GitHub, Gitea, Gitee, Bitbucket, or self-hosted Git servers — SSH Agent, SSH key, and HTTPS token auth included.
+It supports any combination of GitLab, GitHub, Gitea, Gitee, Bitbucket, or self-hosted Git servers — SSH Agent, SSH key, and HTTPS token auth included. The UI follows the system language (English and Simplified Chinese).
 
 [中文](./README.zh-CN.md)
 

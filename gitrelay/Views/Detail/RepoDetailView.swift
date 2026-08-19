@@ -23,7 +23,7 @@ struct RepoDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             Picker("Detail Page", selection: $selectedTab) {
                 ForEach(RepoDetailTab.allCases) { tab in
-                    Text(tab.rawValue).tag(tab)
+                    Text(LocalizedStringKey(tab.rawValue)).tag(tab)
                 }
             }
             .pickerStyle(.segmented)
