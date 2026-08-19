@@ -63,6 +63,15 @@ enum HeadlessSyncRunner {
             throw HeadlessSyncError.saveFailed(error.localizedDescription)
         }
 
+        if record.succeeded {
+            let quota = CachePreferences.load().cacheQuotaGB
+            _ = await MirrorCacheService.performCleanup(
+                repos: repos,
+                quotaGB: quota,
+                excluding: [repoID]
+            )
+        }
+
         return record.succeeded
     }
 
