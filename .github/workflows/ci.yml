@@ -42,11 +42,5 @@ jobs:
             -scheme gitrelay \
             -destination 'platform=macOS' \
             -only-testing:gitrelayTests \
-            CODE_SIGNING_ALLOWED=NO \
-            | xcpretty || true
-          xcodebuild test \
-            -project gitrelay.xcodeproj \
-            -scheme gitrelay \
-            -destination 'platform=macOS' \
-            -only-testing:gitrelayTests \
+            -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO
