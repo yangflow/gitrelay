@@ -163,6 +163,44 @@ final class BrowseRemoteRepoViewModel {
         restoreTargetGiteaAccountContext()
     }
 
+    /// Applies org-subscription discovery prefill and jumps to repo selection.
+    func applyPrefill(_ prefill: BrowseRemotePrefill) {
+        provider = prefill.provider
+        sourceAccountLabel = prefill.accountLabel
+        ProviderAccountStore.setSelectedLabel(prefill.accountLabel, for: prefill.provider, defaults: accountDefaults)
+        restoreSourceAccountContext()
+        if let gitlabHost = prefill.gitlabHost {
+            self.gitlabHost = gitlabHost
+        }
+        scopeKind = .organization
+        organizationName = prefill.organizationName
+        repos = prefill.repos
+        selectedIDs = prefill.preselectedRepoIDs
+        hasMore = false
+        applyTemplate(prefill.template)
+        phase = .selecting
+        connectError = nil
+    }
+
+    private func applyTemplate(_ template: OrgSubscriptionTemplate) {
+        sourceAuthMode = template.sourceAuthMode
+        sourceKeyPath = template.sourceKeyPath
+        targetURLTemplate = template.targetURLTemplate
+        targetAuthMode = template.targetAuthMode
+        targetKeyPath = template.targetKeyPath
+        namePrefix = template.namePrefix
+        frequency = template.frequency
+        targetAutoCreate = template.targetAutoCreate
+        targetCreateHost = template.targetCreateHost
+        targetVisibilityPrivate = template.targetVisibilityPrivate
+        targetNamespaceOwner = template.targetNamespaceOwner
+        switch template.targetNamespaceKind {
+        case .currentUser:   targetNamespaceKind = .currentUser
+        case .organization:  targetNamespaceKind = .organization
+        case .adminForUser:  targetNamespaceKind = .adminForUser
+        }
+    }
+
     func refreshSourceAccounts() {
         sourceAccountLabels = ProviderAccountStore.accountLabels(for: provider, defaults: accountDefaults)
         sourceAccountLabel = ProviderAccountStore.selectedLabel(for: provider, defaults: accountDefaults)

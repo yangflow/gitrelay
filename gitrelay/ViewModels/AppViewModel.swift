@@ -14,11 +14,16 @@ final class AppViewModel {
     var inProgressSyncIDs: Set<UUID> = []
     var inProgressVerifyIDs: Set<UUID> = []
     var verificationPreferences: VerificationPreferences
+    var orgSubscriptionPreferences: OrgSubscriptionPreferences
+    var orgSubscriptions: [OrgSubscription] = []
     var mirrorCacheUsageBytes: Int64 = 0
     var isCleaningMirrorCache = false
 
     /// When opening the main window from the menu bar, select this repo in the sidebar.
     var pendingMainWindowRepoID: UUID?
+
+    /// Opens the browse-remote sheet prefilled from an org subscription discovery notification.
+    var pendingBrowsePrefill: BrowseRemotePrefill?
 
     var errorMessage: String?
     /// FIFO queue: parallel syncs may each need a destructive-push prompt.
@@ -56,15 +61,19 @@ final class AppViewModel {
     }
 
     let notificationPreferences = NotificationPreferencesStore()
+    let orgSubscriptionStore: OrgSubscriptionStore
     let securityPreferences: SecurityPreferencesStore
     let cachePreferences: CachePreferencesStore
     let environmentMonitor = SyncEnvironmentMonitor()
     let failureNotifier = SyncFailureNotifier()
+    let orgDiscoveryNotifier = OrgDiscoveryNotifier()
     let webhookPreferences: WebhookPreferencesStore
 
     private let biometricAuthenticator: BiometricAuthenticating
     private let scheduler = SyncScheduler()
     private let verificationScheduler = VerificationScheduler()
+    private let orgSubscriptionScheduler = OrgSubscriptionScheduler()
+    private let orgSubscriptionPoller: OrgSubscriptionPoller
     private let releaseMirrorService = ReleaseMirrorService()
     private let verificationPreferencesStore: VerificationPreferencesStore
     private let webhookListener = WebhookListener()
@@ -83,6 +92,8 @@ final class AppViewModel {
 
     init(
         verificationPreferencesStore: VerificationPreferencesStore? = nil,
+        orgSubscriptionStore: OrgSubscriptionStore? = nil,
+        orgSubscriptionFetcher: OrgRemoteRepoFetcher = .live,
         webhookPreferencesStore: WebhookPreferencesStore? = nil,
         securityPreferencesStore: SecurityPreferencesStore? = nil,
         cachePreferencesStore: CachePreferencesStore? = nil,
@@ -91,6 +102,11 @@ final class AppViewModel {
         let store = verificationPreferencesStore ?? VerificationPreferencesStore()
         self.verificationPreferencesStore = store
         self.verificationPreferences = store.preferences
+        let orgStore = orgSubscriptionStore ?? OrgSubscriptionStore()
+        self.orgSubscriptionStore = orgStore
+        self.orgSubscriptionPreferences = orgStore.preferences
+        self.orgSubscriptions = orgStore.subscriptions
+        self.orgSubscriptionPoller = OrgSubscriptionPoller(store: orgStore, fetcher: orgSubscriptionFetcher)
         let webhookStore = webhookPreferencesStore ?? WebhookPreferencesStore()
         self.webhookPreferences = webhookStore
         self.securityPreferences = securityPreferencesStore ?? SecurityPreferencesStore()
@@ -108,6 +124,10 @@ final class AppViewModel {
             self?.triggerSync(repoID: id)
         }
 
+        orgDiscoveryNotifier.onView = { [weak self] subscriptionID in
+            self?.openBrowsePrefill(for: subscriptionID)
+        }
+
         scheduler.onFire = { [weak self] id in
             Task { @MainActor in
                 guard let self else { return }
@@ -118,9 +138,19 @@ final class AppViewModel {
         verificationScheduler.onFire = { [weak self] in
             Task { self?.runScheduledVerificationSample() }
         }
+        orgSubscriptionScheduler.onFire = { [weak self] in
+            Task { await self?.runScheduledOrgSubscriptionPoll() }
+        }
         store.onPreferencesChange = { [weak self] (prefs: VerificationPreferences) in
             self?.verificationPreferences = prefs
             self?.verificationScheduler.reschedule(frequency: prefs.frequency)
+        }
+        orgStore.onPreferencesChange = { [weak self] (prefs: OrgSubscriptionPreferences) in
+            self?.orgSubscriptionPreferences = prefs
+            self?.orgSubscriptionScheduler.reschedule(frequency: prefs.pollFrequency)
+        }
+        orgStore.onSubscriptionsChange = { [weak self] subs in
+            self?.orgSubscriptions = subs
         }
         webhookStore.onPreferencesChange = { [weak self] _ in
             self?.refreshWebhookListener()
@@ -139,9 +169,11 @@ final class AppViewModel {
             scheduler.schedule(repo: repo)
         }
         verificationScheduler.schedule(frequency: verificationPreferences.frequency)
+        orgSubscriptionScheduler.schedule(frequency: orgSubscriptionPreferences.pollFrequency)
 
         environmentMonitor.start()
         failureNotifier.requestAuthorizationIfNeeded()
+        orgDiscoveryNotifier.requestAuthorizationIfNeeded()
         startFocusFlushLoop()
         observeAppActivation()
         AppIntentBridge.register(self)
@@ -410,6 +442,53 @@ final class AppViewModel {
         pending.respond(false)
     }
 
+    // MARK: - Org subscription
+
+    func updateOrgSubscriptionPreferences(_ preferences: OrgSubscriptionPreferences) {
+        orgSubscriptionStore.preferences = preferences
+    }
+
+    func addOrgSubscription(_ subscription: OrgSubscription) {
+        orgSubscriptionStore.add(subscription)
+    }
+
+    func updateOrgSubscription(_ subscription: OrgSubscription) {
+        orgSubscriptionStore.update(subscription)
+    }
+
+    func removeOrgSubscription(id: UUID) {
+        orgSubscriptionStore.remove(id: id)
+    }
+
+    func saveOrgSubscriptionTargetToken(_ token: String, for subscriptionID: UUID) throws {
+        try orgSubscriptionStore.saveTargetToken(token, for: subscriptionID)
+    }
+
+    func nextOrgSubscriptionFireDate() -> Date? {
+        orgSubscriptionScheduler.nextFireDate()
+    }
+
+    func triggerOrgSubscriptionPollNow() async {
+        await runScheduledOrgSubscriptionPoll()
+    }
+
+    func openBrowsePrefill(for subscriptionID: UUID) {
+        guard let subscription = orgSubscriptionStore.subscription(id: subscriptionID) else { return }
+        Task {
+            guard let result = await orgSubscriptionPoller.checkSubscription(subscription, localRepos: repos) else {
+                return
+            }
+            guard !result.newRepos.isEmpty else { return }
+            pendingBrowsePrefill = makeBrowsePrefill(from: result)
+            bringAppForwardForConfirmation()
+        }
+    }
+
+    func consumePendingBrowsePrefill() -> BrowseRemotePrefill? {
+        defer { pendingBrowsePrefill = nil }
+        return pendingBrowsePrefill
+    }
+
     // MARK: - Integrity verification
 
     func updateVerificationPreferences(_ preferences: VerificationPreferences) {
@@ -447,6 +526,9 @@ final class AppViewModel {
         failureNotifier.flushPendingIfFocusEnded(
             level: notificationPreferences.preferences.interruptionLevel
         )
+        orgDiscoveryNotifier.flushPendingIfFocusEnded(
+            level: notificationPreferences.preferences.interruptionLevel
+        )
     }
 
     // MARK: - Private
@@ -470,6 +552,44 @@ final class AppViewModel {
         for repo in sample {
             triggerVerify(repoID: repo.id)
         }
+    }
+
+    private func runScheduledOrgSubscriptionPoll() async {
+        guard scheduledSyncPauseReason == nil else { return }
+        let results = await orgSubscriptionPoller.checkAllSubscriptions(localRepos: repos)
+        for result in results where !result.newRepos.isEmpty {
+            if result.subscription.autoAddEnabled {
+                let configs = await OrgSubscriptionAutoAdder.addNewRepos(
+                    from: result,
+                    store: orgSubscriptionStore
+                )
+                if !configs.isEmpty {
+                    addRepos(configs, triggerSync: true)
+                    continue
+                }
+            }
+            orgDiscoveryNotifier.handleDiscovery(
+                result,
+                notificationsEnabled: orgSubscriptionPreferences.notificationsEnabled,
+                interruptionLevel: notificationPreferences.preferences.interruptionLevel
+            )
+        }
+    }
+
+    private func makeBrowsePrefill(from result: OrgSubscriptionCheckResult) -> BrowseRemotePrefill {
+        let gitlabHost = result.subscription.provider == .gitlab
+            ? ProviderAccountStore.host(for: .gitlab, label: result.subscription.accountLabel)
+            : nil
+        return BrowseRemotePrefill(
+            subscriptionID: result.subscription.id,
+            provider: result.subscription.provider,
+            accountLabel: result.subscription.accountLabel,
+            organizationName: result.subscription.organizationName,
+            gitlabHost: gitlabHost,
+            repos: result.allRemoteRepos,
+            preselectedRepoIDs: Set(result.newRepos.map(\.id)),
+            template: result.subscription.template
+        )
     }
 
     private func startVerify(repo: RepoConfig) {

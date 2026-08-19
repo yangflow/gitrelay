@@ -37,6 +37,8 @@ struct gitrelayApp: App {
             TabView {
                 SettingsView()
                     .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
+                OrgSubscriptionSettingsView()
+                    .tabItem { Label(String(localized: "Subscribe"), systemImage: "building.2") }
                 VerificationSettingsView()
                     .tabItem { Label("Verify", systemImage: "checkmark.shield") }
             }
