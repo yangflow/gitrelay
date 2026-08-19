@@ -17,6 +17,7 @@ struct MirrorTargetCardView: View {
                 }
                 AuthFieldView(
                     label: "Target \(index + 1)",
+                    remoteURL: target.url,
                     mode: $target.authMode,
                     keyPath: $target.keyPath,
                     token: $target.token

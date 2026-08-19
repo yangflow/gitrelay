@@ -42,6 +42,7 @@ struct AddEditRepoSheet: View {
                     }
                     AuthFieldView(
                         label: "Source",
+                        remoteURL: vm.srcURL,
                         mode: $vm.srcAuthMode,
                         keyPath: $vm.srcKeyPath,
                         token: $vm.srcToken

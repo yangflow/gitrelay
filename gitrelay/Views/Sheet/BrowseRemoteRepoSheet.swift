@@ -201,6 +201,14 @@ struct BrowseRemoteRepoSheet: View {
 
     // MARK: - Phase 3
 
+    private var sourceRemoteURL: String? {
+        vm.selectedRepos.first.map { vm.sourceURL(for: $0) }
+    }
+
+    private var targetRemoteURL: String? {
+        vm.selectedRepos.first.map { vm.previewURL(for: $0) }
+    }
+
     private var targetView: some View {
         Form {
             Section("已选择 \(vm.selectedIDs.count) 个仓库") {
@@ -212,6 +220,7 @@ struct BrowseRemoteRepoSheet: View {
             Section("源仓库认证(用于 git clone/fetch)") {
                 AuthFieldView(
                     label: "Source",
+                    remoteURL: sourceRemoteURL,
                     mode: $vm.sourceAuthMode,
                     keyPath: $vm.sourceKeyPath,
                     token: $vm.sourceToken
@@ -250,6 +259,7 @@ struct BrowseRemoteRepoSheet: View {
             Section("目标仓库认证(用于 git push)") {
                 AuthFieldView(
                     label: "Target",
+                    remoteURL: targetRemoteURL,
                     mode: $vm.targetAuthMode,
                     keyPath: $vm.targetKeyPath,
                     token: $vm.targetToken
