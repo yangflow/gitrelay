@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 @main
 struct gitrelayApp: App {
@@ -10,6 +11,7 @@ struct gitrelayApp: App {
                 .environment(appVM)
                 .environment(appVM.notificationPreferences)
                 .environment(appVM.environmentMonitor)
+                .onOpenURL(perform: handleIncomingURL)
                 .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { _ in
                     Task { @MainActor in
                         try? await Task.sleep(for: .milliseconds(50))
@@ -51,5 +53,14 @@ struct gitrelayApp: App {
             MenuBarIconLabel(appVM: appVM)
         }
         .menuBarExtraStyle(.window)
+    }
+
+    private func handleIncomingURL(_ url: URL) {
+        if let repoID = WidgetDeepLink.repoID(from: url) {
+            appVM.pendingMainWindowRepoID = repoID
+        }
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        NotificationCenter.default.post(name: .gitrelayOpenMainWindow, object: nil)
     }
 }
