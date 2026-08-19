@@ -4,9 +4,11 @@ struct RepoStatusSectionView: View {
     let repo: RepoConfig
     let status: SyncStatus
     let isSyncing: Bool
+    let isVerifying: Bool
     let records: [SyncRecord]
     let nextFireDate: Date?
     let onSyncNow: () -> Void
+    let onVerifyNow: () -> Void
     let onCancel: () -> Void
 
     var body: some View {
@@ -24,12 +26,23 @@ struct RepoStatusSectionView: View {
                     consecutiveFailureCount: repo.consecutiveFailureCount,
                     onRetry: onSyncNow
                 )
+            } else if case .diverged(let detail) = status {
+                RepoDivergedRowView(
+                    detail: detail,
+                    lastVerifiedAt: repo.lastVerifiedAt,
+                    isVerifying: isVerifying,
+                    onVerifyNow: onVerifyNow,
+                    onSyncNow: onSyncNow
+                )
             } else {
                 RepoIdleRowView(
                     status: status,
                     lastSyncedAt: repo.lastSyncedAt,
+                    lastVerifiedAt: repo.lastVerifiedAt,
                     nextFireDate: nextFireDate,
-                    onSyncNow: onSyncNow
+                    isVerifying: isVerifying,
+                    onSyncNow: onSyncNow,
+                    onVerifyNow: onVerifyNow
                 )
             }
         }

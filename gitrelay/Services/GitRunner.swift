@@ -135,4 +135,62 @@ actor GitRunner {
                 return BranchInfo(name: parts[0], tipSHA: parts[1], isDefault: isDefault)
             }
     }
+
+    /// Returns the tip commit SHA for `refs/heads/<branch>`, or nil if the ref is absent.
+    func lsRemoteTipSHA(
+        url: String,
+        branch: String,
+        env: [String: String] = [:]
+    ) async throws -> String? {
+        let ref = branch.hasPrefix("refs/") ? branch : "refs/heads/\(branch)"
+        let (stdout, _) = try await run(args: ["ls-remote", url, ref], env: env)
+        return Self.parseLSRemoteSHA(stdout, matchingRef: ref)
+    }
+
+    /// Fetches a specific commit (and its tree) into a local repo without updating local branch tips.
+    func fetchCommit(
+        repoPath: String,
+        remoteURL: String,
+        commitSHA: String,
+        env: [String: String] = [:]
+    ) async throws {
+        _ = try await run(
+            args: ["fetch", "--no-tags", remoteURL, commitSHA],
+            env: env,
+            cwd: repoPath
+        )
+    }
+
+    func treeHash(repoPath: String, commitSHA: String) async throws -> String {
+        let (stdout, _) = try await run(
+            args: ["rev-parse", "\(commitSHA)^{tree}"],
+            cwd: repoPath
+        )
+        return stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func ensureBareRepo(at path: String) async throws {
+        let headPath = URL(fileURLWithPath: path).appendingPathComponent("HEAD").path
+        if FileManager.default.fileExists(atPath: headPath) {
+            return
+        }
+        try FileManager.default.createDirectory(
+            atPath: path,
+            withIntermediateDirectories: true
+        )
+        _ = try await run(args: ["init", "--bare", path])
+    }
+
+    nonisolated static func parseLSRemoteSHA(_ output: String, matchingRef: String) -> String? {
+        for line in output.split(separator: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let parts = trimmed.split(whereSeparator: { $0 == "\t" || $0 == " " }).map(String.init)
+            guard parts.count >= 2 else { continue }
+            if parts[1] == matchingRef {
+                return parts[0]
+            }
+        }
+        return nil
+    }
 }

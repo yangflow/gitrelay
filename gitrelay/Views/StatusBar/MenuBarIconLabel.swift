@@ -5,7 +5,14 @@ struct MenuBarIconLabel: View {
     let appVM: AppViewModel
 
     var body: some View {
-        Image(nsImage: appVM.hasAnyFailure ? Self.failedIcon : Self.normalIcon)
+        Image(nsImage: icon)
+    }
+
+    private var icon: NSImage {
+        if appVM.hasAnyFailure || appVM.hasAnyDivergence {
+            return Self.failedIcon
+        }
+        return Self.normalIcon
     }
 
     private static let normalIcon: NSImage = makeIcon(name: "arrow.triangle.2.circlepath")
