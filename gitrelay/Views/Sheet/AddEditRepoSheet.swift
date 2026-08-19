@@ -112,6 +112,40 @@ struct AddEditRepoSheet: View {
                 }
 
                 Section {
+                    DisclosureGroup("高级选项") {
+                        TextField("克隆深度（留空 = 全量历史）", text: $vm.depthText)
+                            .font(.system(.body, design: .monospaced))
+                        if let err = vm.depthError {
+                            Text(err).font(.caption).foregroundStyle(.red)
+                        }
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Fetch refspecs（每行一条）")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            TextEditor(text: $vm.refSpecsText)
+                                .font(.system(.caption, design: .monospaced))
+                                .frame(minHeight: 72)
+                        }
+
+                        Text("默认同步所有分支与 tag。可改为仅 main + v* tag，例如：\n+refs/heads/main:refs/heads/main\n+refs/tags/v*:refs/tags/v*")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        if let warning = vm.partialSyncWarning {
+                            Label {
+                                Text(warning)
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                            } icon: {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                    }
+                }
+
+                Section {
                     Label {
                         Text("GitRelay 会先执行 dry-run。严格保护会在删除或强制更新前弹出确认弹窗;取消则阻断并记失败。自动执行保留传统 mirror 行为。")
                             .font(.caption)
@@ -137,7 +171,7 @@ struct AddEditRepoSheet: View {
             .padding(16)
         }
         .frame(width: 520)
-        .frame(minHeight: 680)
+        .frame(minHeight: 760)
     }
 
     private func binding(for id: UUID) -> Binding<MirrorTargetDraft> {

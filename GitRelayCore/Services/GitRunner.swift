@@ -78,7 +78,41 @@ actor GitRunner {
     // MARK: - Git operations
 
     func cloneMirror(srcURL: String, mirrorPath: String, env: [String: String] = [:]) async throws {
-        _ = try await run(args: ["clone", "--mirror", srcURL, mirrorPath], env: env)
+        _ = try await run(args: GitSyncArguments.cloneMirrorArgs(srcURL: srcURL, mirrorPath: mirrorPath), env: env)
+    }
+
+    func initBareMirror(at path: String, env: [String: String] = [:]) async throws {
+        try FileManager.default.createDirectory(
+            atPath: path,
+            withIntermediateDirectories: true
+        )
+        _ = try await run(args: ["init", "--bare", path], env: env)
+    }
+
+    func addRemote(
+        mirrorPath: String,
+        name: String,
+        url: String,
+        env: [String: String] = [:]
+    ) async throws {
+        _ = try await run(
+            args: ["remote", "add", name, url],
+            env: env,
+            cwd: mirrorPath
+        )
+    }
+
+    func fetchSource(
+        mirrorPath: String,
+        depth: Int?,
+        refSpecs: [String],
+        env: [String: String] = [:]
+    ) async throws {
+        _ = try await run(
+            args: GitSyncArguments.fetchArgs(depth: depth, refSpecs: refSpecs),
+            env: env,
+            cwd: mirrorPath
+        )
     }
 
     func fetchPrune(mirrorPath: String, env: [String: String] = [:]) async throws {
@@ -95,7 +129,20 @@ actor GitRunner {
 
     func pushMirror(mirrorPath: String, dstURL: String, env: [String: String] = [:]) async throws {
         _ = try await run(
-            args: ["push", "--mirror", dstURL],
+            args: GitSyncArguments.pushMirrorArgs(dstURL: dstURL),
+            env: env,
+            cwd: mirrorPath
+        )
+    }
+
+    func pushSelectiveRefs(
+        mirrorPath: String,
+        dstURL: String,
+        refSpecs: [String],
+        env: [String: String] = [:]
+    ) async throws {
+        _ = try await run(
+            args: GitSyncArguments.pushSelectiveArgs(dstURL: dstURL, refSpecs: refSpecs),
             env: env,
             cwd: mirrorPath
         )
@@ -103,7 +150,21 @@ actor GitRunner {
 
     func pushMirrorDryRun(mirrorPath: String, dstURL: String, env: [String: String] = [:]) async throws -> DestructivePushPlan {
         let (stdout, stderr) = try await run(
-            args: ["push", "--mirror", "--dry-run", dstURL],
+            args: GitSyncArguments.pushMirrorDryRunArgs(dstURL: dstURL),
+            env: env,
+            cwd: mirrorPath
+        )
+        return DestructivePushPlan.parse(gitOutput: [stdout, stderr].joined(separator: "\n"))
+    }
+
+    func pushSelectiveRefsDryRun(
+        mirrorPath: String,
+        dstURL: String,
+        refSpecs: [String],
+        env: [String: String] = [:]
+    ) async throws -> DestructivePushPlan {
+        let (stdout, stderr) = try await run(
+            args: GitSyncArguments.pushSelectiveArgs(dstURL: dstURL, refSpecs: refSpecs, dryRun: true),
             env: env,
             cwd: mirrorPath
         )

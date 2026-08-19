@@ -24,9 +24,50 @@ struct RepoConfig: Codable, Identifiable, Equatable {
     var tags: [String]
     /// When enabled, mirror GitHub/GitLab release metadata and binary assets to each target.
     var mirrorReleases: Bool
+    /// Shallow clone depth; nil means full history.
+    var depth: Int?
+    /// Fetch refspecs; defaults to all heads and tags.
+    var refSpecs: [String]
+
+    static let defaultRefSpecs: [String] = [
+        "+refs/heads/*:refs/heads/*",
+        "+refs/tags/*:refs/tags/*"
+    ]
 
     var enabledTargets: [MirrorTarget] {
         targets.filter(\.enabled)
+    }
+
+    var resolvedRefSpecs: [String] {
+        let normalized = Self.normalizedRefSpecs(refSpecs)
+        return normalized.isEmpty ? Self.defaultRefSpecs : normalized
+    }
+
+    var isShallowClone: Bool {
+        guard let depth else { return false }
+        return depth > 0
+    }
+
+    /// True when sync cannot use full `git push --mirror` (shallow history or ref subset).
+    var usesSelectiveRefSync: Bool {
+        isShallowClone || !Self.refSpecsEqual(resolvedRefSpecs, Self.defaultRefSpecs)
+    }
+
+    var partialSyncWarning: String? {
+        guard usesSelectiveRefSync else { return nil }
+        if isShallowClone {
+            return "浅克隆无法完整 push --mirror，将仅同步所选 ref，不构成完整备份。"
+        }
+        return "已自定义 ref 过滤，将仅同步所选 ref，不构成完整备份。"
+    }
+
+    static func normalizedRefSpecs(_ raw: [String]) -> [String] {
+        raw.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    static func refSpecsEqual(_ lhs: [String], _ rhs: [String]) -> Bool {
+        normalizedRefSpecs(lhs) == normalizedRefSpecs(rhs)
     }
 
     init(
@@ -47,7 +88,9 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         lastVerifiedAt: Date? = nil,
         divergedDetail: String? = nil,
         tags: [String] = [],
-        mirrorReleases: Bool = false
+        mirrorReleases: Bool = false,
+        depth: Int? = nil,
+        refSpecs: [String] = RepoConfig.defaultRefSpecs
     ) {
         self.id = id
         self.name = name
@@ -67,6 +110,10 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         self.divergedDetail = divergedDetail
         self.tags = RepoTagGrouping.normalizedTags(tags)
         self.mirrorReleases = mirrorReleases
+        self.depth = depth.map { max(0, $0) }.flatMap { $0 > 0 ? $0 : nil }
+        self.refSpecs = Self.normalizedRefSpecs(refSpecs).isEmpty
+            ? Self.defaultRefSpecs
+            : Self.normalizedRefSpecs(refSpecs)
     }
 
     /// Convenience for tests and single-target call sites.
@@ -89,7 +136,9 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         lastVerifiedAt: Date? = nil,
         divergedDetail: String? = nil,
         tags: [String] = [],
-        mirrorReleases: Bool = false
+        mirrorReleases: Bool = false,
+        depth: Int? = nil,
+        refSpecs: [String] = RepoConfig.defaultRefSpecs
     ) {
         self.init(
             id: id,
@@ -109,7 +158,9 @@ struct RepoConfig: Codable, Identifiable, Equatable {
             lastVerifiedAt: lastVerifiedAt,
             divergedDetail: divergedDetail,
             tags: tags,
-            mirrorReleases: mirrorReleases
+            mirrorReleases: mirrorReleases,
+            depth: depth,
+            refSpecs: refSpecs
         )
     }
 
@@ -134,6 +185,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         case divergedDetail
         case tags
         case mirrorReleases
+        case depth
+        case refSpecs
     }
 
     init(from decoder: Decoder) throws {
@@ -172,6 +225,11 @@ struct RepoConfig: Codable, Identifiable, Equatable {
             try container.decodeIfPresent([String].self, forKey: .tags) ?? []
         )
         mirrorReleases = try container.decodeIfPresent(Bool.self, forKey: .mirrorReleases) ?? false
+        depth = try container.decodeIfPresent(Int.self, forKey: .depth).flatMap { $0 > 0 ? $0 : nil }
+        let decodedRefSpecs = try container.decodeIfPresent([String].self, forKey: .refSpecs) ?? []
+        refSpecs = Self.normalizedRefSpecs(decodedRefSpecs).isEmpty
+            ? Self.defaultRefSpecs
+            : Self.normalizedRefSpecs(decodedRefSpecs)
 
         if let decodedTargets = try container.decodeIfPresent([MirrorTarget].self, forKey: .targets),
            !decodedTargets.isEmpty {
@@ -206,6 +264,10 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         try container.encode(tags, forKey: .tags)
         if mirrorReleases {
             try container.encode(mirrorReleases, forKey: .mirrorReleases)
+        }
+        try container.encodeIfPresent(depth, forKey: .depth)
+        if !Self.refSpecsEqual(refSpecs, Self.defaultRefSpecs) {
+            try container.encode(refSpecs, forKey: .refSpecs)
         }
     }
 

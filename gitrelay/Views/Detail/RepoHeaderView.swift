@@ -33,6 +33,17 @@ struct RepoHeaderView: View {
                     }
                 }
             }
+
+            if repo.usesSelectiveRefSync {
+                Label {
+                    Text(repo.partialSyncWarning ?? "部分 ref 同步（非完整备份）")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
+            }
         }
     }
 
