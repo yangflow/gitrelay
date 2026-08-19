@@ -102,6 +102,7 @@ final class AppViewModel {
         failureNotifier.requestAuthorizationIfNeeded()
         startFocusFlushLoop()
         observeAppActivation()
+        AppIntentBridge.register(self)
     }
 
     // MARK: - CRUD
