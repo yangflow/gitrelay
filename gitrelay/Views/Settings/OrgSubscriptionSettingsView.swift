@@ -208,7 +208,42 @@ struct OrgSubscriptionEditorSheet: View {
                 }
 
                 if autoAddEnabled {
-                    templateSection
+                    Section(String(localized: "Mirror Template")) {
+                        Picker(String(localized: "Source Auth"), selection: $template.sourceAuthMode) {
+                            ForEach(AuthMode.allCases) { mode in
+                                Text(mode.rawValue).tag(mode)
+                            }
+                        }
+
+                        Picker(String(localized: "Target Auth"), selection: $template.targetAuthMode) {
+                            ForEach(AuthMode.allCases) { mode in
+                                Text(mode.rawValue).tag(mode)
+                            }
+                        }
+
+                        TextField(String(localized: "Target URL template (must include {name})"), text: $template.targetURLTemplate)
+                            .textFieldStyle(.roundedBorder)
+                            .font(.system(.caption, design: .monospaced))
+                            .disabled(template.targetAutoCreate)
+
+                        Toggle(String(localized: "Auto-create target on Gitea"), isOn: $template.targetAutoCreate)
+
+                        Picker(String(localized: "Sync Frequency"), selection: $template.frequency) {
+                            ForEach(SyncFrequency.allCases) { f in
+                                Text(f.displayName).tag(f)
+                            }
+                        }
+
+                        TextField(String(localized: "Name prefix (optional)"), text: $template.namePrefix)
+                            .textFieldStyle(.roundedBorder)
+
+                        if template.targetAuthMode == .httpsToken || template.sourceAuthMode == .httpsToken {
+                            GatedSecureTokenField(
+                                placeholder: String(localized: "Target HTTPS token (optional)"),
+                                text: $targetToken
+                            )
+                        }
+                    }
                 }
             }
             .formStyle(.grouped)
