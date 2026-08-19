@@ -43,6 +43,7 @@ struct ContentView: View {
         )) { request in
             DestructivePushConfirmationSheet(
                 repoName: request.repoName,
+                targetURL: request.targetURL,
                 plan: request.plan,
                 onConfirm: { appVM.confirmPendingDestructivePush() },
                 onCancel: { appVM.cancelPendingDestructivePush() }

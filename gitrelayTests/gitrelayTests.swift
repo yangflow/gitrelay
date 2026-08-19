@@ -266,6 +266,55 @@ struct RepoConfigCodableTests {
         #expect(repo.lastSyncError == nil)
         #expect(repo.consecutiveFailureCount == 0)
     }
+
+    @Test func legacyDstURLMigratesToTargetsOnDecode() throws {
+        let json = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "legacy-repo",
+          "srcURL": "git@github.com:user/repo.git",
+          "dstURL": "git@github.com:user/mirror.git",
+          "srcAuth": { "sshAgent": {} },
+          "dstAuth": { "httpsToken": { "keychainTag": "00000000-0000-0000-0000-000000000001-dst" } },
+          "frequency": "手动",
+          "createdAt": "2026-04-25T12:00:00Z"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
+
+        #expect(repo.targets.count == 1)
+        #expect(repo.targets[0].url == "git@github.com:user/mirror.git")
+        #expect(repo.targets[0].enabled)
+        if case .httpsToken(let tag) = repo.targets[0].auth {
+            #expect(tag == "00000000-0000-0000-0000-000000000001-dst")
+        } else {
+            Issue.record("expected migrated https token auth")
+        }
+    }
+
+    @Test func encodesTargetsNotLegacyDstFields() throws {
+        let repo = RepoConfig(
+            name: "multi",
+            srcURL: "git@github.com:user/repo.git",
+            targets: [
+                MirrorTarget(url: "git@github.com:user/a.git"),
+                MirrorTarget(url: "git@gitlab.com:user/b.git", enabled: false)
+            ]
+        )
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(repo)
+        let object = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+
+        #expect(object["targets"] != nil)
+        #expect(object["dstURL"] == nil)
+        #expect(object["dstAuth"] == nil)
+    }
 }
 
 // MARK: - SyncHealthSummary
@@ -579,10 +628,14 @@ struct VerificationFrequencyTests {
 
 @MainActor
 struct AddEditRepoValidationTests {
+    private func setPrimaryTargetURL(_ vm: AddEditRepoViewModel, _ url: String) {
+        vm.targets[0].url = url
+    }
+
     @Test func emptyNameIsInvalid() {
         let vm = AddEditRepoViewModel()
         vm.srcURL = "git@github.com:user/repo.git"
-        vm.dstURL = "git@github.com:user/mirror.git"
+        setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
         _ = vm.validate()
         #expect(vm.nameError != nil)
     }
@@ -591,7 +644,7 @@ struct AddEditRepoValidationTests {
         let vm = AddEditRepoViewModel()
         vm.name = "   "
         vm.srcURL = "git@github.com:user/repo.git"
-        vm.dstURL = "git@github.com:user/mirror.git"
+        setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
         _ = vm.validate()
         #expect(vm.nameError != nil)
     }
@@ -600,17 +653,17 @@ struct AddEditRepoValidationTests {
         let vm = AddEditRepoViewModel()
         vm.name = "my-repo"
         vm.srcURL = "git@gitlab.com:org/repo.git"
-        vm.dstURL = "git@github.com:user/repo.git"
+        setPrimaryTargetURL(vm, "git@github.com:user/repo.git")
         #expect(vm.validate())
         #expect(vm.srcError == nil)
-        #expect(vm.dstError == nil)
+        #expect(vm.targetErrors.isEmpty)
     }
 
     @Test func httpsURLsAreValid() {
         let vm = AddEditRepoViewModel()
         vm.name = "my-repo"
         vm.srcURL = "https://github.com/user/repo.git"
-        vm.dstURL = "https://github.com/user/mirror.git"
+        setPrimaryTargetURL(vm, "https://github.com/user/mirror.git")
         #expect(vm.validate())
     }
 
@@ -618,10 +671,10 @@ struct AddEditRepoValidationTests {
         let vm = AddEditRepoViewModel()
         vm.name = "my-repo"
         vm.srcURL = "not-a-url"
-        vm.dstURL = "git@github.com:user/mirror.git"
+        setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
         _ = vm.validate()
         #expect(vm.srcError != nil)
-        #expect(vm.dstError == nil)
+        #expect(vm.targetErrors.isEmpty)
     }
 
     @Test func emptyURLsAreInvalid() {
@@ -629,19 +682,30 @@ struct AddEditRepoValidationTests {
         vm.name = "my-repo"
         _ = vm.validate()
         #expect(vm.srcError != nil)
-        #expect(vm.dstError != nil)
+        #expect(!vm.targetErrors.isEmpty)
+    }
+
+    @Test func allDisabledTargetsAreInvalid() {
+        let vm = AddEditRepoViewModel()
+        vm.name = "my-repo"
+        vm.srcURL = "git@github.com:user/repo.git"
+        setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
+        vm.targets[0].enabled = false
+        _ = vm.validate()
+        #expect(!vm.targetErrors.isEmpty)
     }
 
     @Test func buildRepoConfigKeepsDestructivePushPolicy() {
         let vm = AddEditRepoViewModel()
         vm.name = "my-repo"
         vm.srcURL = "git@gitlab.com:org/repo.git"
-        vm.dstURL = "git@github.com:user/repo.git"
+        setPrimaryTargetURL(vm, "git@github.com:user/repo.git")
         vm.destructivePushPolicy = .auto
 
         let repo = vm.buildRepoConfig()
 
         #expect(repo.destructivePushPolicy == .auto)
+        #expect(repo.targets.count == 1)
     }
 
     @Test func buildRepoConfigPreservesHealthFieldsWhenEditing() {
@@ -674,10 +738,142 @@ struct AddEditRepoValidationTests {
         #expect(repo.consecutiveFailureCount == 4)
         #expect(repo.lastVerifiedAt == lastVerifiedAt)
         #expect(repo.divergedDetail == "内容分歧")
+        #expect(repo.targets.count == 1)
+    }
+
+    @Test func buildRepoConfigSupportsMultipleTargets() {
+        let vm = AddEditRepoViewModel()
+        vm.name = "multi"
+        vm.srcURL = "git@github.com:user/repo.git"
+        vm.targets[0].url = "git@github.com:user/mirror-a.git"
+        vm.addTarget()
+        vm.targets[1].url = "git@gitlab.com:user/mirror-b.git"
+        vm.targets[1].enabled = false
+
+        let repo = vm.buildRepoConfig()
+
+        #expect(repo.targets.count == 2)
+        #expect(repo.enabledTargets.count == 1)
+        #expect(repo.enabledTargets[0].url.contains("mirror-a"))
     }
 }
 
-// MARK: - FailureNotificationPolicy
+// MARK: - ReposDocument migration
+
+struct ReposDocumentMigrationTests {
+    @Test func loadsLegacyBareArrayAsVersionOne() throws {
+        let json = """
+        [
+          {
+            "id": "00000000-0000-0000-0000-000000000001",
+            "name": "legacy-repo",
+            "srcURL": "git@github.com:user/repo.git",
+            "dstURL": "git@github.com:user/mirror.git",
+            "srcAuth": { "sshAgent": {} },
+            "dstAuth": { "sshAgent": {} },
+            "frequency": "手动",
+            "createdAt": "2026-04-25T12:00:00Z"
+          }
+        ]
+        """
+
+        let repos = try RepoStore.decodeRepos(from: Data(json.utf8))
+
+        #expect(repos.count == 1)
+        #expect(repos[0].targets.count == 1)
+        #expect(repos[0].targets[0].url == "git@github.com:user/mirror.git")
+    }
+
+    @Test func loadsVersionTwoDocumentEnvelope() throws {
+        let json = """
+        {
+          "version": 2,
+          "repos": [
+            {
+              "id": "00000000-0000-0000-0000-000000000002",
+              "name": "v2-repo",
+              "srcURL": "git@github.com:user/repo.git",
+              "targets": [
+                {
+                  "id": "00000000-0000-0000-0000-000000000003",
+                  "url": "git@gitlab.com:user/mirror.git",
+                  "auth": { "sshAgent": {} },
+                  "enabled": true
+                }
+              ],
+              "srcAuth": { "sshAgent": {} },
+              "frequency": "手动",
+              "createdAt": "2026-04-25T12:00:00Z"
+            }
+          ]
+        }
+        """
+
+        let repos = try RepoStore.decodeRepos(from: Data(json.utf8))
+
+        #expect(repos.count == 1)
+        #expect(repos[0].targets.count == 1)
+        #expect(repos[0].targets[0].url == "git@gitlab.com:user/mirror.git")
+    }
+
+    @Test func saveWritesVersionTwoEnvelope() throws {
+        let repo = RepoConfig(
+            name: "saved",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git"
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = .sortedKeys
+        let document = ReposDocument(repos: [repo])
+        let data = try encoder.encode(document)
+        let object = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+
+        #expect(object["version"] as? Int == 2)
+        #expect((object["repos"] as? [Any])?.count == 1)
+    }
+}
+
+// MARK: - Target sync aggregation
+
+struct TargetSyncAggregationTests {
+    @Test func aggregateSucceededRequiresAllTargets() {
+        let results = [
+            TargetSyncResult(targetID: UUID(), targetURL: "a.git", succeeded: true),
+            TargetSyncResult(targetID: UUID(), targetURL: "b.git", succeeded: false, error: "fail")
+        ]
+        #expect(!SyncRecord.aggregateSucceeded(from: results))
+    }
+
+    @Test func partialFailureMessageIncludesCounts() {
+        let results = [
+            TargetSyncResult(targetID: UUID(), targetURL: "a.git", succeeded: true),
+            TargetSyncResult(
+                targetID: UUID(),
+                targetURL: "b.git",
+                succeeded: false,
+                error: "Network error — check connectivity"
+            )
+        ]
+        let message = SyncRecord.aggregateErrorMessage(from: results)
+        #expect(message?.contains("1/2") == true)
+        #expect(message?.contains("b.git") == true)
+    }
+
+    @Test func enabledTargetsFilterDisabledEntries() {
+        let repo = RepoConfig(
+            name: "multi",
+            srcURL: "git@github.com:user/repo.git",
+            targets: [
+                MirrorTarget(url: "git@github.com:user/a.git", enabled: true),
+                MirrorTarget(url: "git@gitlab.com:user/b.git", enabled: false)
+            ]
+        )
+        #expect(repo.enabledTargets.count == 1)
+        #expect(repo.enabledTargets[0].url.contains("a.git"))
+    }
+}
+
 
 struct FailureNotificationPolicyTests {
     @Test func disabledNeverNotifies() {

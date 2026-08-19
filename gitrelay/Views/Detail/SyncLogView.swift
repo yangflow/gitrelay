@@ -32,7 +32,7 @@ struct SyncLogView: View {
                         }
                     }
                 }
-                .frame(maxHeight: 160)
+                .frame(maxHeight: 220)
                 .background(Color(nsColor: .textBackgroundColor))
                 .clipShape(.rect(cornerRadius: 6))
                 .overlay {

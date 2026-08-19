@@ -18,7 +18,7 @@ final class SyncEngine {
 
     /// Called when `.strict` policy needs an explicit continue/cancel decision.
     /// Return `true` to proceed with the destructive push, `false` to block.
-    var confirmDestructivePush: ((DestructivePushPlan) async -> Bool)?
+    var confirmDestructivePush: ((DestructivePushPlan, MirrorTarget) async -> Bool)?
 
     init(repo: RepoConfig) {
         self.repo = repo
@@ -30,17 +30,14 @@ final class SyncEngine {
         emit(.statusChanged(.syncing))
 
         let mirrorPath = MirrorStore.mirrorPath(for: repo.id).path
-        let srcAuth    = repo.srcAuth
-        let dstAuth    = repo.dstAuth
-        let rawSrcURL  = repo.srcURL
-        let rawDstURL  = repo.dstURL
-        let srcURL     = authenticatedURL(url: rawSrcURL, auth: srcAuth)
-        let dstURL     = authenticatedURL(url: rawDstURL, auth: dstAuth)
-        let srcEnv     = buildEnv(for: srcAuth)
-        let dstEnv     = buildEnv(for: dstAuth)
+        let srcAuth = repo.srcAuth
+        let rawSrcURL = repo.srcURL
+        let srcURL = authenticatedURL(url: rawSrcURL, auth: srcAuth)
+        let srcEnv = buildEnv(for: srcAuth)
+        let enabledTargets = repo.enabledTargets
 
         do {
-            // 1. Clone or fetch from src
+            // 1. Clone or fetch from src once
             if MirrorStore.mirrorExists(for: repo.id) {
                 log("Fetching from source...")
                 try await runner.fetchPrune(mirrorPath: mirrorPath, env: srcEnv)
@@ -50,56 +47,43 @@ final class SyncEngine {
                 do {
                     try await runner.cloneMirror(srcURL: srcURL, mirrorPath: mirrorPath, env: srcEnv)
                 } catch {
-                    try? MirrorStore.deleteMirror(for: repo.id)  // clean up partial clone
+                    try? MirrorStore.deleteMirror(for: repo.id)
                     throw error
                 }
                 log("Clone complete.")
             }
 
-            // 2. Compute commit delta by fetching dst refs
-            log("Checking destination...")
-            var commitsBefore = 0
-            do {
-                try await runner.fetchDstRefs(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
-                commitsBefore = (try? await runner.countCommitsAhead(mirrorPath: mirrorPath)) ?? 0
-                log("Source is \(commitsBefore) commit(s) ahead of destination.")
-            } catch {
-                log("Note: Could not read destination refs — first push? (\(error.localizedDescription))")
+            guard !enabledTargets.isEmpty else {
+                throw SyncEngineError.noEnabledTargets
             }
-            record.commitsBefore = commitsBefore
 
-            // 3. Push to dst (dry-run first to catch prune / forced updates)
-            log("Checking mirror push impact...")
-            let plan = try await runner.pushMirrorDryRun(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
-            if plan.isDestructive {
-                log("Dry-run detected destructive changes: \(plan.summary).")
-                plan.deletedRefs.forEach { log("  delete: \($0)") }
-                plan.forcedUpdateRefs.forEach { log("  force-update: \($0)") }
+            // 2. Push to each enabled target independently
+            var targetResults: [TargetSyncResult] = []
+            for target in enabledTargets {
+                let result = await pushToTarget(target, mirrorPath: mirrorPath)
+                targetResults.append(result)
+            }
+            record.targetResults = targetResults
 
-                if repo.destructivePushPolicy.requiresConfirmation(for: plan) {
-                    log("Waiting for confirmation of destructive push...")
-                    let confirmed = await confirmDestructivePush?(plan) ?? false
-                    guard confirmed else {
-                        throw DestructivePushError.blocked(plan)
-                    }
-                    log("User confirmed destructive push; continuing.")
-                } else {
-                    log("Destructive push policy is automatic; continuing.")
-                }
+            let allSucceeded = SyncRecord.aggregateSucceeded(from: targetResults)
+            record.succeeded = allSucceeded
+            record.finishedAt = Date()
+            record.commitsBefore = targetResults.compactMap(\.commitsBefore).max()
+            record.commitsAfter = allSucceeded ? 0 : nil
+
+            if allSucceeded {
+                log("All targets synced successfully. ✓")
+                emit(.statusChanged(.idle))
+                emit(.completed(record))
+            } else if let message = SyncRecord.aggregateErrorMessage(from: targetResults) {
+                log("Error: \(message)")
+                emit(.failed(message, record))
+                emit(.statusChanged(.failed(message)))
             } else {
-                log("Dry-run found no destructive ref changes.")
+                let message = "Sync failed"
+                emit(.failed(message, record))
+                emit(.statusChanged(.failed(message)))
             }
-
-            log("Pushing to destination...")
-            try await runner.pushMirror(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
-            log("Push complete. ✓")
-
-            record.commitsAfter = 0
-            record.succeeded    = true
-            record.finishedAt   = Date()
-
-            emit(.statusChanged(.idle))
-            emit(.completed(record))
 
         } catch GitError.cancelled {
             log("Sync cancelled.")
@@ -122,6 +106,66 @@ final class SyncEngine {
 
     // MARK: - Private
 
+    private func pushToTarget(_ target: MirrorTarget, mirrorPath: String) async -> TargetSyncResult {
+        var result = TargetSyncResult(targetID: target.id, targetURL: target.url)
+        let rawDstURL = target.url
+        let dstURL = authenticatedURL(url: rawDstURL, auth: target.auth)
+        let dstEnv = buildEnv(for: target.auth)
+
+        func targetLog(_ line: String) {
+            result.logLines.append(line)
+            emit(.log("[\(rawDstURL)] \(line)"))
+        }
+
+        targetLog("Target: \(rawDstURL)")
+
+        do {
+            targetLog("Checking destination...")
+            var commitsBefore = 0
+            do {
+                try await runner.fetchDstRefs(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
+                commitsBefore = (try? await runner.countCommitsAhead(mirrorPath: mirrorPath)) ?? 0
+                targetLog("Source is \(commitsBefore) commit(s) ahead of destination.")
+            } catch {
+                targetLog("Note: Could not read destination refs — first push? (\(error.localizedDescription))")
+            }
+            result.commitsBefore = commitsBefore
+
+            targetLog("Checking mirror push impact...")
+            let plan = try await runner.pushMirrorDryRun(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
+            if plan.isDestructive {
+                targetLog("Dry-run detected destructive changes: \(plan.summary).")
+                plan.deletedRefs.forEach { targetLog("  delete: \($0)") }
+                plan.forcedUpdateRefs.forEach { targetLog("  force-update: \($0)") }
+
+                if repo.destructivePushPolicy.requiresConfirmation(for: plan) {
+                    targetLog("Waiting for confirmation of destructive push...")
+                    let confirmed = await confirmDestructivePush?(plan, target) ?? false
+                    guard confirmed else {
+                        throw DestructivePushError.blocked(plan)
+                    }
+                    targetLog("User confirmed destructive push; continuing.")
+                } else {
+                    targetLog("Destructive push policy is automatic; continuing.")
+                }
+            } else {
+                targetLog("Dry-run found no destructive ref changes.")
+            }
+
+            targetLog("Pushing to destination...")
+            try await runner.pushMirror(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
+            targetLog("Push complete. ✓")
+            result.succeeded = true
+        } catch {
+            let message = classifyError(error)
+            targetLog("Error: \(message)")
+            result.error = message
+            result.succeeded = false
+        }
+
+        return result
+    }
+
     private func log(_ line: String) {
         record.logLines.append(line)
         emit(.log(line))
@@ -140,6 +184,9 @@ final class SyncEngine {
     }
 
     private func classifyError(_ error: Error) -> String {
+        if let syncError = error as? SyncEngineError {
+            return syncError.localizedDescription
+        }
         if let destructivePushError = error as? DestructivePushError {
             return destructivePushError.localizedDescription
         }
@@ -184,6 +231,17 @@ final class SyncEngine {
             return ["GIT_SSH_COMMAND": "ssh -i \(path) -o StrictHostKeyChecking=accept-new -o BatchMode=yes"]
         case .httpsToken:
             return ["GIT_TERMINAL_PROMPT": "0"]
+        }
+    }
+}
+
+enum SyncEngineError: LocalizedError {
+    case noEnabledTargets
+
+    var errorDescription: String? {
+        switch self {
+        case .noEnabledTargets:
+            return "No enabled mirror targets"
         }
     }
 }

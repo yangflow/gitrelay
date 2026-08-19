@@ -283,8 +283,10 @@ final class BrowseRemoteRepoViewModel {
             if case .httpsToken(let tag) = config.srcAuth, !sourceToken.isEmpty {
                 try? KeychainService.saveToken(sourceToken, tag: tag)
             }
-            if case .httpsToken(let tag) = config.dstAuth, !targetToken.isEmpty {
-                try? KeychainService.saveToken(targetToken, tag: tag)
+            for target in config.targets {
+                if case .httpsToken(let tag) = target.auth, !targetToken.isEmpty {
+                    try? KeychainService.saveToken(targetToken, tag: tag)
+                }
             }
         }
     }
@@ -336,13 +338,24 @@ final class BrowseRemoteRepoViewModel {
 
     private func makeConfig(repo: RemoteRepo, dstURL: String) -> RepoConfig {
         let id = UUID()
+        let targetID = UUID()
         return RepoConfig(
             id: id,
             name: previewName(for: repo),
             srcURL: sourceURL(for: repo),
-            dstURL: dstURL,
+            targets: [
+                MirrorTarget(
+                    id: targetID,
+                    url: dstURL,
+                    auth: buildAuth(
+                        mode: targetAuthMode,
+                        keyPath: targetKeyPath,
+                        repoID: id,
+                        side: "target-\(targetID.uuidString)"
+                    )
+                )
+            ],
             srcAuth: buildAuth(mode: sourceAuthMode, keyPath: sourceKeyPath, repoID: id, side: "src"),
-            dstAuth: buildAuth(mode: targetAuthMode, keyPath: targetKeyPath, repoID: id, side: "dst"),
             frequency: frequency
         )
     }

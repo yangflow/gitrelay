@@ -48,18 +48,27 @@ struct AddEditRepoSheet: View {
                     )
                 }
 
-                Section("Target(目标仓库)") {
-                    TextField("git@github.com:user/repo.git", text: $vm.dstURL)
-                        .font(.system(.caption, design: .monospaced))
-                    if let err = vm.dstError {
-                        Text(err).font(.caption).foregroundStyle(.red)
+                Section {
+                    ForEach(Array(vm.targets.enumerated()), id: \.element.id) { index, _ in
+                        MirrorTargetCardView(
+                            index: index,
+                            target: binding(for: vm.targets[index].id),
+                            error: vm.targetErrors[vm.targets[index].id],
+                            canRemove: vm.targets.count > 1,
+                            onRemove: { vm.removeTarget(id: vm.targets[index].id) }
+                        )
                     }
-                    AuthFieldView(
-                        label: "Target",
-                        mode: $vm.dstAuthMode,
-                        keyPath: $vm.dstKeyPath,
-                        token: $vm.dstToken
-                    )
+
+                    Button {
+                        vm.addTarget()
+                    } label: {
+                        Label("添加目标", systemImage: "plus.circle")
+                    }
+                } header: {
+                    Text("Targets(目标仓库)")
+                } footer: {
+                    Text("同一源仓库可镜像到多个目标；禁用的目标在同步时跳过。")
+                        .font(.caption)
                 }
 
                 Section("同步频率") {
@@ -113,7 +122,17 @@ struct AddEditRepoSheet: View {
             .padding(16)
         }
         .frame(width: 520)
-        .frame(minHeight: 620)
+        .frame(minHeight: 680)
+    }
+
+    private func binding(for id: UUID) -> Binding<MirrorTargetDraft> {
+        Binding(
+            get: { vm.targets.first(where: { $0.id == id }) ?? MirrorTargetDraft() },
+            set: { newValue in
+                guard let index = vm.targets.firstIndex(where: { $0.id == id }) else { return }
+                vm.targets[index] = newValue
+            }
+        )
     }
 
     private func save() {

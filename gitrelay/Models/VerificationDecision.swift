@@ -17,9 +17,10 @@ enum VerificationDecision: Equatable {
         let dstCommitSHA: String
         let srcTreeHash: String
         let dstTreeHash: String
+        var summaryOverride: String?
 
         var summary: String {
-            "分支 \(branch) 内容分歧：src \(srcCommitSHA.truncatingSHA) / dst \(dstCommitSHA.truncatingSHA)"
+            summaryOverride ?? "分支 \(branch) 内容分歧：src \(srcCommitSHA.truncatingSHA) / dst \(dstCommitSHA.truncatingSHA)"
         }
     }
 

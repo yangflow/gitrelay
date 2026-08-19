@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DestructivePushConfirmationSheet: View {
     let repoName: String
+    let targetURL: String?
     let plan: DestructivePushPlan
     let onConfirm: () -> Void
     let onCancel: () -> Void
@@ -18,6 +19,12 @@ struct DestructivePushConfirmationSheet: View {
                     Text("「\(repoName)」")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                    if let targetURL {
+                        Text(targetURL)
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
                     Text(plan.confirmationPrompt)
                         .font(.callout)
                 }
