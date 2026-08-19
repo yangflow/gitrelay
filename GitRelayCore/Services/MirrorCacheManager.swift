@@ -108,6 +108,8 @@ enum MirrorDirectorySizer {
         return total
     }
 
+    static let defaultSizeProvider: (URL) -> Int64 = { directorySize(at: $0) }
+
     static func mirrorsUsage(
         repos: [RepoConfig],
         mirrorsDirectory: URL = Constants.mirrorsDirectory,

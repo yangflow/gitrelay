@@ -15,7 +15,7 @@ enum MirrorCacheService {
         repos: [RepoConfig],
         mirrorsDirectory: URL = Constants.mirrorsDirectory,
         fileManager: FileManager = .default,
-        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.directorySize(at:)
+        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider
     ) -> Int64 {
         MirrorDirectorySizer.mirrorsUsage(
             repos: repos,
@@ -29,7 +29,7 @@ enum MirrorCacheService {
         repos: [RepoConfig],
         mirrorsDirectory: URL = Constants.mirrorsDirectory,
         fileManager: FileManager = .default,
-        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.directorySize(at:)
+        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider
     ) -> [MirrorCacheEntry] {
         MirrorDirectorySizer.mirrorEntries(
             repos: repos,
@@ -46,7 +46,7 @@ enum MirrorCacheService {
         excluding repoIDs: Set<UUID> = [],
         mirrorsDirectory: URL = Constants.mirrorsDirectory,
         fileManager: FileManager = .default,
-        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.directorySize(at:),
+        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider,
         runGarbageCollection: (UUID) async throws -> Void = defaultGarbageCollection,
         deleteMirror: (UUID) throws -> Void = MirrorStore.deleteMirror(for:)
     ) async -> MirrorCacheCleanupResult {
@@ -111,7 +111,7 @@ enum MirrorCacheService {
         for repoID: UUID,
         mirrorsDirectory: URL = Constants.mirrorsDirectory,
         fileManager: FileManager = .default,
-        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.directorySize(at:),
+        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider,
         runGarbageCollection: (UUID) async throws -> Void = defaultGarbageCollection,
         deleteMirror: (UUID) throws -> Void = MirrorStore.deleteMirror(for:)
     ) async -> Int64 {
