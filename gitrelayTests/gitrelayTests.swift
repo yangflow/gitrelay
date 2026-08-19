@@ -2354,3 +2354,199 @@ struct ReleaseProviderEndpointsTests {
         #expect(base.absoluteString == "https://github.example.com/api/v3")
     }
 }
+
+// MARK: - Archive filename template
+
+struct ArchiveFilenameTemplateTests {
+    @Test func rendersNameAndDatePlaceholders() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = Date(timeIntervalSince1970: 1_704_067_200) // 2024-01-01 UTC
+
+        let filename = ArchiveFilenameTemplate.render(
+            template: "{name}-{date}.tar.gz",
+            repoName: "My Project",
+            date: date,
+            calendar: calendar
+        )
+
+        #expect(filename == "My Project-2024-01-01.tar.gz")
+    }
+
+    @Test func sanitizesInvalidFilenameCharacters() {
+        let filename = ArchiveFilenameTemplate.render(
+            template: "{name}.bundle",
+            repoName: "acme/widget:test"
+        )
+        #expect(filename == "acme-widget-test.bundle")
+    }
+}
+
+// MARK: - Archive retention
+
+struct ArchiveRetentionTests {
+    @Test func deletesOlderArchivesBeyondRetentionCount() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-retention-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let files = ["repo-2024-01-01.tar.gz", "repo-2024-01-02.tar.gz", "repo-2024-01-03.tar.gz"]
+        for (index, name) in files.enumerated() {
+            let url = directory.appendingPathComponent(name)
+            try Data("archive-\(index)".utf8).write(to: url)
+            let timestamp = Date(timeIntervalSince1970: Double(index + 1) * 86_400)
+            try FileManager.default.setAttributes([.modificationDate: timestamp], ofItemAtPath: url.path)
+        }
+
+        let stale = ArchiveRetention.archivesToDelete(
+            in: directory,
+            matchingPrefix: "repo-",
+            keepCount: 2
+        )
+
+        #expect(stale.count == 1)
+        #expect(stale[0].lastPathComponent == "repo-2024-01-01.tar.gz")
+    }
+
+    @Test func retentionDisabledWhenKeepCountIsZero() {
+        let stale = ArchiveRetention.archivesToDelete(
+            in: URL(fileURLWithPath: "/tmp"),
+            matchingPrefix: "repo-",
+            keepCount: 0
+        )
+        #expect(stale.isEmpty)
+    }
+}
+
+// MARK: - Archive command dispatch
+
+struct ArchiveCommandBuilderTests {
+    @Test func tarGzUsesTarCreate() {
+        let plan = ArchiveCommandBuilder.plan(
+            format: .tarGz,
+            mirrorPath: "/tmp/mirrors/repo-id",
+            outputPath: "/Volumes/Backup/repo-2024-01-01.tar.gz"
+        )
+        #expect(plan.tool == .tar)
+        #expect(plan.arguments == ["-czf", "/Volumes/Backup/repo-2024-01-01.tar.gz", "-C", "/tmp/mirrors", "repo-id"])
+        #expect(plan.workingDirectory == nil)
+    }
+
+    @Test func zipUsesZipRecursiveFromParent() {
+        let plan = ArchiveCommandBuilder.plan(
+            format: .zip,
+            mirrorPath: "/tmp/mirrors/repo-id",
+            outputPath: "/Volumes/Backup/repo.zip"
+        )
+        #expect(plan.tool == .zip)
+        #expect(plan.arguments == ["-r", "/Volumes/Backup/repo.zip", "repo-id"])
+        #expect(plan.workingDirectory == "/tmp/mirrors")
+    }
+
+    @Test func gitBundleUsesGitBundleCreate() {
+        let plan = ArchiveCommandBuilder.plan(
+            format: .gitBundle,
+            mirrorPath: "/tmp/mirrors/repo-id",
+            outputPath: "/Volumes/Backup/repo.bundle"
+        )
+        #expect(plan.tool == .git)
+        #expect(plan.arguments == ["bundle", "create", "/Volumes/Backup/repo.bundle", "--all"])
+        #expect(plan.workingDirectory == "/tmp/mirrors/repo-id")
+    }
+}
+
+// MARK: - Filesystem target model
+
+struct FilesystemMirrorTargetTests {
+    @Test func legacyTargetDecodesAsGitRemote() throws {
+        let json = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "url": "git@github.com:user/mirror.git",
+          "auth": { "sshAgent": {} },
+          "enabled": true
+        }
+        """
+
+        let target = try JSONDecoder().decode(MirrorTarget.self, from: Data(json.utf8))
+        #expect(target.kind == .gitRemote)
+        #expect(target.url == "git@github.com:user/mirror.git")
+    }
+
+    @Test func filesystemTargetRoundTrip() throws {
+        let target = MirrorTarget(
+            kind: .filesystem,
+            enabled: true,
+            filesystemPath: "/Volumes/Backup/archives",
+            archiveFormat: .zip,
+            filenameTemplate: "{name}-{date}.zip",
+            retentionCount: 5
+        )
+
+        let data = try JSONEncoder().encode(target)
+        let decoded = try JSONDecoder().decode(MirrorTarget.self, from: Data(data))
+        #expect(decoded.kind == .filesystem)
+        #expect(decoded.filesystemPath == "/Volumes/Backup/archives")
+        #expect(decoded.archiveFormat == .zip)
+        #expect(decoded.filenameTemplate == "{name}-{date}.zip")
+        #expect(decoded.retentionCount == 5)
+        #expect(decoded.displayLabel == "/Volumes/Backup/archives")
+    }
+
+    @Test func archivePrefixStripsDateFromTemplate() {
+        let prefix = FilesystemArchiveService.archivePrefix(
+            from: "{name}-{date}.tar.gz",
+            repoName: "my-repo"
+        )
+        #expect(prefix == "my-repo-")
+    }
+}
+
+// MARK: - Filesystem target form validation
+
+@MainActor
+struct FilesystemTargetValidationTests {
+    @Test func filesystemTargetRequiresDirectory() {
+        let vm = AddEditRepoViewModel()
+        vm.name = "archived"
+        vm.srcURL = "git@github.com:user/repo.git"
+        vm.targets[0].kind = .filesystem
+        vm.targets[0].filesystemPath = ""
+
+        _ = vm.validate()
+        #expect(!vm.targetErrors.isEmpty)
+    }
+
+    @Test func filesystemTargetBuildsRepoConfig() {
+        let vm = AddEditRepoViewModel()
+        vm.name = "archived"
+        vm.srcURL = "git@github.com:user/repo.git"
+        vm.targets[0].kind = .filesystem
+        vm.targets[0].filesystemPath = "/Volumes/Backup/git"
+        vm.targets[0].archiveFormat = .gitBundle
+        vm.targets[0].retentionCount = "3"
+
+        #expect(vm.validate())
+        let repo = vm.buildRepoConfig()
+        #expect(repo.targets.count == 1)
+        #expect(repo.targets[0].kind == .filesystem)
+        #expect(repo.targets[0].filesystemPath == "/Volumes/Backup/git")
+        #expect(repo.targets[0].archiveFormat == .gitBundle)
+        #expect(repo.targets[0].retentionCount == 3)
+    }
+
+    @Test func mixedGitAndFilesystemTargetsValidate() {
+        let vm = AddEditRepoViewModel()
+        vm.name = "mixed"
+        vm.srcURL = "git@github.com:user/repo.git"
+        vm.targets[0].url = "git@github.com:user/mirror.git"
+        vm.addTarget()
+        vm.targets[1].kind = .filesystem
+        vm.targets[1].filesystemPath = "/Volumes/Backup"
+
+        #expect(vm.validate())
+        #expect(vm.buildRepoConfig().enabledTargets.count == 2)
+    }
+}

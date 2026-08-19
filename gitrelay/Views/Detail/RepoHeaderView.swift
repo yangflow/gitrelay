@@ -39,10 +39,23 @@ struct RepoHeaderView: View {
     @ViewBuilder
     private func targetLabel(_ target: MirrorTarget) -> some View {
         HStack(spacing: 6) {
-            Text(target.url)
+            if target.kind == .filesystem {
+                Text("归档")
+                    .font(.caption2)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(Color.secondary.opacity(0.15))
+                    .clipShape(.rect(cornerRadius: 3))
+            }
+            Text(target.displayLabel)
                 .font(.system(.caption, design: .monospaced))
                 .textSelection(.enabled)
                 .lineLimit(1)
+            if target.kind == .filesystem {
+                Text(target.resolvedArchiveFormat.displayName)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
             if !target.enabled {
                 Text("已禁用")
                     .font(.caption2)

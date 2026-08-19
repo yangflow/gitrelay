@@ -68,7 +68,7 @@ struct AddEditRepoSheet: View {
                 } header: {
                     Text("Targets(目标仓库)")
                 } footer: {
-                    Text("同一源仓库可镜像到多个目标；禁用的目标在同步时跳过。")
+                    Text("同一源仓库可镜像到多个目标；可选择 Git 远程或文件系统归档 (tar.gz / zip / git bundle)。禁用的目标在同步时跳过。")
                         .font(.caption)
                 }
 

@@ -9,6 +9,8 @@ final class AppViewModel {
     var repos: [RepoConfig] = []
     var statuses: [UUID: SyncStatus] = [:]
     var records: [UUID: [SyncRecord]] = [:]
+    var syncPhases: [UUID: SyncPhase] = [:]
+    var liveSyncLogLines: [UUID: String] = [:]
     var inProgressSyncIDs: Set<UUID> = []
     var inProgressVerifyIDs: Set<UUID> = []
     var verificationPreferences: VerificationPreferences
@@ -174,6 +176,8 @@ final class AppViewModel {
         activeSyncEngines[repoID] = engine
         inProgressSyncIDs.insert(repoID)
         statuses[repoID] = .syncing
+        syncPhases[repoID] = .fetchingSource
+        liveSyncLogLines.removeValue(forKey: repoID)
 
         engine.confirmDestructivePush = { [weak self] plan, target in
             guard let self else { return false }
@@ -194,6 +198,10 @@ final class AppViewModel {
             switch event {
             case .statusChanged(let status):
                 self.statuses[repoID] = status
+            case .phase(let phase):
+                self.syncPhases[repoID] = phase
+            case .log(let line):
+                self.liveSyncLogLines[repoID] = line
             case .completed(let record):
                 self.appendRecord(record, for: repoID)
                 self.finishSync(repoID: repoID)
@@ -206,7 +214,7 @@ final class AppViewModel {
                 self.patchLastSynced(repoID: repoID, error: message)
                 self.statuses[repoID] = .failed(message)
                 self.notifySyncFailure(repoID: repoID, message: message)
-            case .started, .log:
+            case .started:
                 break
             }
         }
@@ -376,6 +384,8 @@ final class AppViewModel {
         denyPendingDestructiveConfirmation(for: repoID)
         inProgressSyncIDs.remove(repoID)
         activeSyncEngines.removeValue(forKey: repoID)
+        syncPhases.removeValue(forKey: repoID)
+        liveSyncLogLines.removeValue(forKey: repoID)
     }
 
     private func finishVerify(repoID: UUID) {

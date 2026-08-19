@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct RepoSyncingRowView: View {
+    let statusTitle: String
     let latestLogLine: String?
     let onCancel: () -> Void
 
@@ -9,7 +10,7 @@ struct RepoSyncingRowView: View {
             ProgressView()
                 .scaleEffect(0.8)
             VStack(alignment: .leading, spacing: 2) {
-                Text("正在同步...")
+                Text(statusTitle)
                     .font(.callout)
                 if let latestLogLine {
                     Text(latestLogLine)
