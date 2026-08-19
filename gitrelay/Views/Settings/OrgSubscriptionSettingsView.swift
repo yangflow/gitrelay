@@ -169,7 +169,7 @@ struct OrgSubscriptionEditorSheet: View {
             Divider()
 
             Form {
-                Section(String(localized: "Source")) {
+                Section {
                     Picker(String(localized: "Provider"), selection: $provider) {
                         ForEach(GitProvider.listingCases) { p in
                             Text(p.displayName).tag(p)
@@ -191,24 +191,22 @@ struct OrgSubscriptionEditorSheet: View {
                         text: $organizationName
                     )
                     .textFieldStyle(.roundedBorder)
+                } header: {
+                    Text(String(localized: "Source"))
                 }
 
-                Section(String(localized: "When New Repos Appear")) {
+                Section {
                     Toggle(String(localized: "Auto-add using template"), isOn: $autoAddEnabled)
 
                     if autoAddEnabled {
                         Text(String(localized: "New repositories are mirrored immediately using the template below. Notifications are skipped when auto-add succeeds."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                    } else {
-                        Text(String(localized: "GitRelay notifies you and opens a prefilled browse sheet so you can review before mirroring."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
 
-                if autoAddEnabled {
-                    Section(String(localized: "Mirror Template")) {
+                        Text(String(localized: "Mirror Template"))
+                            .font(.headline)
+                            .padding(.top, 4)
+
                         Picker(String(localized: "Source Auth"), selection: $template.sourceAuthMode) {
                             ForEach(AuthMode.allCases) { mode in
                                 Text(mode.rawValue).tag(mode)
@@ -239,11 +237,17 @@ struct OrgSubscriptionEditorSheet: View {
 
                         if template.targetAuthMode == .httpsToken || template.sourceAuthMode == .httpsToken {
                             GatedSecureTokenField(
-                                placeholder: String(localized: "Target HTTPS token (optional)"),
+                                placeholder: "Target HTTPS token (optional)",
                                 text: $targetToken
                             )
                         }
+                    } else {
+                        Text(String(localized: "GitRelay notifies you and opens a prefilled browse sheet so you can review before mirroring."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
+                } header: {
+                    Text(String(localized: "When New Repos Appear"))
                 }
             }
             .formStyle(.grouped)
@@ -266,46 +270,6 @@ struct OrgSubscriptionEditorSheet: View {
             refreshAccounts()
             if let id = existingID {
                 targetToken = appVM.orgSubscriptionStore.loadTargetToken(for: id) ?? ""
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var templateSection: some View {
-        Section(String(localized: "Mirror Template")) {
-            Picker(String(localized: "Source Auth"), selection: $template.sourceAuthMode) {
-                ForEach(AuthMode.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
-                }
-            }
-
-            Picker(String(localized: "Target Auth"), selection: $template.targetAuthMode) {
-                ForEach(AuthMode.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
-                }
-            }
-
-            TextField(String(localized: "Target URL template (must include {name})"), text: $template.targetURLTemplate)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(.caption, design: .monospaced))
-                .disabled(template.targetAutoCreate)
-
-            Toggle(String(localized: "Auto-create target on Gitea"), isOn: $template.targetAutoCreate)
-
-            Picker(String(localized: "Sync Frequency"), selection: $template.frequency) {
-                ForEach(SyncFrequency.allCases) { f in
-                    Text(f.displayName).tag(f)
-                }
-            }
-
-            TextField(String(localized: "Name prefix (optional)"), text: $template.namePrefix)
-                .textFieldStyle(.roundedBorder)
-
-            if template.targetAuthMode == .httpsToken || template.sourceAuthMode == .httpsToken {
-                GatedSecureTokenField(
-                    placeholder: String(localized: "Target HTTPS token (optional)"),
-                    text: $targetToken
-                )
             }
         }
     }
