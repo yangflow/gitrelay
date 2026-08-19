@@ -60,14 +60,7 @@ enum ProviderAccountStore {
 
     static func setHost(_ host: String?, for provider: GitProvider, label: String, defaults: UserDefaults = .standard) {
         migrateIfNeeded(defaults: defaults)
-        var registry = loadRegistry(defaults: defaults)
-        var records = registry[provider.rawValue] ?? [ProviderAccountRecord(label: ProviderAccount.defaultLabel, host: nil)]
-        guard let index = records.firstIndex(where: { $0.label == label }) else { return }
-
-        let trimmed = host?.trimmingCharacters(in: .whitespacesAndNewlines)
-        records[index].host = trimmed?.isEmpty == false ? trimmed : nil
-        registry[provider.rawValue] = records
-        saveRegistry(registry, defaults: defaults)
+        setHostUnchecked(host, for: provider, label: label, defaults: defaults)
     }
 
     @discardableResult
@@ -136,13 +129,29 @@ enum ProviderAccountStore {
 
     private static func migrateLegacyHosts(defaults: UserDefaults) {
         if let gitlabHost = defaults.string(forKey: Keys.legacyGitLabHost), !gitlabHost.isEmpty {
-            setHost(gitlabHost, for: .gitlab, label: ProviderAccount.defaultLabel, defaults: defaults)
+            setHostUnchecked(gitlabHost, for: .gitlab, label: ProviderAccount.defaultLabel, defaults: defaults)
             defaults.removeObject(forKey: Keys.legacyGitLabHost)
         }
         if let giteaHost = defaults.string(forKey: Keys.legacyGiteaHost), !giteaHost.isEmpty {
-            setHost(giteaHost, for: .gitea, label: ProviderAccount.defaultLabel, defaults: defaults)
+            setHostUnchecked(giteaHost, for: .gitea, label: ProviderAccount.defaultLabel, defaults: defaults)
             defaults.removeObject(forKey: Keys.legacyGiteaHost)
         }
+    }
+
+    private static func setHostUnchecked(
+        _ host: String?,
+        for provider: GitProvider,
+        label: String,
+        defaults: UserDefaults
+    ) {
+        var registry = loadRegistry(defaults: defaults)
+        var records = registry[provider.rawValue] ?? [ProviderAccountRecord(label: ProviderAccount.defaultLabel, host: nil)]
+        guard let index = records.firstIndex(where: { $0.label == label }) else { return }
+
+        let trimmed = host?.trimmingCharacters(in: .whitespacesAndNewlines)
+        records[index].host = trimmed?.isEmpty == false ? trimmed : nil
+        registry[provider.rawValue] = records
+        saveRegistry(registry, defaults: defaults)
     }
 
     private static func loadRegistry(defaults: UserDefaults) -> [String: [ProviderAccountRecord]] {
