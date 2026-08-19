@@ -57,6 +57,7 @@ final class AppViewModel {
 
     private let scheduler = SyncScheduler()
     private let verificationScheduler = VerificationScheduler()
+    private let releaseMirrorService = ReleaseMirrorService()
     private let verificationPreferencesStore: VerificationPreferencesStore
     private var activeSyncEngines: [UUID: SyncEngine] = [:]
     private var activeVerifiers: [UUID: IntegrityVerifier] = [:]
@@ -182,6 +183,10 @@ final class AppViewModel {
                 targetURL: target.url,
                 plan: plan
             )
+        }
+
+        engine.mirrorReleases = { [releaseMirrorService] repo, target, log in
+            try await releaseMirrorService.mirrorReleases(repo: repo, target: target, log: log)
         }
 
         engine.onEvent = { [weak self] event in

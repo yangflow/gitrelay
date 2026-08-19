@@ -104,6 +104,13 @@ struct AddEditRepoSheet: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Section("Release 镜像") {
+                    Toggle("镜像 Releases 及二进制 assets", isOn: $vm.mirrorReleases)
+                    Text("同步 git 仓库后，将源仓库 Release 的 tag/title/body 与 .dmg、.tar.gz 等附件增量复制到每个已启用目标。需要 GitHub/GitLab API Token。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section {
                     Label {
                         Text("GitRelay 会先执行 dry-run。严格保护会在删除或强制更新前弹出确认弹窗;取消则阻断并记失败。自动执行保留传统 mirror 行为。")

@@ -2217,3 +2217,140 @@ struct GitRemoteHostTests {
         #expect(url?.absoluteString == "https://github.com/settings/keys")
     }
 }
+
+// MARK: - GitRemoteRepoPath
+
+struct GitRemoteRepoPathTests {
+    @Test func parsesSSHGitHubURL() {
+        let path = GitRemoteRepoPath.parse(from: "git@github.com:acme/widget.git")
+        #expect(path?.namespace == "acme")
+        #expect(path?.name == "widget")
+        #expect(path?.ownerRepoPath == "acme/widget")
+    }
+
+    @Test func parsesHTTPSGitLabNestedGroup() {
+        let path = GitRemoteRepoPath.parse(from: "https://gitlab.com/group/sub/repo.git")
+        #expect(path?.pathWithNamespace == "group/sub/repo")
+        #expect(path?.name == "repo")
+    }
+
+    @Test func rejectsEmptyURL() {
+        #expect(GitRemoteRepoPath.parse(from: "   ") == nil)
+    }
+}
+
+// MARK: - ReleaseMirrorDiff
+
+struct ReleaseMirrorDiffTests {
+    @Test func diffFindsMissingReleaseAndAssets() {
+        let source = [
+            ReleaseInfo(
+                tagName: "v1.0.0",
+                title: "v1",
+                body: "first",
+                assets: [
+                    ReleaseAssetInfo(name: "app.dmg", downloadURL: URL(string: "https://example.com/a.dmg")!, size: 1, contentType: nil),
+                    ReleaseAssetInfo(name: "app.tar.gz", downloadURL: URL(string: "https://example.com/a.tar.gz")!, size: 2, contentType: nil)
+                ]
+            ),
+            ReleaseInfo(tagName: "v2.0.0", title: "v2", body: "", assets: [])
+        ]
+        let target = [
+            ReleaseInfo(
+                tagName: "v1.0.0",
+                title: "v1",
+                body: "first",
+                assets: [
+                    ReleaseAssetInfo(name: "app.dmg", downloadURL: URL(string: "https://example.com/a.dmg")!, size: 1, contentType: nil)
+                ]
+            )
+        ]
+        let resume = ReleaseMirrorResumeState()
+
+        let plans = ReleaseMirrorDiff.plans(source: source, target: target, resume: resume)
+
+        #expect(plans.count == 2)
+        #expect(plans[0].release.tagName == "v1.0.0")
+        #expect(plans[0].missingAssetNames == ["app.tar.gz"])
+        #expect(plans[1].release.tagName == "v2.0.0")
+        #expect(plans[1].needsCreate)
+    }
+
+    @Test func resumeSkipsCompletedAssets() {
+        let source = [
+            ReleaseInfo(
+                tagName: "v1.0.0",
+                title: "v1",
+                body: "",
+                assets: [
+                    ReleaseAssetInfo(name: "a.bin", downloadURL: URL(string: "https://example.com/a.bin")!, size: 1, contentType: nil),
+                    ReleaseAssetInfo(name: "b.bin", downloadURL: URL(string: "https://example.com/b.bin")!, size: 1, contentType: nil)
+                ]
+            )
+        ]
+        var resume = ReleaseMirrorResumeState()
+        resume.markAssetCompleted(tag: "v1.0.0", assetName: "a.bin")
+
+        let plans = ReleaseMirrorDiff.plans(source: source, target: [], resume: resume)
+
+        #expect(plans.count == 1)
+        #expect(plans[0].missingAssetNames == ["b.bin"])
+    }
+}
+
+// MARK: - ReleaseMirrorResumeState
+
+struct ReleaseMirrorResumeStateTests {
+    @Test func markAssetCompletedIsIdempotent() {
+        var resume = ReleaseMirrorResumeState()
+        resume.markAssetCompleted(tag: "v1", assetName: "file.zip")
+        resume.markAssetCompleted(tag: "v1", assetName: "file.zip")
+
+        #expect(resume.completedAssets(for: "v1") == ["file.zip"])
+    }
+
+    @Test func resumeStoreRoundTrip() throws {
+        let repoID = UUID()
+        let targetID = UUID()
+        let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        Constants.setBaseDirectoryForTesting(temp)
+        defer { Constants.setBaseDirectoryForTesting(nil) }
+
+        var resume = ReleaseMirrorResumeState()
+        resume.markAssetCompleted(tag: "v1", assetName: "big.tar.gz")
+        try ReleaseMirrorResumeStore.saveResume(resume, repoID: repoID, targetID: targetID)
+
+        let loaded = ReleaseMirrorResumeStore.loadResume(repoID: repoID, targetID: targetID)
+        #expect(loaded.completedAssets(for: "v1") == ["big.tar.gz"])
+    }
+}
+
+// MARK: - ReleaseProviderEndpoints
+
+struct ReleaseProviderEndpointsTests {
+    @Test func githubListReleasesPath() {
+        let endpoint = ReleaseProviderEndpoints.githubListReleases(ownerRepo: "acme/widget", page: 2, perPage: 50)
+        #expect(endpoint.path == "/repos/acme/widget/releases")
+        #expect(endpoint.query.contains(URLQueryItem(name: "page", value: "2")))
+        #expect(endpoint.query.contains(URLQueryItem(name: "per_page", value: "50")))
+    }
+
+    @Test func githubAssetUploadURLAddsNameQuery() {
+        let template = URL(string: "https://uploads.github.com/repos/acme/widget/releases/1/assets{?name,label}")!
+        let url = ReleaseProviderEndpoints.githubAssetUploadURL(from: template, fileName: "app.dmg")
+        #expect(url?.absoluteString.contains("name=app.dmg") == true)
+    }
+
+    @Test func gitlabPathsArePercentEncoded() {
+        let list = ReleaseProviderEndpoints.gitlabListReleases(projectPath: "group/sub/repo", page: 1, perPage: 20)
+        #expect(list.path == "/projects/group%2Fsub%2Frepo/releases")
+
+        let upload = ReleaseProviderEndpoints.gitlabUploadFile(projectPath: "group/sub/repo")
+        #expect(upload.hasPrefix("/projects/"))
+    }
+
+    @Test func releaseProviderAuthUsesEnterpriseGitHubBase() {
+        let base = ReleaseProviderAuth.apiBaseURL(for: "git@github.example.com:acme/repo.git", provider: .github)
+        #expect(base.absoluteString == "https://github.example.com/api/v3")
+    }
+}
