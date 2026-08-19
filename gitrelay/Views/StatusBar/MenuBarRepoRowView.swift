@@ -7,6 +7,10 @@ struct MenuBarRepoRowView: View {
 
     @State private var isHovered = false
 
+    private var presentation: RepoRowHealthPresentation.Caption {
+        RepoRowHealthPresentation.caption(for: repo, status: status)
+    }
+
     var body: some View {
         Button(action: onSync) {
             HStack(spacing: 8) {
@@ -16,14 +20,11 @@ struct MenuBarRepoRowView: View {
                     Text(repo.name)
                         .foregroundStyle(isEscalatedFailure ? .red : .primary)
                         .lineLimit(1)
-                    lastSuccessLabel
-                        .font(.caption2)
-                        .foregroundStyle(isStale ? .tertiary : .secondary)
-                        .lineLimit(1)
+                    RepoRowCaptionView(caption: presentation)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                if isEscalatedFailure {
-                    FailureCountBadge(count: repo.consecutiveFailureCount)
+                if isEscalatedFailure, let count = RepoRowHealthPresentation.failureBadgeCount(for: repo) {
+                    FailureCountBadge(count: count)
                 }
             }
             .padding(.horizontal, 12)
@@ -39,28 +40,7 @@ struct MenuBarRepoRowView: View {
         .onHover { isHovered = $0 }
     }
 
-    private var lastSuccessLabel: some View {
-        Group {
-            if case .diverged = status {
-                Text("内容分歧")
-            } else if let lastSuccessfulSyncedAt = repo.lastSuccessfulSyncedAt {
-                Text("最近成功 \(lastSuccessfulSyncedAt, format: .relative(presentation: .named))")
-            } else if repo.lastSyncedAt != nil {
-                Text("尚无成功同步")
-            } else {
-                Text("未同步")
-            }
-        }
-    }
-
     private var isEscalatedFailure: Bool {
-        repo.consecutiveFailureCount >= 3
-    }
-
-    private var isStale: Bool {
-        guard let lastSuccessfulSyncedAt = repo.lastSuccessfulSyncedAt else {
-            return true
-        }
-        return Date.now.timeIntervalSince(lastSuccessfulSyncedAt) > 86_400
+        RepoRowHealthPresentation.showsFailureBadge(for: repo)
     }
 }
