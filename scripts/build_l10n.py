@@ -12,7 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SWIFT_ROOTS = (ROOT / "gitrelay", ROOT / "GitRelayCore")
 SPECIAL_FREQUENCY_FILES = {"SyncFrequency.swift", "VerificationFrequency.swift"}
 HAN_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
-STRING_LITERAL_RE = re.compile(r'"((?:\\.|[^"\\])*)"')
+# The lookahead makes matches overlap, so a literal nested in a Swift
+# interpolation is found even when its opening quote also ends an outer match.
+STRING_LITERAL_RE = re.compile(r'(?="((?:\\.|[^"\\])*)")')
 PERSISTED_CASE_RE = re.compile(
     r'^\s*case\s+\w+\s*=\s*"[^"]*[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff][^"]*"\s*(?://.*)?$'
 )
@@ -540,16 +542,17 @@ def main() -> None:
                 output_lines.append(line)
                 continue
 
-            def replace_literal(match: re.Match[str]) -> str:
-                nonlocal file_replacements
-                content = match.group(1)
-                translation = TRANSLATIONS.get(content)
-                if translation is None:
-                    return match.group(0)
-                file_replacements += 1
-                return f'"{translation}"'
-
-            output_lines.append(STRING_LITERAL_RE.sub(replace_literal, line))
+            updated_line = line
+            for content, translation in TRANSLATIONS.items():
+                quoted_content = f'"{content}"'
+                occurrences = updated_line.count(quoted_content)
+                if not occurrences:
+                    continue
+                updated_line = updated_line.replace(
+                    quoted_content, f'"{translation}"'
+                )
+                file_replacements += occurrences
+            output_lines.append(updated_line)
 
         updated = "".join(output_lines)
         if updated != original:
