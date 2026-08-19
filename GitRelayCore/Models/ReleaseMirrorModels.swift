@@ -98,7 +98,7 @@ enum ReleaseMirrorDiff {
             let completed = resume.completedAssets(for: release.tagName)
             let targetRelease = targetByTag[release.tagName]
 
-            if targetRelease == nil {
+            guard let targetRelease else {
                 let missing = release.assets.map(\.name).filter { !completed.contains($0) }
                 plans.append(ReleaseMirrorPlan(release: release, missingAssetNames: missing))
                 continue
