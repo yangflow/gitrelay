@@ -4,6 +4,7 @@ struct ContentView: View {
     @Environment(AppViewModel.self) private var appVM
     @State private var selectedRepoID: UUID?
     @State private var sheetMode: SheetMode?
+    @State private var browsePrefill: BrowseRemotePrefill?
 
     var body: some View {
         @Bindable var appVM = appVM
@@ -16,9 +17,15 @@ struct ContentView: View {
             )
         }
         .frame(minWidth: 720, minHeight: 500)
-        .onAppear(perform: applyPendingMainWindowSelection)
+        .onAppear {
+            applyPendingMainWindowSelection()
+            applyPendingBrowsePrefill()
+        }
         .onChange(of: appVM.pendingMainWindowRepoID) { _, _ in
             applyPendingMainWindowSelection()
+        }
+        .onChange(of: appVM.pendingBrowsePrefill?.id) { _, _ in
+            applyPendingBrowsePrefill()
         }
         .sheet(item: $sheetMode) { mode in
             switch mode {
@@ -27,7 +34,7 @@ struct ContentView: View {
             case .edit(let repo):
                 AddEditRepoSheet(repo: repo)
             case .browse:
-                BrowseRemoteRepoSheet()
+                BrowseRemoteRepoSheet(prefill: browsePrefill)
             }
         }
         .alert(
@@ -60,5 +67,11 @@ struct ContentView: View {
         guard let repoID = appVM.pendingMainWindowRepoID else { return }
         selectedRepoID = repoID
         appVM.pendingMainWindowRepoID = nil
+    }
+
+    private func applyPendingBrowsePrefill() {
+        guard let prefill = appVM.consumePendingBrowsePrefill() else { return }
+        browsePrefill = prefill
+        sheetMode = .browse
     }
 }

@@ -4,6 +4,11 @@ struct BrowseRemoteRepoSheet: View {
     @Environment(AppViewModel.self) private var appVM
     @Environment(\.dismiss) private var dismiss
     @State private var vm = BrowseRemoteRepoViewModel()
+    private let prefill: BrowseRemotePrefill?
+
+    init(prefill: BrowseRemotePrefill? = nil) {
+        self.prefill = prefill
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -23,6 +28,9 @@ struct BrowseRemoteRepoSheet: View {
             vm.restorePersistedTargetCreateToken()
             vm.refreshCachedSourceScopeValidation()
             vm.refreshCachedTargetScopeValidation()
+            if let prefill {
+                vm.applyPrefill(prefill)
+            }
         }
     }
 

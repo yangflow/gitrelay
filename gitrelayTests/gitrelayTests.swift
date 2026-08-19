@@ -3952,3 +3952,219 @@ struct MirrorCacheServiceTests {
     }
 }
 
+// MARK: - OrgRepoDiff
+
+struct OrgRepoDiffTests {
+    private func remote(_ fullName: String) -> RemoteRepo {
+        RemoteRepo(
+            id: fullName,
+            name: fullName.split(separator: "/").last.map(String.init) ?? fullName,
+            fullName: fullName,
+            description: nil,
+            isPrivate: false,
+            httpsCloneURL: "https://github.com/\(fullName).git",
+            sshCloneURL: "git@github.com:\(fullName).git",
+            defaultBranch: "main"
+        )
+    }
+
+    private func localRepo(srcURL: String) -> RepoConfig {
+        RepoConfig(
+            id: UUID(),
+            name: "mirror",
+            srcURL: srcURL,
+            targets: [],
+            createdAt: Date()
+        )
+    }
+
+    @Test func newReposExcludesAlreadyMirroredPaths() {
+        let remoteRepos = [
+            remote("acme/alpha"),
+            remote("acme/beta"),
+            remote("acme/gamma")
+        ]
+        let local = [
+            localRepo(srcURL: "git@github.com:acme/alpha.git"),
+            localRepo(srcURL: "https://github.com/acme/beta.git")
+        ]
+
+        let result = OrgRepoDiff.newRepos(remoteRepos: remoteRepos, localRepos: local)
+        #expect(result.map(\.fullName) == ["acme/gamma"])
+    }
+
+    @Test func syncedRemotePathsIsCaseInsensitive() {
+        let local = [localRepo(srcURL: "git@github.com:Acme/Alpha.git")]
+        let paths = OrgRepoDiff.syncedRemotePaths(from: local)
+        #expect(paths.contains("acme/alpha"))
+    }
+}
+
+// MARK: - OrgDiscoveryNotificationCopy
+
+struct OrgDiscoveryNotificationCopyTests {
+    @Test func singleRepoTitleUsesOrganizationName() {
+        let title = OrgDiscoveryNotificationCopy.title(newRepoCount: 1, organizationName: "acme")
+        #expect(title.contains("acme"))
+    }
+
+    @Test func pluralTitleIncludesCount() {
+        let title = OrgDiscoveryNotificationCopy.title(newRepoCount: 3, organizationName: "acme")
+        #expect(title.contains("3"))
+        #expect(title.contains("acme"))
+    }
+
+    @Test func bodyListsPreviewNames() {
+        let body = OrgDiscoveryNotificationCopy.body(
+            newRepoCount: 2,
+            previewNames: ["alpha", "beta"]
+        )
+        #expect(body.contains("alpha"))
+        #expect(body.contains("beta"))
+    }
+
+    @Test func bodyUsesFallbackWhenNoPreview() {
+        let body = OrgDiscoveryNotificationCopy.body(newRepoCount: 1, previewNames: [])
+        #expect(body.contains("Tap to review"))
+    }
+}
+
+// MARK: - OrgSubscriptionTemplateApplier
+
+struct OrgSubscriptionTemplateApplierTests {
+    private var sampleRepo: RemoteRepo {
+        RemoteRepo(
+            id: "acme/widget",
+            name: "widget",
+            fullName: "acme/widget",
+            description: nil,
+            isPrivate: false,
+            httpsCloneURL: "https://github.com/acme/widget.git",
+            sshCloneURL: "git@github.com:acme/widget.git",
+            defaultBranch: "main"
+        )
+    }
+
+    @Test func destinationURLSubstitutesNamePlaceholder() {
+        var template = OrgSubscriptionTemplate.default
+        template.targetURLTemplate = "git@backup.local:mirrors/{name}.git"
+        let url = OrgSubscriptionTemplateApplier.destinationURL(for: sampleRepo, template: template)
+        #expect(url == "git@backup.local:mirrors/widget.git")
+    }
+
+    @Test func makeConfigAppliesPrefixAndFrequency() {
+        var template = OrgSubscriptionTemplate.default
+        template.namePrefix = "mirror-"
+        template.frequency = .hour1
+        template.targetURLTemplate = "git@backup.local:mirrors/{name}.git"
+        let config = OrgSubscriptionTemplateApplier.makeConfig(
+            repo: sampleRepo,
+            template: template,
+            dstURL: "git@backup.local:mirrors/widget.git"
+        )
+        #expect(config.name == "mirror-widget")
+        #expect(config.frequency == .hour1)
+        #expect(config.srcURL == sampleRepo.sshCloneURL)
+    }
+
+    @Test func isValidTemplateRequiresNamePlaceholder() {
+        var template = OrgSubscriptionTemplate.default
+        template.targetURLTemplate = "git@backup.local:mirrors/repo.git"
+        #expect(!OrgSubscriptionTemplateApplier.isValidTemplate(template))
+
+        template.targetURLTemplate = "git@backup.local:mirrors/{name}.git"
+        #expect(OrgSubscriptionTemplateApplier.isValidTemplate(template))
+    }
+}
+
+// MARK: - OrgSubscriptionStore
+
+@MainActor
+struct OrgSubscriptionStoreTests {
+    @Test func roundTripsPreferencesAndSubscriptions() {
+        let suite = "gitrelay.tests.org-sub.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = OrgSubscriptionStore(defaults: defaults)
+        store.preferences = OrgSubscriptionPreferences(pollFrequency: .week1, notificationsEnabled: false)
+        let subscription = OrgSubscription(
+            provider: .github,
+            accountLabel: "work",
+            organizationName: "acme"
+        )
+        store.add(subscription)
+
+        let reloaded = OrgSubscriptionStore(defaults: defaults)
+        #expect(reloaded.preferences.pollFrequency == .week1)
+        #expect(reloaded.preferences.notificationsEnabled == false)
+        #expect(reloaded.subscriptions.count == 1)
+        #expect(reloaded.subscriptions[0].organizationName == "acme")
+    }
+}
+
+// MARK: - OrgSubscriptionPoller
+
+@MainActor
+struct OrgSubscriptionPollerTests {
+    @Test func checkSubscriptionDiffsAgainstLocalRepos() async {
+        let suite = "gitrelay.tests.org-poller.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = OrgSubscriptionStore(defaults: defaults)
+        let subscription = OrgSubscription(
+            provider: .github,
+            organizationName: "acme"
+        )
+        store.add(subscription)
+
+        let remoteRepos = [
+            RemoteRepo(
+                id: "acme/existing",
+                name: "existing",
+                fullName: "acme/existing",
+                description: nil,
+                isPrivate: false,
+                httpsCloneURL: "https://github.com/acme/existing.git",
+                sshCloneURL: "git@github.com:acme/existing.git",
+                defaultBranch: "main"
+            ),
+            RemoteRepo(
+                id: "acme/new-repo",
+                name: "new-repo",
+                fullName: "acme/new-repo",
+                description: nil,
+                isPrivate: false,
+                httpsCloneURL: "https://github.com/acme/new-repo.git",
+                sshCloneURL: "git@github.com:acme/new-repo.git",
+                defaultBranch: "main"
+            )
+        ]
+
+        let fetcher = OrgRemoteRepoFetcher { _, _, _, _, page, _ in
+            RemoteRepoPage(repos: remoteRepos, hasMore: false, nextPage: page + 1)
+        }
+        let poller = OrgSubscriptionPoller(store: store, fetcher: fetcher)
+
+        try? ProviderTokenStore.save(token: "test-token", provider: .github)
+
+        let localRepos = [
+            RepoConfig(
+                id: UUID(),
+                name: "existing",
+                srcURL: "git@github.com:acme/existing.git",
+                targets: [],
+                createdAt: Date()
+            )
+        ]
+
+        let result = await poller.checkSubscription(subscription, localRepos: localRepos)
+        defer { ProviderTokenStore.delete(provider: .github) }
+
+        #expect(result?.newRepos.map(\.fullName) == ["acme/new-repo"])
+        #expect(result?.allRemoteRepos.count == 2)
+        #expect(store.subscription(id: subscription.id)?.lastCheckedAt != nil)
+    }
+}
+

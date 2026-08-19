@@ -10,7 +10,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SWIFT_ROOTS = (ROOT / "gitrelay", ROOT / "GitRelayCore")
-SPECIAL_FREQUENCY_FILES = {"SyncFrequency.swift", "VerificationFrequency.swift"}
+SPECIAL_FREQUENCY_FILES = {
+    "SyncFrequency.swift",
+    "VerificationFrequency.swift",
+    "OrgSubscriptionPollFrequency.swift",
+}
 HAN_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 # The lookahead makes matches overlap, so a literal nested in a Swift
 # interpolation is found even when its opening quote also ends an outer match.
