@@ -6,16 +6,16 @@ struct GetSyncStatusIntent: AppIntent {
     static var description = IntentDescription("Return the latest sync status for a named GitRelay repository.")
     static var openAppWhenRun: Bool = false
 
-    @Parameter(title: "Repository Name", requestValueDialog: "Which repository status should GitRelay return?")
-    var repoName: String
+    @Parameter(title: "Repository", requestValueDialog: "Which repository status should GitRelay return?")
+    var repo: RepoSyncStatusEntity
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Get sync status for \(\.$repoName)")
+        Summary("Get sync status for \(\.$repo)")
     }
 
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<RepoSyncStatusEntity> & ProvidesDialog {
-        let snapshot = try AppIntentBridge.syncStatusSnapshot(repoName: repoName)
+        let snapshot = try AppIntentBridge.syncStatusSnapshot(repoName: repo.repoName)
         let entity = RepoSyncStatusEntity(snapshot: snapshot)
         let timestamp = snapshot.lastSyncedAt.map(Self.timestampFormatter.string) ?? "never"
         let dialog = "\(snapshot.repoName): \(snapshot.status.rawValue) (last synced \(timestamp))."
