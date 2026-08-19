@@ -1713,3 +1713,153 @@ struct ProviderTokenScopeCacheTests {
         #expect(gitlabKey != gitlabDefaultKey)
     }
 }
+
+// MARK: - App Intents support
+
+struct RepoIntentSupportTests {
+    private func makeRepo(
+        name: String,
+        lastSyncedAt: Date? = nil,
+        lastSuccessfulSyncedAt: Date? = nil,
+        lastSyncError: String? = nil,
+        divergedDetail: String? = nil,
+        lastVerifiedAt: Date? = nil
+    ) -> RepoConfig {
+        RepoConfig(
+            name: name,
+            srcURL: "git@github.com:user/\(name).git",
+            dstURL: "git@github.com:user/\(name)-mirror.git",
+            lastSyncedAt: lastSyncedAt,
+            lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
+            lastSyncError: lastSyncError,
+            divergedDetail: divergedDetail,
+            lastVerifiedAt: lastVerifiedAt
+        )
+    }
+
+    @Test func repoLookupIsCaseInsensitive() {
+        let repos = [makeRepo(name: "My Docs")]
+        #expect(RepoIntentSupport.repo(matchingName: "my docs", in: repos)?.name == "My Docs")
+        #expect(RepoIntentSupport.repo(matchingName: "  My Docs  ", in: repos)?.name == "My Docs")
+        #expect(RepoIntentSupport.repo(matchingName: "missing", in: repos) == nil)
+        #expect(RepoIntentSupport.repo(matchingName: "   ", in: repos) == nil)
+    }
+
+    @Test func snapshotPrefersInProgressSync() {
+        let repo = makeRepo(name: "docs", lastSuccessfulSyncedAt: Date(timeIntervalSince1970: 1_000))
+        let snapshot = RepoIntentSupport.makeSnapshot(
+            repo: repo,
+            runtimeStatus: .idle,
+            isSyncInProgress: true
+        )
+
+        #expect(snapshot.status == .syncing)
+        #expect(snapshot.repoName == "docs")
+    }
+
+    @Test func snapshotMapsRuntimeFailureAndPersistedSuccess() {
+        let syncedAt = Date(timeIntervalSince1970: 2_000)
+        let repo = makeRepo(
+            name: "docs",
+            lastSyncedAt: syncedAt,
+            lastSuccessfulSyncedAt: syncedAt
+        )
+
+        let failed = RepoIntentSupport.makeSnapshot(
+            repo: repo,
+            runtimeStatus: .failed("network failed"),
+            isSyncInProgress: false
+        )
+        #expect(failed.status == .failure)
+        #expect(failed.message == "network failed")
+        #expect(failed.lastSyncedAt == syncedAt)
+
+        let success = RepoIntentSupport.makeSnapshot(
+            repo: repo,
+            runtimeStatus: .idle,
+            isSyncInProgress: false
+        )
+        #expect(success.status == .success)
+        #expect(success.lastSyncedAt == syncedAt)
+    }
+
+    @Test func snapshotFallsBackToPersistedFailureDivergenceAndUnknown() {
+        let failedAt = Date(timeIntervalSince1970: 3_000)
+        let failedRepo = makeRepo(
+            name: "failed",
+            lastSyncedAt: failedAt,
+            lastSyncError: "auth denied"
+        )
+        let failedSnapshot = RepoIntentSupport.makeSnapshot(
+            repo: failedRepo,
+            runtimeStatus: nil,
+            isSyncInProgress: false
+        )
+        #expect(failedSnapshot.status == .failure)
+        #expect(failedSnapshot.message == "auth denied")
+
+        let divergedRepo = makeRepo(name: "diverged", divergedDetail: "tree mismatch")
+        let divergedSnapshot = RepoIntentSupport.makeSnapshot(
+            repo: divergedRepo,
+            runtimeStatus: nil,
+            isSyncInProgress: false
+        )
+        #expect(divergedSnapshot.status == .diverged)
+        #expect(divergedSnapshot.message == "tree mismatch")
+
+        let unknownRepo = makeRepo(name: "fresh")
+        let unknownSnapshot = RepoIntentSupport.makeSnapshot(
+            repo: unknownRepo,
+            runtimeStatus: nil,
+            isSyncInProgress: false
+        )
+        #expect(unknownSnapshot.status == .unknown)
+    }
+}
+
+@MainActor
+struct AppIntentBridgeTests {
+    private func makeViewModel() -> AppViewModel {
+        let suite = "gitrelay.tests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        return AppViewModel(verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults))
+    }
+
+    @Test func triggerSyncReportsMissingRepository() {
+        let vm = makeViewModel()
+        AppIntentBridge.register(vm)
+
+        do {
+            try AppIntentBridge.triggerSync(repoName: "Missing")
+            Issue.record("Expected repoNotFound error")
+        } catch AppIntentBridgeError.repoNotFound(let name) {
+            #expect(name == "Missing")
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
+    @Test func triggerSyncAllUsesRegisteredViewModel() throws {
+        let vm = makeViewModel()
+        AppIntentBridge.register(vm)
+        try AppIntentBridge.triggerSyncAll()
+        #expect(vm.inProgressSyncIDs.isEmpty)
+    }
+
+    @Test func syncStatusSnapshotReturnsMappedStatus() throws {
+        let vm = makeViewModel()
+        AppIntentBridge.register(vm)
+        let syncedAt = Date(timeIntervalSince1970: 4_000)
+        vm.addRepo(RepoConfig(
+            name: "Docs",
+            srcURL: "git@github.com:user/docs.git",
+            dstURL: "git@github.com:user/docs-mirror.git",
+            lastSyncedAt: syncedAt,
+            lastSuccessfulSyncedAt: syncedAt
+        ))
+
+        let snapshot = try AppIntentBridge.syncStatusSnapshot(repoName: "Docs")
+        #expect(snapshot.status == .success)
+        #expect(snapshot.lastSyncedAt == syncedAt)
+    }
+}

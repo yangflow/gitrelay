@@ -8,5 +8,7 @@
 	<string>71pgsFHEpkMXw4iwh57WrXl/3gSSC9+PPa3XiXC1lSg=</string>
 	<key>NSFocusStatusUsageDescription</key>
 	<string>GitRelay 会在专注模式开启时推迟同步失败通知，并在专注结束后发送聚合摘要。</string>
+	<key>NSAppIntentsPackage</key>
+	<string>GitRelay</string>
 </dict>
 </plist>
