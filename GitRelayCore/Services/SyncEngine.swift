@@ -23,7 +23,7 @@ final class SyncEngine {
     var confirmDestructivePush: ((DestructivePushPlan, MirrorTarget) async -> Bool)?
 
     /// Called after a successful git mirror push when `repo.mirrorReleases` is enabled.
-    var mirrorReleases: ((RepoConfig, MirrorTarget, @Sendable (String) -> Void) async throws -> Void)?
+    var mirrorReleases: ((RepoConfig, MirrorTarget, @escaping @Sendable (String) -> Void) async throws -> Void)?
 
     init(repo: RepoConfig) {
         self.repo = repo
