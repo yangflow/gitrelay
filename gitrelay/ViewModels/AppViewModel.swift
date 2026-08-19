@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import AppKit
 import Observation
 import AppKit
 
@@ -12,6 +13,12 @@ final class AppViewModel {
     var inProgressSyncIDs: Set<UUID> = []
 
     var errorMessage: String?
+    /// FIFO queue: parallel syncs may each need a destructive-push prompt.
+    var pendingDestructiveConfirmations: [DestructivePushConfirmationRequest] = []
+
+    var presentedDestructiveConfirmation: DestructivePushConfirmationRequest? {
+        pendingDestructiveConfirmations.first
+    }
 
     var isShowingError: Bool {
         get { errorMessage != nil }
@@ -127,6 +134,11 @@ final class AppViewModel {
         inProgressSyncIDs.insert(repoID)
         statuses[repoID] = .syncing
 
+        engine.confirmDestructivePush = { [weak self] plan in
+            guard let self else { return false }
+            return await self.requestDestructiveConfirmation(repoID: repoID, repoName: repo.name, plan: plan)
+        }
+
         engine.onEvent = { [weak self] event in
             guard let self else { return }
             switch event {
@@ -157,7 +169,20 @@ final class AppViewModel {
     }
 
     func cancelSync(repoID: UUID) {
+        denyPendingDestructiveConfirmation(for: repoID)
         activeSyncEngines[repoID]?.cancel()
+    }
+
+    func confirmPendingDestructivePush() {
+        guard !pendingDestructiveConfirmations.isEmpty else { return }
+        let pending = pendingDestructiveConfirmations.removeFirst()
+        pending.respond(true)
+    }
+
+    func cancelPendingDestructivePush() {
+        guard !pendingDestructiveConfirmations.isEmpty else { return }
+        let pending = pendingDestructiveConfirmations.removeFirst()
+        pending.respond(false)
     }
 
     func nextFireDate(for repoID: UUID) -> Date? {
@@ -195,8 +220,45 @@ final class AppViewModel {
     }
 
     private func finishSync(repoID: UUID) {
+        denyPendingDestructiveConfirmation(for: repoID)
         inProgressSyncIDs.remove(repoID)
         activeSyncEngines.removeValue(forKey: repoID)
+    }
+
+    private func requestDestructiveConfirmation(
+        repoID: UUID,
+        repoName: String,
+        plan: DestructivePushPlan
+    ) async -> Bool {
+        // Replace any unanswered prompt for this repo (re-entrancy / retry).
+        denyPendingDestructiveConfirmation(for: repoID)
+        bringAppForwardForConfirmation()
+
+        return await withCheckedContinuation { continuation in
+            let request = DestructivePushConfirmationRequest(
+                repoID: repoID,
+                repoName: repoName,
+                plan: plan,
+                continuation: continuation
+            )
+            pendingDestructiveConfirmations.append(request)
+        }
+    }
+
+    private func denyPendingDestructiveConfirmation(for repoID: UUID?) {
+        guard let repoID else { return }
+        let matching = pendingDestructiveConfirmations.filter { $0.repoID == repoID }
+        pendingDestructiveConfirmations.removeAll { $0.repoID == repoID }
+        matching.forEach { $0.respond(false) }
+    }
+
+    private func bringAppForwardForConfirmation() {
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        NotificationCenter.default.post(name: .gitrelayOpenMainWindow, object: nil)
+        for window in NSApp.windows where window.styleMask.contains(.titled) {
+            window.makeKeyAndOrderFront(nil)
+        }
     }
 
     private func patchLastSynced(repoID: UUID, error: String?) {

@@ -12,6 +12,11 @@ struct DestructivePushPlan: Equatable {
         "\(deletedRefs.count) 个删除, \(forcedUpdateRefs.count) 个强制更新"
     }
 
+    /// 确认弹窗主文案:「本次将删除 N 个 ref / 强制更新 M 个 ref,是否继续?」
+    var confirmationPrompt: String {
+        "本次将删除 \(deletedRefs.count) 个 ref / 强制更新 \(forcedUpdateRefs.count) 个 ref,是否继续?"
+    }
+
     static let empty = DestructivePushPlan(deletedRefs: [], forcedUpdateRefs: [])
 
     nonisolated static func parse(gitOutput: String) -> DestructivePushPlan {

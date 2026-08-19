@@ -108,6 +108,53 @@ struct DestructivePushPlanTests {
 
         #expect(DestructivePushPlan.parse(gitOutput: output) == .empty)
     }
+
+    @Test func confirmationPromptMatchesIssueCopy() {
+        let plan = DestructivePushPlan(
+            deletedRefs: ["stale-branch", "refs/tags/v1.0.0"],
+            forcedUpdateRefs: ["main"]
+        )
+
+        #expect(plan.confirmationPrompt == "本次将删除 2 个 ref / 强制更新 1 个 ref,是否继续?")
+    }
+
+    @Test func parsesMixedDestructiveDryRunOutput() {
+        let output = """
+        To github.com:user/mirror.git
+         - [deleted]         old-feature
+         + abc1234...def5678 main -> main (forced update)
+           111aaaa..222bbbb  develop -> develop
+         * [new tag]         v2.0.0 -> v2.0.0
+        """
+
+        let plan = DestructivePushPlan.parse(gitOutput: output)
+
+        #expect(plan.deletedRefs == ["old-feature"])
+        #expect(plan.forcedUpdateRefs == ["main"])
+        #expect(plan.isDestructive)
+    }
+}
+
+// MARK: - DestructivePushPolicy
+
+struct DestructivePushPolicyTests {
+    @Test func strictRequiresConfirmationOnlyWhenDestructive() {
+        let destructive = DestructivePushPlan(
+            deletedRefs: ["gone"],
+            forcedUpdateRefs: []
+        )
+
+        #expect(DestructivePushPolicy.strict.requiresConfirmation(for: destructive))
+        #expect(!DestructivePushPolicy.strict.requiresConfirmation(for: .empty))
+        #expect(!DestructivePushPolicy.auto.requiresConfirmation(for: destructive))
+        #expect(!DestructivePushPolicy.auto.requiresConfirmation(for: .empty))
+    }
+
+    @Test func forceOnlyPlanIsDestructiveUnderStrict() {
+        let plan = DestructivePushPlan(deletedRefs: [], forcedUpdateRefs: ["main"])
+        #expect(plan.isDestructive)
+        #expect(DestructivePushPolicy.strict.requiresConfirmation(for: plan))
+    }
 }
 
 // MARK: - RepoConfig Codable

@@ -14,7 +14,7 @@ It supports any combination of GitLab, GitHub, Gitea, Gitee, Bitbucket, or self-
 
 - **Multi-repo sidebar** — manage any number of repo pairs from one window
 - **Full mirror sync** — all branches and tags, one direction, src → dst
-- **Destructive push protection** — dry-runs mirror pushes and blocks target ref deletes or forced updates by default
+- **Destructive push protection** — dry-runs mirror pushes and prompts before target ref deletes or forced updates by default
 - **Sync health dashboard** — sidebar and menu bar summaries for today's success, failure, and not-run counts
 - **Scheduled sync** — per-repo frequency: manual, 15 min, 30 min, 1 h, 1 day
 - **Auth flexibility** — SSH Agent, SSH key path, or HTTPS token (stored in macOS Keychain)
