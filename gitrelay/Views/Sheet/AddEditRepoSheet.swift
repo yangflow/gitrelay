@@ -153,7 +153,10 @@ struct AddEditRepoSheet: View {
                                     .font(.caption)
                                     .foregroundStyle(.orange)
                             }
-                            SecureField("GitHub Token (Requires admin:repo_hook)", text: $vm.webhookRegistrationToken)
+                            GatedSecureTokenField(
+                                placeholder: "GitHub Token (Requires admin:repo_hook)",
+                                text: $vm.webhookRegistrationToken
+                            )
                             TokenScopeBannerView(validation: vm.webhookScopeValidation)
                             if let message = vm.webhookRegistrationMessage {
                                 Text(message)
@@ -243,6 +246,23 @@ struct AddEditRepoSheet: View {
 
     private func save() {
         guard vm.validate() else { return }
+        Task { await saveAfterAuthorization() }
+    }
+
+    private func saveAfterAuthorization() async {
+        if let editing = editingRepo {
+            for change in vm.gitRemoteTargetHostChanges(comparedTo: editing) {
+                let action = SensitiveAction.changeTargetHost(
+                    originalURL: change.originalURL,
+                    newURL: change.newURL
+                )
+                guard await appVM.authorizeSensitiveAction(action) else { return }
+            }
+        }
+        performSave()
+    }
+
+    private func performSave() {
         let config = vm.buildRepoConfig()
         vm.saveTokensToKeychain(repoID: config.id)
         if editingRepo != nil {

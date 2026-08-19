@@ -8,6 +8,8 @@
 	<string>71pgsFHEpkMXw4iwh57WrXl/3gSSC9+PPa3XiXC1lSg=</string>
 	<key>NSFocusStatusUsageDescription</key>
 	<string>GitRelay defers sync failure notifications while Focus is on, then sends a combined summary when Focus ends.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>GitRelay uses Touch ID or your login password to protect sensitive actions such as viewing tokens and deleting repositories.</string>
 	<key>NSAppIntentsPackage</key>
 	<string>GitRelay</string>
 	<key>CFBundleURLTypes</key>

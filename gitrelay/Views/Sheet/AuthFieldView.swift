@@ -63,9 +63,10 @@ struct AuthFieldView: View {
                     }
                 }
             case .httpsToken:
-                SecureField("Personal Access Token", text: $token)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(.caption, design: .monospaced))
+                GatedSecureTokenField(
+                    placeholder: "Personal Access Token",
+                    text: $token
+                )
                 Text("The token will be encrypted in the system Keychain")
                     .font(.caption)
                     .foregroundStyle(.secondary)

@@ -10,6 +10,7 @@ struct gitrelayApp: App {
             ContentView()
                 .environment(appVM)
                 .environment(appVM.notificationPreferences)
+                .environment(appVM.securityPreferences)
                 .environment(appVM.environmentMonitor)
                 .onOpenURL(perform: handleIncomingURL)
                 .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { _ in
@@ -40,6 +41,7 @@ struct gitrelayApp: App {
                     .tabItem { Label("Verify", systemImage: "checkmark.shield") }
             }
             .environment(appVM.notificationPreferences)
+            .environment(appVM.securityPreferences)
             .environment(appVM.environmentMonitor)
             .environment(appVM)
         }
@@ -48,6 +50,7 @@ struct gitrelayApp: App {
             MenuBarPopoverView()
                 .environment(appVM)
                 .environment(appVM.notificationPreferences)
+                .environment(appVM.securityPreferences)
                 .environment(appVM.environmentMonitor)
         } label: {
             MenuBarIconLabel(appVM: appVM)

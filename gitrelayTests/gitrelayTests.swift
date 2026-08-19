@@ -3577,3 +3577,172 @@ struct LocalizationTests {
     }
 }
 
+// MARK: - Sensitive action policy (#19)
+
+struct SensitiveActionPolicyTests {
+    @Test func defaultsRequireAuthenticationForAllHighRiskActions() {
+        let policy = SensitiveActionPolicy(requireBiometricForSensitive: true)
+        #expect(policy.requiresAuthentication(for: .revealToken))
+        #expect(policy.requiresAuthentication(for: .deleteRepository))
+        #expect(policy.requiresAuthentication(for: .changeTargetHost(
+            originalURL: "git@github.com:org/a.git",
+            newURL: "git@gitlab.com:org/a.git"
+        )))
+    }
+
+    @Test func disabledPreferenceSkipsAuthentication() {
+        let policy = SensitiveActionPolicy(requireBiometricForSensitive: false)
+        #expect(!policy.requiresAuthentication(for: .revealToken))
+        #expect(!policy.requiresAuthentication(for: .deleteRepository))
+        #expect(!policy.requiresAuthentication(for: .changeTargetHost(
+            originalURL: "git@github.com:org/a.git",
+            newURL: "git@gitlab.com:org/a.git"
+        )))
+    }
+
+    @Test func sameHostTargetURLChangeDoesNotRequireAuthentication() {
+        let policy = SensitiveActionPolicy(requireBiometricForSensitive: true)
+        #expect(!policy.requiresAuthentication(for: .changeTargetHost(
+            originalURL: "git@github.com:org/a.git",
+            newURL: "https://github.com/org/b.git"
+        )))
+        #expect(!policy.requiresAuthentication(for: .changeTargetHost(
+            originalURL: "git@github.com:org/a.git",
+            newURL: "git@github.com:org/a.git"
+        )))
+    }
+
+    @Test func invalidURLsDoNotRequireAuthentication() {
+        let policy = SensitiveActionPolicy(requireBiometricForSensitive: true)
+        #expect(!policy.requiresAuthentication(for: .changeTargetHost(
+            originalURL: "not-a-url",
+            newURL: "git@gitlab.com:org/a.git"
+        )))
+    }
+}
+
+@MainActor
+struct SecurityPreferencesStoreTests {
+    @Test func loadsDefaultRequireBiometricWhenKeyMissing() {
+        let suite = "gitrelay.tests.security-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = SecurityPreferencesStore(defaults: defaults)
+        #expect(store.preferences.requireBiometricForSensitive == true)
+    }
+
+    @Test func persistsAndReloadsToggle() {
+        let suite = "gitrelay.tests.security-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = SecurityPreferencesStore(defaults: defaults)
+        store.preferences.requireBiometricForSensitive = false
+
+        let reloaded = SecurityPreferencesStore(defaults: defaults)
+        #expect(reloaded.preferences.requireBiometricForSensitive == false)
+    }
+
+    @Test func resetToDefaultsRestoresOnByDefault() {
+        let suite = "gitrelay.tests.security-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = SecurityPreferencesStore(defaults: defaults)
+        store.preferences.requireBiometricForSensitive = false
+        store.resetToDefaults()
+        #expect(store.preferences.requireBiometricForSensitive == true)
+    }
+}
+
+struct BiometricGateTests {
+    @Test func allowsActionWhenPolicyDoesNotRequireAuthentication() async {
+        let gate = BiometricGate(
+            policy: SensitiveActionPolicy(requireBiometricForSensitive: false),
+            authenticator: StubBiometricAuthenticator(result: false)
+        )
+        #expect(await gate.authorize(action: .revealToken))
+    }
+
+    @Test func abortsWhenAuthenticationFails() async {
+        let gate = BiometricGate(
+            policy: SensitiveActionPolicy(requireBiometricForSensitive: true),
+            authenticator: StubBiometricAuthenticator(result: false)
+        )
+        #expect(await gate.authorize(action: .deleteRepository) == false)
+    }
+
+    @Test func proceedsWhenAuthenticationSucceeds() async {
+        let authenticator = StubBiometricAuthenticator(result: true)
+        let gate = BiometricGate(
+            policy: SensitiveActionPolicy(requireBiometricForSensitive: true),
+            authenticator: authenticator
+        )
+        #expect(await gate.authorize(action: .revealToken))
+        #expect(authenticator.lastReason?.contains("token") == true)
+    }
+}
+
+@MainActor
+struct AddEditRepoHostChangeDetectionTests {
+    @Test func detectsGitRemoteTargetHostChangesOnly() {
+        let targetID = UUID(uuidString: "00000000-0000-0000-0000-000000000010")!
+        let original = RepoConfig(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+            name: "demo",
+            srcURL: "git@github.com:org/src.git",
+            targets: [
+                MirrorTarget(
+                    id: targetID,
+                    kind: .gitRemote,
+                    url: "git@github.com:org/dst.git",
+                    auth: .sshAgent,
+                    enabled: true
+                )
+            ],
+            srcAuth: .sshAgent,
+            frequency: .manual,
+            destructivePushPolicy: .strict,
+            defaultBranch: "main",
+            createdAt: Date(timeIntervalSince1970: 0)
+        )
+
+        let vm = AddEditRepoViewModel(editing: original)
+        vm.targets[0].url = "git@gitlab.com:org/dst.git"
+
+        let changes = vm.gitRemoteTargetHostChanges(comparedTo: original)
+        #expect(changes.count == 1)
+        #expect(changes[0].originalURL == "git@github.com:org/dst.git")
+        #expect(changes[0].newURL == "git@gitlab.com:org/dst.git")
+    }
+
+    @Test func ignoresSameHostPathChanges() {
+        let targetID = UUID(uuidString: "00000000-0000-0000-0000-000000000011")!
+        let original = RepoConfig(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!,
+            name: "demo",
+            srcURL: "git@github.com:org/src.git",
+            targets: [
+                MirrorTarget(
+                    id: targetID,
+                    kind: .gitRemote,
+                    url: "git@github.com:org/dst.git",
+                    auth: .sshAgent,
+                    enabled: true
+                )
+            ],
+            srcAuth: .sshAgent,
+            frequency: .manual,
+            destructivePushPolicy: .strict,
+            defaultBranch: "main",
+            createdAt: Date(timeIntervalSince1970: 0)
+        )
+
+        let vm = AddEditRepoViewModel(editing: original)
+        vm.targets[0].url = "https://github.com/other/dst.git"
+
+        #expect(vm.gitRemoteTargetHostChanges(comparedTo: original).isEmpty)
+    }
+}
+
