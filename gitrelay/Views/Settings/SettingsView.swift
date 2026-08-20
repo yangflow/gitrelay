@@ -6,7 +6,6 @@ struct SettingsView: View {
     @Environment(NotificationPreferencesStore.self) private var preferencesStore
     @Environment(SecurityPreferencesStore.self) private var securityStore
     @Environment(CachePreferencesStore.self) private var cacheStore
-    @Environment(SyncEnvironmentMonitor.self) private var environmentMonitor
     @Environment(AppViewModel.self) private var appVM
 
     @State private var limitMirrorCache = false
@@ -83,7 +82,25 @@ struct SettingsView: View {
                 Toggle("Pause scheduled sync in Low Power Mode", isOn: $store.preferences.pauseOnLowPowerMode)
                 Toggle("Pause scheduled sync on expensive networks or hotspots", isOn: $store.preferences.pauseOnExpensiveNetwork)
 
-                if let reason = environmentMonitor.pauseReason(using: store.preferences.pausePolicy) {
+                Toggle(String(localized: "Enable quiet hours"), isOn: quietHoursEnabledBinding)
+
+                if store.preferences.quietHours.isEnabled {
+                    DatePicker(
+                        String(localized: "Quiet hours start"),
+                        selection: quietHoursStartBinding,
+                        displayedComponents: .hourAndMinute
+                    )
+                    DatePicker(
+                        String(localized: "Quiet hours end"),
+                        selection: quietHoursEndBinding,
+                        displayedComponents: .hourAndMinute
+                    )
+                    Text(String(localized: "Uses this Mac's local timezone. A window such as 23:00–07:00 wraps midnight."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let reason = appVM.scheduledSyncPauseReason {
                     Label(reason.displayMessage, systemImage: "pause.circle")
                         .foregroundStyle(.orange)
                         .font(.callout)
@@ -256,6 +273,55 @@ struct SettingsView: View {
             limitMirrorCache = false
             mirrorCacheQuotaGB = 50
         }
+    }
+
+    private var quietHoursEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { preferencesStore.preferences.quietHours.isEnabled },
+            set: { enabled in
+                var prefs = preferencesStore.preferences
+                prefs.quietHours.isEnabled = enabled
+                preferencesStore.preferences = prefs
+            }
+        )
+    }
+
+    private var quietHoursStartBinding: Binding<Date> {
+        minutesDateBinding(
+            getMinutes: { preferencesStore.preferences.quietHours.startMinutes },
+            setMinutes: { minutes in
+                var prefs = preferencesStore.preferences
+                prefs.quietHours.startMinutes = minutes
+                preferencesStore.preferences = prefs
+            }
+        )
+    }
+
+    private var quietHoursEndBinding: Binding<Date> {
+        minutesDateBinding(
+            getMinutes: { preferencesStore.preferences.quietHours.endMinutes },
+            setMinutes: { minutes in
+                var prefs = preferencesStore.preferences
+                prefs.quietHours.endMinutes = minutes
+                preferencesStore.preferences = prefs
+            }
+        )
+    }
+
+    private func minutesDateBinding(
+        getMinutes: @escaping () -> Int,
+        setMinutes: @escaping (Int) -> Void
+    ) -> Binding<Date> {
+        Binding(
+            get: {
+                let calendar = Calendar.current
+                let startOfDay = calendar.startOfDay(for: Date())
+                return calendar.date(byAdding: .minute, value: getMinutes(), to: startOfDay) ?? startOfDay
+            },
+            set: { date in
+                setMinutes(QuietHoursSettings.minutesSinceMidnight(of: date, calendar: .current))
+            }
+        )
     }
 
     private func exportConfiguration() {

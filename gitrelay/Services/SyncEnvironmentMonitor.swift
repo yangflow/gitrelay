@@ -15,6 +15,9 @@ final class SyncEnvironmentMonitor {
     private var powerObserver: NSObjectProtocol?
     private var didStart = false
 
+    /// Called on the main actor when power or network pause inputs change.
+    var onEnvironmentChange: (() -> Void)?
+
     init(
         pathMonitor: NWPathMonitor = NWPathMonitor(),
         isLowPowerModeEnabled: Bool = ProcessInfo.processInfo.isLowPowerModeEnabled,
@@ -36,13 +39,23 @@ final class SyncEnvironmentMonitor {
             queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                self?.isLowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
+                guard let self else { return }
+                let previous = self.isLowPowerModeEnabled
+                self.isLowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
+                if previous != self.isLowPowerModeEnabled {
+                    self.onEnvironmentChange?()
+                }
             }
         }
 
         pathMonitor.pathUpdateHandler = { [weak self] path in
             Task { @MainActor in
-                self?.isExpensiveNetwork = path.isExpensive
+                guard let self else { return }
+                let previous = self.isExpensiveNetwork
+                self.isExpensiveNetwork = path.isExpensive
+                if previous != self.isExpensiveNetwork {
+                    self.onEnvironmentChange?()
+                }
             }
         }
         pathMonitor.start(queue: pathQueue)
@@ -58,14 +71,16 @@ final class SyncEnvironmentMonitor {
         }
     }
 
-    func pauseReason(using policy: SyncPausePolicy) -> SyncPauseReason? {
+    func pauseReason(using policy: SyncPausePolicy, date: Date = Date(), calendar: Calendar = .current) -> SyncPauseReason? {
         policy.pauseReason(
             isLowPowerMode: isLowPowerModeEnabled,
-            isExpensiveNetwork: isExpensiveNetwork
+            isExpensiveNetwork: isExpensiveNetwork,
+            date: date,
+            calendar: calendar
         )
     }
 
-    func shouldPauseScheduledSyncs(using policy: SyncPausePolicy) -> Bool {
-        pauseReason(using: policy) != nil
+    func shouldPauseScheduledSyncs(using policy: SyncPausePolicy, date: Date = Date(), calendar: Calendar = .current) -> Bool {
+        pauseReason(using: policy, date: date, calendar: calendar) != nil
     }
 }
