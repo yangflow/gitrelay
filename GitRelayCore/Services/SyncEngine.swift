@@ -15,6 +15,7 @@ final class SyncEngine {
     private let runner = GitRunner()
     private let archiveService = FilesystemArchiveService()
     private var record: SyncRecord
+    private var lfsReadyToPush = false
 
     var onEvent: ((SyncEvent) -> Void)?
 
@@ -40,6 +41,7 @@ final class SyncEngine {
         let srcURL = authenticatedURL(url: rawSrcURL, auth: srcAuth)
         let srcEnv = buildEnv(for: srcAuth)
         let enabledTargets = repo.enabledTargets
+        let lfsService = LFSMirrorService(runner: runner)
 
         do {
             emit(.phase(.fetchingSource))
@@ -92,6 +94,17 @@ final class SyncEngine {
                 log("Clone complete.")
             }
 
+            // 1b. Optional Git LFS fetch into the local bare mirror (src → local only).
+            let lfsPrepare = try await lfsService.prepareAfterSourceFetch(
+                mode: repo.lfsMirrorMode,
+                mirrorPath: mirrorPath,
+                env: srcEnv,
+                log: { [weak self] line in
+                    self?.log(SyncEngine.redactCredentials(line))
+                }
+            )
+            lfsReadyToPush = (lfsPrepare == .readyToPush)
+
             guard !enabledTargets.isEmpty else {
                 throw SyncEngineError.noEnabledTargets
             }
@@ -99,7 +112,7 @@ final class SyncEngine {
             // 2. Sync each enabled target independently
             var targetResults: [TargetSyncResult] = []
             for target in enabledTargets {
-                let result = await syncToTarget(target, mirrorPath: mirrorPath)
+                let result = await syncToTarget(target, mirrorPath: mirrorPath, lfsService: lfsService)
                 targetResults.append(result)
             }
             record.targetResults = targetResults
@@ -148,10 +161,14 @@ final class SyncEngine {
 
     // MARK: - Private
 
-    private func syncToTarget(_ target: MirrorTarget, mirrorPath: String) async -> TargetSyncResult {
+    private func syncToTarget(
+        _ target: MirrorTarget,
+        mirrorPath: String,
+        lfsService: LFSMirrorService
+    ) async -> TargetSyncResult {
         switch target.kind {
         case .gitRemote:
-            return await pushToTarget(target, mirrorPath: mirrorPath)
+            return await pushToTarget(target, mirrorPath: mirrorPath, lfsService: lfsService)
         case .filesystem:
             return await archiveToTarget(target, mirrorPath: mirrorPath)
         }
@@ -187,15 +204,20 @@ final class SyncEngine {
         return result
     }
 
-    private func pushToTarget(_ target: MirrorTarget, mirrorPath: String) async -> TargetSyncResult {
+    private func pushToTarget(
+        _ target: MirrorTarget,
+        mirrorPath: String,
+        lfsService: LFSMirrorService
+    ) async -> TargetSyncResult {
         var result = TargetSyncResult(targetID: target.id, targetURL: target.displayLabel)
         let rawDstURL = target.url
         let dstURL = authenticatedURL(url: rawDstURL, auth: target.auth)
         let dstEnv = buildEnv(for: target.auth)
 
         func targetLog(_ line: String) {
-            result.logLines.append(line)
-            emit(.log("[\(rawDstURL)] \(line)"))
+            let safe = SyncEngine.redactCredentials(line)
+            result.logLines.append(safe)
+            emit(.log("[\(rawDstURL)] \(safe)"))
         }
 
         emit(.phase(.syncingTarget(rawDstURL)))
@@ -258,6 +280,23 @@ final class SyncEngine {
                 try await runner.pushMirror(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
             }
             targetLog("Push complete. ✓")
+
+            if lfsReadyToPush {
+                do {
+                    try await lfsService.pushToDestination(
+                        mirrorPath: mirrorPath,
+                        remoteURL: dstURL,
+                        env: dstEnv,
+                        log: targetLog
+                    )
+                } catch {
+                    let message = classifyError(error)
+                    targetLog(String(localized: "LFS push error: \(message)"))
+                    result.error = message
+                    result.succeeded = false
+                    return result
+                }
+            }
 
             if repo.mirrorReleases, let mirrorReleases {
                 targetLog("Mirroring releases...")

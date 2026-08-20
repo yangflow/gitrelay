@@ -104,11 +104,34 @@ struct AddEditRepoSheet: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Section("Release Mirroring") {
+                Section {
                     Toggle("Mirror Releases and Binary Assets", isOn: $vm.mirrorReleases)
                     Text("After syncing the git repository, incrementally copy source Release tags, titles, bodies, and attachments such as .dmg and .tar.gz files to each enabled target. A GitHub or GitLab API token is required.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } header: {
+                    Text("Release Mirroring")
+                }
+
+                Section {
+                    Picker("Git LFS", selection: $vm.lfsMirrorMode) {
+                        ForEach(LFSMirrorMode.allCases) { mode in
+                            Text(mode.displayName).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    Text(vm.lfsMirrorMode.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if vm.lfsMirrorMode == .auto {
+                        Text(LFSMirrorMessages.installHint)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Git LFS Objects")
                 }
 
                 Section {

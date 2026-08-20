@@ -60,7 +60,7 @@ struct RepoDetailView: View {
 
     private var overviewContent: some View {
         VStack(alignment: .leading, spacing: 20) {
-            RepoHeaderView(repo: repo)
+            RepoHeaderView(repo: repo, recentSyncRecords: records)
 
             Divider()
 
@@ -97,7 +97,7 @@ struct RepoDetailView: View {
 
     private var releasesContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            RepoHeaderView(repo: repo)
+            RepoHeaderView(repo: repo, recentSyncRecords: records)
 
             ReleaseMirrorStatusView(
                 repo: repo,

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RepoHeaderView: View {
     let repo: RepoConfig
+    var recentSyncRecords: [SyncRecord] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -44,7 +45,32 @@ struct RepoHeaderView: View {
                         .foregroundStyle(.orange)
                 }
             }
+
+            if let lfsWarning = missingGitLFSWarningFromRecentSync {
+                Label {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(lfsWarning)
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Text(LFSMirrorMessages.installHint)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
+            }
         }
+    }
+
+    private var missingGitLFSWarningFromRecentSync: String? {
+        for record in recentSyncRecords.reversed() {
+            if let line = record.logLines.first(where: LFSMirrorMessages.isMissingGitLFSWarning) {
+                return line
+            }
+        }
+        return nil
     }
 
     @ViewBuilder

@@ -18,6 +18,23 @@
         }
       }
     },
+    "%1$@ of %2$@ used": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ of %2$@ used"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已用 %1$@ / %2$@"
+          }
+        }
+      }
+    },
     "%@ Authentication": {
       "extractionState": "manual",
       "localizations": {
@@ -65,6 +82,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "未检测到 %@（可手动安装后使用）"
+          }
+        }
+      }
+    },
+    "%@ used (unlimited quota)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ used (unlimited quota)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已用 %@（无配额限制）"
           }
         }
       }
@@ -133,6 +167,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法在 127.0.0.1 上绑定 webhook 监听端口"
+          }
+        }
+      }
+    },
+    "%lld New Repositories in %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld New Repositories in %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 中的 %lld 个新仓库"
           }
         }
       }
@@ -371,6 +422,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "关于 GitRelay"
+          }
+        }
+      }
+    },
+    "Account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "账号"
+          }
+        }
+      }
+    },
+    "Account name must be 1–32 letters, numbers, spaces, hyphens, or underscores.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account name must be 1–32 letters, numbers, spaces, hyphens, or underscores."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "账号名称须为 1–32 个字母、数字、空格、连字符或下划线。"
+          }
+        }
+      }
+    },
+    "Account not found.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account not found."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到该账号。"
+          }
+        }
+      }
+    },
+    "Add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加"
           }
         }
       }
@@ -698,6 +817,23 @@
         }
       }
     },
+    "An account with this name already exists.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An account with this name already exists."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同名账号已存在。"
+          }
+        }
+      }
+    },
     "Archive": {
       "extractionState": "manual",
       "localizations": {
@@ -749,6 +885,74 @@
         }
       }
     },
+    "At least one account must remain.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At least one account must remain."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "至少保留一个账号。"
+          }
+        }
+      }
+    },
+    "Authenticate to change the mirror target to a different host.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authenticate to change the mirror target to a different host."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请验证身份以将镜像目标更改为不同的主机。"
+          }
+        }
+      }
+    },
+    "Authenticate to delete this repository and its local mirror.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authenticate to delete this repository and its local mirror."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请验证身份以删除此仓库及其本地镜像。"
+          }
+        }
+      }
+    },
+    "Authenticate to show the token in plaintext.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authenticate to show the token in plaintext."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请验证身份以明文显示令牌。"
+          }
+        }
+      }
+    },
     "Authentication failed (401)": {
       "extractionState": "manual",
       "localizations": {
@@ -796,6 +1000,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "鉴权失败(401)：请确认 Token 未过期且包含正确权限(GitHub 需 repo + read:org，GitLab 需 read_api)"
+          }
+        }
+      }
+    },
+    "Auto-add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-add"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动添加"
+          }
+        }
+      }
+    },
+    "Auto-add using template": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-add using template"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用模板自动添加"
+          }
+        }
+      }
+    },
+    "Auto-create target on Gitea": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-create target on Gitea"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Gitea 上自动创建目标"
+          }
+        }
+      }
+    },
+    "Automatic": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动"
           }
         }
       }
@@ -1021,6 +1293,23 @@
         }
       }
     },
+    "Bare clones are stored under ~/.local/share/gitrelay/mirrors/. When over quota, GitRelay runs git gc on least-recently synced mirrors first, then deletes entire clones if needed. The next sync rebuilds deleted mirrors.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bare clones are stored under ~/.local/share/gitrelay/mirrors/. When over quota, GitRelay runs git gc on least-recently synced mirrors first, then deletes entire clones if needed. The next sync rebuilds deleted mirrors."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bare 克隆保存在 ~/.local/share/gitrelay/mirrors/。超出配额时，GitRelay 会先对最久未同步的镜像执行 git gc，必要时再删除整个克隆；下次同步会自动重建。"
+          }
+        }
+      }
+    },
     "Binding port…": {
       "extractionState": "manual",
       "localizations": {
@@ -1102,6 +1391,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "默认同步所有分支与 tag。可改为仅 main + v* tag，例如：\\n+refs/heads/main:refs/heads/main\\n+refs/tags/v*:refs/tags/v*"
+          }
+        }
+      }
+    },
+    "Cache quota: %lld GB": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache quota: %lld GB"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缓存配额：%lld GB"
           }
         }
       }
@@ -1221,6 +1527,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "选择…"
+          }
+        }
+      }
+    },
+    "Clean Now": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clean Now"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即清理"
           }
         }
       }
@@ -1480,159 +1803,6 @@
         }
       }
     },
-    "%1$@ of %2$@ used": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ of %2$@ used"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已用 %1$@ / %2$@"
-          }
-        }
-      }
-    },
-    "%@ used (unlimited quota)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ used (unlimited quota)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已用 %@（无配额限制）"
-          }
-        }
-      }
-    },
-    "Cache quota: %lld GB": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cache quota: %lld GB"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "缓存配额：%lld GB"
-          }
-        }
-      }
-    },
-    "Clean Now": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clean Now"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "立即清理"
-          }
-        }
-      }
-    },
-    "Current Usage": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Current Usage"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当前占用"
-          }
-        }
-      }
-    },
-    "Free Space": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Free Space"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "释放空间"
-          }
-        }
-      }
-    },
-    "Limit local mirror cache size": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Limit local mirror cache size"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "限制本地镜像缓存大小"
-          }
-        }
-      }
-    },
-    "Mirror Cache": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mirror Cache"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "镜像缓存"
-          }
-        }
-      }
-    },
-    "Bare clones are stored under ~/.local/share/gitrelay/mirrors/. When over quota, GitRelay runs git gc on least-recently synced mirrors first, then deletes entire clones if needed. The next sync rebuilds deleted mirrors.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bare clones are stored under ~/.local/share/gitrelay/mirrors/. When over quota, GitRelay runs git gc on least-recently synced mirrors first, then deletes entire clones if needed. The next sync rebuilds deleted mirrors."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bare 克隆保存在 ~/.local/share/gitrelay/mirrors/。超出配额时，GitRelay 会先对最久未同步的镜像执行 git gc，必要时再删除整个克隆；下次同步会自动重建。"
-          }
-        }
-      }
-    },
     "Copy Public Key": {
       "extractionState": "manual",
       "localizations": {
@@ -1803,6 +1973,23 @@
         }
       }
     },
+    "Current Usage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current Usage"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前占用"
+          }
+        }
+      }
+    },
     "Current User": {
       "extractionState": "manual",
       "localizations": {
@@ -1854,6 +2041,23 @@
         }
       }
     },
+    "Default": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认"
+          }
+        }
+      }
+    },
     "Delete": {
       "extractionState": "manual",
       "localizations": {
@@ -1884,6 +2088,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "将删除 %lld 个 ref"
+          }
+        }
+      }
+    },
+    "Delete Current Account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Current Account"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除当前账号"
           }
         }
       }
@@ -2092,6 +2313,23 @@
         }
       }
     },
+    "Edit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑"
+          }
+        }
+      }
+    },
     "Edit Frequency for All Repositories in Group...": {
       "extractionState": "manual",
       "localizations": {
@@ -2139,6 +2377,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "编辑仓库"
+          }
+        }
+      }
+    },
+    "Edit Subscription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Subscription"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑订阅"
           }
         }
       }
@@ -2534,6 +2789,23 @@
         }
       }
     },
+    "Fetching Git LFS objects...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetching Git LFS objects..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在拉取 Git LFS 对象…"
+          }
+        }
+      }
+    },
     "Filename Template": {
       "extractionState": "manual",
       "localizations": {
@@ -2602,6 +2874,23 @@
         }
       }
     },
+    "Free Space": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free Space"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "释放空间"
+          }
+        }
+      }
+    },
     "Generate": {
       "extractionState": "manual",
       "localizations": {
@@ -2653,6 +2942,40 @@
         }
       }
     },
+    "Git LFS": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Git LFS"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Git LFS"
+          }
+        }
+      }
+    },
+    "Git LFS Objects": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Git LFS Objects"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Git LFS 对象"
+          }
+        }
+      }
+    },
     "Git Remote": {
       "extractionState": "manual",
       "localizations": {
@@ -2700,6 +3023,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "GitLab Host(自建实例可选)"
+          }
+        }
+      }
+    },
+    "GitRelay notifies you and opens a prefilled browse sheet so you can review before mirroring.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitRelay notifies you and opens a prefilled browse sheet so you can review before mirroring."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitRelay 会通知您并打开预填充的浏览面板，供您在镜像前审核。"
           }
         }
       }
@@ -2806,6 +3146,57 @@
         }
       }
     },
+    "HTTP %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@"
+          }
+        }
+      }
+    },
+    "HTTP %@: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@: %@"
+          }
+        }
+      }
+    },
+    "Hide Token": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Token"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏令牌"
+          }
+        }
+      }
+    },
     "Hourly": {
       "extractionState": "manual",
       "localizations": {
@@ -2836,6 +3227,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法判定: %@"
+          }
+        }
+      }
+    },
+    "Install path tip: brew install git-lfs (or download from git-lfs.com), then sync again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install path tip: brew install git-lfs (or download from git-lfs.com), then sync again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装提示：brew install git-lfs（或从 git-lfs.com 下载），然后再次同步。"
           }
         }
       }
@@ -2942,6 +3350,57 @@
         }
       }
     },
+    "LFS fetch complete.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LFS fetch complete."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LFS 拉取完成。"
+          }
+        }
+      }
+    },
+    "LFS push complete. ✓": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LFS push complete. ✓"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LFS 推送完成。✓"
+          }
+        }
+      }
+    },
+    "LFS push error: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LFS push error: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LFS 推送错误：%@"
+          }
+        }
+      }
+    },
     "Last %@": {
       "extractionState": "manual",
       "localizations": {
@@ -2972,6 +3431,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "上次同步失败"
+          }
+        }
+      }
+    },
+    "Last checked": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last checked"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上次检查"
           }
         }
       }
@@ -3074,6 +3550,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "留空则使用 gitlab.com。会自动追加 /api/v4 路径。"
+          }
+        }
+      }
+    },
+    "Limit local mirror cache size": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limit local mirror cache size"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "限制本地镜像缓存大小"
           }
         }
       }
@@ -3248,6 +3741,23 @@
         }
       }
     },
+    "Mirror Cache": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mirror Cache"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "镜像缓存"
+          }
+        }
+      }
+    },
     "Mirror Releases and Binary Assets": {
       "extractionState": "manual",
       "localizations": {
@@ -3261,6 +3771,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "镜像 Releases 及二进制 assets"
+          }
+        }
+      }
+    },
+    "Mirror Template": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mirror Template"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "镜像模板"
           }
         }
       }
@@ -3367,6 +3894,23 @@
         }
       }
     },
+    "Name prefix (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name prefix (optional)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称前缀（可选）"
+          }
+        }
+      }
+    },
     "Namespace": {
       "extractionState": "manual",
       "localizations": {
@@ -3435,6 +3979,57 @@
         }
       }
     },
+    "New Repository in %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Repository in %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 中的新仓库"
+          }
+        }
+      }
+    },
+    "New account name (for example, work)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New account name (for example, work)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新账号名称（例如 work）"
+          }
+        }
+      }
+    },
+    "New repositories are mirrored immediately using the template below. Notifications are skipped when auto-add succeeds.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New repositories are mirrored immediately using the template below. Notifications are skipped when auto-add succeeds."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新仓库将立即按下方模板镜像。自动添加成功时不发送通知。"
+          }
+        }
+      }
+    },
     "Next (%lld)": {
       "extractionState": "manual",
       "localizations": {
@@ -3448,6 +4043,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "下一步 (%lld)"
+          }
+        }
+      }
+    },
+    "Next Poll": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next Poll"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下次轮询"
           }
         }
       }
@@ -3520,6 +4132,23 @@
         }
       }
     },
+    "No Git LFS usage detected; skipping LFS sync.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Git LFS usage detected; skipping LFS sync."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未检测到 Git LFS 用法，跳过 LFS 同步。"
+          }
+        }
+      }
+    },
     "No Matching Repositories": {
       "extractionState": "manual",
       "localizations": {
@@ -3588,6 +4217,23 @@
         }
       }
     },
+    "No org or group subscriptions yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No org or group subscriptions yet."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚无组织或群组订阅。"
+          }
+        }
+      }
+    },
     "Not Run": {
       "extractionState": "manual",
       "localizations": {
@@ -3618,6 +4264,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "未同步"
+          }
+        }
+      }
+    },
+    "Not yet mirrored: %@, and others. Tap to review.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not yet mirrored: %@, and others. Tap to review."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未镜像：%@ 等。点按查看。"
+          }
+        }
+      }
+    },
+    "Not yet mirrored: %@. Tap to review.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not yet mirrored: %@. Tap to review."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未镜像：%@。点按查看。"
           }
         }
       }
@@ -3673,6 +4353,23 @@
         }
       }
     },
+    "Notify when new repositories are discovered": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify when new repositories are discovered"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发现新仓库时通知"
+          }
+        }
+      }
+    },
     "Number to Keep (Optional)": {
       "extractionState": "manual",
       "localizations": {
@@ -3703,6 +4400,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "确定"
+          }
+        }
+      }
+    },
+    "Off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
           }
         }
       }
@@ -3754,6 +4468,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开主窗口"
+          }
+        }
+      }
+    },
+    "Org / Group Discovery": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Org / Group Discovery"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组织 / 群组发现"
           }
         }
       }
@@ -3996,6 +4727,23 @@
         }
       }
     },
+    "Periodically compare subscribed GitHub organizations or GitLab groups against locally mirrored repositories. When new repos appear, GitRelay can notify you or auto-add them using a preset template.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periodically compare subscribed GitHub organizations or GitLab groups against locally mirrored repositories. When new repos appear, GitRelay can notify you or auto-add them using a preset template."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定期将已订阅的 GitHub 组织或 GitLab 群组与本地已镜像仓库对比。出现新仓库时，GitRelay 可通知您，或使用预设模板自动添加。"
+          }
+        }
+      }
+    },
     "Periodically compare the src/dst tip SHA and tree hash for a random sample of repositories. Mismatches are marked as content divergence.": {
       "extractionState": "manual",
       "localizations": {
@@ -4094,6 +4842,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "策略"
+          }
+        }
+      }
+    },
+    "Poll Frequency": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poll Frequency"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轮询频率"
+          }
+        }
+      }
+    },
+    "Poll Subscriptions Now": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poll Subscriptions Now"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即轮询订阅"
           }
         }
       }
@@ -4213,6 +4995,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "未找到公钥文件：%@"
+          }
+        }
+      }
+    },
+    "Pushing Git LFS objects...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pushing Git LFS objects..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在推送 Git LFS 对象…"
           }
         }
       }
@@ -4353,6 +5152,23 @@
         }
       }
     },
+    "Remove": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除"
+          }
+        }
+      }
+    },
     "Remove Tag": {
       "extractionState": "manual",
       "localizations": {
@@ -4383,6 +5199,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "将创建在当前 Token 所属用户名下。"
+          }
+        }
+      }
+    },
+    "Require Touch ID or password for sensitive actions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Require Touch ID or password for sensitive actions"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "敏感操作需要 Touch ID 或密码"
           }
         }
       }
@@ -4693,6 +5526,23 @@
         }
       }
     },
+    "Security": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Security"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安全"
+          }
+        }
+      }
+    },
     "Select All Visible": {
       "extractionState": "manual",
       "localizations": {
@@ -4795,6 +5645,23 @@
         }
       }
     },
+    "Show Token": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Token"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示令牌"
+          }
+        }
+      }
+    },
     "Show a confirmation when the dry run detects ref deletions or forced updates on the target; canceling blocks the sync.": {
       "extractionState": "manual",
       "localizations": {
@@ -4825,6 +5692,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "仅在通知中心展示，不会打断当前专注模式。"
+          }
+        }
+      }
+    },
+    "Skip Git LFS objects. Only Git pointers are mirrored.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip Git LFS objects. Only Git pointers are mirrored."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跳过 Git LFS 对象，仅镜像 Git 指针文件。"
           }
         }
       }
@@ -4876,6 +5760,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "源"
+          }
+        }
+      }
+    },
+    "Source Auth": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source Auth"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "源认证"
           }
         }
       }
@@ -4995,6 +5896,57 @@
           "stringUnit": {
             "state": "translated",
             "value": "严格保护"
+          }
+        }
+      }
+    },
+    "Subscribe": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscribe"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "订阅"
+          }
+        }
+      }
+    },
+    "Subscribe to Org / Group": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscribe to Org / Group"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "订阅组织 / 群组"
+          }
+        }
+      }
+    },
+    "Subscriptions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscriptions"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "订阅"
           }
         }
       }
@@ -5288,6 +6240,23 @@
         }
       }
     },
+    "Tap to review and mirror the new repositories.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to review and mirror the new repositories."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点按以审核并镜像新仓库。"
+          }
+        }
+      }
+    },
     "Target %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -5301,6 +6270,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "目标 %lld"
+          }
+        }
+      }
+    },
+    "Target Auth": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target Auth"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标认证"
+          }
+        }
+      }
+    },
+    "Target HTTPS token (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target HTTPS token (optional)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标 HTTPS 令牌（可选）"
           }
         }
       }
@@ -5352,6 +6355,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "目标 URL 模板"
+          }
+        }
+      }
+    },
+    "Target URL template (must include {name})": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target URL template (must include {name})"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标 URL 模板（须包含 {name}）"
           }
         }
       }
@@ -5968,6 +6988,23 @@
         }
       }
     },
+    "View": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看"
+          }
+        }
+      }
+    },
     "View Key": {
       "extractionState": "manual",
       "localizations": {
@@ -6002,6 +7039,23 @@
         }
       }
     },
+    "Warning: This repository uses Git LFS, but git-lfs was not found. Install it (for example: brew install git-lfs), then sync again. Git objects were still mirrored successfully.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warning: This repository uses Git LFS, but git-lfs was not found. Install it (for example: brew install git-lfs), then sync again. Git objects were still mirrored successfully."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "警告：此仓库使用了 Git LFS，但未找到 git-lfs。请安装（例如：brew install git-lfs）后再次同步。Git 对象已成功镜像。"
+          }
+        }
+      }
+    },
     "Weekly": {
       "extractionState": "manual",
       "localizations": {
@@ -6015,6 +7069,57 @@
           "stringUnit": {
             "state": "translated",
             "value": "每周"
+          }
+        }
+      }
+    },
+    "When New Repos Appear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When New Repos Appear"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "出现新仓库时"
+          }
+        }
+      }
+    },
+    "When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开启后，明文查看令牌、删除仓库以及将镜像目标更改为不同主机时均需要验证身份。取消或验证失败将中止操作。"
+          }
+        }
+      }
+    },
+    "When the source uses Git LFS, fetch all LFS objects into the local mirror and push them to each destination. Requires git-lfs.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the source uses Git LFS, fetch all LFS objects into the local mirror and push them to each destination. Requires git-lfs."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当源仓库使用 Git LFS 时，将全部 LFS 对象拉取到本地镜像，并推送到每个目标。需要安装 git-lfs。"
           }
         }
       }
@@ -6100,873 +7205,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "⚠ 检测到内容分歧: %@"
-          }
-        }
-      }
-    },
-    "HTTP %@: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HTTP %@: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HTTP %@: %@"
-          }
-        }
-      }
-    },
-    "HTTP %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HTTP %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HTTP %@"
-          }
-        }
-      }
-    },
-    "Account": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Account"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "账号"
-          }
-        }
-      }
-    },
-    "Default": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Default"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "默认"
-          }
-        }
-      }
-    },
-    "New account name (for example, work)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New account name (for example, work)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新账号名称（例如 work）"
-          }
-        }
-      }
-    },
-    "Add": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加"
-          }
-        }
-      }
-    },
-    "Delete Current Account": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete Current Account"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "删除当前账号"
-          }
-        }
-      }
-    },
-    "At least one account must remain.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "At least one account must remain."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "至少保留一个账号。"
-          }
-        }
-      }
-    },
-    "Account name must be 1–32 letters, numbers, spaces, hyphens, or underscores.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Account name must be 1–32 letters, numbers, spaces, hyphens, or underscores."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "账号名称须为 1–32 个字母、数字、空格、连字符或下划线。"
-          }
-        }
-      }
-    },
-    "An account with this name already exists.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "An account with this name already exists."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "同名账号已存在。"
-          }
-        }
-      }
-    },
-    "Account not found.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Account not found."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未找到该账号。"
-          }
-        }
-      }
-    },
-    "Authenticate to change the mirror target to a different host.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Authenticate to change the mirror target to a different host."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请验证身份以将镜像目标更改为不同的主机。"
-          }
-        }
-      }
-    },
-    "Authenticate to delete this repository and its local mirror.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Authenticate to delete this repository and its local mirror."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请验证身份以删除此仓库及其本地镜像。"
-          }
-        }
-      }
-    },
-    "Authenticate to show the token in plaintext.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Authenticate to show the token in plaintext."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请验证身份以明文显示令牌。"
-          }
-        }
-      }
-    },
-    "Hide Token": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hide Token"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隐藏令牌"
-          }
-        }
-      }
-    },
-    "Require Touch ID or password for sensitive actions": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Require Touch ID or password for sensitive actions"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "敏感操作需要 Touch ID 或密码"
-          }
-        }
-      }
-    },
-    "Security": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Security"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安全"
-          }
-        }
-      }
-    },
-    "Show Token": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show Token"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "显示令牌"
-          }
-        }
-      }
-    },
-    "When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开启后，明文查看令牌、删除仓库以及将镜像目标更改为不同主机时均需要验证身份。取消或验证失败将中止操作。"
-          }
-        }
-      }
-    },
-    "Poll Frequency": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poll Frequency"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "轮询频率"
-          }
-        }
-      }
-    },
-    "Notify when new repositories are discovered": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notify when new repositories are discovered"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "发现新仓库时通知"
-          }
-        }
-      }
-    },
-    "Next Poll": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next Poll"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下次轮询"
-          }
-        }
-      }
-    },
-    "Org / Group Discovery": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Org / Group Discovery"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "组织 / 群组发现"
-          }
-        }
-      }
-    },
-    "Periodically compare subscribed GitHub organizations or GitLab groups against locally mirrored repositories. When new repos appear, GitRelay can notify you or auto-add them using a preset template.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Periodically compare subscribed GitHub organizations or GitLab groups against locally mirrored repositories. When new repos appear, GitRelay can notify you or auto-add them using a preset template."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "定期将已订阅的 GitHub 组织或 GitLab 群组与本地已镜像仓库对比。出现新仓库时，GitRelay 可通知您，或使用预设模板自动添加。"
-          }
-        }
-      }
-    },
-    "No org or group subscriptions yet.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No org or group subscriptions yet."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "尚无组织或群组订阅。"
-          }
-        }
-      }
-    },
-    "Edit": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "编辑"
-          }
-        }
-      }
-    },
-    "Remove": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remove"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移除"
-          }
-        }
-      }
-    },
-    "Subscribe to Org / Group": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Subscribe to Org / Group"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "订阅组织 / 群组"
-          }
-        }
-      }
-    },
-    "Subscriptions": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Subscriptions"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "订阅"
-          }
-        }
-      }
-    },
-    "Poll Subscriptions Now": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poll Subscriptions Now"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "立即轮询订阅"
-          }
-        }
-      }
-    },
-    "Auto-add": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto-add"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自动添加"
-          }
-        }
-      }
-    },
-    "Last checked": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Last checked"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上次检查"
-          }
-        }
-      }
-    },
-    "Edit Subscription": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit Subscription"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "编辑订阅"
-          }
-        }
-      }
-    },
-    "When New Repos Appear": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "When New Repos Appear"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "出现新仓库时"
-          }
-        }
-      }
-    },
-    "Auto-add using template": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto-add using template"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用模板自动添加"
-          }
-        }
-      }
-    },
-    "New repositories are mirrored immediately using the template below. Notifications are skipped when auto-add succeeds.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New repositories are mirrored immediately using the template below. Notifications are skipped when auto-add succeeds."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新仓库将立即按下方模板镜像。自动添加成功时不发送通知。"
-          }
-        }
-      }
-    },
-    "GitRelay notifies you and opens a prefilled browse sheet so you can review before mirroring.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GitRelay notifies you and opens a prefilled browse sheet so you can review before mirroring."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GitRelay 会通知您并打开预填充的浏览面板，供您在镜像前审核。"
-          }
-        }
-      }
-    },
-    "Mirror Template": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mirror Template"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "镜像模板"
-          }
-        }
-      }
-    },
-    "Target URL template (must include {name})": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Target URL template (must include {name})"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目标 URL 模板（须包含 {name}）"
-          }
-        }
-      }
-    },
-    "Auto-create target on Gitea": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto-create target on Gitea"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Gitea 上自动创建目标"
-          }
-        }
-      }
-    },
-    "Name prefix (optional)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Name prefix (optional)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "名称前缀（可选）"
-          }
-        }
-      }
-    },
-    "Target HTTPS token (optional)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Target HTTPS token (optional)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目标 HTTPS 令牌（可选）"
-          }
-        }
-      }
-    },
-    "Subscribe": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Subscribe"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "订阅"
-          }
-        }
-      }
-    },
-    "View": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "View"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "查看"
-          }
-        }
-      }
-    },
-    "New Repository in %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Repository in %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 中的新仓库"
-          }
-        }
-      }
-    },
-    "%lld New Repositories in %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld New Repositories in %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 中的 %lld 个新仓库"
-          }
-        }
-      }
-    },
-    "Tap to review and mirror the new repositories.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tap to review and mirror the new repositories."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "点按以审核并镜像新仓库。"
-          }
-        }
-      }
-    },
-    "Not yet mirrored: %@, and others. Tap to review.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Not yet mirrored: %@, and others. Tap to review."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "尚未镜像：%@ 等。点按查看。"
-          }
-        }
-      }
-    },
-    "Not yet mirrored: %@. Tap to review.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Not yet mirrored: %@. Tap to review."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "尚未镜像：%@。点按查看。"
-          }
-        }
-      }
-    },
-    "Source Auth": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Source Auth"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "源认证"
-          }
-        }
-      }
-    },
-    "Target Auth": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Target Auth"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目标认证"
           }
         }
       }
