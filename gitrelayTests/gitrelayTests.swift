@@ -1918,6 +1918,7 @@ struct NotificationPreferencesStoreTests {
         prefs.notificationsEnabled = false
         prefs.notifyOnFirstFailure = false
         prefs.consecutiveFailureThreshold = 5
+        prefs.transientGitMaxAttempts = 4
         prefs.interruptionLevel = .timeSensitive
         prefs.pauseOnLowPowerMode = false
         prefs.pauseOnExpensiveNetwork = false
@@ -1927,6 +1928,7 @@ struct NotificationPreferencesStoreTests {
         #expect(reloaded.preferences.notificationsEnabled == false)
         #expect(reloaded.preferences.notifyOnFirstFailure == false)
         #expect(reloaded.preferences.consecutiveFailureThreshold == 5)
+        #expect(reloaded.preferences.transientGitMaxAttempts == 4)
         #expect(reloaded.preferences.interruptionLevel == .timeSensitive)
         #expect(reloaded.preferences.pauseOnLowPowerMode == false)
         #expect(reloaded.preferences.pauseOnExpensiveNetwork == false)
@@ -1941,6 +1943,7 @@ struct NotificationPreferencesStoreTests {
         var prefs = store.preferences
         prefs.notificationsEnabled = false
         prefs.consecutiveFailureThreshold = 9
+        prefs.transientGitMaxAttempts = 5
         store.preferences = prefs
         store.resetToDefaults()
         #expect(store.preferences == .default)
@@ -1956,6 +1959,19 @@ struct NotificationPreferencesStoreTests {
         prefs.consecutiveFailureThreshold = 0
         store.preferences = prefs
         #expect(store.preferences.consecutiveFailureThreshold == 1)
+    }
+
+    @Test func clampsTransientGitMaxAttemptsToThreeMinuteBudget() {
+        let suite = "gitrelay.tests.notification-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = NotificationPreferencesStore(defaults: defaults)
+        var prefs = store.preferences
+        prefs.transientGitMaxAttempts = 999
+        store.preferences = prefs
+        #expect(store.preferences.transientGitMaxAttempts == GitRetryPolicy.clampedMaxAttempts(999))
+        #expect(store.preferences.gitRetryPolicy.maxAttempts == store.preferences.transientGitMaxAttempts)
     }
 }
 
@@ -4408,3 +4424,265 @@ struct AddEditRepoLFSMirrorModeTests {
         #expect(vm.buildRepoConfig().lfsMirrorMode == .off)
     }
 }
+
+// MARK: - Transient git retry (#44)
+
+struct GitTransientErrorClassifierTests {
+    @Test func classifiesNetworkTimeoutsAsRetryable() {
+        let errors: [Error] = [
+            GitError.processError(128, "fatal: unable to access 'https://github.com/x/y.git/': Could not resolve host: github.com"),
+            GitError.processError(128, "ssh: connect to host github.com port 22: Connection timed out"),
+            GitError.processError(128, "Recv failure: Connection reset by peer"),
+            GitError.processError(128, "The requested URL returned error: 502"),
+            GitError.processError(128, "RPC failed; HTTP 503 curl 22"),
+            GitError.processError(128, "fatal: Network is unreachable"),
+        ]
+        for error in errors {
+            guard case .retryable = GitTransientErrorClassifier.classify(error) else {
+                Issue.record("expected retryable for \(error.localizedDescription)")
+                continue
+            }
+        }
+    }
+
+    @Test func classifiesAuthPermissionCorruptionAndCancelAsNonRetryable() {
+        #expect(GitTransientErrorClassifier.classify(GitError.cancelled) == .cancelled)
+        #expect(GitTransientErrorClassifier.classify(CancellationError()) == .cancelled)
+
+        let nonRetryable: [Error] = [
+            GitError.processError(128, "Authentication failed for 'https://github.com/x/y.git/'"),
+            GitError.processError(128, "Permission denied (publickey)."),
+            GitError.processError(128, "fatal: could not read Username for 'https://github.com': terminal prompts disabled"),
+            GitError.processError(128, "error: corrupt loose object"),
+            GitError.processError(128, "error: packfile is corrupt"),
+            DestructivePushError.blocked(
+                DestructivePushPlan(deletedRefs: ["refs/heads/old"], forcedUpdateRefs: [])
+            ),
+            SyncEngineError.noEnabledTargets,
+        ]
+        for error in nonRetryable {
+            #expect(GitTransientErrorClassifier.classify(error) == .nonRetryable)
+        }
+    }
+
+    @Test func redactsCredentialsBeforeClassifyingReason() {
+        let error = GitError.processError(
+            128,
+            "fatal: unable to access 'https://secret-token@github.com/x/y.git/': Could not resolve host: github.com"
+        )
+        guard case .retryable(let reason) = GitTransientErrorClassifier.classify(error) else {
+            Issue.record("expected retryable")
+            return
+        }
+        #expect(!reason.contains("secret-token"))
+        #expect(reason == "Could not resolve host")
+    }
+}
+
+struct GitRetryPolicyTests {
+    @Test func defaultScheduleIsTwoThenEightSeconds() {
+        let policy = GitRetryPolicy.default
+        #expect(policy.maxAttempts == 3)
+        #expect(policy.delayAfterAttempt(1) == 2)
+        #expect(policy.delayAfterAttempt(2) == 8)
+        #expect(policy.delayAfterAttempt(3) == nil)
+        #expect(GitRetryPolicy.delaySchedule(maxAttempts: 3) == [2, 8])
+        #expect(GitRetryPolicy.delaySchedule(maxAttempts: 4) == [2, 8, 32])
+    }
+
+    @Test func clampsAttemptsSoTotalWaitStaysWithinThreeMinutes() {
+        let policy = GitRetryPolicy(maxAttempts: 100)
+        let schedule = GitRetryPolicy.delaySchedule(maxAttempts: policy.maxAttempts)
+        #expect(schedule.reduce(0, +) <= GitRetryPolicy.maxTotalWaitSeconds)
+        #expect(policy.maxAttempts == schedule.count + 1)
+        #expect(policy.maxAttempts < 100)
+    }
+
+    @Test func singleAttemptMeansNoRetries() {
+        let policy = GitRetryPolicy(maxAttempts: 1)
+        #expect(policy.maxAttempts == 1)
+        #expect(policy.delayAfterAttempt(1) == nil)
+        #expect(GitRetryPolicy.delaySchedule(maxAttempts: 1).isEmpty)
+    }
+}
+
+private final class RetryTestCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value = 0
+    var value: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return _value
+    }
+
+    func increment() -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        _value += 1
+        return _value
+    }
+}
+
+private final class RetryTestFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value = false
+    var value: Bool {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _value
+        }
+        set {
+            lock.lock()
+            _value = newValue
+            lock.unlock()
+        }
+    }
+}
+
+private final class RetryTestSleepLog: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _values: [TimeInterval] = []
+    var values: [TimeInterval] {
+        lock.lock()
+        defer { lock.unlock() }
+        return _values
+    }
+
+    func append(_ value: TimeInterval) {
+        lock.lock()
+        _values.append(value)
+        lock.unlock()
+    }
+}
+
+private final class RetryTestStringLog: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _values: [String] = []
+    var values: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return _values
+    }
+
+    func append(_ value: String) {
+        lock.lock()
+        _values.append(value)
+        lock.unlock()
+    }
+}
+
+@MainActor
+struct GitRetryExecutorTests {
+    @Test func transientErrorThenSuccessDoesNotSurfaceFailure() async throws {
+        let attempts = RetryTestCounter()
+        let sleeps = RetryTestSleepLog()
+        let retries = RetryTestStringLog()
+
+        let result = try await GitRetryExecutor.run(
+            policy: .default,
+            sleep: { delay in sleeps.append(delay) },
+            onRetry: { next, max, reason in
+                retries.append(GitRetryLog.line(attempt: next, maxAttempts: max, reason: reason))
+            },
+            operation: {
+                let n = attempts.increment()
+                if n == 1 {
+                    throw GitError.processError(128, "ssh: connect to host github.com port 22: Connection timed out")
+                }
+                return "ok"
+            }
+        )
+
+        #expect(result == "ok")
+        #expect(attempts.value == 2)
+        #expect(sleeps.values == [2])
+        #expect(retries.values.count == 1)
+        #expect(retries.values[0].contains("2"))
+        #expect(retries.values[0].contains("3"))
+        #expect(retries.values[0].lowercased().contains("timed out") || retries.values[0].contains("timeout") || retries.values[0].contains("Connection"))
+
+        // A later successful retry must look like a normal success for failure counting.
+        var repo = RepoConfig(
+            name: "retry-ok",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git"
+        )
+        repo.recordSyncResult(error: nil)
+        #expect(repo.consecutiveFailureCount == 0)
+        #expect(repo.lastSyncError == nil)
+    }
+
+    @Test func nonRetryableErrorFailsImmediatelyWithoutSleep() async {
+        let attempts = RetryTestCounter()
+        let sleeps = RetryTestSleepLog()
+
+        do {
+            _ = try await GitRetryExecutor.run(
+                policy: .default,
+                sleep: { delay in sleeps.append(delay) },
+                operation: {
+                    _ = attempts.increment()
+                    throw GitError.processError(128, "Authentication failed for 'https://github.com/x/y.git/'")
+                }
+            )
+            Issue.record("expected authentication failure")
+        } catch let error as GitError {
+            guard case .processError = error else {
+                Issue.record("expected processError")
+                return
+            }
+        } catch {
+            Issue.record("unexpected error \(error)")
+        }
+
+        #expect(attempts.value == 1)
+        #expect(sleeps.values.isEmpty)
+    }
+
+    @Test func cancellationAbortsBackoffWithoutWaitingRemainingDelay() async {
+        let attempts = RetryTestCounter()
+        let sleeps = RetryTestSleepLog()
+        let cancelled = RetryTestFlag()
+
+        do {
+            _ = try await GitRetryExecutor.run(
+                policy: .default,
+                isCancelled: { cancelled.value },
+                sleep: { delay in
+                    sleeps.append(delay)
+                    cancelled.value = true
+                },
+                operation: {
+                    _ = attempts.increment()
+                    throw GitError.processError(128, "Could not resolve host: github.com")
+                }
+            )
+            Issue.record("expected cancellation")
+        } catch let error as GitError {
+            guard case .cancelled = error else {
+                Issue.record("expected GitError.cancelled, got \(error)")
+                return
+            }
+        } catch {
+            Issue.record("unexpected error \(error)")
+        }
+
+        #expect(attempts.value == 1)
+        #expect(sleeps.values == [2])
+        // Must not proceed to the 8s / 32s backoff slots after cancel.
+        #expect(!sleeps.values.contains(8))
+        #expect(!sleeps.values.contains(32))
+    }
+
+    @Test func retryLogRedactsCredentialURLs() {
+        let line = GitRetryLog.line(
+            attempt: 2,
+            maxAttempts: 3,
+            reason: "Could not resolve host in https://mytoken@github.com/x/y.git"
+        )
+        #expect(!line.contains("mytoken"))
+        #expect(line.contains("****") || !line.contains("@github.com") || line.contains("https://****@"))
+    }
+}
+

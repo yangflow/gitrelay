@@ -2,6 +2,10 @@ import Foundation
 
 /// User-adjustable alert preferences for sync failures and scheduled-sync pausing.
 struct NotificationPreferences: Equatable, Sendable {
+    enum DefaultsKey {
+        static let transientGitMaxAttempts = "NotificationPreferences.transientGitMaxAttempts"
+    }
+
     /// Master switch for failure notifications.
     var notificationsEnabled: Bool
 
@@ -10,6 +14,9 @@ struct NotificationPreferences: Equatable, Sendable {
 
     /// Also notify when consecutive failures reach this count (and multiples thereof).
     var consecutiveFailureThreshold: Int
+
+    /// Max git attempts per sync run for transient network errors (clamped by `GitRetryPolicy`).
+    var transientGitMaxAttempts: Int
 
     /// Delivery urgency for posted notifications.
     var interruptionLevel: NotificationInterruptionPreference
@@ -24,6 +31,7 @@ struct NotificationPreferences: Equatable, Sendable {
         notificationsEnabled: true,
         notifyOnFirstFailure: true,
         consecutiveFailureThreshold: 3,
+        transientGitMaxAttempts: GitRetryPolicy.defaultMaxAttempts,
         interruptionLevel: .active,
         pauseOnLowPowerMode: true,
         pauseOnExpensiveNetwork: true
@@ -41,6 +49,20 @@ struct NotificationPreferences: Equatable, Sendable {
         SyncPausePolicy(
             pauseOnLowPowerMode: pauseOnLowPowerMode,
             pauseOnExpensiveNetwork: pauseOnExpensiveNetwork
+        )
+    }
+
+    var gitRetryPolicy: GitRetryPolicy {
+        GitRetryPolicy(maxAttempts: transientGitMaxAttempts)
+    }
+
+    /// Load the in-run git retry budget from UserDefaults (shared by app + CLI).
+    static func gitRetryPolicy(from defaults: UserDefaults = .standard) -> GitRetryPolicy {
+        if defaults.object(forKey: DefaultsKey.transientGitMaxAttempts) == nil {
+            return .default
+        }
+        return GitRetryPolicy(
+            maxAttempts: defaults.integer(forKey: DefaultsKey.transientGitMaxAttempts)
         )
     }
 }

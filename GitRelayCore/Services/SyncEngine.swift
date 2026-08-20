@@ -14,6 +14,8 @@ final class SyncEngine {
     private let repo: RepoConfig
     private let runner = GitRunner()
     private let archiveService = FilesystemArchiveService()
+    private let retryPolicy: GitRetryPolicy
+    private let cancellation = SyncCancellationFlag()
     private var record: SyncRecord
     private var lfsReadyToPush = false
 
@@ -26,8 +28,9 @@ final class SyncEngine {
     /// Called after a successful git mirror push when `repo.mirrorReleases` is enabled.
     var mirrorReleases: ((RepoConfig, MirrorTarget, @escaping @Sendable (String) -> Void) async throws -> Void)?
 
-    init(repo: RepoConfig) {
+    init(repo: RepoConfig, retryPolicy: GitRetryPolicy = .default) {
         self.repo = repo
+        self.retryPolicy = retryPolicy
         self.record = SyncRecord(repoID: repo.id)
     }
 
@@ -50,29 +53,37 @@ final class SyncEngine {
                 log(GitSyncArguments.partialSyncLogLine)
                 if MirrorStore.mirrorExists(for: repo.id) {
                     log("Fetching selected refs from source...")
-                    try await runner.fetchSource(
-                        mirrorPath: mirrorPath,
-                        depth: repo.depth,
-                        refSpecs: repo.resolvedRefSpecs,
-                        env: srcEnv
-                    )
+                    try await withTransientRetry(log: { self.log($0) }) {
+                        try await self.runner.fetchSource(
+                            mirrorPath: mirrorPath,
+                            depth: self.repo.depth,
+                            refSpecs: self.repo.resolvedRefSpecs,
+                            env: srcEnv
+                        )
+                    }
                     log("Fetch complete.")
                 } else {
                     log("Initializing partial mirror (first time)...")
+                    let repoID = repo.id
                     do {
-                        try await runner.initBareMirror(at: mirrorPath, env: srcEnv)
-                        try await runner.addRemote(
-                            mirrorPath: mirrorPath,
-                            name: "origin",
-                            url: srcURL,
-                            env: srcEnv
-                        )
-                        try await runner.fetchSource(
-                            mirrorPath: mirrorPath,
-                            depth: repo.depth,
-                            refSpecs: repo.resolvedRefSpecs,
-                            env: srcEnv
-                        )
+                        try await withTransientRetry(
+                            log: { self.log($0) },
+                            beforeRetry: { try? MirrorStore.deleteMirror(for: repoID) }
+                        ) {
+                            try await self.runner.initBareMirror(at: mirrorPath, env: srcEnv)
+                            try await self.runner.addRemote(
+                                mirrorPath: mirrorPath,
+                                name: "origin",
+                                url: srcURL,
+                                env: srcEnv
+                            )
+                            try await self.runner.fetchSource(
+                                mirrorPath: mirrorPath,
+                                depth: self.repo.depth,
+                                refSpecs: self.repo.resolvedRefSpecs,
+                                env: srcEnv
+                            )
+                        }
                     } catch {
                         try? MirrorStore.deleteMirror(for: repo.id)
                         throw error
@@ -81,12 +92,24 @@ final class SyncEngine {
                 }
             } else if MirrorStore.mirrorExists(for: repo.id) {
                 log("Fetching from source...")
-                try await runner.fetchPrune(mirrorPath: mirrorPath, env: srcEnv)
+                try await withTransientRetry(log: { self.log($0) }) {
+                    try await self.runner.fetchPrune(mirrorPath: mirrorPath, env: srcEnv)
+                }
                 log("Fetch complete.")
             } else {
                 log("Cloning source (first time)...")
+                let repoID = repo.id
                 do {
-                    try await runner.cloneMirror(srcURL: srcURL, mirrorPath: mirrorPath, env: srcEnv)
+                    try await withTransientRetry(
+                        log: { self.log($0) },
+                        beforeRetry: { try? MirrorStore.deleteMirror(for: repoID) }
+                    ) {
+                        try await self.runner.cloneMirror(
+                            srcURL: srcURL,
+                            mirrorPath: mirrorPath,
+                            env: srcEnv
+                        )
+                    }
                 } catch {
                     try? MirrorStore.deleteMirror(for: repo.id)
                     throw error
@@ -95,14 +118,17 @@ final class SyncEngine {
             }
 
             // 1b. Optional Git LFS fetch into the local bare mirror (src → local only).
-            let lfsPrepare = try await lfsService.prepareAfterSourceFetch(
-                mode: repo.lfsMirrorMode,
-                mirrorPath: mirrorPath,
-                env: srcEnv,
-                log: { [weak self] line in
-                    self?.log(SyncEngine.redactCredentials(line))
-                }
-            )
+            // LFS goes through GitRunner; transient failures use the same retry classifier.
+            let lfsPrepare = try await withTransientRetry(log: { self.log($0) }) {
+                try await lfsService.prepareAfterSourceFetch(
+                    mode: self.repo.lfsMirrorMode,
+                    mirrorPath: mirrorPath,
+                    env: srcEnv,
+                    log: { [weak self] line in
+                        self?.log(SyncEngine.redactCredentials(line))
+                    }
+                )
+            }
             lfsReadyToPush = (lfsPrepare == .readyToPush)
 
             guard !enabledTargets.isEmpty else {
@@ -153,6 +179,7 @@ final class SyncEngine {
     }
 
     func cancel() {
+        cancellation.cancel()
         Task {
             await runner.cancel()
             await archiveService.cancel()
@@ -227,7 +254,13 @@ final class SyncEngine {
             targetLog("Checking destination...")
             var commitsBefore = 0
             do {
-                try await runner.fetchDstRefs(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
+                try await withTransientRetry(log: targetLog) {
+                    try await self.runner.fetchDstRefs(
+                        mirrorPath: mirrorPath,
+                        dstURL: dstURL,
+                        env: dstEnv
+                    )
+                }
                 commitsBefore = (try? await runner.countCommitsAhead(mirrorPath: mirrorPath)) ?? 0
                 targetLog("Source is \(commitsBefore) commit(s) ahead of destination.")
             } catch {
@@ -240,14 +273,22 @@ final class SyncEngine {
             let plan: DestructivePushPlan
             if repo.usesSelectiveRefSync {
                 targetLog("Using selective ref push (not a complete mirror backup).")
-                plan = try await runner.pushSelectiveRefsDryRun(
-                    mirrorPath: mirrorPath,
-                    dstURL: dstURL,
-                    refSpecs: pushRefSpecs,
-                    env: dstEnv
-                )
+                plan = try await withTransientRetry(log: targetLog) {
+                    try await self.runner.pushSelectiveRefsDryRun(
+                        mirrorPath: mirrorPath,
+                        dstURL: dstURL,
+                        refSpecs: pushRefSpecs,
+                        env: dstEnv
+                    )
+                }
             } else {
-                plan = try await runner.pushMirrorDryRun(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
+                plan = try await withTransientRetry(log: targetLog) {
+                    try await self.runner.pushMirrorDryRun(
+                        mirrorPath: mirrorPath,
+                        dstURL: dstURL,
+                        env: dstEnv
+                    )
+                }
             }
             if plan.isDestructive {
                 targetLog("Dry-run detected destructive changes: \(plan.summary).")
@@ -270,25 +311,35 @@ final class SyncEngine {
 
             targetLog("Pushing to destination...")
             if repo.usesSelectiveRefSync {
-                try await runner.pushSelectiveRefs(
-                    mirrorPath: mirrorPath,
-                    dstURL: dstURL,
-                    refSpecs: pushRefSpecs,
-                    env: dstEnv
-                )
+                try await withTransientRetry(log: targetLog) {
+                    try await self.runner.pushSelectiveRefs(
+                        mirrorPath: mirrorPath,
+                        dstURL: dstURL,
+                        refSpecs: pushRefSpecs,
+                        env: dstEnv
+                    )
+                }
             } else {
-                try await runner.pushMirror(mirrorPath: mirrorPath, dstURL: dstURL, env: dstEnv)
+                try await withTransientRetry(log: targetLog) {
+                    try await self.runner.pushMirror(
+                        mirrorPath: mirrorPath,
+                        dstURL: dstURL,
+                        env: dstEnv
+                    )
+                }
             }
             targetLog("Push complete. ✓")
 
             if lfsReadyToPush {
                 do {
-                    try await lfsService.pushToDestination(
-                        mirrorPath: mirrorPath,
-                        remoteURL: dstURL,
-                        env: dstEnv,
-                        log: targetLog
-                    )
+                    try await withTransientRetry(log: targetLog) {
+                        try await lfsService.pushToDestination(
+                            mirrorPath: mirrorPath,
+                            remoteURL: dstURL,
+                            env: dstEnv,
+                            log: targetLog
+                        )
+                    }
                 } catch {
                     let message = classifyError(error)
                     targetLog(String(localized: "LFS push error: \(message)"))
@@ -330,6 +381,29 @@ final class SyncEngine {
 
     private func emit(_ event: SyncEvent) {
         onEvent?(event)
+    }
+
+    /// Retries transient network git failures within this sync run. Cancel stops before the next sleep.
+    private func withTransientRetry<T>(
+        log logLine: @escaping (String) -> Void,
+        beforeRetry: (() async throws -> Void)? = nil,
+        operation: () async throws -> T
+    ) async throws -> T {
+        let flag = cancellation
+        try await GitRetryExecutor.run(
+            policy: retryPolicy,
+            isCancelled: { flag.isCancelled },
+            onRetry: { nextAttempt, maxAttempts, reason in
+                let line = GitRetryLog.line(
+                    attempt: nextAttempt,
+                    maxAttempts: maxAttempts,
+                    reason: reason
+                )
+                logLine(SyncEngine.redactCredentials(line))
+            },
+            beforeRetry: beforeRetry,
+            operation: operation
+        )
     }
 
     private func authenticatedURL(url: String, auth: AuthConfig) -> String {
@@ -403,5 +477,23 @@ enum SyncEngineError: LocalizedError {
         case .noEnabledTargets:
             return "No enabled mirror targets"
         }
+    }
+}
+
+/// Thread-safe cancel flag shared with the retry executor (which is not MainActor-isolated).
+final class SyncCancellationFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var cancelled = false
+
+    var isCancelled: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return cancelled
+    }
+
+    func cancel() {
+        lock.lock()
+        cancelled = true
+        lock.unlock()
     }
 }

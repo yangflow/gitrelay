@@ -257,7 +257,10 @@ final class AppViewModel {
               !inProgressVerifyIDs.contains(repoID),
               let repo = repos.first(where: { $0.id == repoID }) else { return }
 
-        let engine = SyncEngine(repo: repo)
+        let engine = SyncEngine(
+            repo: repo,
+            retryPolicy: notificationPreferences.preferences.gitRetryPolicy
+        )
         activeSyncEngines[repoID] = engine
         inProgressSyncIDs.insert(repoID)
         statuses[repoID] = .syncing

@@ -7208,6 +7208,74 @@
           }
         }
       }
+    },
+    "Retry %lld of %lld, reason: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry %lld of %lld, reason: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld 次重试（共 %lld 次），原因：%@"
+          }
+        }
+      }
+    },
+    "Sync Retries": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync Retries"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步重试"
+          }
+        }
+      }
+    },
+    "Transient network retries: %lld attempts": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transient network retries: %lld attempts"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瞬时网络重试：%lld 次尝试"
+          }
+        }
+      }
+    },
+    "Within a single sync, retry fetch/clone/push (and LFS) on brief network errors using 2s / 8s / 32s backoff. Total wait is capped at 3 minutes. Auth failures and local corruption are not retried.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Within a single sync, retry fetch/clone/push (and LFS) on brief network errors using 2s / 8s / 32s backoff. Total wait is capped at 3 minutes. Auth failures and local corruption are not retried."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "单次同步内，对短暂网络错误按 2 秒 / 8 秒 / 32 秒退避重试 fetch/clone/push（以及 LFS）。总等待不超过 3 分钟。认证失败与本地仓库损坏不会重试。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
