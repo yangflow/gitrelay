@@ -58,6 +58,23 @@ struct SettingsView: View {
             }
 
             Section {
+                Stepper(
+                    value: $store.preferences.transientGitMaxAttempts,
+                    in: 1...GitRetryPolicy.clampedMaxAttempts(100)
+                ) {
+                    Text(
+                        String(
+                            localized: "Transient network retries: \(store.preferences.transientGitMaxAttempts) attempts"
+                        )
+                    )
+                }
+            } header: {
+                Text(String(localized: "Sync Retries"))
+            } footer: {
+                Text(String(localized: "Within a single sync, retry fetch/clone/push (and LFS) on brief network errors using 2s / 8s / 32s backoff. Total wait is capped at 3 minutes. Auth failures and local corruption are not retried."))
+            }
+
+            Section {
                 Toggle("Pause scheduled sync in Low Power Mode", isOn: $store.preferences.pauseOnLowPowerMode)
                 Toggle("Pause scheduled sync on expensive networks or hotspots", isOn: $store.preferences.pauseOnExpensiveNetwork)
 

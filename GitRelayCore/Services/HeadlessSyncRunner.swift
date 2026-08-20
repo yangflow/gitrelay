@@ -28,7 +28,10 @@ enum HeadlessSyncRunner {
         }
 
         let repoID = repos[index].id
-        let engine = SyncEngine(repo: repos[index])
+        let engine = SyncEngine(
+            repo: repos[index],
+            retryPolicy: NotificationPreferences.gitRetryPolicy()
+        )
         engine.confirmDestructivePush = { plan, _ in
             !repos[index].destructivePushPolicy.requiresConfirmation(for: plan)
         }
