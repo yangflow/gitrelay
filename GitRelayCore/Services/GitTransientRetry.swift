@@ -188,26 +188,27 @@ struct GitRetryPolicy: Equatable, Sendable {
 enum GitRetryExecutor {
     static func run<T>(
         policy: GitRetryPolicy = .default,
-        isCancelled: @Sendable () -> Bool = { false },
+        isCancelled: @escaping @Sendable () -> Bool = { false },
         sleep: (@Sendable (TimeInterval) async throws -> Void)? = nil,
         onRetry: ((_ nextAttempt: Int, _ maxAttempts: Int, _ reason: String) async -> Void)? = nil,
         beforeRetry: (() async throws -> Void)? = nil,
         operation: () async throws -> T
     ) async throws -> T {
+        let cancelCheck = isCancelled
         let sleepHandler = sleep ?? { seconds in
-            try await interruptibleSleep(seconds: seconds, isCancelled: isCancelled)
+            try await interruptibleSleep(seconds: seconds, isCancelled: cancelCheck)
         }
 
         var attempt = 1
         while true {
-            if isCancelled() {
+            if cancelCheck() {
                 throw GitError.cancelled
             }
 
             do {
                 return try await operation()
             } catch {
-                if isCancelled() {
+                if cancelCheck() {
                     throw GitError.cancelled
                 }
 
@@ -222,7 +223,7 @@ enum GitRetryExecutor {
                     }
                     let nextAttempt = attempt + 1
                     // Stop before sleeping when the user already cancelled.
-                    if isCancelled() {
+                    if cancelCheck() {
                         throw GitError.cancelled
                     }
                     if let onRetry {
@@ -231,11 +232,11 @@ enum GitRetryExecutor {
                     if let beforeRetry {
                         try await beforeRetry()
                     }
-                    if isCancelled() {
+                    if cancelCheck() {
                         throw GitError.cancelled
                     }
                     try await sleepHandler(delay)
-                    if isCancelled() {
+                    if cancelCheck() {
                         throw GitError.cancelled
                     }
                     attempt = nextAttempt

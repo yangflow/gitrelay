@@ -390,7 +390,7 @@ final class SyncEngine {
         operation: () async throws -> T
     ) async throws -> T {
         let flag = cancellation
-        try await GitRetryExecutor.run(
+        return try await GitRetryExecutor.run(
             policy: retryPolicy,
             isCancelled: { flag.isCancelled },
             onRetry: { nextAttempt, maxAttempts, reason in
