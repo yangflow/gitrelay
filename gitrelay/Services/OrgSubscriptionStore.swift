@@ -55,6 +55,24 @@ final class OrgSubscriptionStore {
         deleteTargetToken(for: id)
     }
 
+    func replaceAll(
+        subscriptions newSubscriptions: [OrgSubscription],
+        preferences newPreferences: OrgSubscriptionPreferences?
+    ) {
+        if let newPreferences {
+            preferences = newPreferences
+        }
+        replaceSubscriptions(newSubscriptions)
+    }
+
+    func replaceSubscriptions(_ newSubscriptions: [OrgSubscription]) {
+        let removedIDs = Set(subscriptions.map(\.id)).subtracting(newSubscriptions.map(\.id))
+        for id in removedIDs {
+            deleteTargetToken(for: id)
+        }
+        subscriptions = newSubscriptions
+    }
+
     func subscription(id: UUID) -> OrgSubscription? {
         subscriptions.first { $0.id == id }
     }

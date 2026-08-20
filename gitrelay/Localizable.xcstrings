@@ -4399,7 +4399,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "确定"
+            "value": "好"
           }
         }
       }
@@ -7273,6 +7273,312 @@
           "stringUnit": {
             "state": "translated",
             "value": "单次同步内，对短暂网络错误按 2 秒 / 8 秒 / 32 秒退避重试 fetch/clone/push（以及 LFS）。总等待不超过 3 分钟。认证失败与本地仓库损坏不会重试。"
+          }
+        }
+      }
+    },
+    "Export Configuration…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export Configuration…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出配置…"
+          }
+        }
+      }
+    },
+    "Import Configuration…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import Configuration…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入配置…"
+          }
+        }
+      }
+    },
+    "Configuration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configuration"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置"
+          }
+        }
+      }
+    },
+    "Export repository pairs, targets, tags, frequency, shallow/ref filters, LFS, org subscriptions, and account labels. Tokens and private keys are never written to the file. After import, repositories missing credentials are marked and stay unscheduled until you fill them in.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export repository pairs, targets, tags, frequency, shallow/ref filters, LFS, org subscriptions, and account labels. Tokens and private keys are never written to the file. After import, repositories missing credentials are marked and stay unscheduled until you fill them in."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出仓库对、目标、标签、频率、浅克隆/ref 过滤、LFS、组织订阅和账户标签。文件中绝不会写入 Token 或私钥。导入后缺少凭证的仓库会被标记，并在补全前保持不调度。"
+          }
+        }
+      }
+    },
+    "Import Configuration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import Configuration"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入配置"
+          }
+        }
+      }
+    },
+    "Merge (skip existing IDs)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merge (skip existing IDs)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "合并（跳过已有 ID）"
+          }
+        }
+      }
+    },
+    "Replace all": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace all"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部替换"
+          }
+        }
+      }
+    },
+    "Merge keeps current repositories and skips matching IDs. Replace discards the current repository list and loads the file.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merge keeps current repositories and skips matching IDs. Replace discards the current repository list and loads the file."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "合并会保留当前仓库并跳过相同 ID。替换会丢弃当前仓库列表并载入该文件。"
+          }
+        }
+      }
+    },
+    "Export Configuration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export Configuration"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出配置"
+          }
+        }
+      }
+    },
+    "Configuration exported. Tokens and private keys were not included.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configuration exported. Tokens and private keys were not included."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置已导出。未包含 Token 或私钥。"
+          }
+        }
+      }
+    },
+    "Import": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入"
+          }
+        }
+      }
+    },
+    "Imported %lld repositories (skipped %lld existing). Repositories missing credentials are marked and will not sync until you edit them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported %lld repositories (skipped %lld existing). Repositories missing credentials are marked and will not sync until you edit them."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已导入 %lld 个仓库（跳过 %lld 个已有）。缺少凭证的仓库已标记，编辑补全前不会同步。"
+          }
+        }
+      }
+    },
+    "Imported %lld repositories. Repositories missing credentials are marked and will not sync until you edit them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported %lld repositories. Repositories missing credentials are marked and will not sync until you edit them."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已导入 %lld 个仓库。缺少凭证的仓库已标记，编辑补全前不会同步。"
+          }
+        }
+      }
+    },
+    "Needs credentials": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs credentials"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "待补认证"
+          }
+        }
+      }
+    },
+    "This repository needs credentials before it can sync. Edit the repository to add a token or SSH key.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This repository needs credentials before it can sync. Edit the repository to add a token or SSH key."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此仓库需要先补全凭证才能同步。请编辑仓库并填写 Token 或 SSH 密钥。"
+          }
+        }
+      }
+    },
+    "The configuration file is damaged or is not valid JSON.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The configuration file is damaged or is not valid JSON."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置文件已损坏或不是有效的 JSON。"
+          }
+        }
+      }
+    },
+    "Unsupported configuration schema version %lld. This app supports version %lld.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unsupported configuration schema version %lld. This app supports version %lld."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不支持的配置 schema 版本 %lld。本应用支持版本 %lld。"
+          }
+        }
+      }
+    },
+    "The configuration file could not be fully read: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The configuration file could not be fully read: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法完整读取配置文件：%@"
           }
         }
       }

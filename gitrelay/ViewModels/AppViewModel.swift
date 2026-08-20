@@ -163,10 +163,19 @@ final class AppViewModel {
             }
         }
 
-        for repo in repos {
-            statuses[repo.id] = initialStatus(for: repo)
-            records[repo.id]  = []
-            scheduler.schedule(repo: repo)
+        var needsCredentialsChanged = false
+        for index in repos.indices {
+            let refreshed = RepoCredentialGate.refreshedNeedsCredentials(for: repos[index])
+            if repos[index].needsCredentials != refreshed {
+                repos[index].needsCredentials = refreshed
+                needsCredentialsChanged = true
+            }
+            statuses[repos[index].id] = initialStatus(for: repos[index])
+            records[repos[index].id] = []
+            scheduler.schedule(repo: repos[index])
+        }
+        if needsCredentialsChanged {
+            saveRepos()
         }
         verificationScheduler.schedule(frequency: verificationPreferences.frequency)
         orgSubscriptionScheduler.schedule(frequency: orgSubscriptionPreferences.pollFrequency)
@@ -193,17 +202,20 @@ final class AppViewModel {
     // MARK: - CRUD
 
     func addRepo(_ repo: RepoConfig) {
-        repos.append(repo)
-        statuses[repo.id] = initialStatus(for: repo)
-        records[repo.id]  = []
-        scheduler.schedule(repo: repo)
+        var stored = repo
+        stored.needsCredentials = RepoCredentialGate.refreshedNeedsCredentials(for: stored)
+        repos.append(stored)
+        statuses[stored.id] = initialStatus(for: stored)
+        records[stored.id]  = []
+        scheduler.schedule(repo: stored)
         saveRepos()
         refreshWebhookListener()
     }
 
     func addRepos(_ newRepos: [RepoConfig], triggerSync: Bool = false) {
         guard !newRepos.isEmpty else { return }
-        for repo in newRepos {
+        for var repo in newRepos {
+            repo.needsCredentials = RepoCredentialGate.refreshedNeedsCredentials(for: repo)
             repos.append(repo)
             statuses[repo.id] = initialStatus(for: repo)
             records[repo.id]  = []
@@ -220,13 +232,20 @@ final class AppViewModel {
 
     func updateRepo(_ updated: RepoConfig) {
         guard let index = repos.firstIndex(where: { $0.id == updated.id }) else { return }
-        repos[index] = updated
-        if updated.isDiverged {
-            statuses[updated.id] = .diverged(updated.divergedDetail ?? String(localized: "Content divergence"))
-        } else if case .diverged = statuses[updated.id] {
-            statuses[updated.id] = updated.lastSyncError.map(SyncStatus.failed) ?? .unknown
+        var stored = updated
+        stored.needsCredentials = RepoCredentialGate.refreshedNeedsCredentials(for: stored)
+        repos[index] = stored
+        if stored.isDiverged {
+            statuses[stored.id] = .diverged(stored.divergedDetail ?? String(localized: "Content divergence"))
+        } else if case .diverged = statuses[stored.id] {
+            statuses[stored.id] = stored.lastSyncError.map(SyncStatus.failed) ?? .unknown
+        } else if stored.needsCredentials {
+            statuses[stored.id] = .failed(RepoCredentialGate.missingCredentialsMessage)
+        } else if case .failed(let message) = statuses[stored.id],
+                  message == RepoCredentialGate.missingCredentialsMessage {
+            statuses[stored.id] = stored.lastSyncError.map(SyncStatus.failed) ?? .unknown
         }
-        scheduler.reschedule(repo: updated)
+        scheduler.reschedule(repo: stored)
         saveRepos()
         refreshWebhookListener()
     }
@@ -256,6 +275,19 @@ final class AppViewModel {
         guard !inProgressSyncIDs.contains(repoID),
               !inProgressVerifyIDs.contains(repoID),
               let repo = repos.first(where: { $0.id == repoID }) else { return }
+
+        if repo.needsCredentials || RepoCredentialGate.needsCredentials(for: repo) {
+            let message = RepoCredentialGate.missingCredentialsMessage
+            if let index = repos.firstIndex(where: { $0.id == repoID }) {
+                repos[index].needsCredentials = true
+                saveRepos()
+            }
+            statuses[repoID] = .failed(message)
+            errorMessage = message
+            scheduler.deschedule(repoID: repoID)
+            refreshWidgetSnapshot()
+            return
+        }
 
         let engine = SyncEngine(
             repo: repo,
@@ -426,6 +458,100 @@ final class AppViewModel {
             scheduler.reschedule(repo: repos[index])
         }
         saveRepos()
+    }
+
+    // MARK: - Config export / import
+
+    func makeConfigExportDocument(exportedAt: Date = Date()) -> ConfigExportDocument {
+        ConfigExportCodec.makeDocument(
+            repos: repos,
+            providerAccounts: ProviderAccountStore.exportedAccounts(),
+            orgSubscriptions: orgSubscriptions,
+            orgSubscriptionPreferences: orgSubscriptionPreferences,
+            exportedAt: exportedAt
+        )
+    }
+
+    func exportConfigurationData(exportedAt: Date = Date()) throws -> Data {
+        try ConfigExportCodec.encode(makeConfigExportDocument(exportedAt: exportedAt))
+    }
+
+    /// Decodes and applies an import plan. Throws before mutating when the file is invalid.
+    @discardableResult
+    func importConfiguration(
+        from data: Data,
+        mode: ConfigImportMode,
+        probe: CredentialProbe = .live
+    ) throws -> ConfigImportPlan {
+        let document = try ConfigExportCodec.decode(data)
+        let plan = ConfigExportCodec.planImport(
+            document: document,
+            mode: mode,
+            existingRepos: repos,
+            probe: probe
+        )
+
+        // Persist repos first (atomic file replace). Only then update account / org stores.
+        let previousRepos = repos
+        let previousStatuses = statuses
+        let previousRecords = records
+
+        do {
+            applyImportedRepos(plan.repos)
+            try RepoStore.save(repos)
+        } catch {
+            repos = previousRepos
+            statuses = previousStatuses
+            records = previousRecords
+            scheduler.invalidateAll()
+            for repo in repos {
+                scheduler.schedule(repo: repo)
+            }
+            throw error
+        }
+
+        switch mode {
+        case .replace:
+            ProviderAccountStore.replaceExportedAccounts(plan.providerAccounts)
+            orgSubscriptionStore.replaceAll(
+                subscriptions: plan.orgSubscriptions,
+                preferences: plan.orgSubscriptionPreferences
+            )
+        case .merge:
+            ProviderAccountStore.mergeExportedAccounts(plan.providerAccounts)
+            let mergedSubs = ConfigExportCodec.mergeSubscriptions(
+                existing: orgSubscriptions,
+                imported: plan.orgSubscriptions
+            ).merged
+            orgSubscriptionStore.replaceSubscriptions(mergedSubs)
+            if let prefs = plan.orgSubscriptionPreferences {
+                // Keep existing prefs on merge unless the file provides them — still apply when present.
+                orgSubscriptionStore.preferences = prefs
+            }
+        }
+
+        orgSubscriptions = orgSubscriptionStore.subscriptions
+        orgSubscriptionPreferences = orgSubscriptionStore.preferences
+        refreshWebhookListener()
+        refreshWidgetSnapshot()
+        return plan
+    }
+
+    private func applyImportedRepos(_ imported: [RepoConfig]) {
+        scheduler.invalidateAll()
+        for id in statuses.keys {
+            cancelSync(repoID: id)
+            cancelVerify(repoID: id)
+            failureNotifier.clearPending(for: id)
+        }
+        repos = imported
+        statuses = [:]
+        records = [:]
+        for repo in repos {
+            statuses[repo.id] = initialStatus(for: repo)
+            records[repo.id] = []
+            scheduler.schedule(repo: repo)
+        }
     }
 
     func cancelSync(repoID: UUID) {
@@ -710,6 +836,9 @@ final class AppViewModel {
     }
 
     private func initialStatus(for repo: RepoConfig) -> SyncStatus {
+        if repo.needsCredentials {
+            return .failed(RepoCredentialGate.missingCredentialsMessage)
+        }
         if let error = repo.lastSyncError {
             return .failed(error)
         }

@@ -4,6 +4,7 @@ enum HeadlessSyncError: LocalizedError, Equatable {
     case repoNotFound(String)
     case loadFailed(String)
     case saveFailed(String)
+    case needsCredentials(String)
 
     var errorDescription: String? {
         switch self {
@@ -13,6 +14,8 @@ enum HeadlessSyncError: LocalizedError, Equatable {
             return "Failed to load repositories: \(message)"
         case .saveFailed(let message):
             return "Failed to save repositories: \(message)"
+        case .needsCredentials(let name):
+            return "Repository \"\(name)\" needs credentials before it can sync. Edit it in GitRelay to add a token or SSH key."
         }
     }
 }
@@ -27,9 +30,17 @@ enum HeadlessSyncRunner {
             throw HeadlessSyncError.repoNotFound(repoName)
         }
 
-        let repoID = repos[index].id
+        var repo = repos[index]
+        repo.needsCredentials = RepoCredentialGate.refreshedNeedsCredentials(for: repo)
+        if repo.needsCredentials {
+            repos[index] = repo
+            try? RepoStore.save(repos)
+            throw HeadlessSyncError.needsCredentials(repo.name)
+        }
+
+        let repoID = repo.id
         let engine = SyncEngine(
-            repo: repos[index],
+            repo: repo,
             retryPolicy: NotificationPreferences.gitRetryPolicy()
         )
         engine.confirmDestructivePush = { plan, _ in

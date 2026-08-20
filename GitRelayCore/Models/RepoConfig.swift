@@ -32,6 +32,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
     var refSpecs: [String]
     /// When enabled, push webhooks at `/hook/<id>` can trigger an immediate sync.
     var webhookEnabled: Bool
+    /// Set after import when HTTPS tokens or SSH keys are missing; blocks scheduling until fixed.
+    var needsCredentials: Bool
 
     static let defaultRefSpecs: [String] = [
         "+refs/heads/*:refs/heads/*",
@@ -96,7 +98,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         lfsMirrorMode: LFSMirrorMode = .auto,
         depth: Int? = nil,
         refSpecs: [String] = RepoConfig.defaultRefSpecs,
-        webhookEnabled: Bool = false
+        webhookEnabled: Bool = false,
+        needsCredentials: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -122,6 +125,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
             ? Self.defaultRefSpecs
             : Self.normalizedRefSpecs(refSpecs)
         self.webhookEnabled = webhookEnabled
+        self.needsCredentials = needsCredentials
     }
 
     /// Convenience for tests and single-target call sites.
@@ -148,7 +152,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         lfsMirrorMode: LFSMirrorMode = .auto,
         depth: Int? = nil,
         refSpecs: [String] = RepoConfig.defaultRefSpecs,
-        webhookEnabled: Bool = false
+        webhookEnabled: Bool = false,
+        needsCredentials: Bool = false
     ) {
         self.init(
             id: id,
@@ -172,7 +177,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
             lfsMirrorMode: lfsMirrorMode,
             depth: depth,
             refSpecs: refSpecs,
-            webhookEnabled: webhookEnabled
+            webhookEnabled: webhookEnabled,
+            needsCredentials: needsCredentials
         )
     }
 
@@ -206,6 +212,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         case depth
         case refSpecs
         case webhookEnabled
+        case needsCredentials
     }
 
     init(from decoder: Decoder) throws {
@@ -251,6 +258,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
             ? Self.defaultRefSpecs
             : Self.normalizedRefSpecs(decodedRefSpecs)
         webhookEnabled = try container.decodeIfPresent(Bool.self, forKey: .webhookEnabled) ?? false
+        needsCredentials = try container.decodeIfPresent(Bool.self, forKey: .needsCredentials) ?? false
 
         if let decodedTargets = try container.decodeIfPresent([MirrorTarget].self, forKey: .targets),
            !decodedTargets.isEmpty {
@@ -295,6 +303,9 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         }
         if webhookEnabled {
             try container.encode(webhookEnabled, forKey: .webhookEnabled)
+        }
+        if needsCredentials {
+            try container.encode(needsCredentials, forKey: .needsCredentials)
         }
     }
 

@@ -171,7 +171,7 @@ enum GitRelayCLIExecutor {
             switch headlessError {
             case .repoNotFound:
                 return .repoNotFound
-            case .loadFailed, .saveFailed:
+            case .loadFailed, .saveFailed, .needsCredentials:
                 return .failure
             }
         }

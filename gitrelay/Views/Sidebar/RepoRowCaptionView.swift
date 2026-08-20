@@ -12,6 +12,8 @@ struct RepoRowCaptionView: View {
 
     private var captionText: String {
         switch caption.kind {
+        case .needsCredentials:
+            return String(localized: "Needs credentials")
         case .diverged:
             return String(localized: "Content divergence")
         case .neverSynced:

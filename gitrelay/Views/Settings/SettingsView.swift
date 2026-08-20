@@ -1,4 +1,6 @@
 import SwiftUI
+import UniformTypeIdentifiers
+import AppKit
 
 struct SettingsView: View {
     @Environment(NotificationPreferencesStore.self) private var preferencesStore
@@ -9,6 +11,9 @@ struct SettingsView: View {
 
     @State private var limitMirrorCache = false
     @State private var mirrorCacheQuotaGB = 50
+    @State private var showImportModePicker = false
+    @State private var pendingImportURL: URL?
+    @State private var configMessage: String?
 
     var body: some View {
         @Bindable var store = preferencesStore
@@ -184,6 +189,19 @@ struct SettingsView: View {
             }
 
             Section {
+                Button(String(localized: "Export Configuration…")) {
+                    exportConfiguration()
+                }
+                Button(String(localized: "Import Configuration…")) {
+                    presentImportPanel()
+                }
+            } header: {
+                Text(String(localized: "Configuration"))
+            } footer: {
+                Text(String(localized: "Export repository pairs, targets, tags, frequency, shallow/ref filters, LFS, org subscriptions, and account labels. Tokens and private keys are never written to the file. After import, repositories missing credentials are marked and stay unscheduled until you fill them in."))
+            }
+
+            Section {
                 Button("Restore Defaults") {
                     store.resetToDefaults()
                     security.resetToDefaults()
@@ -201,6 +219,33 @@ struct SettingsView: View {
             syncCacheControlsFromStore()
             appVM.refreshMirrorCacheUsage()
         }
+        .alert(
+            String(localized: "Import Configuration"),
+            isPresented: $showImportModePicker
+        ) {
+            Button(String(localized: "Merge (skip existing IDs)")) {
+                runImport(mode: .merge)
+            }
+            Button(String(localized: "Replace all"), role: .destructive) {
+                runImport(mode: .replace)
+            }
+            Button(String(localized: "Cancel"), role: .cancel) {
+                pendingImportURL = nil
+            }
+        } message: {
+            Text(String(localized: "Merge keeps current repositories and skips matching IDs. Replace discards the current repository list and loads the file."))
+        }
+        .alert(
+            String(localized: "Configuration"),
+            isPresented: Binding(
+                get: { configMessage != nil },
+                set: { if !$0 { configMessage = nil } }
+            )
+        ) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text(configMessage ?? "")
+        }
     }
 
     private func syncCacheControlsFromStore() {
@@ -210,6 +255,54 @@ struct SettingsView: View {
         } else {
             limitMirrorCache = false
             mirrorCacheQuotaGB = 50
+        }
+    }
+
+    private func exportConfiguration() {
+        do {
+            let data = try appVM.exportConfigurationData()
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [.json]
+            panel.nameFieldStringValue = "gitrelay-config.json"
+            panel.canCreateDirectories = true
+            panel.title = String(localized: "Export Configuration")
+            guard panel.runModal() == .OK, let url = panel.url else { return }
+            try data.write(to: url, options: .atomic)
+            configMessage = String(localized: "Configuration exported. Tokens and private keys were not included.")
+        } catch {
+            configMessage = error.localizedDescription
+        }
+    }
+
+    private func presentImportPanel() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.title = String(localized: "Import Configuration")
+        panel.prompt = String(localized: "Import")
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        pendingImportURL = url
+        showImportModePicker = true
+    }
+
+    private func runImport(mode: ConfigImportMode) {
+        guard let url = pendingImportURL else { return }
+        pendingImportURL = nil
+        do {
+            let data = try Data(contentsOf: url)
+            let plan = try appVM.importConfiguration(from: data, mode: mode)
+            if plan.skippedRepoCount > 0 {
+                configMessage = String(
+                    localized: "Imported \(plan.importedRepoCount) repositories (skipped \(plan.skippedRepoCount) existing). Repositories missing credentials are marked and will not sync until you edit them."
+                )
+            } else {
+                configMessage = String(
+                    localized: "Imported \(plan.importedRepoCount) repositories. Repositories missing credentials are marked and will not sync until you edit them."
+                )
+            }
+        } catch {
+            configMessage = error.localizedDescription
         }
     }
 
