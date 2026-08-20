@@ -29,6 +29,21 @@ final class AppViewModel {
     /// FIFO queue: parallel syncs may each need a destructive-push prompt.
     var pendingDestructiveConfirmations: [DestructivePushConfirmationRequest] = []
 
+    /// Sidebar search query; display-only, never written to `repos.json`.
+    var sidebarSearchText: String = ""
+    /// Sidebar status quick filter; display-only, never written to `repos.json`.
+    var sidebarStatusFilter: SidebarRepoFilter.StatusFilter = .all
+
+    /// Repos visible in the sidebar after search + status filter (AND).
+    var displayedSidebarRepos: [RepoConfig] {
+        SidebarRepoFilter.filteredRepos(
+            repos,
+            searchText: sidebarSearchText,
+            statusFilter: sidebarStatusFilter,
+            statuses: statuses
+        )
+    }
+
     var presentedDestructiveConfirmation: DestructivePushConfirmationRequest? {
         pendingDestructiveConfirmations.first
     }

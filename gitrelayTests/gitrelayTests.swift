@@ -1120,6 +1120,207 @@ struct MenuBarPopoverFilterTests {
     }
 }
 
+// MARK: - SidebarRepoFilter
+
+struct SidebarRepoFilterTests {
+    private func makeRepo(
+        name: String,
+        srcURL: String? = nil,
+        dstURL: String? = nil,
+        targets: [MirrorTarget]? = nil,
+        tags: [String] = [],
+        lastSyncedAt: Date? = Date(timeIntervalSince1970: 1_700_000_000),
+        divergedDetail: String? = nil
+    ) -> RepoConfig {
+        if let targets {
+            return RepoConfig(
+                name: name,
+                srcURL: srcURL ?? "git@github.com:user/\(name).git",
+                targets: targets,
+                lastSyncedAt: lastSyncedAt,
+                lastSuccessfulSyncedAt: lastSyncedAt,
+                divergedDetail: divergedDetail,
+                tags: tags
+            )
+        }
+        return RepoConfig(
+            name: name,
+            srcURL: srcURL ?? "git@github.com:user/\(name).git",
+            dstURL: dstURL ?? "git@github.com:user/\(name)-mirror.git",
+            lastSyncedAt: lastSyncedAt,
+            lastSuccessfulSyncedAt: lastSyncedAt,
+            divergedDetail: divergedDetail,
+            tags: tags
+        )
+    }
+
+    @Test func searchMatchesRepoNameCaseInsensitively() {
+        let alpha = makeRepo(name: "AlphaProject")
+        let beta = makeRepo(name: "beta-service")
+        let repos = [alpha, beta]
+
+        let hit = SidebarRepoFilter.filteredRepos(
+            repos,
+            searchText: "alpha",
+            statusFilter: .all,
+            statuses: [:]
+        )
+        #expect(hit == [alpha])
+
+        let upper = SidebarRepoFilter.filteredRepos(
+            repos,
+            searchText: "SERVICE",
+            statusFilter: .all,
+            statuses: [:]
+        )
+        #expect(upper == [beta])
+    }
+
+    @Test func searchMatchesTags() {
+        let tagged = makeRepo(name: "mirror-a", tags: ["production"])
+        let other = makeRepo(name: "mirror-b", tags: ["staging"])
+        let repos = [tagged, other]
+
+        let hit = SidebarRepoFilter.filteredRepos(
+            repos,
+            searchText: "prod",
+            statusFilter: .all,
+            statuses: [:]
+        )
+        #expect(hit == [tagged])
+    }
+
+    @Test func searchMatchesSourceAndDestinationURLsIncludingMultiTarget() {
+        let multi = makeRepo(
+            name: "multi",
+            srcURL: "git@github.com:acme/source.git",
+            targets: [
+                MirrorTarget(url: "git@gitlab.com:acme/primary.git"),
+                MirrorTarget(url: "git@backup.local:mirrors/secondary.git")
+            ]
+        )
+        let other = makeRepo(name: "other")
+        let repos = [multi, other]
+
+        #expect(
+            SidebarRepoFilter.filteredRepos(
+                repos,
+                searchText: "acme/source",
+                statusFilter: .all,
+                statuses: [:]
+            ) == [multi]
+        )
+        #expect(
+            SidebarRepoFilter.filteredRepos(
+                repos,
+                searchText: "backup.local",
+                statusFilter: .all,
+                statuses: [:]
+            ) == [multi]
+        )
+    }
+
+    @Test func failedFilterShowsOnlyFailedStatuses() {
+        let ok = makeRepo(name: "ok")
+        let failed = makeRepo(name: "failed")
+        let diverged = makeRepo(name: "diverged")
+        let repos = [ok, failed, diverged]
+        let statuses: [UUID: SyncStatus] = [
+            ok.id: .idle,
+            failed.id: .failed("network"),
+            diverged.id: .diverged("tree mismatch")
+        ]
+
+        let hit = SidebarRepoFilter.filteredRepos(
+            repos,
+            searchText: "",
+            statusFilter: .failed,
+            statuses: statuses
+        )
+        #expect(hit == [failed])
+    }
+
+    @Test func clearingSearchRestoresFullFilteredSet() {
+        let alpha = makeRepo(name: "Alpha")
+        let beta = makeRepo(name: "Beta")
+        let repos = [alpha, beta]
+        let statuses: [UUID: SyncStatus] = [
+            alpha.id: .failed("boom"),
+            beta.id: .failed("boom")
+        ]
+
+        let narrowed = SidebarRepoFilter.filteredRepos(
+            repos,
+            searchText: "alpha",
+            statusFilter: .failed,
+            statuses: statuses
+        )
+        #expect(narrowed == [alpha])
+
+        let restored = SidebarRepoFilter.filteredRepos(
+            repos,
+            searchText: "   ",
+            statusFilter: .failed,
+            statuses: statuses
+        )
+        #expect(restored == [alpha, beta])
+    }
+
+    @Test func searchAndStatusFilterCombineWithAND() {
+        let failedAlpha = makeRepo(name: "Alpha")
+        let failedBeta = makeRepo(name: "Beta")
+        let idleAlpha = makeRepo(name: "AlphaIdle")
+        let repos = [failedAlpha, failedBeta, idleAlpha]
+        let statuses: [UUID: SyncStatus] = [
+            failedAlpha.id: .failed("err"),
+            failedBeta.id: .failed("err"),
+            idleAlpha.id: .idle
+        ]
+
+        let hit = SidebarRepoFilter.filteredRepos(
+            repos,
+            searchText: "alpha",
+            statusFilter: .failed,
+            statuses: statuses
+        )
+        #expect(hit == [failedAlpha])
+    }
+
+    @Test func divergedFilterMatchesStatusOrPersistedDivergence() {
+        let byStatus = makeRepo(name: "status-diverged")
+        let byDetail = makeRepo(name: "detail-diverged", divergedDetail: "src != dst")
+        let ok = makeRepo(name: "ok")
+        let repos = [byStatus, byDetail, ok]
+        let statuses: [UUID: SyncStatus] = [
+            byStatus.id: .diverged("live"),
+            byDetail.id: .idle,
+            ok.id: .idle
+        ]
+
+        let hit = SidebarRepoFilter.filteredRepos(
+            repos,
+            searchText: "",
+            statusFilter: .diverged,
+            statuses: statuses
+        )
+        #expect(hit == [byStatus, byDetail])
+    }
+
+    @Test func notSyncedFilterMatchesNeverSyncedCaptionPath() {
+        let neverSynced = makeRepo(name: "fresh", lastSyncedAt: nil)
+        let synced = makeRepo(name: "done")
+        let repos = [neverSynced, synced]
+
+        let hit = SidebarRepoFilter.filteredRepos(
+            repos,
+            searchText: "",
+            statusFilter: .notSynced,
+            statuses: [:]
+        )
+        #expect(hit == [neverSynced])
+    }
+}
+
 // MARK: - SyncHistorySparkline
 
 struct SyncHistorySparklineTests {
