@@ -4763,7 +4763,9 @@ struct ConfigExportImportTests {
         let json = try #require(String(data: data, encoding: .utf8))
 
         #expect(!json.contains("/Users/me/.ssh/id_ed25519"))
-        #expect(json.contains("relative/id_ed25519"))
+        #expect(!json.contains("\\/Users\\/me\\/.ssh\\/id_ed25519"))
+        // JSONEncoder may escape `/` as `\/`.
+        #expect(json.contains("relative/id_ed25519") || json.contains("relative\\/id_ed25519"))
     }
 
     @Test func importReplaceRestoresRepoCount() throws {
