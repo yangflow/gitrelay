@@ -72,7 +72,15 @@ final class AppViewModel {
 
     /// Current reason scheduled syncs are paused, if any.
     var scheduledSyncPauseReason: SyncPauseReason? {
-        environmentMonitor.pauseReason(using: notificationPreferences.preferences.pausePolicy)
+        // Touch QuietHoursMonitor.isActive so Observation refreshes the menu bar
+        // when the local-time window opens or closes.
+        _ = quietHoursMonitor.isActive
+        return notificationPreferences.preferences.pausePolicy.pauseReason(
+            isLowPowerMode: environmentMonitor.isLowPowerModeEnabled,
+            isExpensiveNetwork: environmentMonitor.isExpensiveNetwork,
+            date: quietHoursMonitor.now(),
+            calendar: quietHoursMonitor.calendar
+        )
     }
 
     let notificationPreferences = NotificationPreferencesStore()
@@ -80,6 +88,7 @@ final class AppViewModel {
     let securityPreferences: SecurityPreferencesStore
     let cachePreferences: CachePreferencesStore
     let environmentMonitor = SyncEnvironmentMonitor()
+    let quietHoursMonitor = QuietHoursMonitor()
     let failureNotifier = SyncFailureNotifier()
     let orgDiscoveryNotifier = OrgDiscoveryNotifier()
     let webhookPreferences: WebhookPreferencesStore
@@ -96,6 +105,9 @@ final class AppViewModel {
     private var activeVerifiers: [UUID: IntegrityVerifier] = [:]
     private var focusFlushTask: Task<Void, Never>?
     private var activationObserver: NSObjectProtocol?
+    private var quietHoursCatchUp = QuietHoursCatchUpTracker()
+    private var lastScheduledSkipLogAt: Date?
+    private var wasScheduledSyncPaused = false
 
     /// Bound loopback port when the webhook listener is running.
     var webhookListenPort: UInt16? { webhookListener.port }
@@ -146,8 +158,7 @@ final class AppViewModel {
         scheduler.onFire = { [weak self] id in
             Task { @MainActor in
                 guard let self else { return }
-                guard self.scheduledSyncPauseReason == nil else { return }
-                self.triggerSync(repoID: id)
+                self.handleScheduledSyncFire(repoID: id)
             }
         }
         verificationScheduler.onFire = { [weak self] in
@@ -169,6 +180,10 @@ final class AppViewModel {
         }
         webhookStore.onPreferencesChange = { [weak self] _ in
             self?.refreshWebhookListener()
+        }
+        notificationPreferences.onPreferencesChange = { [weak self] prefs in
+            self?.quietHoursMonitor.update(settings: prefs.quietHours)
+            self?.handleScheduledPauseTransition()
         }
 
         webhookListener.onRequest = { [weak self] request in
@@ -195,7 +210,15 @@ final class AppViewModel {
         verificationScheduler.schedule(frequency: verificationPreferences.frequency)
         orgSubscriptionScheduler.schedule(frequency: orgSubscriptionPreferences.pollFrequency)
 
+        environmentMonitor.onEnvironmentChange = { [weak self] in
+            self?.handleScheduledPauseTransition()
+        }
         environmentMonitor.start()
+        quietHoursMonitor.onTransition = { [weak self] in
+            self?.handleScheduledPauseTransition()
+        }
+        quietHoursMonitor.start(settings: notificationPreferences.preferences.quietHours)
+        wasScheduledSyncPaused = scheduledSyncPauseReason != nil
         failureNotifier.requestAuthorizationIfNeeded()
         orgDiscoveryNotifier.requestAuthorizationIfNeeded()
         startFocusFlushLoop()
@@ -676,6 +699,47 @@ final class AppViewModel {
     }
 
     // MARK: - Private
+
+    private func handleScheduledSyncFire(repoID: UUID) {
+        if let reason = scheduledSyncPauseReason {
+            if reason.isQuietHours {
+                quietHoursCatchUp.noteScheduledSkip(repoID: repoID)
+                logQuietHoursSkipIfNeeded()
+            }
+            wasScheduledSyncPaused = true
+            return
+        }
+        quietHoursCatchUp.clear(repoID: repoID)
+        triggerSync(repoID: repoID)
+    }
+
+    private func handleScheduledPauseTransition() {
+        let paused = scheduledSyncPauseReason != nil
+        if paused {
+            wasScheduledSyncPaused = true
+            return
+        }
+        guard wasScheduledSyncPaused || !quietHoursCatchUp.pendingRepoIDs.isEmpty else { return }
+        wasScheduledSyncPaused = false
+        let ids = quietHoursCatchUp.takePendingCatchUp()
+        for id in ids {
+            triggerSync(repoID: id)
+            // Reset the repeating timer so catch-up does not stack with the next due tick.
+            if let repo = repos.first(where: { $0.id == id }) {
+                scheduler.reschedule(repo: repo)
+            }
+        }
+    }
+
+    private func logQuietHoursSkipIfNeeded() {
+        let now = quietHoursMonitor.now()
+        if let last = lastScheduledSkipLogAt, now.timeIntervalSince(last) < 3600 {
+            return
+        }
+        lastScheduledSkipLogAt = now
+        // Keep this quiet: at most once per hour while quiet hours stay active.
+        print("GitRelay: skipped scheduled sync during quiet hours")
+    }
 
     private func notifySyncFailure(repoID: UUID, message: String) {
         guard let repo = repos.first(where: { $0.id == repoID }) else { return }

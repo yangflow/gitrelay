@@ -7633,6 +7633,91 @@
           }
         }
       }
+    },
+    "Quiet hours": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quiet hours"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "静默中"
+          }
+        }
+      }
+    },
+    "Enable quiet hours": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable quiet hours"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用静默时段"
+          }
+        }
+      }
+    },
+    "Quiet hours start": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quiet hours start"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "静默开始"
+          }
+        }
+      }
+    },
+    "Quiet hours end": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quiet hours end"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "静默结束"
+          }
+        }
+      }
+    },
+    "Uses this Mac's local timezone. A window such as 23:00–07:00 wraps midnight.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses this Mac's local timezone. A window such as 23:00–07:00 wraps midnight."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用本机本地时区。例如 23:00–07:00 可跨午夜。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

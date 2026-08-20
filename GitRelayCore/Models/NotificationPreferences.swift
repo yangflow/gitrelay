@@ -27,6 +27,9 @@ struct NotificationPreferences: Equatable, Sendable {
     /// Pause scheduled syncs on expensive / hotspot paths.
     var pauseOnExpensiveNetwork: Bool
 
+    /// Global quiet-hours window (local timezone). Off by default.
+    var quietHours: QuietHoursSettings
+
     static let `default` = NotificationPreferences(
         notificationsEnabled: true,
         notifyOnFirstFailure: true,
@@ -34,7 +37,8 @@ struct NotificationPreferences: Equatable, Sendable {
         transientGitMaxAttempts: GitRetryPolicy.defaultMaxAttempts,
         interruptionLevel: .active,
         pauseOnLowPowerMode: true,
-        pauseOnExpensiveNetwork: true
+        pauseOnExpensiveNetwork: true,
+        quietHours: .default
     )
 
     var failurePolicy: FailureNotificationPolicy {
@@ -48,7 +52,8 @@ struct NotificationPreferences: Equatable, Sendable {
     var pausePolicy: SyncPausePolicy {
         SyncPausePolicy(
             pauseOnLowPowerMode: pauseOnLowPowerMode,
-            pauseOnExpensiveNetwork: pauseOnExpensiveNetwork
+            pauseOnExpensiveNetwork: pauseOnExpensiveNetwork,
+            quietHours: quietHours
         )
     }
 

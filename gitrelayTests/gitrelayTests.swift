@@ -2094,6 +2094,198 @@ struct SyncPausePolicyTests {
             == .expensiveNetwork
         )
     }
+
+    @Test func quietHoursTakePrecedenceOverPowerNetwork() {
+        let calendar = QuietHoursTestSupport.makeUTCCalendar()
+        let quiet = QuietHoursSettings(isEnabled: true, startMinutes: 23 * 60, endMinutes: 7 * 60)
+        let policy = SyncPausePolicy(
+            pauseOnLowPowerMode: true,
+            pauseOnExpensiveNetwork: true,
+            quietHours: quiet
+        )
+        let inside = QuietHoursTestSupport.date(hour: 1, minute: 0, calendar: calendar)
+        #expect(
+            policy.pauseReason(
+                isLowPowerMode: true,
+                isExpensiveNetwork: true,
+                date: inside,
+                calendar: calendar
+            ) == .quietHours
+        )
+    }
+}
+
+// MARK: - Quiet Hours (#47)
+
+enum QuietHoursTestSupport {
+    static func makeUTCCalendar() -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
+        return calendar
+    }
+
+    static func date(hour: Int, minute: Int, day: Int = 15, calendar: Calendar) -> Date {
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 6
+        components.day = day
+        components.hour = hour
+        components.minute = minute
+        return calendar.date(from: components) ?? Date(timeIntervalSince1970: 0)
+    }
+}
+
+struct QuietHoursSettingsTests {
+    private var utcCalendar: Calendar { QuietHoursTestSupport.makeUTCCalendar() }
+
+    @Test func disabledWindowNeverContains() {
+        let settings = QuietHoursSettings(isEnabled: false, startMinutes: 23 * 60, endMinutes: 7 * 60)
+        let calendar = utcCalendar
+        let inside = QuietHoursTestSupport.date(hour: 1, minute: 0, calendar: calendar)
+        #expect(!settings.contains(inside, calendar: calendar))
+    }
+
+    @Test func sameDayWindowContainsOnlyInside() {
+        let settings = QuietHoursSettings(isEnabled: true, startMinutes: 12 * 60, endMinutes: 14 * 60)
+        let calendar = utcCalendar
+        #expect(settings.contains(QuietHoursTestSupport.date(hour: 12, minute: 0, calendar: calendar), calendar: calendar))
+        #expect(settings.contains(QuietHoursTestSupport.date(hour: 13, minute: 30, calendar: calendar), calendar: calendar))
+        #expect(!settings.contains(QuietHoursTestSupport.date(hour: 14, minute: 0, calendar: calendar), calendar: calendar))
+        #expect(!settings.contains(QuietHoursTestSupport.date(hour: 11, minute: 59, calendar: calendar), calendar: calendar))
+    }
+
+    @Test func midnightWrapWindowWorks() {
+        let settings = QuietHoursSettings(isEnabled: true, startMinutes: 23 * 60, endMinutes: 7 * 60)
+        let calendar = utcCalendar
+        #expect(settings.contains(QuietHoursTestSupport.date(hour: 23, minute: 0, calendar: calendar), calendar: calendar))
+        #expect(settings.contains(QuietHoursTestSupport.date(hour: 23, minute: 30, calendar: calendar), calendar: calendar))
+        #expect(settings.contains(QuietHoursTestSupport.date(hour: 0, minute: 0, calendar: calendar), calendar: calendar))
+        #expect(settings.contains(QuietHoursTestSupport.date(hour: 6, minute: 59, calendar: calendar), calendar: calendar))
+        #expect(!settings.contains(QuietHoursTestSupport.date(hour: 7, minute: 0, calendar: calendar), calendar: calendar))
+        #expect(!settings.contains(QuietHoursTestSupport.date(hour: 12, minute: 0, calendar: calendar), calendar: calendar))
+        #expect(!settings.contains(QuietHoursTestSupport.date(hour: 22, minute: 59, calendar: calendar), calendar: calendar))
+    }
+
+    @Test func zeroWidthWindowIsNeverActive() {
+        let settings = QuietHoursSettings(isEnabled: true, startMinutes: 8 * 60, endMinutes: 8 * 60)
+        let calendar = utcCalendar
+        #expect(!settings.contains(QuietHoursTestSupport.date(hour: 8, minute: 0, calendar: calendar), calendar: calendar))
+    }
+}
+
+struct ScheduledSyncGateQuietHoursTests {
+    private var utcCalendar: Calendar { QuietHoursTestSupport.makeUTCCalendar() }
+
+    @Test func scheduledTickSkippedInsideQuietHours() {
+        let calendar = utcCalendar
+        let policy = SyncPausePolicy(
+            pauseOnLowPowerMode: false,
+            pauseOnExpensiveNetwork: false,
+            quietHours: QuietHoursSettings(isEnabled: true, startMinutes: 23 * 60, endMinutes: 7 * 60)
+        )
+        let inside = QuietHoursTestSupport.date(hour: 2, minute: 15, calendar: calendar)
+        #expect(
+            !ScheduledSyncGate.shouldRunScheduledSync(
+                pausePolicy: policy,
+                isLowPowerMode: false,
+                isExpensiveNetwork: false,
+                at: inside,
+                calendar: calendar
+            )
+        )
+    }
+
+    @Test func scheduledTickRunsOutsideQuietHours() {
+        let calendar = utcCalendar
+        let policy = SyncPausePolicy(
+            pauseOnLowPowerMode: false,
+            pauseOnExpensiveNetwork: false,
+            quietHours: QuietHoursSettings(isEnabled: true, startMinutes: 23 * 60, endMinutes: 7 * 60)
+        )
+        let outside = QuietHoursTestSupport.date(hour: 10, minute: 0, calendar: calendar)
+        #expect(
+            ScheduledSyncGate.shouldRunScheduledSync(
+                pausePolicy: policy,
+                isLowPowerMode: false,
+                isExpensiveNetwork: false,
+                at: outside,
+                calendar: calendar
+            )
+        )
+    }
+
+    @Test func manualSyncPathIgnoresQuietHoursGate() {
+        // Manual / App Intent / webhook call `triggerSync` directly and must not consult the gate.
+        let calendar = utcCalendar
+        let policy = SyncPausePolicy(
+            pauseOnLowPowerMode: true,
+            pauseOnExpensiveNetwork: true,
+            quietHours: QuietHoursSettings(isEnabled: true, startMinutes: 23 * 60, endMinutes: 7 * 60)
+        )
+        let inside = QuietHoursTestSupport.date(hour: 3, minute: 0, calendar: calendar)
+        #expect(
+            !ScheduledSyncGate.shouldRunScheduledSync(
+                pausePolicy: policy,
+                isLowPowerMode: false,
+                isExpensiveNetwork: false,
+                at: inside,
+                calendar: calendar
+            )
+        )
+        // Direct sync APIs remain available regardless of the scheduled gate outcome.
+        #expect(policy.pauseReason(
+            isLowPowerMode: false,
+            isExpensiveNetwork: false,
+            date: inside,
+            calendar: calendar
+        )?.isQuietHours == true)
+    }
+}
+
+@MainActor
+struct QuietHoursMonitorFakeClockTests {
+    @Test func monitorTracksFakeClockAcrossWindowBoundary() {
+        let calendar = QuietHoursTestSupport.makeUTCCalendar()
+        let monitor = QuietHoursMonitor()
+        monitor.calendar = calendar
+        var current = QuietHoursTestSupport.date(hour: 1, minute: 30, calendar: calendar)
+        monitor.now = { current }
+
+        monitor.start(
+            settings: QuietHoursSettings(isEnabled: true, startMinutes: 23 * 60, endMinutes: 7 * 60)
+        )
+        #expect(monitor.isActive)
+
+        current = QuietHoursTestSupport.date(hour: 8, minute: 0, calendar: calendar)
+        monitor.refresh()
+        #expect(!monitor.isActive)
+
+        monitor.stop()
+    }
+}
+
+struct QuietHoursCatchUpTrackerTests {
+    @Test func catchUpIsAtMostOncePerRepo() {
+        var tracker = QuietHoursCatchUpTracker()
+        let repoA = UUID()
+        let repoB = UUID()
+
+        // Many skipped ticks during quiet hours must not stack.
+        tracker.noteScheduledSkip(repoID: repoA)
+        tracker.noteScheduledSkip(repoID: repoA)
+        tracker.noteScheduledSkip(repoID: repoA)
+        tracker.noteScheduledSkip(repoID: repoB)
+
+        let first = tracker.takePendingCatchUp()
+        #expect(first == Set([repoA, repoB]))
+
+        let second = tracker.takePendingCatchUp()
+        #expect(second.isEmpty)
+
+        tracker.noteScheduledSkip(repoID: repoA)
+        tracker.clear(repoID: repoA)
+        #expect(tracker.takePendingCatchUp().isEmpty)
+    }
 }
 
 // MARK: - NotificationPreferencesStore
@@ -2123,6 +2315,7 @@ struct NotificationPreferencesStoreTests {
         prefs.interruptionLevel = .timeSensitive
         prefs.pauseOnLowPowerMode = false
         prefs.pauseOnExpensiveNetwork = false
+        prefs.quietHours = QuietHoursSettings(isEnabled: true, startMinutes: 22 * 60, endMinutes: 6 * 60)
         store.preferences = prefs
 
         let reloaded = NotificationPreferencesStore(defaults: defaults)
@@ -2133,6 +2326,9 @@ struct NotificationPreferencesStoreTests {
         #expect(reloaded.preferences.interruptionLevel == .timeSensitive)
         #expect(reloaded.preferences.pauseOnLowPowerMode == false)
         #expect(reloaded.preferences.pauseOnExpensiveNetwork == false)
+        #expect(reloaded.preferences.quietHours.isEnabled == true)
+        #expect(reloaded.preferences.quietHours.startMinutes == 22 * 60)
+        #expect(reloaded.preferences.quietHours.endMinutes == 6 * 60)
     }
 
     @Test func resetToDefaultsRestoresFactoryValues() {
@@ -3789,6 +3985,7 @@ struct LocalizationTests {
     }
 
     @Test func pauseReasonMessagesAreLocalizedEnglishDefaults() {
+        #expect(SyncPauseReason.quietHours.displayMessage == "Quiet hours")
         #expect(SyncPauseReason.lowPowerMode.displayMessage.contains("Low Power Mode"))
         #expect(SyncPauseReason.expensiveNetwork.displayMessage.contains("expensive"))
     }
