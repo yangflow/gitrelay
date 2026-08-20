@@ -4949,8 +4949,9 @@ struct ConfigExportImportTests {
 
     @MainActor
     @Test func importFailureLeavesRepoStoreUnchanged() throws {
-        let defaults = UserDefaults(suiteName: "config-import-\(UUID().uuidString)")!
-        defer { defaults.removePersistentDomain(forName: defaults.suiteName!) }
+        let suite = "config-import-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
 
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("gitrelay-config-import-fail-\(UUID().uuidString)", isDirectory: true)
@@ -4989,8 +4990,9 @@ struct ConfigExportImportTests {
 
     @MainActor
     @Test func successfulImportMarksMissingHTTPSCredentials() throws {
-        let defaults = UserDefaults(suiteName: "config-import-ok-\(UUID().uuidString)")!
-        defer { defaults.removePersistentDomain(forName: defaults.suiteName!) }
+        let suite = "config-import-ok-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
 
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("gitrelay-config-import-\(UUID().uuidString)", isDirectory: true)
