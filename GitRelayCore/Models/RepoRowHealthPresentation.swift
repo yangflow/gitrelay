@@ -5,6 +5,7 @@ enum RepoRowHealthPresentation {
     static let failureEscalationThreshold = 3
 
     enum CaptionKind: Equatable {
+        case needsCredentials
         case diverged
         case neverSynced
         case lastSync(Date)
@@ -21,7 +22,9 @@ enum RepoRowHealthPresentation {
         now: Date = .now
     ) -> Caption {
         let kind: CaptionKind
-        if case .diverged = status {
+        if repo.needsCredentials {
+            kind = .needsCredentials
+        } else if case .diverged = status {
             kind = .diverged
         } else if let lastSyncedAt = repo.lastSyncedAt {
             kind = .lastSync(lastSyncedAt)

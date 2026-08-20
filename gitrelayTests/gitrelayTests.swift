@@ -4686,3 +4686,366 @@ struct GitRetryExecutorTests {
     }
 }
 
+
+// MARK: - Config export / import (#45)
+
+struct ConfigExportImportTests {
+    @Test func exportJSONOmitsTokenLikeFieldsAndValues() throws {
+        let repoID = UUID(uuidString: "00000000-0000-0000-0000-0000000000aa")!
+        let targetID = UUID(uuidString: "00000000-0000-0000-0000-0000000000bb")!
+        let secretTag = "super-secret-token-value"
+        let repo = RepoConfig(
+            id: repoID,
+            name: "api",
+            srcURL: "https://github.com/acme/api.git",
+            targets: [
+                MirrorTarget(
+                    id: targetID,
+                    url: "https://gitlab.com/acme/api.git",
+                    auth: .httpsToken(keychainTag: secretTag)
+                )
+            ],
+            srcAuth: .httpsToken(keychainTag: "\(repoID.uuidString)-src"),
+            frequency: .min15,
+            tags: ["prod"],
+            mirrorReleases: true,
+            lfsMirrorMode: .off,
+            depth: 1,
+            webhookEnabled: true
+        )
+
+        let document = ConfigExportCodec.makeDocument(
+            repos: [repo],
+            providerAccounts: [
+                ExportedProviderAccount(provider: .github, label: "work", host: nil)
+            ],
+            orgSubscriptions: [
+                OrgSubscription(
+                    id: UUID(uuidString: "00000000-0000-0000-0000-0000000000cc")!,
+                    provider: .github,
+                    accountLabel: "work",
+                    organizationName: "acme"
+                )
+            ],
+            orgSubscriptionPreferences: .default,
+            exportedAt: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+
+        let data = try ConfigExportCodec.encode(document)
+        let json = try #require(String(data: data, encoding: .utf8))
+
+        #expect(document.schemaVersion == ConfigExportDocument.currentSchemaVersion)
+        #expect(!ConfigExportCodec.containsForbiddenSecretFields(json))
+        #expect(!json.contains(secretTag))
+        #expect(!json.contains("keychainTag"))
+        #expect(!json.localizedCaseInsensitiveContains("-----BEGIN"))
+        #expect(json.contains("\"kind\" : \"httpsToken\"") || json.contains("\"kind\":\"httpsToken\""))
+        #expect(json.contains("\"schemaVersion\""))
+        #expect(json.contains("work"))
+        #expect(json.contains("acme"))
+    }
+
+    @Test func exportOmitsMachineLocalSSHKeyPaths() throws {
+        let repo = RepoConfig(
+            name: "keys",
+            srcURL: "git@github.com:acme/keys.git",
+            dstURL: "git@gitlab.com:acme/keys.git",
+            srcAuth: .sshKey(privateKeyPath: "/Users/me/.ssh/id_ed25519"),
+            dstAuth: .sshKey(privateKeyPath: "relative/id_ed25519")
+        )
+        let document = ConfigExportCodec.makeDocument(
+            repos: [repo],
+            providerAccounts: [],
+            orgSubscriptions: [],
+            orgSubscriptionPreferences: nil
+        )
+        let data = try ConfigExportCodec.encode(document)
+        let json = try #require(String(data: data, encoding: .utf8))
+
+        #expect(!json.contains("/Users/me/.ssh/id_ed25519"))
+        #expect(!json.contains("\\/Users\\/me\\/.ssh\\/id_ed25519"))
+        // JSONEncoder may escape `/` as `\/`.
+        #expect(json.contains("relative/id_ed25519") || json.contains("relative\\/id_ed25519"))
+    }
+
+    @Test func importReplaceRestoresRepoCount() throws {
+        let existing = [
+            RepoConfig(name: "old", srcURL: "a", dstURL: "b")
+        ]
+        let importedIDs = [
+            UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+            UUID(uuidString: "00000000-0000-0000-0000-000000000002")!,
+            UUID(uuidString: "00000000-0000-0000-0000-000000000003")!
+        ]
+        let document = ConfigExportDocument(
+            repos: importedIDs.map {
+                ExportedRepo(from: RepoConfig(
+                    id: $0,
+                    name: "r-\($0.uuidString.prefix(4))",
+                    srcURL: "git@github.com:acme/r.git",
+                    dstURL: "git@gitlab.com:acme/r.git",
+                    frequency: .hour1
+                ))
+            },
+            providerAccounts: [],
+            orgSubscriptions: []
+        )
+
+        let plan = ConfigExportCodec.planImport(
+            document: document,
+            mode: .replace,
+            existingRepos: existing,
+            probe: .alwaysPresent
+        )
+        #expect(plan.repos.count == 3)
+        #expect(plan.importedRepoCount == 3)
+        #expect(plan.skippedRepoCount == 0)
+    }
+
+    @Test func importMergeSkipsSameIDByDefault() {
+        let sharedID = UUID(uuidString: "00000000-0000-0000-0000-000000000099")!
+        let existing = [
+            RepoConfig(id: sharedID, name: "keep-me", srcURL: "a", dstURL: "b")
+        ]
+        let document = ConfigExportDocument(
+            repos: [
+                ExportedRepo(from: RepoConfig(
+                    id: sharedID,
+                    name: "incoming",
+                    srcURL: "c",
+                    dstURL: "d"
+                )),
+                ExportedRepo(from: RepoConfig(
+                    id: UUID(uuidString: "00000000-0000-0000-0000-000000000100")!,
+                    name: "new-one",
+                    srcURL: "e",
+                    dstURL: "f"
+                ))
+            ]
+        )
+
+        let plan = ConfigExportCodec.planImport(
+            document: document,
+            mode: .merge,
+            existingRepos: existing,
+            probe: .alwaysPresent
+        )
+        #expect(plan.repos.count == 2)
+        #expect(plan.importedRepoCount == 1)
+        #expect(plan.skippedRepoCount == 1)
+        #expect(plan.repos.first?.name == "keep-me")
+    }
+
+    @Test func httpsTokenWithoutKeychainIsMarkedNeedsCredentials() {
+        let repoID = UUID(uuidString: "00000000-0000-0000-0000-0000000000dd")!
+        let exported = ExportedRepo(from: RepoConfig(
+            id: repoID,
+            name: "needs-auth",
+            srcURL: "https://github.com/acme/x.git",
+            dstURL: "https://gitlab.com/acme/x.git",
+            srcAuth: .httpsToken(keychainTag: "\(repoID.uuidString)-src"),
+            frequency: .min15
+        ))
+        let imported = exported.toRepoConfig(probe: .alwaysMissing)
+        #expect(imported.needsCredentials)
+        #expect(RepoCredentialGate.needsCredentials(for: imported, probe: .alwaysMissing))
+    }
+
+    @MainActor
+    @Test func schedulerSkipsReposNeedingCredentials() {
+        let scheduler = SyncScheduler()
+        defer { scheduler.invalidateAll() }
+
+        var repo = RepoConfig(
+            name: "paused",
+            srcURL: "git@github.com:acme/p.git",
+            dstURL: "git@gitlab.com:acme/p.git",
+            frequency: .min15
+        )
+        repo.needsCredentials = true
+        scheduler.schedule(repo: repo)
+        #expect(scheduler.nextFireDate(for: repo.id) == nil)
+
+        repo.needsCredentials = false
+        scheduler.schedule(repo: repo)
+        #expect(scheduler.nextFireDate(for: repo.id) != nil)
+    }
+
+    @Test func corruptJSONThrowsAndDoesNotProduceDocument() {
+        let garbage = Data("{not-json".utf8)
+        #expect(throws: ConfigExportError.corruptJSON) {
+            try ConfigExportCodec.decode(garbage)
+        }
+    }
+
+    @Test func unsupportedSchemaVersionThrows() throws {
+        let payload = """
+        {
+          "schemaVersion": 99,
+          "repos": [],
+          "providerAccounts": [],
+          "orgSubscriptions": []
+        }
+        """
+        do {
+            _ = try ConfigExportCodec.decode(Data(payload.utf8))
+            Issue.record("expected unsupported schema version error")
+        } catch let error as ConfigExportError {
+            guard case .unsupportedSchemaVersion(let found, let supported) = error else {
+                Issue.record("wrong error \(error)")
+                return
+            }
+            #expect(found == 99)
+            #expect(supported == ConfigExportDocument.currentSchemaVersion)
+        } catch {
+            Issue.record("unexpected \(error)")
+        }
+    }
+
+    @Test func partialDecodeDoesNotHalfApply() throws {
+        let payload = """
+        {
+          "schemaVersion": 1,
+          "repos": [
+            {
+              "id": "not-a-uuid",
+              "name": "broken",
+              "srcURL": "x",
+              "targets": [],
+              "srcAuth": { "kind": "sshAgent" },
+              "frequency": "手动",
+              "destructivePushPolicy": "strict",
+              "defaultBranch": "main",
+              "createdAt": "2026-04-25T12:00:00Z",
+              "tags": [],
+              "mirrorReleases": false,
+              "lfsMirrorMode": "auto",
+              "refSpecs": [],
+              "webhookEnabled": false
+            }
+          ],
+          "providerAccounts": [],
+          "orgSubscriptions": []
+        }
+        """
+        var store = [
+            RepoConfig(name: "untouched", srcURL: "a", dstURL: "b")
+        ]
+        let snapshot = store
+
+        do {
+            let document = try ConfigExportCodec.decode(Data(payload.utf8))
+            store = ConfigExportCodec.planImport(
+                document: document,
+                mode: .replace,
+                existingRepos: store,
+                probe: .alwaysPresent
+            ).repos
+            Issue.record("decode should have failed")
+        } catch is ConfigExportError {
+            #expect(store == snapshot)
+        } catch {
+            #expect(store == snapshot)
+        }
+    }
+
+    @MainActor
+    @Test func importFailureLeavesRepoStoreUnchanged() throws {
+        let suite = "config-import-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-config-import-fail-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            Constants.setBaseDirectoryForTesting(nil)
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+        Constants.setBaseDirectoryForTesting(tempDir)
+
+        let orgStore = OrgSubscriptionStore(defaults: defaults)
+        let vm = AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            orgSubscriptionStore: orgStore,
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
+            securityPreferencesStore: SecurityPreferencesStore(defaults: defaults),
+            cachePreferencesStore: CachePreferencesStore(defaults: defaults),
+            biometricAuthenticator: PermissiveBiometricAuthenticator()
+        )
+
+        let original = RepoConfig(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000ee")!,
+            name: "keep",
+            srcURL: "git@github.com:acme/keep.git",
+            dstURL: "git@gitlab.com:acme/keep.git"
+        )
+        vm.repos = [original]
+        let beforeCount = vm.repos.count
+
+        #expect(throws: ConfigExportError.self) {
+            try vm.importConfiguration(from: Data("totally-broken".utf8), mode: .replace)
+        }
+        #expect(vm.repos.count == beforeCount)
+        #expect(vm.repos.first?.name == "keep")
+    }
+
+    @MainActor
+    @Test func successfulImportMarksMissingHTTPSCredentials() throws {
+        let suite = "config-import-ok-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-config-import-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            Constants.setBaseDirectoryForTesting(nil)
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+        Constants.setBaseDirectoryForTesting(tempDir)
+
+        let orgStore = OrgSubscriptionStore(defaults: defaults)
+        let vm = AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            orgSubscriptionStore: orgStore,
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
+            securityPreferencesStore: SecurityPreferencesStore(defaults: defaults),
+            cachePreferencesStore: CachePreferencesStore(defaults: defaults),
+            biometricAuthenticator: PermissiveBiometricAuthenticator()
+        )
+        vm.repos = []
+
+        let repoID = UUID(uuidString: "00000000-0000-0000-0000-0000000000ff")!
+        let document = ConfigExportDocument(
+            repos: [
+                ExportedRepo(from: RepoConfig(
+                    id: repoID,
+                    name: "imported",
+                    srcURL: "https://github.com/acme/imported.git",
+                    dstURL: "https://gitlab.com/acme/imported.git",
+                    srcAuth: .httpsToken(keychainTag: "\(repoID.uuidString)-src"),
+                    frequency: .min15
+                ))
+            ],
+            providerAccounts: [
+                ExportedProviderAccount(provider: .github, label: "default", host: nil)
+            ]
+        )
+        let data = try ConfigExportCodec.encode(document)
+        let plan = try vm.importConfiguration(from: data, mode: .replace, probe: .alwaysMissing)
+
+        #expect(plan.importedRepoCount == 1)
+        #expect(vm.repos.count == 1)
+        #expect(vm.repos[0].needsCredentials)
+        #expect(vm.nextFireDate(for: repoID) == nil)
+
+        vm.triggerSync(repoID: repoID)
+        #expect(vm.errorMessage == RepoCredentialGate.missingCredentialsMessage)
+        if case .failed(let message) = vm.statuses[repoID] {
+            #expect(message == RepoCredentialGate.missingCredentialsMessage)
+        } else {
+            Issue.record("expected failed status for missing credentials")
+        }
+    }
+}

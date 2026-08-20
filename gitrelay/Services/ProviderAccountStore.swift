@@ -115,6 +115,71 @@ enum ProviderAccountStore {
         }
     }
 
+    // MARK: - Config export / import
+
+    static func exportedAccounts(defaults: UserDefaults = .standard) -> [ExportedProviderAccount] {
+        migrateIfNeeded(defaults: defaults)
+        var result: [ExportedProviderAccount] = []
+        for provider in GitProvider.allCases {
+            for record in accounts(for: provider, defaults: defaults) {
+                result.append(
+                    ExportedProviderAccount(
+                        provider: provider,
+                        label: record.label,
+                        host: record.host
+                    )
+                )
+            }
+        }
+        return result.sorted {
+            if $0.provider.rawValue != $1.provider.rawValue {
+                return $0.provider.rawValue < $1.provider.rawValue
+            }
+            return $0.label < $1.label
+        }
+    }
+
+    /// Replaces the account registry with exported labels/hosts. Tokens stay in Keychain untouched.
+    static func replaceExportedAccounts(
+        _ accounts: [ExportedProviderAccount],
+        defaults: UserDefaults = .standard
+    ) {
+        migrateIfNeeded(defaults: defaults)
+        var registry: [String: [ProviderAccountRecord]] = [:]
+        for account in accounts {
+            guard let label = ProviderAccount.normalizeLabel(account.label) else {
+                continue
+            }
+            var records = registry[account.provider.rawValue] ?? []
+            if !records.contains(where: { $0.label == label }) {
+                let host = account.host?.trimmingCharacters(in: .whitespacesAndNewlines)
+                records.append(
+                    ProviderAccountRecord(
+                        label: label,
+                        host: (host?.isEmpty == false) ? host : nil
+                    )
+                )
+            }
+            registry[account.provider.rawValue] = records
+        }
+        for provider in GitProvider.allCases {
+            if registry[provider.rawValue] == nil || registry[provider.rawValue]?.isEmpty == true {
+                registry[provider.rawValue] = [ProviderAccountRecord(label: ProviderAccount.defaultLabel, host: nil)]
+            }
+        }
+        saveRegistry(registry, defaults: defaults)
+    }
+
+    static func mergeExportedAccounts(
+        _ accounts: [ExportedProviderAccount],
+        defaults: UserDefaults = .standard
+    ) {
+        migrateIfNeeded(defaults: defaults)
+        let existing = exportedAccounts(defaults: defaults)
+        let merged = ConfigExportCodec.mergeProviderAccounts(existing: existing, imported: accounts)
+        replaceExportedAccounts(merged, defaults: defaults)
+    }
+
     // MARK: - Private
 
     private static func ensureDefaultAccount(for provider: GitProvider, defaults: UserDefaults) {

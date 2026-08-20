@@ -6,6 +6,11 @@ final class SyncScheduler {
     var onFire: ((UUID) -> Void)?
 
     func schedule(repo: RepoConfig) {
+        // Imported repos missing Token/SSH stay unscheduled until credentials are filled in.
+        guard !repo.needsCredentials else {
+            deschedule(repoID: repo.id)
+            return
+        }
         guard let interval = repo.frequency.interval else { return }
         deschedule(repoID: repo.id)
         let id = repo.id
