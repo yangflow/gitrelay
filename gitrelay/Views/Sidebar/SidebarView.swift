@@ -22,14 +22,59 @@ struct SidebarView: View {
     @State private var showDeleteAlert = false
     @State private var batchFrequencyGroup: TagGroupSheetItem?
 
+    private var filteredRepos: [RepoConfig] {
+        appVM.displayedSidebarRepos
+    }
+
+    private var isFilterActive: Bool {
+        let trimmed = appVM.sidebarSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty || appVM.sidebarStatusFilter != .all
+    }
+
     var body: some View {
+        @Bindable var appVM = appVM
         VStack(spacing: 0) {
-            Picker("Display", selection: $displayMode) {
-                ForEach(SidebarDisplayMode.allCases) { mode in
-                    Text(LocalizedStringKey(mode.rawValue)).tag(mode)
+            VStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                    TextField("Search Repositories", text: $appVM.sidebarSearchText)
+                        .textFieldStyle(.plain)
+                        .font(.caption)
+                    if !appVM.sidebarSearchText.isEmpty {
+                        Button {
+                            appVM.sidebarSearchText = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                                .font(.caption)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Clear Search")
+                    }
                 }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+
+                Picker("Status Filter", selection: $appVM.sidebarStatusFilter) {
+                    ForEach(SidebarRepoFilter.StatusFilter.allCases) { filter in
+                        Text(LocalizedStringKey(filter.rawValue)).tag(filter)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.small)
+
+                Picker("Display", selection: $displayMode) {
+                    ForEach(SidebarDisplayMode.allCases) { mode in
+                        Text(LocalizedStringKey(mode.rawValue)).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
 
@@ -100,16 +145,20 @@ struct SidebarView: View {
 
     @ViewBuilder
     private var allReposList: some View {
-        ForEach(appVM.repos) { repo in
-            repoRow(repo)
+        if filteredRepos.isEmpty {
+            emptyListPlaceholder
+        } else {
+            ForEach(filteredRepos) { repo in
+                repoRow(repo)
+            }
         }
     }
 
     @ViewBuilder
     private var groupedReposList: some View {
-        let sections = RepoTagGrouping.sections(from: appVM.repos)
+        let sections = RepoTagGrouping.sections(from: filteredRepos)
         if sections.isEmpty {
-            ContentUnavailableView("No Repositories", systemImage: "folder")
+            emptyListPlaceholder
         } else {
             ForEach(sections) { section in
                 Section {
@@ -120,6 +169,20 @@ struct SidebarView: View {
                     tagSectionHeader(section)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var emptyListPlaceholder: some View {
+        if appVM.repos.isEmpty {
+            ContentUnavailableView("No Repositories", systemImage: "folder")
+        } else if isFilterActive {
+            Text("No Matching Repositories")
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
         }
     }
 
