@@ -86,6 +86,7 @@ final class AddEditRepoViewModel {
     var defaultBranch: String = "main"
     var tags: [String] = []
     var mirrorReleases: Bool = false
+    var lfsMirrorMode: LFSMirrorMode = .auto
     var depthText: String = ""
     var refSpecsText: String = RepoConfig.defaultRefSpecs.joined(separator: "\n")
     var webhookEnabled: Bool = false
@@ -128,6 +129,7 @@ final class AddEditRepoViewModel {
         defaultBranch = repo.defaultBranch
         tags = repo.tags
         mirrorReleases = repo.mirrorReleases
+        lfsMirrorMode = repo.lfsMirrorMode
         depthText = repo.depth.map(String.init) ?? ""
         refSpecsText = repo.resolvedRefSpecs.joined(separator: "\n")
         webhookEnabled = repo.webhookEnabled
@@ -224,6 +226,7 @@ final class AddEditRepoViewModel {
             divergedDetail: divergedDetail,
             tags: RepoTagGrouping.normalizedTags(tags),
             mirrorReleases: mirrorReleases,
+            lfsMirrorMode: lfsMirrorMode,
             depth: parsedDepth(),
             refSpecs: parsedRefSpecs(),
             webhookEnabled: webhookEnabled

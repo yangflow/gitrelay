@@ -4168,3 +4168,243 @@ struct OrgSubscriptionPollerTests {
     }
 }
 
+
+// MARK: - Git LFS mirroring
+
+struct LFSAttributesDetectorTests {
+    @Test func detectsFilterLFSInGitattributes() {
+        let content = """
+        *.psd filter=lfs diff=lfs merge=lfs -text
+        # comment
+        *.md text
+        """
+        #expect(LFSAttributesDetector.containsLFSFilter(content))
+    }
+
+    @Test func ignoresCommentsAndNonLFSAttributes() {
+        let content = """
+        # *.bin filter=lfs
+        *.txt text
+        """
+        #expect(!LFSAttributesDetector.containsLFSFilter(content))
+    }
+
+    @Test func recognizesNestedGitAttributesPaths() {
+        #expect(LFSAttributesDetector.isGitAttributesPath(".gitattributes"))
+        #expect(LFSAttributesDetector.isGitAttributesPath("subdir/.gitattributes"))
+        #expect(!LFSAttributesDetector.isGitAttributesPath("README.md"))
+    }
+}
+
+struct LFSMirrorPlannerTests {
+    @Test func offAlwaysSkips() {
+        #expect(LFSMirrorPlanner.decide(mode: .off, usesLFS: true, gitLFSAvailable: true) == .skip)
+        #expect(LFSMirrorPlanner.decide(mode: .off, usesLFS: true, gitLFSAvailable: false) == .skip)
+    }
+
+    @Test func autoSkipsWhenNoLFS() {
+        #expect(LFSMirrorPlanner.decide(mode: .auto, usesLFS: false, gitLFSAvailable: true) == .skip)
+    }
+
+    @Test func autoWarnsWhenToolMissing() {
+        #expect(LFSMirrorPlanner.decide(mode: .auto, usesLFS: true, gitLFSAvailable: false) == .warnMissingTool)
+    }
+
+    @Test func autoFetchesWhenPresent() {
+        #expect(LFSMirrorPlanner.decide(mode: .auto, usesLFS: true, gitLFSAvailable: true) == .fetchThenPush)
+    }
+}
+
+struct GitLFSArgumentsTests {
+    @Test func fetchAndPushArgsMatchGitLFSCLI() {
+        #expect(GitLFSArguments.fetchAllArgs == ["lfs", "fetch", "--all"])
+        #expect(GitLFSArguments.pushAllArgs(remoteURL: "git@example.com:org/dst.git") == [
+            "lfs", "push", "--all", "git@example.com:org/dst.git"
+        ])
+    }
+}
+
+struct GitLFSToolTests {
+    @Test func candidatePathsPreferHomebrewAndUsrLocal() {
+        let paths = GitLFSTool.candidatePaths(homeDirectory: "/Users/demo")
+        #expect(paths.contains("/opt/homebrew/bin/git-lfs"))
+        #expect(paths.contains("/usr/local/bin/git-lfs"))
+        #expect(paths.contains("/Users/demo/.local/bin/git-lfs"))
+    }
+
+    @Test func isAvailableUsesInjectedFileExists() {
+        #expect(GitLFSTool.isAvailable(fileExists: { $0.hasSuffix("/git-lfs") }, homeDirectory: "/tmp"))
+        #expect(!GitLFSTool.isAvailable(fileExists: { _ in false }, homeDirectory: "/tmp"))
+    }
+}
+
+actor FakeLFSCommandRunner: LFSCommandRunning {
+    var available: Bool
+    var usesLFS: Bool
+    private(set) var fetchCount = 0
+    private(set) var pushedURLs: [String] = []
+    var fetchError: Error?
+    var pushError: Error?
+
+    init(available: Bool, usesLFS: Bool) {
+        self.available = available
+        self.usesLFS = usesLFS
+    }
+
+    func isGitLFSAvailable() async throws -> Bool { available }
+
+    func repositoryUsesLFS(mirrorPath: String) async throws -> Bool { usesLFS }
+
+    func lfsFetchAll(mirrorPath: String, env: [String: String]) async throws {
+        if let fetchError { throw fetchError }
+        fetchCount += 1
+    }
+
+    func lfsPushAll(mirrorPath: String, remoteURL: String, env: [String: String]) async throws {
+        if let pushError { throw pushError }
+        pushedURLs.append(remoteURL)
+    }
+}
+
+struct LFSMirrorServiceTests {
+    @Test func lfsPresentInvokesFetchAndPush() async throws {
+        let runner = FakeLFSCommandRunner(available: true, usesLFS: true)
+        let service = LFSMirrorService(runner: runner)
+        var logs: [String] = []
+
+        let prepare = try await service.prepareAfterSourceFetch(
+            mode: .auto,
+            mirrorPath: "/tmp/mirror",
+            env: [:],
+            log: { logs.append($0) }
+        )
+        #expect(prepare == .readyToPush)
+        #expect(await runner.fetchCount == 1)
+
+        try await service.pushToDestination(
+            mirrorPath: "/tmp/mirror",
+            remoteURL: "git@example.com:org/dst.git",
+            env: [:],
+            log: { logs.append($0) }
+        )
+        #expect(await runner.pushedURLs == ["git@example.com:org/dst.git"])
+        #expect(logs.contains(where: { $0.contains("Fetching Git LFS") || $0.contains("LFS") }))
+    }
+
+    @Test func noLFSSkipsFetchAndPush() async throws {
+        let runner = FakeLFSCommandRunner(available: true, usesLFS: false)
+        let service = LFSMirrorService(runner: runner)
+        var logs: [String] = []
+
+        let prepare = try await service.prepareAfterSourceFetch(
+            mode: .auto,
+            mirrorPath: "/tmp/mirror",
+            env: [:],
+            log: { logs.append($0) }
+        )
+        #expect(prepare == .skipped)
+        #expect(await runner.fetchCount == 0)
+        #expect(await runner.pushedURLs.isEmpty)
+    }
+
+    @Test func missingGitLFSWarnsWithoutFailingPrepare() async throws {
+        let runner = FakeLFSCommandRunner(available: false, usesLFS: true)
+        let service = LFSMirrorService(runner: runner)
+        var logs: [String] = []
+
+        let prepare = try await service.prepareAfterSourceFetch(
+            mode: .auto,
+            mirrorPath: "/tmp/mirror",
+            env: [:],
+            log: { logs.append($0) }
+        )
+        #expect(prepare == .warnedMissingTool)
+        #expect(await runner.fetchCount == 0)
+        #expect(logs.contains(where: LFSMirrorMessages.isMissingGitLFSWarning))
+        #expect(logs.contains(where: { $0.contains("brew install git-lfs") || $0.contains("git-lfs") }))
+        // Missing tool is a soft warning: callers treat git sync as success.
+        #expect(prepare != .readyToPush)
+    }
+
+    @Test func modeOffSkipsEvenWhenLFSPresent() async throws {
+        let runner = FakeLFSCommandRunner(available: true, usesLFS: true)
+        let service = LFSMirrorService(runner: runner)
+
+        let prepare = try await service.prepareAfterSourceFetch(
+            mode: .off,
+            mirrorPath: "/tmp/mirror",
+            env: [:],
+            log: { _ in }
+        )
+        #expect(prepare == .skipped)
+        #expect(await runner.fetchCount == 0)
+    }
+}
+
+@MainActor
+struct RepoConfigLFSMirrorModeTests {
+    @Test func defaultsToAuto() {
+        let repo = RepoConfig(
+            name: "lfs-repo",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git"
+        )
+        #expect(repo.lfsMirrorMode == .auto)
+    }
+
+    @Test func legacyJSONWithoutLFSModeDecodesAsAuto() throws {
+        let json = """
+        {
+          "id": "00000000-0000-0000-0000-000000000043",
+          "name": "legacy-lfs",
+          "srcURL": "git@github.com:user/repo.git",
+          "dstURL": "git@github.com:user/mirror.git",
+          "srcAuth": { "sshAgent": {} },
+          "dstAuth": { "sshAgent": {} },
+          "frequency": "手动",
+          "createdAt": "2026-04-25T12:00:00Z"
+        }
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
+        #expect(repo.lfsMirrorMode == .auto)
+    }
+
+    @Test func offModeRoundTripsAndOmitsDefaultAuto() throws {
+        var repo = RepoConfig(
+            name: "lfs-off",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            lfsMirrorMode: .off
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(repo)
+        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        #expect(object?["lfsMirrorMode"] as? String == "off")
+
+        repo.lfsMirrorMode = .auto
+        let autoData = try encoder.encode(repo)
+        let autoObject = try JSONSerialization.jsonObject(with: autoData) as? [String: Any]
+        #expect(autoObject?["lfsMirrorMode"] == nil)
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(RepoConfig.self, from: data)
+        #expect(decoded.lfsMirrorMode == .off)
+    }
+}
+
+@MainActor
+struct AddEditRepoLFSMirrorModeTests {
+    @Test func buildRepoConfigPreservesLFSMode() {
+        let vm = AddEditRepoViewModel()
+        vm.name = "demo"
+        vm.srcURL = "git@github.com:org/src.git"
+        vm.targets[0].url = "git@github.com:org/dst.git"
+        vm.lfsMirrorMode = .off
+        #expect(vm.validate())
+        #expect(vm.buildRepoConfig().lfsMirrorMode == .off)
+    }
+}

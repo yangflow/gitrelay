@@ -262,4 +262,111 @@ actor GitRunner {
         }
         return nil
     }
+
+    // MARK: - Git LFS
+
+    /// Ensures Homebrew / local bins are on PATH so `git lfs` can resolve `git-lfs`.
+    private func environmentWithGitLFSPath(_ env: [String: String]) -> [String: String] {
+        var merged = env
+        let existing = merged["PATH"]
+            ?? ProcessInfo.processInfo.environment["PATH"]
+            ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+        let extras = GitLFSTool.pathDirectories()
+        var parts = existing.split(separator: ":").map(String.init)
+        for dir in extras.reversed() where !parts.contains(dir) {
+            parts.insert(dir, at: 0)
+        }
+        merged["PATH"] = parts.joined(separator: ":")
+        return merged
+    }
+
+    func isGitLFSAvailable() async throws -> Bool {
+        if GitLFSTool.isAvailable() {
+            return true
+        }
+        do {
+            _ = try await run(args: GitLFSArguments.versionArgs, env: environmentWithGitLFSPath([:]))
+            return true
+        } catch GitError.cancelled {
+            throw GitError.cancelled
+        } catch {
+            return false
+        }
+    }
+
+    /// Detects LFS on a bare `--mirror` clone via `.gitattributes` (`filter=lfs`), then `git lfs ls-files`.
+    func repositoryUsesLFS(mirrorPath: String) async throws -> Bool {
+        if try await attributesIndicateLFS(mirrorPath: mirrorPath) {
+            return true
+        }
+        guard try await isGitLFSAvailable() else { return false }
+        do {
+            let (stdout, _) = try await run(
+                args: GitLFSArguments.lsFilesArgs,
+                env: environmentWithGitLFSPath([:]),
+                cwd: mirrorPath
+            )
+            return stdout.split(whereSeparator: \.isNewline).contains { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        } catch GitError.cancelled {
+            throw GitError.cancelled
+        } catch {
+            return false
+        }
+    }
+
+    func lfsFetchAll(mirrorPath: String, env: [String: String] = [:]) async throws {
+        _ = try await run(
+            args: GitLFSArguments.fetchAllArgs,
+            env: environmentWithGitLFSPath(env),
+            cwd: mirrorPath
+        )
+    }
+
+    func lfsPushAll(mirrorPath: String, remoteURL: String, env: [String: String] = [:]) async throws {
+        _ = try await run(
+            args: GitLFSArguments.pushAllArgs(remoteURL: remoteURL),
+            env: environmentWithGitLFSPath(env),
+            cwd: mirrorPath
+        )
+    }
+
+    private func attributesIndicateLFS(mirrorPath: String) async throws -> Bool {
+        let treeCandidates = ["HEAD", "refs/heads/main", "refs/heads/master"]
+        for treeIsh in treeCandidates {
+            let paths: [String]
+            do {
+                let (stdout, _) = try await run(
+                    args: ["ls-tree", "-r", "--name-only", treeIsh],
+                    cwd: mirrorPath
+                )
+                paths = stdout
+                    .split(separator: "\n")
+                    .map(String.init)
+                    .filter(LFSAttributesDetector.isGitAttributesPath)
+            } catch GitError.cancelled {
+                throw GitError.cancelled
+            } catch {
+                continue
+            }
+
+            for path in paths {
+                do {
+                    let (content, _) = try await run(
+                        args: ["show", "\(treeIsh):\(path)"],
+                        cwd: mirrorPath
+                    )
+                    if LFSAttributesDetector.containsLFSFilter(content) {
+                        return true
+                    }
+                } catch GitError.cancelled {
+                    throw GitError.cancelled
+                } catch {
+                    continue
+                }
+            }
+        }
+        return false
+    }
 }
+
+extension GitRunner: LFSCommandRunning {}

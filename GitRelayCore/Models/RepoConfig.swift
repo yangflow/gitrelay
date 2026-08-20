@@ -24,6 +24,8 @@ struct RepoConfig: Codable, Identifiable, Equatable {
     var tags: [String]
     /// When enabled, mirror GitHub/GitLab release metadata and binary assets to each target.
     var mirrorReleases: Bool
+    /// When `.auto`, fetch/push Git LFS objects if the source uses LFS. `.off` skips LFS.
+    var lfsMirrorMode: LFSMirrorMode
     /// Shallow clone depth; nil means full history.
     var depth: Int?
     /// Fetch refspecs; defaults to all heads and tags.
@@ -91,6 +93,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         divergedDetail: String? = nil,
         tags: [String] = [],
         mirrorReleases: Bool = false,
+        lfsMirrorMode: LFSMirrorMode = .auto,
         depth: Int? = nil,
         refSpecs: [String] = RepoConfig.defaultRefSpecs,
         webhookEnabled: Bool = false
@@ -113,6 +116,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         self.divergedDetail = divergedDetail
         self.tags = RepoTagGrouping.normalizedTags(tags)
         self.mirrorReleases = mirrorReleases
+        self.lfsMirrorMode = lfsMirrorMode
         self.depth = depth.map { max(0, $0) }.flatMap { $0 > 0 ? $0 : nil }
         self.refSpecs = Self.normalizedRefSpecs(refSpecs).isEmpty
             ? Self.defaultRefSpecs
@@ -141,6 +145,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         divergedDetail: String? = nil,
         tags: [String] = [],
         mirrorReleases: Bool = false,
+        lfsMirrorMode: LFSMirrorMode = .auto,
         depth: Int? = nil,
         refSpecs: [String] = RepoConfig.defaultRefSpecs,
         webhookEnabled: Bool = false
@@ -164,6 +169,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
             divergedDetail: divergedDetail,
             tags: tags,
             mirrorReleases: mirrorReleases,
+            lfsMirrorMode: lfsMirrorMode,
             depth: depth,
             refSpecs: refSpecs,
             webhookEnabled: webhookEnabled
@@ -196,6 +202,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         case divergedDetail
         case tags
         case mirrorReleases
+        case lfsMirrorMode
         case depth
         case refSpecs
         case webhookEnabled
@@ -237,6 +244,7 @@ struct RepoConfig: Codable, Identifiable, Equatable {
             try container.decodeIfPresent([String].self, forKey: .tags) ?? []
         )
         mirrorReleases = try container.decodeIfPresent(Bool.self, forKey: .mirrorReleases) ?? false
+        lfsMirrorMode = try container.decodeIfPresent(LFSMirrorMode.self, forKey: .lfsMirrorMode) ?? .auto
         depth = try container.decodeIfPresent(Int.self, forKey: .depth).flatMap { $0 > 0 ? $0 : nil }
         let decodedRefSpecs = try container.decodeIfPresent([String].self, forKey: .refSpecs) ?? []
         refSpecs = Self.normalizedRefSpecs(decodedRefSpecs).isEmpty
@@ -277,6 +285,9 @@ struct RepoConfig: Codable, Identifiable, Equatable {
         try container.encode(tags, forKey: .tags)
         if mirrorReleases {
             try container.encode(mirrorReleases, forKey: .mirrorReleases)
+        }
+        if lfsMirrorMode != .auto {
+            try container.encode(lfsMirrorMode, forKey: .lfsMirrorMode)
         }
         try container.encodeIfPresent(depth, forKey: .depth)
         if !Self.refSpecsEqual(refSpecs, Self.defaultRefSpecs) {
