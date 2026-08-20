@@ -1137,20 +1137,20 @@ struct SidebarRepoFilterTests {
                 name: name,
                 srcURL: srcURL ?? "git@github.com:user/\(name).git",
                 targets: targets,
-                tags: tags,
                 lastSyncedAt: lastSyncedAt,
                 lastSuccessfulSyncedAt: lastSyncedAt,
-                divergedDetail: divergedDetail
+                divergedDetail: divergedDetail,
+                tags: tags
             )
         }
         return RepoConfig(
             name: name,
             srcURL: srcURL ?? "git@github.com:user/\(name).git",
             dstURL: dstURL ?? "git@github.com:user/\(name)-mirror.git",
-            tags: tags,
             lastSyncedAt: lastSyncedAt,
             lastSuccessfulSyncedAt: lastSyncedAt,
-            divergedDetail: divergedDetail
+            divergedDetail: divergedDetail,
+            tags: tags
         )
     }
 
