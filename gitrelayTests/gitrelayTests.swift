@@ -7193,6 +7193,42 @@ struct StringCatalogLocaleTests {
             #expect(!value.isEmpty)
         }
     }
+
+    // The widget target builds with STRING_CATALOG_GENERATE_SYMBOLS=YES, so a key
+    // that cannot become a Swift identifier (e.g. "✓ %lld") fails the build (issue #89).
+    @Test func widgetCatalogStaysSymbolGenerationSafe() throws {
+        let url = Self.repoRoot.appendingPathComponent("gitrelayWidget/Localizable.xcstrings")
+        let data = try Data(contentsOf: url)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let strings = try #require(json?["strings"] as? [String: Any])
+        #expect(!strings.isEmpty)
+
+        for key in strings.keys {
+            let first = try #require(key.first, "empty catalog key")
+            let startsWithASCIILetter = first.isASCII && first.isLetter
+            #expect(
+                startsWithASCIILetter,
+                "widget catalog key \(key) must start with an ASCII letter"
+            )
+        }
+
+        for key in ["✓ %lld", "✗ %lld", "— %lld"] {
+            let stillPresent = strings.keys.contains(key)
+            #expect(!stillPresent, "glyph-leading key \(key) is back in the widget catalog")
+        }
+    }
+
+    @Test func widgetCatalogKeepsTheProductNameOffTheFace() throws {
+        let url = Self.repoRoot.appendingPathComponent("gitrelayWidget/Localizable.xcstrings")
+        let data = try Data(contentsOf: url)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let strings = try #require(json?["strings"] as? [String: Any])
+
+        for key in strings.keys {
+            let namesTheProduct = key.contains("GitRelay")
+            #expect(!namesTheProduct, "widget string \(key) puts the product name on the widget")
+        }
+    }
 }
 
 // MARK: - Sync phase progress (issue #67)
