@@ -9,7 +9,7 @@ struct MirrorTargetCardView: View {
 
     var body: some View {
         DisclosureGroup(isExpanded: $target.isExpanded) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                 Picker("Type", selection: $target.kind) {
                     ForEach(MirrorTargetKind.allCases) { kind in
                         Text(kind.displayName).tag(kind)
@@ -26,7 +26,7 @@ struct MirrorTargetCardView: View {
 
                 Toggle("Enabled", isOn: $target.enabled)
             }
-            .padding(.top, 6)
+            .padding(.top, DesignTokens.Spacing.xs)
         } label: {
             HStack {
                 Text("Target \(index + 1)")
@@ -68,7 +68,7 @@ struct MirrorTargetCardView: View {
         TextField("git@github.com:user/repo.git", text: $target.url)
             .font(.system(.caption, design: .monospaced))
         if let err = error {
-            Text(err).font(.caption).foregroundStyle(.red)
+            Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
         }
         AuthFieldView(
             label: "Target \(index + 1)",
@@ -89,7 +89,7 @@ struct MirrorTargetCardView: View {
             }
         }
         if let err = error {
-            Text(err).font(.caption).foregroundStyle(.red)
+            Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
         }
 
         Picker("Archive Format", selection: $target.archiveFormat) {

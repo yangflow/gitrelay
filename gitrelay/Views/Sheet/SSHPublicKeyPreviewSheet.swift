@@ -10,7 +10,7 @@ struct SSHPublicKeyPreviewSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
                 Text("Public Key Preview")
                     .font(.headline)
                 Text(publicKeyPath)
@@ -20,10 +20,10 @@ struct SSHPublicKeyPreviewSheet: View {
                 if didCopy {
                     Label("Copied to Clipboard", systemImage: "checkmark.circle.fill")
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(DesignTokens.StatusColor.success)
                 }
             }
-            .padding(20)
+            .padding(DesignTokens.Spacing.sheetContent)
 
             Divider()
 
@@ -32,7 +32,7 @@ struct SSHPublicKeyPreviewSheet: View {
                     .font(.system(.caption, design: .monospaced))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(20)
+                    .padding(DesignTokens.Spacing.sheetContent)
             }
             .frame(maxHeight: 160)
 
@@ -47,8 +47,9 @@ struct SSHPublicKeyPreviewSheet: View {
                 Button("Close") { dismiss() }
                     .keyboardShortcut(.escape)
             }
-            .padding(16)
+            .gitRelaySheetFooterPadding()
         }
         .frame(width: 520)
+        .gitRelayChrome(.sheet)
     }
 }

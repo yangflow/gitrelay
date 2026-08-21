@@ -9,11 +9,11 @@ struct DestructivePushConfirmationSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.md) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.title2)
-                    .foregroundStyle(.yellow)
-                VStack(alignment: .leading, spacing: 6) {
+                    .foregroundStyle(DesignTokens.StatusColor.diverged)
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
                     Text("Confirm Destructive Mirror Push")
                         .font(.headline)
                     Text(repoName)
@@ -30,18 +30,19 @@ struct DestructivePushConfirmationSheet: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(20)
+            .padding(DesignTokens.Spacing.sheetContent)
 
             Divider()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
                     if !plan.deletedRefs.isEmpty {
                         refSection(
                             title: "Delete \(plan.deletedRefs.count) refs",
                             refs: plan.deletedRefs,
                             symbol: "trash",
-                            tint: .red
+                            tint: DesignTokens.StatusColor.error,
+                            fill: DesignTokens.Surface.destructiveFill
                         )
                     }
                     if !plan.forcedUpdateRefs.isEmpty {
@@ -49,12 +50,13 @@ struct DestructivePushConfirmationSheet: View {
                             title: "Force-update \(plan.forcedUpdateRefs.count) refs",
                             refs: plan.forcedUpdateRefs,
                             symbol: "arrow.triangle.2.circlepath",
-                            tint: .orange
+                            tint: DesignTokens.StatusColor.warning,
+                            fill: DesignTokens.Surface.forceUpdateFill
                         )
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(20)
+                .padding(DesignTokens.Spacing.sheetContent)
             }
             .frame(maxHeight: 320)
 
@@ -66,13 +68,14 @@ struct DestructivePushConfirmationSheet: View {
                     .keyboardShortcut(.escape)
                 Button("Continue", action: onConfirm)
                     .buttonStyle(.borderedProminent)
-                    .tint(.orange)
+                    .tint(DesignTokens.StatusColor.warning)
                     .keyboardShortcut(.return)
             }
-            .padding(16)
+            .gitRelaySheetFooterPadding()
         }
         .frame(width: 480)
         .frame(minHeight: 280)
+        .gitRelayChrome(.sheet)
     }
 
     @ViewBuilder
@@ -80,14 +83,15 @@ struct DestructivePushConfirmationSheet: View {
         title: String,
         refs: [String],
         symbol: String,
-        tint: Color
+        tint: Color,
+        fill: Color
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             Label(title, systemImage: symbol)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(tint)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
                 ForEach(refs, id: \.self) { ref in
                     Text(ref)
                         .font(.system(.caption, design: .monospaced))
@@ -95,9 +99,14 @@ struct DestructivePushConfirmationSheet: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .padding(10)
-            .background(tint.opacity(0.08))
-            .clipShape(.rect(cornerRadius: 8))
+            .padding(DesignTokens.Spacing.popoverChromeVertical)
+            .background(fill)
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: DesignTokens.CornerRadius.banner,
+                    style: .continuous
+                )
+            )
         }
     }
 }

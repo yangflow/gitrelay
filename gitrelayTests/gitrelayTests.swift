@@ -1342,14 +1342,35 @@ struct DesignTokensTests {
         #expect(DesignTokens.StatusColor.label(for: .unknown) == "unknown")
     }
 
+    @Test func widgetStatusColorMappingCoversEveryKind() {
+        #expect(DesignTokens.StatusColor.label(forWidgetStatus: .success) == "success")
+        #expect(DesignTokens.StatusColor.label(forWidgetStatus: .failure) == "failure")
+        #expect(DesignTokens.StatusColor.label(forWidgetStatus: .syncing) == "syncing")
+        #expect(DesignTokens.StatusColor.label(forWidgetStatus: .diverged) == "diverged")
+        #expect(DesignTokens.StatusColor.label(forWidgetStatus: .unknown) == "unknown")
+    }
+
     @Test func chromeMaterialsAreDistinctRoles() {
         #expect(DesignTokens.ChromeRole.sidebar.material == .sidebar)
         #expect(DesignTokens.ChromeRole.detail.material == .detail)
+        #expect(DesignTokens.ChromeRole.popover.material == .popover)
+        #expect(DesignTokens.ChromeRole.sheet.material == .sheet)
         #expect(DesignTokens.Material.sidebar != DesignTokens.Material.detail)
         #expect(DesignTokens.Material.footer != DesignTokens.Material.sidebar)
+        #expect(DesignTokens.Material.popover != DesignTokens.Material.sheet)
         #expect(DesignTokens.Material.sidebar.tokenName == "sidebar")
         #expect(DesignTokens.Material.detail.tokenName == "detail")
         #expect(DesignTokens.Material.footer.tokenName == "footer")
+        #expect(DesignTokens.Material.popover.tokenName == "popover")
+        #expect(DesignTokens.Material.sheet.tokenName == "sheet")
+    }
+
+    @Test func sharedLayoutTokensStayStable() {
+        #expect(DesignTokens.Layout.popoverWidth == 280)
+        #expect(DesignTokens.Layout.settingsMinWidth == 420)
+        #expect(DesignTokens.Spacing.sheetFooter == 16)
+        #expect(DesignTokens.Size.statusDot == 8)
+        #expect(DesignTokens.Size.menuBarIconPointSize == 16)
     }
 }
 

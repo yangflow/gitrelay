@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Applies main-window chrome materials from ``DesignTokens``.
+/// Applies chrome materials from ``DesignTokens``.
 /// On macOS 26+, adds a light translucent wash (no LiquidGlassKit / design-system packages).
 /// On 14/15 the same chrome uses ordinary visual-effect materials only.
 struct GitRelayChromeBackground: View {
@@ -53,9 +53,20 @@ extension View {
                     .stroke(DesignTokens.Surface.separator, lineWidth: 1)
             }
     }
+
+    /// Standard sheet header / footer padding from DesignTokens.
+    func gitRelaySheetHeaderPadding() -> some View {
+        padding(.horizontal, DesignTokens.Spacing.sheetHeaderHorizontal)
+            .padding(.top, DesignTokens.Spacing.sheetHeaderTop)
+            .padding(.bottom, DesignTokens.Spacing.sheetHeaderBottom)
+    }
+
+    func gitRelaySheetFooterPadding() -> some View {
+        padding(DesignTokens.Spacing.sheetFooter)
+    }
 }
 
-/// Compact status color dot for sidebar rows (Ice / Luminare atmosphere).
+/// Compact status color dot for sidebar and menu-bar rows (Ice / Luminare atmosphere).
 struct StatusDotView: View {
     let status: SyncStatus
     /// When false, ahead state is a plain blue dot (detail labels already show the count).

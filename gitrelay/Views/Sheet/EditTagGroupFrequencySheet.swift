@@ -20,8 +20,7 @@ struct EditTagGroupFrequencySheet: View {
                     .font(.headline)
                 Spacer()
             }
-            .padding([.horizontal, .top], 20)
-            .padding(.bottom, 12)
+            .gitRelaySheetHeaderPadding()
 
             Divider()
 
@@ -48,9 +47,10 @@ struct EditTagGroupFrequencySheet: View {
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.return)
             }
-            .padding(16)
+            .gitRelaySheetFooterPadding()
         }
         .frame(width: 420)
+        .gitRelayChrome(.sheet)
         .onAppear {
             frequency = appVM.repos(matchingTag: tag).first?.frequency ?? .manual
         }

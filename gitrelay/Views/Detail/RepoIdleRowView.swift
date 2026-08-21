@@ -11,7 +11,7 @@ struct RepoIdleRowView: View {
 
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
                 RepoStatusLabel(status: status)
                 if let lastSyncedAt {
                     Text("Last synced: \(lastSyncedAt.formatted(.dateTime.year().month().day().hour().minute()))")
@@ -30,7 +30,7 @@ struct RepoIdleRowView: View {
                 }
             }
             Spacer()
-            VStack(spacing: 6) {
+            VStack(spacing: DesignTokens.Spacing.xs) {
                 Button("Verify Now", action: onVerifyNow)
                     .buttonStyle(.bordered)
                     .disabled(isVerifying || status == .syncing)

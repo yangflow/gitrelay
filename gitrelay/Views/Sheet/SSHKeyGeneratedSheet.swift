@@ -24,11 +24,11 @@ struct SSHKeyGeneratedSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.md) {
                 Image(systemName: "key.fill")
                     .font(.title2)
-                    .foregroundStyle(.green)
-                VStack(alignment: .leading, spacing: 6) {
+                    .foregroundStyle(DesignTokens.StatusColor.success)
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
                     Text("SSH Key Generated")
                         .font(.headline)
                     Text("Add the public key to \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) to use SSH authentication.")
@@ -37,12 +37,12 @@ struct SSHKeyGeneratedSheet: View {
                     if didCopy {
                         Label("Copied to Clipboard", systemImage: "checkmark.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(DesignTokens.StatusColor.success)
                     }
                 }
                 Spacer(minLength: 0)
             }
-            .padding(20)
+            .padding(DesignTokens.Spacing.sheetContent)
 
             Divider()
 
@@ -51,7 +51,7 @@ struct SSHKeyGeneratedSheet: View {
                     .font(.system(.caption, design: .monospaced))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(20)
+                    .padding(DesignTokens.Spacing.sheetContent)
             }
             .frame(maxHeight: 120)
 
@@ -74,9 +74,10 @@ struct SSHKeyGeneratedSheet: View {
                     .keyboardShortcut(.return)
                     .buttonStyle(.borderedProminent)
             }
-            .padding(16)
+            .gitRelaySheetFooterPadding()
         }
         .frame(width: 520)
+        .gitRelayChrome(.sheet)
         .onAppear {
             ClipboardService.copy(result.publicKey)
             didCopy = true

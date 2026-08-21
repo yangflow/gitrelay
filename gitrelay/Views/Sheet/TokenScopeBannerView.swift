@@ -5,7 +5,7 @@ struct TokenScopeBannerView: View {
 
     var body: some View {
         if let validation {
-            HStack(alignment: .top, spacing: 8) {
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: validation.isFullyAuthorized
                       ? "checkmark.circle.fill"
                       : "exclamationmark.triangle.fill")
@@ -13,12 +13,18 @@ struct TokenScopeBannerView: View {
                     .font(.caption)
                     .multilineTextAlignment(.leading)
             }
-            .foregroundStyle(validation.isFullyAuthorized ? Color.green : Color.orange)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .foregroundStyle(
+                validation.isFullyAuthorized
+                    ? DesignTokens.StatusColor.success
+                    : DesignTokens.StatusColor.warning
+            )
+            .padding(.horizontal, DesignTokens.Spacing.lg)
+            .padding(.vertical, DesignTokens.Spacing.popoverChromeVertical)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                (validation.isFullyAuthorized ? Color.green : Color.orange).opacity(0.12)
+                validation.isFullyAuthorized
+                    ? DesignTokens.Surface.bannerSuccessFill
+                    : DesignTokens.Surface.bannerWarningFill
             )
         }
     }

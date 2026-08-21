@@ -10,27 +10,32 @@ struct AboutView: View {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "–"
     }
 
+    private static let githubURL = URL(string: "https://github.com/yangflow/gitrelay")
+
     var body: some View {
         VStack(spacing: 0) {
-            Spacer().frame(height: 24)
+            Spacer().frame(height: DesignTokens.Spacing.xxl)
 
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
-                .frame(width: 80, height: 80)
+                .frame(
+                    width: DesignTokens.Layout.aboutIconSize,
+                    height: DesignTokens.Layout.aboutIconSize
+                )
 
             Text("GitRelay")
                 .font(.title.weight(.bold))
-                .padding(.top, 12)
+                .padding(.top, DesignTokens.Spacing.md)
 
             Text("Version \(version) (\(build))")
                 .font(.callout)
                 .foregroundStyle(.secondary)
-                .padding(.top, 4)
+                .padding(.top, DesignTokens.Spacing.xxs)
                 .textSelection(.enabled)
 
-            Spacer().frame(height: 20)
+            Spacer().frame(height: DesignTokens.Spacing.xl)
 
-            VStack(spacing: 6) {
+            VStack(spacing: DesignTokens.Spacing.aboutSection) {
                 Text("© 2026 yangflow")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
@@ -39,11 +44,13 @@ struct AboutView: View {
                     .foregroundStyle(.tertiary)
             }
 
-            Spacer().frame(height: 16)
+            Spacer().frame(height: DesignTokens.Spacing.lg)
 
-            HStack(spacing: 12) {
+            HStack(spacing: DesignTokens.Spacing.md) {
                 Button {
-                    NSWorkspace.shared.open(URL(string: "https://github.com/yangflow/gitrelay")!)
+                    if let url = Self.githubURL {
+                        NSWorkspace.shared.open(url)
+                    }
                 } label: {
                     Label("GitHub", systemImage: "link")
                 }
@@ -56,9 +63,10 @@ struct AboutView: View {
             }
             .buttonStyle(.borderless)
 
-            Spacer().frame(height: 24)
+            Spacer().frame(height: DesignTokens.Spacing.xxl)
         }
-        .frame(width: 280)
+        .frame(width: DesignTokens.Layout.aboutWidth)
         .fixedSize()
+        .gitRelayChrome(.sheet)
     }
 }

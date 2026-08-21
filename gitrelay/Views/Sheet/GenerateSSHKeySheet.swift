@@ -23,8 +23,7 @@ struct GenerateSSHKeySheet: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Generate SSH Key")
                 .font(.headline)
-                .padding([.horizontal, .top], 20)
-                .padding(.bottom, 12)
+                .gitRelaySheetHeaderPadding()
 
             Divider()
 
@@ -49,7 +48,7 @@ struct GenerateSSHKeySheet: View {
                     Section {
                         Text(errorMessage)
                             .font(.caption)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(DesignTokens.StatusColor.error)
                     }
                 }
             }
@@ -67,9 +66,10 @@ struct GenerateSSHKeySheet: View {
                     .keyboardShortcut(.return)
                     .disabled(isGenerating)
             }
-            .padding(16)
+            .gitRelaySheetFooterPadding()
         }
         .frame(width: 460)
+        .gitRelayChrome(.sheet)
     }
 
     private func generate() {

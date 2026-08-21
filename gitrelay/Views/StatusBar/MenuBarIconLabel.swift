@@ -19,7 +19,10 @@ struct MenuBarIconLabel: View {
     private static let failedIcon: NSImage = makeIcon(name: "exclamationmark.triangle.fill")
 
     private static func makeIcon(name: String) -> NSImage {
-        let config = NSImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+        let config = NSImage.SymbolConfiguration(
+            pointSize: DesignTokens.Size.menuBarIconPointSize,
+            weight: .semibold
+        )
         let image = NSImage(systemSymbolName: name, accessibilityDescription: "GitRelay")?
             .withSymbolConfiguration(config) ?? NSImage()
         image.isTemplate = true

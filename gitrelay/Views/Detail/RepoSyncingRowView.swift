@@ -6,10 +6,10 @@ struct RepoSyncingRowView: View {
     let onCancel: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DesignTokens.Spacing.md) {
             ProgressView()
                 .scaleEffect(0.8)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                 Text(statusTitle)
                     .font(.callout)
                 if let latestLogLine {
@@ -24,8 +24,13 @@ struct RepoSyncingRowView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
         }
-        .padding(12)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .clipShape(.rect(cornerRadius: 8))
+        .padding(DesignTokens.Spacing.md)
+        .background(DesignTokens.Surface.panelFill)
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: DesignTokens.CornerRadius.banner,
+                style: .continuous
+            )
+        )
     }
 }

@@ -99,26 +99,32 @@ private struct SyncHealthSmallWidgetView: View {
     let snapshot: WidgetHealthSnapshot
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             Label("Today", systemImage: "calendar")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
             Spacer(minLength: 0)
 
-            Text(compactCounts)
-                .font(.title3.weight(.semibold))
-                .monospacedDigit()
-                .minimumScaleFactor(0.75)
-                .lineLimit(1)
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                widgetCount(symbol: "checkmark.circle.fill", value: snapshot.summary.succeededToday, color: DesignTokens.StatusColor.success)
+                widgetCount(symbol: "xmark.octagon.fill", value: snapshot.summary.failedToday, color: DesignTokens.StatusColor.escalatedFailure)
+                widgetCount(symbol: "minus.circle", value: snapshot.summary.notRunToday, color: DesignTokens.StatusColor.unknown)
+            }
+            .font(.caption.weight(.semibold))
+            .monospacedDigit()
+            .minimumScaleFactor(0.75)
+            .lineLimit(1)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text(accessibilitySummary))
     }
 
-    private var compactCounts: String {
-        "✓ \(snapshot.summary.succeededToday) / ✗ \(snapshot.summary.failedToday) / — \(snapshot.summary.notRunToday)"
+    private func widgetCount(symbol: String, value: Int, color: Color) -> some View {
+        Label("\(value)", systemImage: symbol)
+            .foregroundStyle(color)
+            .labelStyle(.titleAndIcon)
     }
 
     private var accessibilitySummary: String {
@@ -135,17 +141,24 @@ private struct SyncHealthMediumWidgetView: View {
     let snapshot: WidgetHealthSnapshot
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.popoverChromeVertical) {
             HStack {
                 Label("Today", systemImage: "calendar")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
-                Text(compactCounts)
-                    .font(.caption.weight(.semibold))
-                    .monospacedDigit()
-                    .minimumScaleFactor(0.8)
-                    .lineLimit(1)
+                HStack(spacing: DesignTokens.Spacing.xs) {
+                    Text("✓ \(snapshot.summary.succeededToday)")
+                        .foregroundStyle(DesignTokens.StatusColor.success)
+                    Text("✗ \(snapshot.summary.failedToday)")
+                        .foregroundStyle(DesignTokens.StatusColor.escalatedFailure)
+                    Text("— \(snapshot.summary.notRunToday)")
+                        .foregroundStyle(DesignTokens.StatusColor.unknown)
+                }
+                .font(.caption.weight(.semibold))
+                .monospacedDigit()
+                .minimumScaleFactor(0.8)
+                .lineLimit(1)
             }
 
             if snapshot.attentionRepos.isEmpty {
@@ -154,7 +167,7 @@ private struct SyncHealthMediumWidgetView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             } else {
-                VStack(spacing: 6) {
+                VStack(spacing: DesignTokens.Spacing.xs) {
                     ForEach(snapshot.attentionRepos) { repo in
                         Link(destination: WidgetDeepLink.repoURL(id: repo.id)) {
                             SyncHealthAttentionRow(repo: repo)
@@ -166,19 +179,14 @@ private struct SyncHealthMediumWidgetView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
-
-    private var compactCounts: String {
-        "✓ \(snapshot.summary.succeededToday) / ✗ \(snapshot.summary.failedToday) / — \(snapshot.summary.notRunToday)"
-    }
 }
 
 private struct SyncHealthAttentionRow: View {
     let repo: WidgetAttentionRepo
 
     var body: some View {
-        HStack(spacing: 8) {
-            WidgetStatusIcon(status: repo.status)
-                .font(.caption)
+        HStack(spacing: DesignTokens.Spacing.statusDotGap) {
+            WidgetStatusDotView(status: repo.status)
 
             Text(repo.name)
                 .font(.caption.weight(.medium))
@@ -205,30 +213,6 @@ private struct SyncHealthAttentionRow: View {
             return String(localized: "Not Synced")
         case .success:
             return String(localized: "Stale")
-        }
-    }
-}
-
-private struct WidgetStatusIcon: View {
-    let status: RepoSyncStatusKind
-
-    var body: some View {
-        switch status {
-        case .success:
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-        case .failure:
-            Image(systemName: "xmark.octagon.fill")
-                .foregroundStyle(.red)
-        case .syncing:
-            Image(systemName: "arrow.triangle.2.circlepath")
-                .foregroundStyle(.secondary)
-        case .diverged:
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.yellow)
-        case .unknown:
-            Image(systemName: "questionmark.circle")
-                .foregroundStyle(.secondary)
         }
     }
 }
