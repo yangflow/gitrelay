@@ -16,7 +16,7 @@ struct EditTagGroupFrequencySheet: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Edit Group Sync Frequency")
+                Text(String(localized: "Edit Group Sync Frequency"))
                     .font(.headline)
                 Spacer()
             }
@@ -26,10 +26,12 @@ struct EditTagGroupFrequencySheet: View {
 
             Form {
                 Section {
-                    Text("Set the sync frequency for all \(repoCount) repositories in “\(groupTitle)” to:")
+                    Text(String(localized: "Set the sync frequency for all \(repoCount) repositories in “\(groupTitle)” to:"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     FrequencyPickerView(frequency: $frequency)
+                } header: {
+                    Text(String(localized: "Sync Frequency"))
                 }
             }
             .formStyle(.grouped)
@@ -38,9 +40,9 @@ struct EditTagGroupFrequencySheet: View {
 
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
+                Button(String(localized: "Cancel")) { dismiss() }
                     .keyboardShortcut(.escape)
-                Button("Save") {
+                Button(String(localized: "Save")) {
                     appVM.updateFrequency(matchingTag: tag, frequency: frequency)
                     dismiss()
                 }

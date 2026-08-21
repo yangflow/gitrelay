@@ -21,27 +21,34 @@ struct GenerateSSHKeySheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Generate SSH Key")
-                .font(.headline)
-                .gitRelaySheetHeaderPadding()
+            HStack {
+                Text(String(localized: "Generate SSH Key"))
+                    .font(.headline)
+                Spacer()
+            }
+            .gitRelaySheetHeaderPadding()
 
             Divider()
 
             Form {
                 Section {
-                    TextField("Private Key Path", text: $keyPath)
+                    TextField(String(localized: "Private Key Path"), text: $keyPath)
                         .font(.system(.body, design: .monospaced))
-                    Text("The default path is \(SSHKeyGenerator.defaultDisplayPath). The public key will be written to a .pub file at the same path.")
+                    Text(String(localized: "The default path is \(SSHKeyGenerator.defaultDisplayPath). The public key will be written to a .pub file at the same path."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } header: {
+                    Text(String(localized: "Key Location"))
                 }
 
                 Section {
-                    Toggle("Encrypt the private key with a passphrase", isOn: $usePassphrase)
+                    Toggle(String(localized: "Encrypt the private key with a passphrase"), isOn: $usePassphrase)
                     if usePassphrase {
-                        SecureField("Passphrase", text: $passphrase)
+                        SecureField(String(localized: "Passphrase"), text: $passphrase)
                             .textFieldStyle(.roundedBorder)
                     }
+                } header: {
+                    Text(String(localized: "Passphrase"))
                 }
 
                 if let errorMessage {
@@ -58,10 +65,10 @@ struct GenerateSSHKeySheet: View {
 
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
+                Button(String(localized: "Cancel")) { dismiss() }
                     .keyboardShortcut(.escape)
                     .disabled(isGenerating)
-                Button("Generate", action: generate)
+                Button(String(localized: "Generate"), action: generate)
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.return)
                     .disabled(isGenerating)
