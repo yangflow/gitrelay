@@ -2,14 +2,16 @@ import SwiftUI
 
 /// Applies main-window chrome materials from ``DesignTokens``.
 /// On macOS 26+, adds a light translucent wash (no LiquidGlassKit / design-system packages).
-/// On 14/15 the same chrome uses ordinary SwiftUI materials only.
+/// On 14/15 the same chrome uses ordinary visual-effect materials only.
 struct GitRelayChromeBackground: View {
     let role: DesignTokens.ChromeRole
 
     var body: some View {
         ZStack {
-            Rectangle()
-                .fill(role.material.swiftUIMaterial)
+            GitRelayVisualEffectView(
+                material: role.material.nsMaterial,
+                blendingMode: role.material.blendingMode
+            )
 
             if #available(macOS 26, *) {
                 // Tahoe / Liquid Glass era: keep fallback materials underneath and

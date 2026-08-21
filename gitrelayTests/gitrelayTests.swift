@@ -1346,6 +1346,9 @@ struct DesignTokensTests {
         #expect(DesignTokens.ChromeRole.detail.material == .detail)
         #expect(DesignTokens.Material.sidebar != DesignTokens.Material.detail)
         #expect(DesignTokens.Material.footer != DesignTokens.Material.sidebar)
+        #expect(DesignTokens.Material.sidebar.nsMaterial == .sidebar)
+        #expect(DesignTokens.Material.detail.nsMaterial == .contentBackground)
+        #expect(DesignTokens.Material.footer.nsMaterial == .headerView)
     }
 }
 

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// In-repo visual language for the main window chrome.
@@ -81,26 +82,35 @@ enum DesignTokens {
         static let badgeFill = Color.red
     }
 
-    /// Materials used for main-window chrome. Ordinary materials on 14/15;
-    /// Tahoe may layer an extra translucent wash behind `#available(macOS 26, *)`.
-    enum Material {
+    /// AppKit visual-effect materials for main-window chrome.
+    /// Ordinary materials on 14/15; Tahoe may layer an extra wash behind `#available(macOS 26, *)`.
+    enum Material: Equatable {
         case sidebar
         case detail
         case footer
 
-        var swiftUIMaterial: SwiftUI.Material {
+        var nsMaterial: NSVisualEffectView.Material {
             switch self {
             case .sidebar:
                 return .sidebar
             case .detail:
                 return .contentBackground
             case .footer:
-                return .bar
+                return .headerView
+            }
+        }
+
+        var blendingMode: NSVisualEffectView.BlendingMode {
+            switch self {
+            case .sidebar, .footer:
+                return .behindWindow
+            case .detail:
+                return .withinWindow
             }
         }
     }
 
-    enum ChromeRole {
+    enum ChromeRole: Equatable {
         case sidebar
         case detail
 
@@ -110,5 +120,25 @@ enum DesignTokens {
             case .detail: return .detail
             }
         }
+    }
+}
+
+/// Thin `NSVisualEffectView` wrapper (same approach as Ice / Luminare atmosphere).
+struct GitRelayVisualEffectView: NSViewRepresentable {
+    var material: NSVisualEffectView.Material
+    var blendingMode: NSVisualEffectView.BlendingMode
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blendingMode
+        view.state = .active
+        view.isEmphasized = true
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
     }
 }

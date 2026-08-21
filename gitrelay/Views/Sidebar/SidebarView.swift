@@ -59,7 +59,10 @@ struct SidebarView: View {
                     .padding(.vertical, DesignTokens.Spacing.sm)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background {
-                        Rectangle().fill(DesignTokens.Material.footer.swiftUIMaterial)
+                        GitRelayVisualEffectView(
+                            material: DesignTokens.Material.footer.nsMaterial,
+                            blendingMode: DesignTokens.Material.footer.blendingMode
+                        )
                     }
             }
 
@@ -69,7 +72,10 @@ struct SidebarView: View {
                     .padding(.horizontal, DesignTokens.Spacing.sidebarChromeHorizontal)
                     .padding(.vertical, DesignTokens.Spacing.sm)
                     .background {
-                        Rectangle().fill(DesignTokens.Material.footer.swiftUIMaterial)
+                        GitRelayVisualEffectView(
+                            material: DesignTokens.Material.footer.nsMaterial,
+                            blendingMode: DesignTokens.Material.footer.blendingMode
+                        )
                     }
             }
         }
