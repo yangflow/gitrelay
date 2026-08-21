@@ -60,9 +60,11 @@ struct MenuBarRepoRowView: View {
             if isHovered {
                 Button(action: onSync) {
                     Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.body)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .opacity(canSync ? 1 : 0.4)
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(QuietPressButtonStyle())
                 .help("Sync Now")
                 .disabled(!canSync)
             }
