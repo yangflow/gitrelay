@@ -3,6 +3,10 @@ import Foundation
 nonisolated struct DestructivePushPlan: Equatable, Sendable {
     var deletedRefs: [String]
     var forcedUpdateRefs: [String]
+    /// Commits the destination's branches hold that no source branch reaches.
+    /// Nil when git could not be asked, so the sheet drops the number rather
+    /// than claiming zero.
+    var destinationOnlyCommits: Int?
 
     var isDestructive: Bool {
         !deletedRefs.isEmpty || !forcedUpdateRefs.isEmpty
@@ -12,12 +16,13 @@ nonisolated struct DestructivePushPlan: Equatable, Sendable {
         String(localized: "\(deletedRefs.count) deletions, \(forcedUpdateRefs.count) forced updates")
     }
 
-    /// Confirmation dialog body: delete / force-update counts.
-    var confirmationPrompt: String {
-        String(localized: "This will delete \(deletedRefs.count) refs and force-update \(forcedUpdateRefs.count) refs. Continue?")
-    }
-
     static let empty = DestructivePushPlan(deletedRefs: [], forcedUpdateRefs: [])
+
+    func withDestinationOnlyCommits(_ count: Int?) -> DestructivePushPlan {
+        var updated = self
+        updated.destinationOnlyCommits = count
+        return updated
+    }
 
     nonisolated static func parse(gitOutput: String) -> DestructivePushPlan {
         var deletedRefs: [String] = []

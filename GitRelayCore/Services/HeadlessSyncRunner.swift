@@ -43,8 +43,10 @@ enum HeadlessSyncRunner {
             repo: repo,
             retryPolicy: NotificationPreferences.gitRetryPolicy()
         )
+        // No UI here, so `.strict` stops the sync and `.auto` overwrites as before.
+        // Nothing silently reroutes to check branches: that is the user's call.
         engine.confirmDestructivePush = { plan, _ in
-            !repos[index].destructivePushPolicy.requiresConfirmation(for: plan)
+            repos[index].destructivePushPolicy.requiresConfirmation(for: plan) ? .cancel : .overwrite
         }
 
         var latestRecord: SyncRecord?
