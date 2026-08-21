@@ -47,6 +47,44 @@ enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
+/// Six locked top tabs. No sidebar, no extra panes.
+private struct SettingsPaneTabBar: View {
+    @Binding var selection: SettingsPane
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .bottom, spacing: DesignTokens.Spacing.paneTabGap) {
+                ForEach(SettingsPane.allCases) { pane in
+                    tab(pane)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, DesignTokens.Spacing.paneHeaderHorizontal)
+
+            Divider()
+        }
+    }
+
+    private func tab(_ pane: SettingsPane) -> some View {
+        let isSelected = pane == selection
+        return Button {
+            selection = pane
+        } label: {
+            VStack(spacing: DesignTokens.Spacing.xs) {
+                Text(pane.title)
+                    .font(.callout.weight(isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                Rectangle()
+                    .fill(isSelected ? Color.accentColor : Color.clear)
+                    .frame(height: DesignTokens.Size.paneTabUnderline)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
+    }
+}
+
 struct SettingsView: View {
     @Environment(NotificationPreferencesStore.self) private var preferencesStore
     @Environment(SecurityPreferencesStore.self) private var securityStore
@@ -63,28 +101,15 @@ struct SettingsView: View {
     @State private var configMessage: String?
 
     var body: some View {
-        NavigationSplitView {
-            List(SettingsPane.allCases, selection: $selectedPane) { pane in
-                Label(pane.title, systemImage: pane.systemImage)
-                    .tag(pane)
-            }
-            .listStyle(.sidebar)
-            .gitRelaySettingsSidebarColumnWidth()
-            .gitRelayChrome(.sidebar)
-        } detail: {
+        VStack(spacing: 0) {
+            PaneHeaderView(title: MainSidebarItem.settings.title)
+
+            SettingsPaneTabBar(selection: $selectedPane)
+
             detailForm
                 .formStyle(.grouped)
-                .frame(
-                    minWidth: DesignTokens.Layout.settingsDetailMinWidth,
-                    minHeight: DesignTokens.Layout.settingsMinHeight
-                )
-                .padding(DesignTokens.Spacing.settingsForm)
-                .gitRelayChrome(.sheet)
         }
-        .frame(
-            minWidth: DesignTokens.Layout.settingsMinWidth,
-            minHeight: DesignTokens.Layout.settingsMinHeight
-        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
             loginItem.refresh()
             syncCacheControlsFromStore()
@@ -265,6 +290,8 @@ struct SettingsView: View {
         }
 
         Section {
+            Toggle(String(localized: "Pause Scheduled Sync"), isOn: $store.preferences.scheduledSyncManuallyPaused)
+
             Toggle(String(localized: "Pause scheduled sync in Low Power Mode"), isOn: $store.preferences.pauseOnLowPowerMode)
             Toggle(String(localized: "Pause scheduled sync on expensive networks or hotspots"), isOn: $store.preferences.pauseOnExpensiveNetwork)
 

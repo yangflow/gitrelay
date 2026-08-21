@@ -17,6 +17,16 @@ nonisolated enum GitProvider: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// SF Symbol stand-in for the provider. GitRelay ships no third-party
+    /// brand marks, so these are neutral glyphs rather than logos.
+    var symbolName: String {
+        switch self {
+        case .github: "chevron.left.forwardslash.chevron.right"
+        case .gitlab: "arrow.triangle.branch"
+        case .gitea:  "cup.and.saucer"
+        }
+    }
+
     var apiBaseURL: URL {
         switch self {
         case .github: URL(string: "https://api.github.com")!

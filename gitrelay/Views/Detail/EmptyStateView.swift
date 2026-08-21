@@ -15,7 +15,7 @@ struct EmptyStateView: View {
                 .foregroundStyle(.tertiary)
                 .accessibilityHidden(true)
 
-            Text(String(localized: "Select a repository, or drop a git URL to add one."))
+            Text(String(localized: "Add a repository, or drop a git URL to create a pair."))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

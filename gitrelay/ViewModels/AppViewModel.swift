@@ -60,6 +60,37 @@ final class AppViewModel {
         )
     }
 
+    /// Run state, counts, and pause affordance for the sidebar footer.
+    var sidebarFooterSummary: SidebarFooterSummary {
+        SidebarFooterSummary.make(
+            repos: repos,
+            statuses: statuses,
+            pauseReason: scheduledSyncPauseReason
+        )
+    }
+
+    /// Repos holding or waiting for a sync slot, in queue order.
+    var syncQueueEntries: [SyncQueueEntry] {
+        SyncQueueList.entries(repos: repos, statuses: statuses, syncPhases: syncPhases)
+    }
+
+    var isScheduledSyncManuallyPaused: Bool {
+        notificationPreferences.preferences.scheduledSyncManuallyPaused
+    }
+
+    /// Explicitly pauses or resumes frequency-driven syncs. Manual sync and
+    /// instant webhook sync are unaffected; resuming runs quiet-hours catch-up.
+    func setScheduledSyncManuallyPaused(_ paused: Bool) {
+        var prefs = notificationPreferences.preferences
+        guard prefs.scheduledSyncManuallyPaused != paused else { return }
+        prefs.scheduledSyncManuallyPaused = paused
+        notificationPreferences.preferences = prefs
+    }
+
+    func toggleScheduledSyncPause() {
+        setScheduledSyncManuallyPaused(!isScheduledSyncManuallyPaused)
+    }
+
     var presentedDestructiveConfirmation: DestructivePushConfirmationRequest? {
         pendingDestructiveConfirmations.first
     }
