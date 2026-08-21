@@ -164,7 +164,6 @@ TRANSLATIONS: dict[str, str] = {
     "同步此组": "Sync This Group",
     "校验此组": "Verify This Group",
     "编辑组内所有仓库频率...": "Edit Frequency for All Repositories in Group...",
-    "组操作": "Group Actions",
     "立即校验": "Verify Now",
     "编辑...": "Edit...",
     "删除...": "Delete...",

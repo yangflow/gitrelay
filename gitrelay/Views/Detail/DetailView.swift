@@ -21,8 +21,8 @@ struct DetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toolbar {
-            // Pin Add / Browse on the detail toolbar only so sidebar collapse
-            // never reparents these controls into the window chrome.
+            // Pin Add / Browse / Sync All on the detail toolbar only so sidebar
+            // collapse never reparents these controls into the window chrome.
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     onAdd()
@@ -38,6 +38,16 @@ struct DetailView: View {
                     Label(String(localized: "Browse Remote Repositories"), systemImage: "magnifyingglass")
                 }
                 .help(String(localized: "Browse and select from GitHub or GitLab"))
+            }
+            if !appVM.repos.isEmpty {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        appVM.triggerSyncAll()
+                    } label: {
+                        Label(String(localized: "Sync All"), systemImage: "arrow.triangle.2.circlepath")
+                    }
+                    .help(String(localized: "Sync All"))
+                }
             }
         }
     }

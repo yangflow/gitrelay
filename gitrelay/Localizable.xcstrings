@@ -3095,23 +3095,6 @@
         }
       }
     },
-    "Group Actions": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Group Actions"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "组操作"
-          }
-        }
-      }
-    },
     "Group by Tag": {
       "extractionState": "manual",
       "localizations": {

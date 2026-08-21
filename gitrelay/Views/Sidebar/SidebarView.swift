@@ -80,21 +80,6 @@ struct SidebarView: View {
                     }
             }
         }
-        .toolbar {
-            // Add / Browse live on the detail toolbar only (issue #81).
-            if !appVM.repos.isEmpty {
-                ToolbarItem(placement: .automatic) {
-                    Button("Sync All", systemImage: "arrow.triangle.2.circlepath") {
-                        appVM.triggerSyncAll()
-                    }
-                }
-            }
-            if displayMode == .byTag {
-                ToolbarItem(placement: .automatic) {
-                    tagGroupToolbarMenu
-                }
-            }
-        }
         .sheet(item: $batchFrequencyGroup) { group in
             EditTagGroupFrequencySheet(
                 tag: group.tag,
@@ -287,17 +272,6 @@ struct SidebarView: View {
             batchFrequencyGroup = TagGroupSheetItem(tag: tag)
         }
         .disabled(repoCount == 0)
-    }
-
-    private var tagGroupToolbarMenu: some View {
-        Menu("Group Actions", systemImage: "tag") {
-            ForEach(RepoTagGrouping.sections(from: appVM.repos)) { section in
-                Menu("\(section.title) (\(section.repos.count))") {
-                    tagGroupContextMenu(tag: section.tag, repoCount: section.repos.count)
-                }
-            }
-        }
-        .disabled(appVM.repos.isEmpty)
     }
 
     private func confirmDelete(id: UUID) async {
