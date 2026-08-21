@@ -101,6 +101,14 @@ enum DesignTokens {
         case detail
         case footer
 
+        var tokenName: String {
+            switch self {
+            case .sidebar: return "sidebar"
+            case .detail: return "detail"
+            case .footer: return "footer"
+            }
+        }
+
         var nsMaterial: NSVisualEffectView.Material {
             switch self {
             case .sidebar:
