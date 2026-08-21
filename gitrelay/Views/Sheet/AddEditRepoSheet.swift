@@ -85,15 +85,15 @@ struct AddEditRepoSheet: View {
     private var footer: some View {
         HStack {
             if editingRepo == nil, vm.showsMoreOptions {
-                Button("Back") {
+                Button(String(localized: "Back")) {
                     vm.backToBasics()
                 }
             }
             Spacer()
-            Button("Cancel") { dismiss() }
+            Button(String(localized: "Cancel")) { dismiss() }
                 .keyboardShortcut(.escape)
             if showsBasicsOnly {
-                Button("More Options") {
+                Button(String(localized: "More Options")) {
                     _ = vm.openMoreOptions()
                 }
             }
@@ -112,7 +112,7 @@ struct AddEditRepoSheet: View {
                 Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
             }
         } header: {
-            Text("Name")
+            Text(String(localized: "Name"))
         }
 
         Section {
@@ -122,7 +122,7 @@ struct AddEditRepoSheet: View {
                 Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
             }
             AuthFieldView(
-                label: "Source",
+                label: String(localized: "Source"),
                 remoteURL: vm.srcURL,
                 mode: $vm.srcAuthMode,
                 keyPath: $vm.srcKeyPath,
@@ -130,7 +130,7 @@ struct AddEditRepoSheet: View {
             )
             .id(AddEditRepoScrollTarget.sourceAuth)
         } header: {
-            Text("Source Repository")
+            Text(String(localized: "Source Repository"))
         }
 
         Section {
@@ -150,17 +150,17 @@ struct AddEditRepoSheet: View {
                 Button {
                     vm.addTarget()
                 } label: {
-                    Label("Add Target", systemImage: "plus.circle")
+                    Label(String(localized: "Add Target"), systemImage: "plus.circle")
                 }
             }
         } header: {
-            Text("Targets")
+            Text(String(localized: "Targets"))
         } footer: {
             if primaryTargetOnly {
-                Text("Add more targets under More Options.")
+                Text(String(localized: "Add more targets under More Options."))
                     .font(.caption)
             } else {
-                Text("A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync.")
+                Text(String(localized: "A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync."))
                     .font(.caption)
             }
         }
@@ -168,7 +168,7 @@ struct AddEditRepoSheet: View {
         Section {
             FrequencyPickerView(frequency: $vm.frequency)
         } header: {
-            Text("Sync Frequency")
+            Text(String(localized: "Sync Frequency"))
         }
     }
 
@@ -189,12 +189,12 @@ struct AddEditRepoSheet: View {
                 Button {
                     vm.addTarget()
                 } label: {
-                    Label("Add Target", systemImage: "plus.circle")
+                    Label(String(localized: "Add Target"), systemImage: "plus.circle")
                 }
             } header: {
-                Text("Targets")
+                Text(String(localized: "Targets"))
             } footer: {
-                Text("A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync.")
+                Text(String(localized: "A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync."))
                     .font(.caption)
             }
         }
@@ -205,21 +205,21 @@ struct AddEditRepoSheet: View {
                 suggestions: appVM.allKnownTags
             )
         } header: {
-            Text("Tags")
+            Text(String(localized: "Tags"))
         }
 
         Section {
             TextField("main", text: $vm.defaultBranch)
                 .font(.system(.body, design: .monospaced))
-            Text("Integrity verification compares this branch's tip and tree hash on src and dst.")
+            Text(String(localized: "Integrity verification compares this branch's tip and tree hash on src and dst."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } header: {
-            Text("Verification Branch")
+            Text(String(localized: "Verification Branch"))
         }
 
         Section {
-            Picker("Policy", selection: $vm.destructivePushPolicy) {
+            Picker(String(localized: "Policy"), selection: $vm.destructivePushPolicy) {
                 ForEach(DestructivePushPolicy.allCases) { policy in
                     Text(policy.displayName).tag(policy)
                 }
@@ -230,20 +230,20 @@ struct AddEditRepoSheet: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } header: {
-            Text("Destructive Push Protection")
+            Text(String(localized: "Destructive Push Protection"))
         }
 
         Section {
-            Toggle("Mirror Releases and Binary Assets", isOn: $vm.mirrorReleases)
-            Text("After syncing the git repository, incrementally copy source Release tags, titles, bodies, and attachments such as .dmg and .tar.gz files to each enabled target. A GitHub or GitLab API token is required.")
+            Toggle(String(localized: "Mirror Releases and Binary Assets"), isOn: $vm.mirrorReleases)
+            Text(String(localized: "After syncing the git repository, incrementally copy source Release tags, titles, bodies, and attachments such as .dmg and .tar.gz files to each enabled target. A GitHub or GitLab API token is required."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } header: {
-            Text("Release Mirroring")
+            Text(String(localized: "Release Mirroring"))
         }
 
         Section {
-            Picker("Git LFS", selection: $vm.lfsMirrorMode) {
+            Picker(String(localized: "Git LFS"), selection: $vm.lfsMirrorMode) {
                 ForEach(LFSMirrorMode.allCases) { mode in
                     Text(mode.displayName).tag(mode)
                 }
@@ -260,14 +260,14 @@ struct AddEditRepoSheet: View {
                     .foregroundStyle(.secondary)
             }
         } header: {
-            Text("Git LFS Objects")
+            Text(String(localized: "Git LFS Objects"))
         }
 
         Section {
-            Toggle("Allow Instant Webhook Sync", isOn: $vm.webhookEnabled)
+            Toggle(String(localized: "Allow Instant Webhook Sync"), isOn: $vm.webhookEnabled)
             if vm.webhookEnabled {
                 if let editing = editingRepo {
-                    Text("Path: /hook/\(editing.webhookPathID)")
+                    Text(String(localized: "Path: /hook/\(editing.webhookPathID)"))
                         .font(.system(.caption, design: .monospaced))
                         .textSelection(.enabled)
 
@@ -278,27 +278,27 @@ struct AddEditRepoSheet: View {
                             .textSelection(.enabled)
                             .lineLimit(2)
                         Spacer()
-                        Button("Copy URL") { ClipboardService.copy(url) }
+                        Button(String(localized: "Copy URL")) { ClipboardService.copy(url) }
                             .font(.caption)
                     }
 
                     if let secret = WebhookSecretStore.loadSecret(repoID: editing.id) {
                         HStack {
-                            Text("HMAC secret saved in Keychain")
+                            Text(String(localized: "HMAC secret saved in Keychain"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Spacer()
-                            Button("Copy Secret") { ClipboardService.copy(secret) }
+                            Button(String(localized: "Copy Secret")) { ClipboardService.copy(secret) }
                                 .font(.caption)
                         }
                     }
                 } else {
-                    Text("Saving generates a /hook/<repo-id> path and an HMAC secret stored in Keychain. Also enable the local listener in Settings.")
+                    Text(String(localized: "Saving generates a /hook/<repo-id> path and an HMAC secret stored in Keychain. Also enable the local listener in Settings."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                Toggle("Try to Register the Webhook Through the GitHub API When Saving", isOn: $vm.registerWebhookOnSave)
+                Toggle(String(localized: "Try to Register the Webhook Through the GitHub API When Saving"), isOn: $vm.registerWebhookOnSave)
                 if vm.registerWebhookOnSave {
                     if let disclosure = ProviderTokenUsage.webhookRegistration(provider: .github).disclosureText {
                         Text(disclosure)
@@ -318,21 +318,21 @@ struct AddEditRepoSheet: View {
                 }
             }
         } header: {
-            Text("Webhook")
+            Text(String(localized: "Webhook"))
         } footer: {
-            Text("Sync immediately after receiving a verified push event, independent of the frequency schedule. Enable the local listener in Settings → Webhook. Cloudflare Tunnel or Tailscale Funnel can optionally provide external access.")
+            Text(String(localized: "Sync immediately after receiving a verified push event, independent of the frequency schedule. Enable the local listener in Settings → Webhook. Cloudflare Tunnel or Tailscale Funnel can optionally provide external access."))
         }
 
         Section {
-            DisclosureGroup("Advanced Options") {
-                TextField("Clone Depth (Blank = Full History)", text: $vm.depthText)
+            DisclosureGroup(String(localized: "Advanced Options")) {
+                TextField(String(localized: "Clone Depth (Blank = Full History)"), text: $vm.depthText)
                     .font(.system(.body, design: .monospaced))
                 if let err = vm.depthError {
                     Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
                 }
 
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-                    Text("Fetch Refspecs (One per Line)")
+                    Text(String(localized: "Fetch Refspecs (One per Line)"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     TextEditor(text: $vm.refSpecsText)
@@ -340,7 +340,7 @@ struct AddEditRepoSheet: View {
                         .frame(minHeight: 72)
                 }
 
-                Text("By default, all branches and tags are synced. You can limit this to main and v* tags, for example:\n+refs/heads/main:refs/heads/main\n+refs/tags/v*:refs/tags/v*")
+                Text(String(localized: "By default, all branches and tags are synced. You can limit this to main and v* tags, for example:\n+refs/heads/main:refs/heads/main\n+refs/tags/v*:refs/tags/v*"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -359,7 +359,7 @@ struct AddEditRepoSheet: View {
 
         Section {
             Label {
-                Text("GitRelay performs a dry run first. Strict Protection asks for confirmation before deletions or forced updates; canceling blocks the sync and records a failure. Run Automatically preserves traditional mirror behavior.")
+                Text(String(localized: "GitRelay performs a dry run first. Strict Protection asks for confirmation before deletions or forced updates; canceling blocks the sync and records a failure. Run Automatically preserves traditional mirror behavior."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } icon: {

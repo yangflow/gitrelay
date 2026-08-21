@@ -6,7 +6,7 @@ struct BranchListView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
-            Text("Branches")
+            Text(String(localized: "Branches"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -15,7 +15,7 @@ struct BranchListView: View {
                     .scaleEffect(0.7)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else if branches.isEmpty {
-                Text("No Branches Detected (Visible After Sync)")
+                Text(String(localized: "No Branches Detected (Visible After Sync)"))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             } else {

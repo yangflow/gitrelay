@@ -82,11 +82,11 @@ struct ReleaseMirrorStatusView: View {
                 Text(tag.tagName)
                     .font(.system(.body, design: .monospaced))
                 if tag.totalAssets > 0 {
-                    Text("\(tag.completedCount)/\(tag.totalAssets) assets")
+                    Text(String(localized: "\(tag.completedCount)/\(tag.totalAssets) assets"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("No Attachments")
+                    Text(String(localized: "No Attachments"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

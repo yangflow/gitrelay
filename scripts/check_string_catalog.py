@@ -14,6 +14,45 @@ CATALOGS = (
 )
 REQUIRED_LOCALES = ("en", "zh-Hans")
 
+# Recent UI keys from #55–#73 that must stay bilingual (issue #65).
+REQUIRED_KEYS = {
+    ROOT / "gitrelay" / "Localizable.xcstrings": (
+        "Queued",
+        "Sync Concurrency",
+        "Max concurrent syncs: %lld",
+        "Manual, webhook, and scheduled syncs share this limit. Extra requests wait in a queue (Queued) until a slot frees. Quitting the app discards the queue.",
+        "Open at Login",
+        "Keep in Menu Bar when closing main window",
+        "Startup & Menu Bar",
+        "When enabled, closing the main window leaves GitRelay in the menu bar (Dock icon may hide). Turn off to quit when the last window closes.",
+        "Open at Login needs approval in System Settings → General → Login Items.",
+        "Could not enable Open at Login. Check System Settings → Login Items.",
+        "Security",
+        "Notifications",
+        "Schedule",
+        "Webhook",
+        "Cache",
+        "Configuration",
+        "More Options",
+        "Add and Start Syncing",
+        "Add more targets under More Options.",
+        "Re-enter credentials",
+        "Open Log",
+        "Source repository not found",
+        "Destination repository not found",
+        "Personal Access Token",
+        "Provider",
+        "Gitea Host",
+        "Gitea API Token",
+    ),
+    ROOT / "gitrelayWidget" / "Localizable.xcstrings": (
+        "Queued",
+        "✓ %lld",
+        "✗ %lld",
+        "— %lld",
+    ),
+}
+
 
 def validate_catalog(catalog: Path) -> list[str]:
     if not catalog.is_file():
@@ -38,6 +77,23 @@ def validate_catalog(catalog: Path) -> list[str]:
             value = unit.get("value")
             if not isinstance(value, str) or value == "":
                 errors.append(f"{catalog.relative_to(ROOT)} {key!r}: missing {locale} value")
+
+    for key in REQUIRED_KEYS.get(catalog, ()):
+        entry = strings.get(key)
+        if not isinstance(entry, dict):
+            errors.append(f"{catalog.relative_to(ROOT)}: missing required key {key!r}")
+            continue
+        locs = entry.get("localizations")
+        if not isinstance(locs, dict):
+            errors.append(f"{catalog.relative_to(ROOT)} {key!r}: missing localizations")
+            continue
+        for locale in REQUIRED_LOCALES:
+            unit = locs.get(locale, {}).get("stringUnit", {})
+            value = unit.get("value")
+            if not isinstance(value, str) or value == "":
+                errors.append(
+                    f"{catalog.relative_to(ROOT)} required key {key!r}: missing {locale} value"
+                )
     return errors
 
 

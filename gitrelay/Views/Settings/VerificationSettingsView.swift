@@ -6,30 +6,30 @@ struct VerificationSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Picker("Verification Frequency", selection: frequencyBinding) {
+                Picker(String(localized: "Verification Frequency"), selection: frequencyBinding) {
                     ForEach(VerificationFrequency.allCases) { frequency in
                         Text(frequency.displayName).tag(frequency)
                     }
                 }
 
                 Stepper(value: sampleSizeBinding, in: VerificationPreferences.sampleSizeRange) {
-                    Text("Sample \(appVM.verificationPreferences.sampleSize) repositories each time")
+                    Text(String(localized: "Sample \(appVM.verificationPreferences.sampleSize) repositories each time"))
                 }
 
                 if let next = appVM.nextVerificationFireDate() {
-                    LabeledContent("Next Sample") {
+                    LabeledContent(String(localized: "Next Sample")) {
                         Text(next, format: .relative(presentation: .named))
                             .foregroundStyle(.secondary)
                     }
                 }
             } header: {
-                Text("Backup Integrity Verification")
+                Text(String(localized: "Backup Integrity Verification"))
             } footer: {
-                Text("Periodically compare the src/dst tip SHA and tree hash for a random sample of repositories. Mismatches are marked as content divergence.")
+                Text(String(localized: "Periodically compare the src/dst tip SHA and tree hash for a random sample of repositories. Mismatches are marked as content divergence."))
             }
 
             Section {
-                Button("Verify a Sample Now") {
+                Button(String(localized: "Verify a Sample Now")) {
                     appVM.triggerVerifySampleNow()
                 }
                 .disabled(appVM.repos.isEmpty)

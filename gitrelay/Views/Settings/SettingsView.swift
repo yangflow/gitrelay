@@ -187,7 +187,7 @@ struct SettingsView: View {
         } header: {
             Text(String(localized: "Security"))
         } footer: {
-            Text("When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action.")
+            Text(String(localized: "When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action."))
         }
     }
 
@@ -196,20 +196,20 @@ struct SettingsView: View {
         @Bindable var store = preferencesStore
 
         Section {
-            Toggle("Enable sync failure notifications", isOn: $store.preferences.notificationsEnabled)
+            Toggle(String(localized: "Enable sync failure notifications"), isOn: $store.preferences.notificationsEnabled)
 
-            Toggle("Notify on the first failure", isOn: $store.preferences.notifyOnFirstFailure)
+            Toggle(String(localized: "Notify on the first failure"), isOn: $store.preferences.notifyOnFirstFailure)
                 .disabled(!store.preferences.notificationsEnabled)
 
             Stepper(
                 value: $store.preferences.consecutiveFailureThreshold,
                 in: 1...20
             ) {
-                Text("Consecutive failure threshold: \(store.preferences.consecutiveFailureThreshold)")
+                Text(String(localized: "Consecutive failure threshold: \(store.preferences.consecutiveFailureThreshold)"))
             }
             .disabled(!store.preferences.notificationsEnabled)
 
-            Picker("Notification Level", selection: $store.preferences.interruptionLevel) {
+            Picker(String(localized: "Notification Level"), selection: $store.preferences.interruptionLevel) {
                 ForEach(NotificationInterruptionPreference.allCases) { level in
                     Text(level.displayName).tag(level)
                 }
@@ -220,9 +220,9 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } header: {
-            Text("Failure Notifications")
+            Text(String(localized: "Failure Notifications"))
         } footer: {
-            Text("Notify only on the first failure (optional), or when consecutive failures reach the threshold and its multiples, to avoid alerts from brief network interruptions. Notifications are deferred while Focus is on and combined into a summary afterward.")
+            Text(String(localized: "Notify only on the first failure (optional), or when consecutive failures reach the threshold and its multiples, to avoid alerts from brief network interruptions. Notifications are deferred while Focus is on and combined into a summary afterward."))
         }
     }
 
@@ -265,8 +265,8 @@ struct SettingsView: View {
         }
 
         Section {
-            Toggle("Pause scheduled sync in Low Power Mode", isOn: $store.preferences.pauseOnLowPowerMode)
-            Toggle("Pause scheduled sync on expensive networks or hotspots", isOn: $store.preferences.pauseOnExpensiveNetwork)
+            Toggle(String(localized: "Pause scheduled sync in Low Power Mode"), isOn: $store.preferences.pauseOnLowPowerMode)
+            Toggle(String(localized: "Pause scheduled sync on expensive networks or hotspots"), isOn: $store.preferences.pauseOnExpensiveNetwork)
 
             Toggle(String(localized: "Enable quiet hours"), isOn: quietHoursEnabledBinding)
 
@@ -292,9 +292,9 @@ struct SettingsView: View {
                     .font(.callout)
             }
         } header: {
-            Text("Scheduled Sync Pausing")
+            Text(String(localized: "Scheduled Sync Pausing"))
         } footer: {
-            Text("This affects only syncs triggered automatically by frequency. Manual sync and instant webhook sync are unaffected.")
+            Text(String(localized: "This affects only syncs triggered automatically by frequency. Manual sync and instant webhook sync are unaffected."))
         }
     }
 
@@ -303,12 +303,12 @@ struct SettingsView: View {
         @Bindable var webhookStore = appVM.webhookPreferences
 
         Section {
-            Toggle("Enable local webhook listener", isOn: $webhookStore.preferences.listenerEnabled)
+            Toggle(String(localized: "Enable local webhook listener"), isOn: $webhookStore.preferences.listenerEnabled)
 
             if webhookStore.preferences.listenerEnabled {
                 if let port = appVM.webhookListenPort {
-                    LabeledContent("Listening Address") {
-                        Text("127.0.0.1:\(port)")
+                    LabeledContent(String(localized: "Listening Address")) {
+                        Text(String(localized: "127.0.0.1:\(port)"))
                             .font(.system(.body, design: .monospaced))
                             .textSelection(.enabled)
                     }
@@ -317,7 +317,7 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Picker("External Access", selection: $webhookStore.preferences.exposureMode) {
+                Picker(String(localized: "External Access"), selection: $webhookStore.preferences.exposureMode) {
                     ForEach(WebhookExposureMode.allCases) { mode in
                         Text(mode.displayName).tag(mode)
                     }
@@ -346,7 +346,7 @@ struct SettingsView: View {
                                 command: WebhookURLTemplate.tailscaleFunnelCommand(port: port)
                             )
                         case .relaySketch:
-                            Text("Relay mode is a configuration example only. A Worker or GitHub App can forward to the local listener using long polling; this version does not deploy a hosted service.")
+                            Text(String(localized: "Relay mode is a configuration example only. A Worker or GitHub App can forward to the local listener using long polling; this version does not deploy a hosted service."))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         case .off:
@@ -356,9 +356,9 @@ struct SettingsView: View {
                 }
             }
         } header: {
-            Text("Instant Webhook Sync")
+            Text(String(localized: "Instant Webhook Sync"))
         } footer: {
-            Text("Off by default. When enabled, a random port on 127.0.0.1 accepts POST /hook/<id>. The HMAC secret is stored only in Keychain. Cloudflare and Tailscale are optional runtime dependencies that must be installed locally.")
+            Text(String(localized: "Off by default. When enabled, a random port on 127.0.0.1 accepts POST /hook/<id>. The HMAC secret is stored only in Keychain. Cloudflare and Tailscale are optional runtime dependencies that must be installed locally."))
         }
     }
 
@@ -418,7 +418,7 @@ struct SettingsView: View {
         }
 
         Section {
-            Button("Restore Defaults") {
+            Button(String(localized: "Restore Defaults")) {
                 preferencesStore.resetToDefaults()
                 securityStore.resetToDefaults()
                 cacheStore.resetToDefaults()
@@ -553,7 +553,7 @@ struct SettingsView: View {
                     .font(.system(.caption, design: .monospaced))
                     .textSelection(.enabled)
                 Spacer(minLength: DesignTokens.Spacing.sm)
-                Button("Copy") {
+                Button(String(localized: "Copy")) {
                     ClipboardService.copy(command)
                 }
                 .font(.caption)

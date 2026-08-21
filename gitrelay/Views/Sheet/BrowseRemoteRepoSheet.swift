@@ -94,7 +94,7 @@ struct BrowseRemoteRepoSheet: View {
     private var connectView: some View {
         Form {
             Section {
-                Picker("Type", selection: $vm.provider) {
+                Picker(String(localized: "Type"), selection: $vm.provider) {
                     ForEach(GitProvider.listingCases) { p in
                         Text(p.displayName).tag(p)
                     }
@@ -120,7 +120,7 @@ struct BrowseRemoteRepoSheet: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } header: {
-                Text("Provider")
+                Text(String(localized: "Provider"))
             }
 
             if vm.provider == .gitlab {
@@ -131,11 +131,11 @@ struct BrowseRemoteRepoSheet: View {
                         .onChange(of: vm.gitlabHost) { _, _ in
                             vm.persistGitLabHost()
                         }
-                    Text("Leave blank to use gitlab.com. The /api/v4 path is appended automatically.")
+                    Text(String(localized: "Leave blank to use gitlab.com. The /api/v4 path is appended automatically."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } header: {
-                    Text("GitLab Host (Self-Hosted Instance Optional)")
+                    Text(String(localized: "GitLab Host (Self-Hosted Instance Optional)"))
                 }
             }
 
@@ -156,13 +156,13 @@ struct BrowseRemoteRepoSheet: View {
                         vm.sourceScopeValidation = nil
                         vm.refreshCachedSourceScopeValidation()
                     }
-                Toggle("Save to Keychain (Autofill Next Time)", isOn: $vm.rememberToken)
+                Toggle(String(localized: "Save to Keychain (Autofill Next Time)"), isOn: $vm.rememberToken)
             } header: {
-                Text("Personal Access Token")
+                Text(String(localized: "Personal Access Token"))
             }
 
             Section {
-                Picker("Select Scope", selection: $vm.scopeKind) {
+                Picker(String(localized: "Select Scope"), selection: $vm.scopeKind) {
                     ForEach(BrowseRemoteRepoViewModel.ScopeKind.allCases) { k in
                         Text(k.label).tag(k)
                     }
@@ -178,7 +178,7 @@ struct BrowseRemoteRepoSheet: View {
                         .textFieldStyle(.roundedBorder)
                 }
             } header: {
-                Text("Scope")
+                Text(String(localized: "Scope"))
             }
 
             if let err = vm.connectError {
@@ -201,10 +201,10 @@ struct BrowseRemoteRepoSheet: View {
                 TextField("Search Names or Descriptions", text: $vm.searchText)
                     .textFieldStyle(.plain)
                 Spacer()
-                Button("Select All Visible") { vm.selectAllVisible() }
+                Button(String(localized: "Select All Visible")) { vm.selectAllVisible() }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
-                Button("Clear") { vm.clearSelection() }
+                Button(String(localized: "Clear")) { vm.clearSelection() }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
             }
@@ -252,11 +252,11 @@ struct BrowseRemoteRepoSheet: View {
     private var targetView: some View {
         Form {
             Section {
-                Text("Source URLs are generated from the selected repositories (choose SSH or HTTPS with the source authentication option below)")
+                Text(String(localized: "Source URLs are generated from the selected repositories (choose SSH or HTTPS with the source authentication option below)"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } header: {
-                Text("\(vm.selectedIDs.count) repositories selected")
+                Text(String(localized: "\(vm.selectedIDs.count) repositories selected"))
             }
 
             Section {
@@ -268,11 +268,11 @@ struct BrowseRemoteRepoSheet: View {
                     token: $vm.sourceToken
                 )
             } header: {
-                Text("Source Repository Authentication (for git clone/fetch)")
+                Text(String(localized: "Source Repository Authentication (for git clone/fetch)"))
             }
 
             Section {
-                Toggle("Automatically Create Repositories on the Target (Gitea)", isOn: $vm.targetAutoCreate)
+                Toggle(String(localized: "Automatically Create Repositories on the Target (Gitea)"), isOn: $vm.targetAutoCreate)
                     .onChange(of: vm.targetAutoCreate) { _, enabled in
                         if enabled {
                             Task { await vm.prepareTargetConfiguration() }
@@ -286,7 +286,7 @@ struct BrowseRemoteRepoSheet: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } header: {
-                Text("Target Repository")
+                Text(String(localized: "Target Repository"))
             }
 
             if vm.targetAutoCreate {
@@ -296,11 +296,11 @@ struct BrowseRemoteRepoSheet: View {
                     TextField("git@github.com:myuser/{name}.git", text: $vm.targetURLTemplate)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.caption, design: .monospaced))
-                    Text("Use {name} as the repository name placeholder.")
+                    Text(String(localized: "Use {name} as the repository name placeholder."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } header: {
-                    Text("Target URL Template")
+                    Text(String(localized: "Target URL Template"))
                 }
             }
 
@@ -313,7 +313,7 @@ struct BrowseRemoteRepoSheet: View {
                     token: $vm.targetToken
                 )
             } header: {
-                Text("Target Repository Authentication (for git push)")
+                Text(String(localized: "Target Repository Authentication (for git push)"))
             }
 
             Section {
@@ -321,7 +321,7 @@ struct BrowseRemoteRepoSheet: View {
                     .textFieldStyle(.roundedBorder)
                 FrequencyPickerView(frequency: $vm.frequency)
             } header: {
-                Text("Naming & Frequency")
+                Text(String(localized: "Naming & Frequency"))
             }
 
             if !vm.selectedRepos.isEmpty {
@@ -329,16 +329,16 @@ struct BrowseRemoteRepoSheet: View {
                     ForEach(vm.selectedRepos.prefix(3), id: \.id) { repo in
                         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                             Text(vm.previewName(for: repo)).font(.caption).bold()
-                            Text("src: \(vm.sourceURL(for: repo))")
+                            Text(String(localized: "src: \(vm.sourceURL(for: repo))"))
                                 .font(.system(.caption2, design: .monospaced))
                                 .foregroundStyle(.secondary)
-                            Text("dst: \(vm.previewURL(for: repo))")
+                            Text(String(localized: "dst: \(vm.previewURL(for: repo))"))
                                 .font(.system(.caption2, design: .monospaced))
                                 .foregroundStyle(.secondary)
                         }
                     }
                 } header: {
-                    Text("Preview (First 3)")
+                    Text(String(localized: "Preview (First 3)"))
                 }
             }
 
@@ -370,11 +370,11 @@ struct BrowseRemoteRepoSheet: View {
                 .onChange(of: vm.targetCreateHost) { _, _ in
                     vm.persistGiteaHost()
                 }
-            Text("The /api/v1 path is appended automatically.")
+            Text(String(localized: "The /api/v1 path is appended automatically."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } header: {
-            Text("Gitea Host")
+            Text(String(localized: "Gitea Host"))
         }
 
         Section {
@@ -386,9 +386,9 @@ struct BrowseRemoteRepoSheet: View {
                     vm.targetScopeValidation = nil
                     vm.refreshCachedTargetScopeValidation()
                 }
-            Toggle("Save to Keychain (Autofill Next Time)", isOn: $vm.rememberTargetCreateToken)
+            Toggle(String(localized: "Save to Keychain (Autofill Next Time)"), isOn: $vm.rememberTargetCreateToken)
         } header: {
-            Text("Gitea API Token")
+            Text(String(localized: "Gitea API Token"))
         }
         .onChange(of: vm.targetCreateHost) { _, _ in
             vm.targetScopeValidation = nil
@@ -396,7 +396,7 @@ struct BrowseRemoteRepoSheet: View {
         }
 
         Section {
-            Picker("Location", selection: $vm.targetNamespaceKind) {
+            Picker(String(localized: "Location"), selection: $vm.targetNamespaceKind) {
                 ForEach(BrowseRemoteRepoViewModel.NamespaceKind.allCases) { k in
                     Text(k.label).tag(k)
                 }
@@ -405,7 +405,7 @@ struct BrowseRemoteRepoSheet: View {
 
             switch vm.targetNamespaceKind {
             case .currentUser:
-                Text("Repositories will be created under the username associated with the current token.")
+                Text(String(localized: "Repositories will be created under the username associated with the current token."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             case .organization:
@@ -416,9 +416,9 @@ struct BrowseRemoteRepoSheet: View {
                     .textFieldStyle(.roundedBorder)
             }
 
-            Toggle("Create as Private Repositories", isOn: $vm.targetVisibilityPrivate)
+            Toggle(String(localized: "Create as Private Repositories"), isOn: $vm.targetVisibilityPrivate)
         } header: {
-            Text("Namespace")
+            Text(String(localized: "Namespace"))
         }
     }
 
@@ -429,7 +429,7 @@ struct BrowseRemoteRepoSheet: View {
             Spacer()
             ProgressView()
                 .controlSize(.large)
-            Text("Processing \(vm.submitProgress) / \(vm.submitTotal)")
+            Text(String(localized: "Processing \(vm.submitProgress) / \(vm.submitTotal)"))
                 .font(.callout)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -453,14 +453,14 @@ struct BrowseRemoteRepoSheet: View {
         return Form {
             Section {
                 HStack(spacing: DesignTokens.Spacing.lg - DesignTokens.Spacing.xxxs) {
-                    Label("Succeeded \(succeeded)", systemImage: "checkmark.circle.fill")
+                    Label(String(localized: "Succeeded \(succeeded)"), systemImage: "checkmark.circle.fill")
                         .foregroundStyle(DesignTokens.StatusColor.success)
                     if existed > 0 {
-                        Label("Reused \(existed)", systemImage: "arrow.counterclockwise.circle.fill")
+                        Label(String(localized: "Reused \(existed)"), systemImage: "arrow.counterclockwise.circle.fill")
                             .foregroundStyle(DesignTokens.StatusColor.info)
                     }
                     if failed > 0 {
-                        Label("Failed \(failed)", systemImage: "xmark.octagon.fill")
+                        Label(String(localized: "Failed \(failed)"), systemImage: "xmark.octagon.fill")
                             .foregroundStyle(DesignTokens.StatusColor.error)
                     }
                 }
@@ -472,7 +472,7 @@ struct BrowseRemoteRepoSheet: View {
                     BatchOutcomeRow(outcome: outcome)
                 }
             } header: {
-                Text("Details")
+                Text(String(localized: "Details"))
             }
         }
         .formStyle(.grouped)
@@ -483,7 +483,7 @@ struct BrowseRemoteRepoSheet: View {
     private var footer: some View {
         HStack {
             if vm.phase != .connect, vm.phase != .submitting, vm.phase != .result {
-                Button("Back") { goBack() }
+                Button(String(localized: "Back")) { goBack() }
                     .buttonStyle(.bordered)
             }
             Spacer()
@@ -506,7 +506,7 @@ struct BrowseRemoteRepoSheet: View {
             .disabled(!vm.canAdvanceToSelect || vm.isLoading)
             .keyboardShortcut(.return)
         case .selecting:
-            Button("Next (\(vm.selectedIDs.count))") {
+            Button(String(localized: "Next (\(vm.selectedIDs.count))")) {
                 vm.phase = .configureTarget
                 Task { await vm.prepareTargetConfiguration() }
             }
@@ -526,7 +526,7 @@ struct BrowseRemoteRepoSheet: View {
             EmptyView()
         case .result:
             let count = vm.successfulConfigs.count
-            Button("Add \(count) to Sync List") {
+            Button(String(localized: "Add \(count) to Sync List")) {
                 let configs = vm.successfulConfigs
                 vm.persistTokensForSuccessfulConfigs()
                 appVM.addRepos(configs, triggerSync: true)
@@ -558,7 +558,7 @@ struct BrowseRemoteRepoSheet: View {
         canDelete: Bool
     ) -> some View {
         Section {
-            Picker("Account", selection: Binding(
+            Picker(String(localized: "Account"), selection: Binding(
                 get: { selectedLabel },
                 set: { onSelect($0) }
             )) {
@@ -570,7 +570,7 @@ struct BrowseRemoteRepoSheet: View {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 TextField("New account name (for example, work)", text: $vm.newAccountLabelInput)
                     .textFieldStyle(.roundedBorder)
-                Button("Add") {
+                Button(String(localized: "Add")) {
                     onCreate(vm.newAccountLabelInput)
                 }
                 .disabled(
@@ -582,16 +582,16 @@ struct BrowseRemoteRepoSheet: View {
             }
 
             if canDelete {
-                Button("Delete Current Account", role: .destructive) {
+                Button(String(localized: "Delete Current Account"), role: .destructive) {
                     onDelete(selectedLabel)
                 }
             } else {
-                Text("At least one account must remain.")
+                Text(String(localized: "At least one account must remain."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         } header: {
-            Text("Account")
+            Text(String(localized: "Account"))
         }
     }
 

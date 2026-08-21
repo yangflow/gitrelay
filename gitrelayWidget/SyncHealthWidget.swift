@@ -100,7 +100,7 @@ private struct SyncHealthSmallWidgetView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            Label("Today", systemImage: "calendar")
+            Label(String(localized: "Today"), systemImage: "calendar")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -143,16 +143,16 @@ private struct SyncHealthMediumWidgetView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.popoverChromeVertical) {
             HStack {
-                Label("Today", systemImage: "calendar")
+                Label(String(localized: "Today"), systemImage: "calendar")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
                 HStack(spacing: DesignTokens.Spacing.xs) {
-                    Text("✓ \(snapshot.summary.succeededToday)")
+                    Text(String(localized: "✓ \(snapshot.summary.succeededToday)"))
                         .foregroundStyle(DesignTokens.StatusColor.success)
-                    Text("✗ \(snapshot.summary.failedToday)")
+                    Text(String(localized: "✗ \(snapshot.summary.failedToday)"))
                         .foregroundStyle(DesignTokens.StatusColor.escalatedFailure)
-                    Text("— \(snapshot.summary.notRunToday)")
+                    Text(String(localized: "— \(snapshot.summary.notRunToday)"))
                         .foregroundStyle(DesignTokens.StatusColor.unknown)
                 }
                 .font(.caption.weight(.semibold))
@@ -162,7 +162,7 @@ private struct SyncHealthMediumWidgetView: View {
             }
 
             if snapshot.attentionRepos.isEmpty {
-                Text("All mirrors look healthy")
+                Text(String(localized: "All mirrors look healthy"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
