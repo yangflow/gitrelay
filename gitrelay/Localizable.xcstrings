@@ -8755,6 +8755,40 @@
           }
         }
       }
+    },
+    "Try an example pair": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try an example pair"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "试用示例配对"
+          }
+        }
+      }
+    },
+    "Opens the add sheet with example URLs. Nothing is saved until you confirm.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the add sheet with example URLs. Nothing is saved until you confirm."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开带示例 URL 的添加表单。确认前不会保存。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

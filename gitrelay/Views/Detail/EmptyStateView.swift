@@ -2,7 +2,10 @@ import SwiftUI
 
 struct EmptyStateView: View {
     let onAdd: () -> Void
+    var onExamplePrefill: ((RepoSourceDropPrefill) -> Void)? = nil
     var isDropTargeted: Bool = false
+
+    private var example: RepoSourceDropPrefill { .emptyStateExample }
 
     var body: some View {
         ContentUnavailableView {
@@ -15,9 +18,29 @@ struct EmptyStateView: View {
                     .foregroundStyle(.secondary)
             }
         } actions: {
-            Button("Add Your First Repository", action: onAdd)
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+            VStack(spacing: DesignTokens.Spacing.md) {
+                Button("Add Your First Repository", action: onAdd)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+
+                if let onExamplePrefill {
+                    Button {
+                        onExamplePrefill(example)
+                    } label: {
+                        VStack(spacing: DesignTokens.Spacing.xxxs) {
+                            Text(String(localized: "Try an example pair"))
+                                .font(.callout.weight(.medium))
+                            Text(examplePairCaption)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: 360)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityHint(String(localized: "Opens the add sheet with example URLs. Nothing is saved until you confirm."))
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(DesignTokens.Spacing.xxl)
@@ -28,5 +51,9 @@ struct EmptyStateView: View {
                     .padding(DesignTokens.Spacing.md)
             }
         }
+    }
+
+    private var examplePairCaption: String {
+        "\(example.srcURL) → \(example.dstURL ?? "")"
     }
 }

@@ -1433,12 +1433,17 @@ struct SyncFailureClassifierTests {
 // MARK: - MenuBarPopoverFilter
 
 struct MenuBarPopoverFilterTests {
-    private func makeRepo(name: String, tags: [String] = []) -> RepoConfig {
+    private func makeRepo(
+        name: String,
+        tags: [String] = [],
+        needsCredentials: Bool = false
+    ) -> RepoConfig {
         RepoConfig(
             name: name,
             srcURL: "git@github.com:user/\(name).git",
             dstURL: "git@github.com:user/\(name)-mirror.git",
-            tags: tags
+            tags: tags,
+            needsCredentials: needsCredentials
         )
     }
 
@@ -1476,6 +1481,75 @@ struct MenuBarPopoverFilterTests {
         #expect(MenuBarPopoverFilter.canTriggerSync(for: .diverged("detail")))
         #expect(!MenuBarPopoverFilter.canTriggerSync(for: .syncing))
         #expect(!MenuBarPopoverFilter.canTriggerSync(for: .queued))
+    }
+
+    @Test func failedAndNeedsCredentialsPinFirstPreservingRelativeOrder() {
+        let idle = makeRepo(name: "idle-first")
+        let failedA = makeRepo(name: "failed-a")
+        let ok = makeRepo(name: "ok-mid")
+        let creds = makeRepo(name: "needs-creds", needsCredentials: true)
+        let failedB = makeRepo(name: "failed-b")
+        let idleLast = makeRepo(name: "idle-last")
+        let repos = [idle, failedA, ok, creds, failedB, idleLast]
+
+        let statuses: [UUID: SyncStatus] = [
+            failedA.id: .failed("auth"),
+            failedB.id: .failed("network"),
+            idle.id: .idle,
+            ok.id: .idle,
+            idleLast.id: .ahead(1),
+            creds.id: .unknown,
+        ]
+
+        let ordered = MenuBarPopoverFilter.filteredRepos(
+            repos,
+            searchText: "",
+            statuses: statuses
+        )
+        #expect(ordered.map(\.name) == [
+            "failed-a",
+            "needs-creds",
+            "failed-b",
+            "idle-first",
+            "ok-mid",
+            "idle-last",
+        ])
+    }
+
+    @Test func attentionSortKeepsAddOrderWhenNothingNeedsAttention() {
+        let a = makeRepo(name: "a")
+        let b = makeRepo(name: "b")
+        let c = makeRepo(name: "c")
+        let repos = [a, b, c]
+        let statuses: [UUID: SyncStatus] = [
+            a.id: .idle,
+            b.id: .syncing,
+            c.id: .diverged("tip mismatch"),
+        ]
+        #expect(
+            MenuBarPopoverFilter.filteredRepos(repos, searchText: "", statuses: statuses)
+                == repos
+        )
+        #expect(!MenuBarPopoverFilter.needsAttention(c, status: .diverged("tip mismatch")))
+    }
+
+    @Test func searchThenPinsAttentionMatches() {
+        let idleMatch = makeRepo(name: "svc-idle")
+        let failedMatch = makeRepo(name: "svc-failed")
+        let otherFailed = makeRepo(name: "other-failed")
+        let repos = [idleMatch, failedMatch, otherFailed]
+        let statuses: [UUID: SyncStatus] = [
+            idleMatch.id: .idle,
+            failedMatch.id: .failed("x"),
+            otherFailed.id: .failed("y"),
+        ]
+
+        let ordered = MenuBarPopoverFilter.filteredRepos(
+            repos,
+            searchText: "svc",
+            statuses: statuses
+        )
+        #expect(ordered.map(\.name) == ["svc-failed", "svc-idle"])
     }
 }
 
@@ -2405,6 +2479,60 @@ struct AddEditRepoTwoStepTests {
         vm.rememberLastUsedAuthMode()
         #expect(LastUsedAuthMode.load(from: defaults) == .sshKey)
         #expect(defaults.string(forKey: "AddEditRepo.lastUsedAuthMode") == AuthMode.sshKey.rawValue)
+    }
+}
+
+// MARK: - Empty-state example prefill (#72)
+
+@MainActor
+struct EmptyStateExamplePrefillTests {
+    @Test func emptyStateExampleIsGitHubToGitLabPlaceholders() {
+        let example = RepoSourceDropPrefill.emptyStateExample
+        #expect(example.srcURL == "https://github.com/org/repo.git")
+        #expect(example.dstURL == "https://gitlab.com/org/repo.git")
+        #expect(example.inferredName == "repo")
+    }
+
+    @Test func applyingEmptyStateExamplePrefillsBasicsWithoutSaving() throws {
+        let suite = "EmptyStateExample.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-empty-prefill-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        Constants.setBaseDirectoryForTesting(base)
+
+        let appVM = AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults)
+        )
+        #expect(appVM.repos.isEmpty)
+
+        let sheetVM = AddEditRepoViewModel(
+            prefill: .emptyStateExample,
+            defaults: defaults
+        )
+        #expect(sheetVM.srcURL == "https://github.com/org/repo.git")
+        #expect(sheetVM.targets[0].url == "https://gitlab.com/org/repo.git")
+        #expect(sheetVM.name == "repo")
+        #expect(!sheetVM.showsMoreOptions)
+        #expect(sheetVM.validateBasics())
+
+        // Prefill only — never auto-save into AppViewModel / repos.json.
+        #expect(appVM.repos.isEmpty)
+        #expect(try RepoStore.load().isEmpty)
+    }
+
+    @Test func dropPrefillWithoutDestinationLeavesTargetBlank() {
+        let prefill = RepoSourceDropPrefill(
+            srcURL: "https://github.com/acme/only-src.git",
+            inferredName: "only-src"
+        )
+        let vm = AddEditRepoViewModel(prefill: prefill)
+        #expect(vm.srcURL == "https://github.com/acme/only-src.git")
+        #expect(vm.targets[0].url.isEmpty)
+        #expect(vm.name == "only-src")
     }
 }
 

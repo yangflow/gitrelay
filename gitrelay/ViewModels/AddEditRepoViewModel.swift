@@ -162,6 +162,14 @@ final class AddEditRepoViewModel {
         if trimmedName.isEmpty, let inferred = prefill.inferredName, !inferred.isEmpty {
             name = inferred
         }
+        if let dstURL = prefill.dstURL?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !dstURL.isEmpty {
+            if targets.isEmpty {
+                targets = [MirrorTargetDraft(url: dstURL)]
+            } else {
+                targets[0].url = dstURL
+            }
+        }
     }
 
     /// Opens the optional more-options step after required fields validate.

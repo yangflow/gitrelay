@@ -36,7 +36,8 @@ struct ContentView: View {
         } detail: {
             DetailView(
                 selectedRepoID: $selectedRepoID,
-                onAdd: { sheetMode = .add },
+                onAdd: { openAddSheet(prefill: nil) },
+                onExamplePrefill: { openAddSheet(prefill: $0) },
                 isDropTargeted: isDropTargeted
             )
             .gitRelayChrome(.detail)
@@ -130,10 +131,14 @@ struct ContentView: View {
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
         Task { @MainActor in
             guard let prefill = await RepoDropImport.prefill(from: providers) else { return }
-            addPrefill = prefill
-            sheetMode = .add
+            openAddSheet(prefill: prefill)
         }
         return true
+    }
+
+    private func openAddSheet(prefill: RepoSourceDropPrefill?) {
+        addPrefill = prefill
+        sheetMode = .add
     }
 
     private func applyPendingMainWindowSelection() {
@@ -158,7 +163,6 @@ struct ContentView: View {
 
     private func applyPendingOpenAddRepository() {
         guard appVM.consumePendingOpenAddRepository() else { return }
-        addPrefill = nil
-        sheetMode = .add
+        openAddSheet(prefill: nil)
     }
 }

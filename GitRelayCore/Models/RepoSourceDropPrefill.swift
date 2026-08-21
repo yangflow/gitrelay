@@ -1,9 +1,26 @@
 import Foundation
 
-/// Prefill values for the add-repository sheet from a dropped URL or local Git directory.
+/// Prefill values for the add-repository sheet from a dropped URL, local Git directory,
+/// or the empty-state example pair. Never persists on its own — the sheet must be saved.
 nonisolated struct RepoSourceDropPrefill: Equatable, Sendable {
     let srcURL: String
     let inferredName: String?
+    /// Optional primary mirror target URL (empty-state example / future importers).
+    let dstURL: String?
+
+    init(srcURL: String, inferredName: String? = nil, dstURL: String? = nil) {
+        self.srcURL = srcURL
+        self.inferredName = inferredName
+        self.dstURL = dstURL
+    }
+
+    /// Placeholder GitHub → GitLab pair for the empty-state “try this” row.
+    /// Opens the two-step add sheet with fields filled; does not auto-save.
+    static let emptyStateExample = RepoSourceDropPrefill(
+        srcURL: "https://github.com/org/repo.git",
+        inferredName: "repo",
+        dstURL: "https://gitlab.com/org/repo.git"
+    )
 }
 
 /// Parses dropped git remotes and local `.git` directories into add-sheet prefill.
