@@ -19,6 +19,13 @@ nonisolated enum TargetCreateOutcome: Sendable {
     case alreadyExists(httpsCloneURL: String, sshCloneURL: String)
 }
 
+/// Answer to "is this repository already there?", used by the add sheet's
+/// preflight before it offers to create an empty destination.
+nonisolated enum TargetRepoLookup: Sendable, Equatable {
+    case found(httpsCloneURL: String, sshCloneURL: String)
+    case missing
+}
+
 nonisolated enum TargetProviderAPIError: LocalizedError {
     case unauthorized(String?)
     case forbidden(String?)
@@ -42,6 +49,7 @@ nonisolated enum TargetProviderAPIError: LocalizedError {
 protocol TargetProviderAPIClient: Sendable {
     nonisolated var provider: GitProvider { get }
     nonisolated func fetchTokenScopes() async throws -> Set<String>
+    nonisolated func fetchRepo(path: GitRemoteRepoPath) async throws -> TargetRepoLookup
     nonisolated func createRepo(
         name: String,
         namespace: TargetNamespace,

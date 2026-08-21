@@ -23,6 +23,18 @@ struct GiteaTargetAPIClient: TargetProviderAPIClient {
         return []
     }
 
+    nonisolated func fetchRepo(path: GitRemoteRepoPath) async throws -> TargetRepoLookup {
+        let owner = path.namespace.isEmpty ? path.name : path.namespace
+        let encodedOwner = owner.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? owner
+        let encodedName = path.name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path.name
+        do {
+            let dto: GiteaRepoDTO = try await get(path: "/repos/\(encodedOwner)/\(encodedName)")
+            return .found(httpsCloneURL: dto.clone_url, sshCloneURL: dto.ssh_url)
+        } catch TargetProviderAPIError.http(status: 404, message: _) {
+            return .missing
+        }
+    }
+
     nonisolated func createRepo(
         name: String,
         namespace: TargetNamespace,
