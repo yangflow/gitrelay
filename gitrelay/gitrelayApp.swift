@@ -12,6 +12,7 @@ struct gitrelayApp: App {
                 .environment(appVM)
                 .environment(appVM.notificationPreferences)
                 .environment(appVM.securityPreferences)
+                .environment(appVM.cachePreferences)
                 .environment(appVM.appBehaviorPreferences)
                 .environment(appVM.windowLayout)
                 .environment(appVM.environmentMonitor)
@@ -34,10 +35,10 @@ struct gitrelayApp: App {
         }
         .windowResizability(.contentSize)
 
+        // The six locked settings panes live in the main window's 设置 row.
+        // Only org subscriptions and integrity verification remain here.
         Settings {
             TabView {
-                SettingsView()
-                    .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
                 OrgSubscriptionSettingsView()
                     .tabItem { Label(String(localized: "Subscribe"), systemImage: "building.2") }
                 VerificationSettingsView()
