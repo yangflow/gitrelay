@@ -8045,11 +8045,11 @@ struct GitRelayMarkTests {
     @Test func plateIsAClosedSquircleFillingTheUnitSquare() {
         let outline = GitRelayMark.plateOutline()
         #expect(outline.count == GitRelayMark.plateSampleCount)
-        #expect(outline.allSatisfy { $0.x >= 0 && $0.x <= 1 && $0.y >= 0 && $0.y <= 1 })
+        #expect(outline.allSatisfy({ $0.x >= 0 && $0.x <= 1 && $0.y >= 0 && $0.y <= 1 }))
         // Touches the middle of each edge. The 2/n exponent magnifies the tiny
         // residue `cos(.pi / 2)` leaves behind, hence the looser tolerance.
-        #expect(outline.contains { isClose($0.x, 1) && isClose($0.y, 0.5, tolerance: 1e-5) })
-        #expect(outline.contains { isClose($0.y, 1) && isClose($0.x, 0.5, tolerance: 1e-5) })
+        #expect(outline.contains(where: { isClose($0.x, 1) && isClose($0.y, 0.5, tolerance: 1e-5) }))
+        #expect(outline.contains(where: { isClose($0.y, 1) && isClose($0.x, 0.5, tolerance: 1e-5) }))
     }
 
     /// A squircle corner sits between a circle's and a square's: fuller than a
@@ -8060,7 +8060,7 @@ struct GitRelayMarkTests {
             Issue.record("no corner sample")
             return
         }
-        let circleCorner = 0.5 + 0.5 * (0.5.squareRoot())
+        let circleCorner = 0.5 + 0.5 * Double(0.5).squareRoot()
         #expect(corner.x > circleCorner)
         #expect(corner.x < 1)
         #expect(isClose(corner.x, corner.y))
@@ -8078,8 +8078,12 @@ struct GitRelayMarkTests {
         #expect(GitRelayMark.rightBranchNode == GitRelayMarkPoint(x: 0.707, y: 0.283))
         #expect(isClose(GitRelayMark.plateExponent, 5))
         #expect(GitRelayMark.plateSampleCount == 720)
-        #expect(GitRelayMark.plateTopColor == (red: 0.443, green: 0.400, blue: 0.831))
-        #expect(GitRelayMark.plateBottomColor == (red: 0.357, green: 0.306, blue: 0.745))
+        #expect(isClose(GitRelayMark.plateTopColor.red, 0.443))
+        #expect(isClose(GitRelayMark.plateTopColor.green, 0.400))
+        #expect(isClose(GitRelayMark.plateTopColor.blue, 0.831))
+        #expect(isClose(GitRelayMark.plateBottomColor.red, 0.357))
+        #expect(isClose(GitRelayMark.plateBottomColor.green, 0.306))
+        #expect(isClose(GitRelayMark.plateBottomColor.blue, 0.745))
         // The plate is lighter at the top.
         #expect(GitRelayMark.plateTopColor.red > GitRelayMark.plateBottomColor.red)
         #expect(GitRelayMark.plateTopColor.blue > GitRelayMark.plateBottomColor.blue)
