@@ -1,6 +1,6 @@
 import Foundation
 
-struct SyncHistorySparkline: Equatable {
+nonisolated struct SyncHistorySparkline: Equatable, Sendable {
     struct Day: Equatable, Identifiable {
         let date: Date
         let successes: Int
@@ -17,12 +17,14 @@ struct SyncHistorySparkline: Equatable {
 
     static let defaultDayCount = 30
 
-    static func make(
+    nonisolated static func make(
         from dailyOutcomes: [String: SyncDayOutcome],
-        now: Date = .now,
-        calendar: Calendar = .current,
+        now: Date? = nil,
+        calendar: Calendar? = nil,
         dayCount: Int = defaultDayCount
     ) -> SyncHistorySparkline {
+        let calendar = calendar ?? Calendar(identifier: .gregorian)
+        let now = now ?? Date()
         let normalizedDayCount = max(1, dayCount)
         let endDay = calendar.startOfDay(for: now)
         let days = (0 ..< normalizedDayCount).compactMap { offset -> Day? in
@@ -42,12 +44,14 @@ struct SyncHistorySparkline: Equatable {
         return SyncHistorySparkline(days: days)
     }
 
-    static func make(
+    nonisolated static func make(
         from records: [SyncRecord],
-        now: Date = .now,
-        calendar: Calendar = .current,
+        now: Date? = nil,
+        calendar: Calendar? = nil,
         dayCount: Int = defaultDayCount
     ) -> SyncHistorySparkline {
+        let calendar = calendar ?? Calendar(identifier: .gregorian)
+        let now = now ?? Date()
         var dailyOutcomes: [String: SyncDayOutcome] = [:]
 
         for record in records {
@@ -69,7 +73,7 @@ struct SyncHistorySparkline: Equatable {
         max(days.map(\.total).max() ?? 0, 1)
     }
 
-    static func dayKey(for date: Date, calendar: Calendar) -> String {
+    nonisolated static func dayKey(for date: Date, calendar: Calendar) -> String {
         let components = calendar.dateComponents([.year, .month, .day], from: date)
         let year = components.year ?? 0
         let month = components.month ?? 0
@@ -77,12 +81,13 @@ struct SyncHistorySparkline: Equatable {
         return String(format: "%04d-%02d-%02d", year, month, day)
     }
 
-    static func pruneDailyOutcomes(
+    nonisolated static func pruneDailyOutcomes(
         _ outcomes: [String: SyncDayOutcome],
         keepingDays: Int,
         referenceDate: Date,
-        calendar: Calendar = .current
+        calendar: Calendar? = nil
     ) -> [String: SyncDayOutcome] {
+        let calendar = calendar ?? Calendar(identifier: .gregorian)
         guard keepingDays > 0 else { return [:] }
         guard let cutoff = calendar.date(
             byAdding: .day,
@@ -98,7 +103,7 @@ struct SyncHistorySparkline: Equatable {
         }
     }
 
-    private static func date(fromDayKey key: String, calendar: Calendar) -> Date? {
+    nonisolated private static func date(fromDayKey key: String, calendar: Calendar) -> Date? {
         let parts = key.split(separator: "-")
         guard parts.count == 3,
               let year = Int(parts[0]),

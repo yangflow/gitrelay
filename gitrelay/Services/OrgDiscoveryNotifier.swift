@@ -7,10 +7,10 @@ import Observation
 @MainActor
 @Observable
 final class OrgDiscoveryNotifier: NSObject {
-    static let categoryIdentifier = "GITRELAY_ORG_DISCOVERY"
-    static let viewActionIdentifier = "GITRELAY_ORG_DISCOVERY_VIEW"
-    static let subscriptionIDKey = "subscriptionID"
-    static let newRepoCountKey = "newRepoCount"
+    nonisolated static let categoryIdentifier = "GITRELAY_ORG_DISCOVERY"
+    nonisolated static let viewActionIdentifier = "GITRELAY_ORG_DISCOVERY_VIEW"
+    nonisolated static let subscriptionIDKey = "subscriptionID"
+    nonisolated static let newRepoCountKey = "newRepoCount"
 
     private let center: UNUserNotificationCenter
     private let focusStatusProvider: () -> Bool?

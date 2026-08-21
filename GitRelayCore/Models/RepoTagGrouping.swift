@@ -1,6 +1,6 @@
 import Foundation
 
-enum RepoTagGrouping {
+nonisolated enum RepoTagGrouping {
     struct Section: Identifiable, Equatable {
         /// Display title for the sidebar section.
         let title: String
@@ -11,12 +11,12 @@ enum RepoTagGrouping {
         var id: String { tag ?? "__untagged__" }
     }
 
-    static func normalizeTag(_ raw: String) -> String? {
+    nonisolated static func normalizeTag(_ raw: String) -> String? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    static func normalizedTags(_ tags: [String]) -> [String] {
+    nonisolated static func normalizedTags(_ tags: [String]) -> [String] {
         var seen = Set<String>()
         var result: [String] = []
         for tag in tags {

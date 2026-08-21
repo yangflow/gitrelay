@@ -492,16 +492,16 @@ final class SyncEngine {
 }
 
 /// Forwards parsed git progress onto the main-actor SyncEngine without capturing it in a Sendable closure.
-private final class SyncPhaseProgressBridge: @unchecked Sendable {
-    private weak var engine: SyncEngine?
+private nonisolated final class SyncPhaseProgressBridge: @unchecked Sendable {
+    private nonisolated(unsafe) weak var engine: SyncEngine?
     private let phase: SyncPhase
 
-    nonisolated init(engine: SyncEngine, phase: SyncPhase) {
+    init(engine: SyncEngine, phase: SyncPhase) {
         self.engine = engine
         self.phase = phase
     }
 
-    nonisolated func handleLine(_ line: String) {
+    func handleLine(_ line: String) {
         let safe = SyncEngine.redactCredentials(line)
         guard let detail = GitProgressParser.detail(from: safe) else { return }
         let updated = phase.withProgress(detail)
@@ -512,14 +512,14 @@ private final class SyncPhaseProgressBridge: @unchecked Sendable {
 }
 
 /// Forwards target log lines onto a MainActor sink without converting a MainActor function to `@Sendable`.
-private final class SyncTargetLogBridge: @unchecked Sendable {
+private nonisolated final class SyncTargetLogBridge: @unchecked Sendable {
     private let onLine: @MainActor (String) -> Void
 
-    nonisolated init(onLine: @escaping @MainActor (String) -> Void) {
+    init(onLine: @escaping @MainActor (String) -> Void) {
         self.onLine = onLine
     }
 
-    nonisolated func handleLine(_ line: String) {
+    func handleLine(_ line: String) {
         Task { @MainActor in
             onLine(line)
         }
@@ -538,17 +538,17 @@ nonisolated enum SyncEngineError: LocalizedError {
 }
 
 /// Thread-safe cancel flag shared with the retry executor (which is not MainActor-isolated).
-final class SyncCancellationFlag: @unchecked Sendable {
+nonisolated final class SyncCancellationFlag: @unchecked Sendable {
     private let lock = NSLock()
     private nonisolated(unsafe) var cancelled = false
 
-    nonisolated var isCancelled: Bool {
+    var isCancelled: Bool {
         lock.lock()
         defer { lock.unlock() }
         return cancelled
     }
 
-    nonisolated func cancel() {
+    func cancel() {
         lock.lock()
         cancelled = true
         lock.unlock()

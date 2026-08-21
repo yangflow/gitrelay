@@ -23,7 +23,7 @@ nonisolated enum DestructivePushPolicy: String, Codable, CaseIterable, Identifia
     }
 
     /// strict 策略在 dry-run 发现删除 / 强制更新时需要用户显式确认。
-    func requiresConfirmation(for plan: DestructivePushPlan) -> Bool {
+    nonisolated func requiresConfirmation(for plan: DestructivePushPlan) -> Bool {
         self == .strict && plan.isDestructive
     }
 }

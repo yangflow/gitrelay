@@ -231,7 +231,7 @@ final class AppViewModel {
         }
 
         webhookListener.onRequest = { [weak self] request in
-            await MainActor.run {
+            await MainActor.run { [weak self] in
                 self?.handleWebhookRequest(request)
                     ?? WebhookHTTPResponse.plain(503, "Service Unavailable", message: "unavailable\n")
             }

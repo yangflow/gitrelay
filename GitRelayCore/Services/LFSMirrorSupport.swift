@@ -3,7 +3,7 @@ import Foundation
 /// Pure helpers for Git LFS detection and sync planning (unit-testable without spawning git).
 nonisolated enum LFSAttributesDetector {
     /// Returns true when `.gitattributes` content declares the LFS filter.
-    static func containsLFSFilter(_ content: String) -> Bool {
+    nonisolated static func containsLFSFilter(_ content: String) -> Bool {
         for rawLine in content.split(separator: "\n", omittingEmptySubsequences: false) {
             var line = String(rawLine)
             if let commentIndex = line.firstIndex(of: "#") {
@@ -19,12 +19,12 @@ nonisolated enum LFSAttributesDetector {
         return false
     }
 
-    static func isGitAttributesPath(_ path: String) -> Bool {
+    nonisolated static func isGitAttributesPath(_ path: String) -> Bool {
         let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed == ".gitattributes" || trimmed.hasSuffix("/.gitattributes")
     }
 
-    private static func isLFSFilterAttribute(_ token: String) -> Bool {
+    nonisolated private static func isLFSFilterAttribute(_ token: String) -> Bool {
         token == "filter=lfs" || token.hasPrefix("filter=lfs=")
     }
 }
@@ -37,7 +37,7 @@ nonisolated enum LFSMirrorStep: Equatable, Sendable {
 
 nonisolated enum LFSMirrorPlanner {
     /// Decide whether to run LFS fetch/push, warn, or skip.
-    static func decide(
+    nonisolated static func decide(
         mode: LFSMirrorMode,
         usesLFS: Bool,
         gitLFSAvailable: Bool
@@ -53,40 +53,40 @@ nonisolated enum LFSMirrorPlanner {
 }
 
 nonisolated enum LFSMirrorMessages {
-    static var missingGitLFSWarning: String {
+    nonisolated static var missingGitLFSWarning: String {
         String(localized: "Warning: This repository uses Git LFS, but git-lfs was not found. Install it (for example: brew install git-lfs), then sync again. Git objects were still mirrored successfully.")
     }
 
-    static var skippedNoLFS: String {
+    nonisolated static var skippedNoLFS: String {
         String(localized: "No Git LFS usage detected; skipping LFS sync.")
     }
 
-    static var fetching: String {
+    nonisolated static var fetching: String {
         String(localized: "Fetching Git LFS objects...")
     }
 
-    static var fetchComplete: String {
+    nonisolated static var fetchComplete: String {
         String(localized: "LFS fetch complete.")
     }
 
-    static var pushing: String {
+    nonisolated static var pushing: String {
         String(localized: "Pushing Git LFS objects...")
     }
 
-    static var pushComplete: String {
+    nonisolated static var pushComplete: String {
         String(localized: "LFS push complete. ✓")
     }
 
-    static var installHint: String {
+    nonisolated static var installHint: String {
         String(localized: "Install path tip: brew install git-lfs (or download from git-lfs.com), then sync again.")
     }
 
-    static func isMissingGitLFSWarning(_ line: String) -> Bool {
+    nonisolated static func isMissingGitLFSWarning(_ line: String) -> Bool {
         line == missingGitLFSWarning
     }
 
     /// True when any recent sync log (or per-target log) recorded the missing-git-lfs warning.
-    static func recentRecordsContainMissingToolWarning(_ records: [SyncRecord]) -> Bool {
+    nonisolated static func recentRecordsContainMissingToolWarning(_ records: [SyncRecord]) -> Bool {
         for record in records.reversed() {
             if record.logLines.contains(where: isMissingGitLFSWarning) {
                 return true
@@ -101,27 +101,38 @@ nonisolated enum LFSMirrorMessages {
 
 /// Candidate locations for the `git-lfs` binary (GUI apps often lack Homebrew on PATH).
 nonisolated enum GitLFSTool {
-    static func candidatePaths(
-        homeDirectory: String = NSHomeDirectory()
+    /// Avoid `FileManager.default` in default args — it is MainActor-isolated under the app target.
+    nonisolated static func isExecutable(_ path: String) -> Bool {
+        FileManager().isExecutableFile(atPath: path)
+    }
+
+    nonisolated static func defaultHomeDirectory() -> String {
+        NSHomeDirectory()
+    }
+
+    nonisolated static func candidatePaths(
+        homeDirectory: String? = nil
     ) -> [String] {
-        [
+        let home = homeDirectory ?? defaultHomeDirectory()
+        return [
             "/opt/homebrew/bin/git-lfs",
             "/usr/local/bin/git-lfs",
             "/usr/bin/git-lfs",
-            "\(homeDirectory)/.local/bin/git-lfs"
+            "\(home)/.local/bin/git-lfs"
         ]
     }
 
-    static func isAvailable(
-        fileExists: (String) -> Bool = { FileManager.default.isExecutableFile(atPath: $0) },
-        homeDirectory: String = NSHomeDirectory()
+    nonisolated static func isAvailable(
+        fileExists: ((String) -> Bool)? = nil,
+        homeDirectory: String? = nil
     ) -> Bool {
-        candidatePaths(homeDirectory: homeDirectory).contains(where: fileExists)
+        let exists = fileExists ?? isExecutable
+        return candidatePaths(homeDirectory: homeDirectory).contains(where: exists)
     }
 
     /// Directories to prepend to PATH so `git lfs` can resolve `git-lfs`.
-    static func pathDirectories(
-        homeDirectory: String = NSHomeDirectory()
+    nonisolated static func pathDirectories(
+        homeDirectory: String? = nil
     ) -> [String] {
         Array(Set(candidatePaths(homeDirectory: homeDirectory).map {
             URL(fileURLWithPath: $0).deletingLastPathComponent().path
@@ -135,7 +146,7 @@ nonisolated enum GitLFSArguments {
     static let lsFilesArgs = ["lfs", "ls-files"]
     static let fetchAllArgs = ["lfs", "fetch", "--all"]
 
-    static func pushAllArgs(remoteURL: String) -> [String] {
+    nonisolated static func pushAllArgs(remoteURL: String) -> [String] {
         ["lfs", "push", "--all", remoteURL]
     }
 }

@@ -12,26 +12,26 @@ struct PendingFailureAlert: Equatable, Sendable {
 }
 
 /// User-facing routes from a sync-failure notification action (or body tap).
-enum SyncFailureNotificationAction: Equatable, Sendable {
+nonisolated enum SyncFailureNotificationAction: Equatable, Sendable {
     case syncAgain
     case open
 }
 
 /// Builds and reads the failure-notification `userInfo` payload (repo id only).
-enum SyncFailureNotificationPayload {
-    static func userInfo(repoID: UUID) -> [AnyHashable: Any] {
+nonisolated enum SyncFailureNotificationPayload {
+    nonisolated static func userInfo(repoID: UUID) -> [AnyHashable: Any] {
         [SyncFailureNotifier.repoIDKey: repoID.uuidString]
     }
 
-    static func repoID(from userInfo: [AnyHashable: Any]) -> UUID? {
+    nonisolated static func repoID(from userInfo: [AnyHashable: Any]) -> UUID? {
         guard let raw = userInfo[SyncFailureNotifier.repoIDKey] as? String else { return nil }
         return UUID(uuidString: raw)
     }
 }
 
 /// Maps `UNNotificationResponse.actionIdentifier` values to failure-notification actions.
-enum SyncFailureNotificationRouting {
-    static func action(for identifier: String) -> SyncFailureNotificationAction? {
+nonisolated enum SyncFailureNotificationRouting {
+    nonisolated static func action(for identifier: String) -> SyncFailureNotificationAction? {
         switch identifier {
         case SyncFailureNotifier.syncAgainActionIdentifier:
             return .syncAgain
@@ -49,13 +49,13 @@ enum SyncFailureNotificationRouting {
 @MainActor
 @Observable
 final class SyncFailureNotifier: NSObject {
-    static let categoryIdentifier = "GITRELAY_SYNC_FAILURE"
+    nonisolated static let categoryIdentifier = "GITRELAY_SYNC_FAILURE"
     /// Kept as the historical identifier so already-delivered notifications still route.
-    static let syncAgainActionIdentifier = "GITRELAY_RETRY_SYNC"
-    static let retryActionIdentifier = syncAgainActionIdentifier
-    static let openActionIdentifier = "GITRELAY_OPEN_REPO"
-    static let aggregatedCategoryIdentifier = "GITRELAY_SYNC_FAILURE_SUMMARY"
-    static let repoIDKey = "repoID"
+    nonisolated static let syncAgainActionIdentifier = "GITRELAY_RETRY_SYNC"
+    nonisolated static let retryActionIdentifier = syncAgainActionIdentifier
+    nonisolated static let openActionIdentifier = "GITRELAY_OPEN_REPO"
+    nonisolated static let aggregatedCategoryIdentifier = "GITRELAY_SYNC_FAILURE_SUMMARY"
+    nonisolated static let repoIDKey = "repoID"
 
     private let center: UNUserNotificationCenter
     private let focusStatusProvider: () -> Bool?
