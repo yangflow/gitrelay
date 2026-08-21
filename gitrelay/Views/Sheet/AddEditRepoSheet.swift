@@ -21,24 +21,25 @@ struct AddEditRepoSheet: View {
                 Text(title).font(.headline)
                 Spacer()
             }
-            .padding([.horizontal, .top], 20)
-            .padding(.bottom, 12)
+            .gitRelaySheetHeaderPadding()
 
             Divider()
 
             Form {
-                Section("Name") {
+                Section {
                     TextField("For example: my-project", text: $vm.name)
                     if let err = vm.nameError {
-                        Text(err).font(.caption).foregroundStyle(.red)
+                        Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
                     }
+                } header: {
+                    Text("Name")
                 }
 
-                Section("Source Repository") {
+                Section {
                     TextField("git@gitlab.com:org/repo.git", text: $vm.srcURL)
                         .font(.system(.caption, design: .monospaced))
                     if let err = vm.srcError {
-                        Text(err).font(.caption).foregroundStyle(.red)
+                        Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
                     }
                     AuthFieldView(
                         label: "Source",
@@ -47,6 +48,8 @@ struct AddEditRepoSheet: View {
                         keyPath: $vm.srcKeyPath,
                         token: $vm.srcToken
                     )
+                } header: {
+                    Text("Source Repository")
                 }
 
                 Section {
@@ -72,26 +75,32 @@ struct AddEditRepoSheet: View {
                         .font(.caption)
                 }
 
-                Section("Sync Frequency") {
+                Section {
                     FrequencyPickerView(frequency: $vm.frequency)
+                } header: {
+                    Text("Sync Frequency")
                 }
 
-                Section("Tags") {
+                Section {
                     TagTokenInputView(
                         tags: $vm.tags,
                         suggestions: appVM.allKnownTags
                     )
+                } header: {
+                    Text("Tags")
                 }
 
-                Section("Verification Branch") {
+                Section {
                     TextField("main", text: $vm.defaultBranch)
                         .font(.system(.body, design: .monospaced))
                     Text("Integrity verification compares this branch's tip and tree hash on src and dst.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } header: {
+                    Text("Verification Branch")
                 }
 
-                Section("Destructive Push Protection") {
+                Section {
                     Picker("Policy", selection: $vm.destructivePushPolicy) {
                         ForEach(DestructivePushPolicy.allCases) { policy in
                             Text(policy.displayName).tag(policy)
@@ -102,6 +111,8 @@ struct AddEditRepoSheet: View {
                     Text(vm.destructivePushPolicy.description)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } header: {
+                    Text("Destructive Push Protection")
                 }
 
                 Section {
@@ -174,7 +185,7 @@ struct AddEditRepoSheet: View {
                             if let disclosure = ProviderTokenUsage.webhookRegistration(provider: .github).disclosureText {
                                 Text(disclosure)
                                     .font(.caption)
-                                    .foregroundStyle(.orange)
+                                    .foregroundStyle(DesignTokens.StatusColor.warning)
                             }
                             GatedSecureTokenField(
                                 placeholder: "GitHub Token (Requires admin:repo_hook)",
@@ -199,10 +210,10 @@ struct AddEditRepoSheet: View {
                         TextField("Clone Depth (Blank = Full History)", text: $vm.depthText)
                             .font(.system(.body, design: .monospaced))
                         if let err = vm.depthError {
-                            Text(err).font(.caption).foregroundStyle(.red)
+                            Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
                         }
 
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
                             Text("Fetch Refspecs (One per Line)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -219,10 +230,10 @@ struct AddEditRepoSheet: View {
                             Label {
                                 Text(warning)
                                     .font(.caption)
-                                    .foregroundStyle(.orange)
+                                    .foregroundStyle(DesignTokens.StatusColor.warning)
                             } icon: {
                                 Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundStyle(.orange)
+                                    .foregroundStyle(DesignTokens.StatusColor.warning)
                             }
                         }
                     }
@@ -251,10 +262,11 @@ struct AddEditRepoSheet: View {
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.return)
             }
-            .padding(16)
+            .gitRelaySheetFooterPadding()
         }
         .frame(width: 520)
         .frame(minHeight: 760)
+        .gitRelayChrome(.sheet)
     }
 
     private func binding(for id: UUID) -> Binding<MirrorTargetDraft> {

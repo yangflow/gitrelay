@@ -61,6 +61,13 @@
 			);
 			target = 964A1ADE2F8B6C8F008A7FD2 /* gitrelay */;
 		};
+		GRC00E2F8B6C8F008A7FD2 /* Exceptions for "GitRelayCore" folder in "gitrelayctl" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Design/DesignTokens.swift,
+			);
+			target = GRC0032F8B6C8F008A7FD2 /* gitrelayctl */;
+		};
 		GRW0142F8B6C8F008A7FD2 /* Exceptions for "gitrelayWidget" folder in "gitrelayWidget" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -91,6 +98,9 @@
 		};
 		GRC0012F8B6C8F008A7FD2 /* GitRelayCore */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				GRC00E2F8B6C8F008A7FD2 /* Exceptions for "GitRelayCore" folder in "gitrelayctl" target */,
+			);
 			path = GitRelayCore;
 			sourceTree = "<group>";
 		};

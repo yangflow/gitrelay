@@ -102,7 +102,7 @@ struct SettingsView: View {
 
                 if let reason = appVM.scheduledSyncPauseReason {
                     Label(reason.displayMessage, systemImage: "pause.circle")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DesignTokens.StatusColor.pause)
                         .font(.callout)
                 }
             } header: {
@@ -230,8 +230,9 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(minWidth: 420, minHeight: 420)
-        .padding()
+        .frame(minWidth: DesignTokens.Layout.settingsMinWidth, minHeight: DesignTokens.Layout.settingsMinHeight)
+        .padding(DesignTokens.Spacing.settingsForm)
+        .gitRelayChrome(.sheet)
         .onAppear {
             syncCacheControlsFromStore()
             appVM.refreshMirrorCacheUsage()
@@ -374,19 +375,19 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func tunnelHint(available: Bool, tool: String, command: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
             Label(
                 available ? String(localized: "\(tool) detected") : String(localized: "\(tool) not detected (you can install it manually)"),
                 systemImage: available ? "checkmark.circle" : "questionmark.circle"
             )
             .font(.caption)
-            .foregroundStyle(available ? .green : .secondary)
+            .foregroundStyle(available ? DesignTokens.StatusColor.success : .secondary)
 
             HStack(alignment: .top) {
                 Text(command)
                     .font(.system(.caption, design: .monospaced))
                     .textSelection(.enabled)
-                Spacer(minLength: 8)
+                Spacer(minLength: DesignTokens.Spacing.sm)
                 Button("Copy") {
                     ClipboardService.copy(command)
                 }

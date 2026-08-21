@@ -16,9 +16,9 @@ struct TagTokenInputView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             if !tags.isEmpty {
-                FlowLayout(spacing: 6) {
+                FlowLayout(spacing: DesignTokens.Spacing.xs) {
                     ForEach(tags, id: \.self) { tag in
                         tagChip(tag)
                     }
@@ -45,11 +45,11 @@ struct TagTokenInputView: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 8)
+                        .padding(.vertical, DesignTokens.Spacing.xxs)
+                        .padding(.horizontal, DesignTokens.Spacing.sm)
                     }
                 }
-                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
+                .background(DesignTokens.Surface.suggestionFill, in: RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.control, style: .continuous))
             }
 
             Text("Separate multiple tags with commas or Return. Existing tags are suggested as you type.")
@@ -68,7 +68,7 @@ struct TagTokenInputView: View {
     }
 
     private func tagChip(_ tag: String) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: DesignTokens.Spacing.xxs) {
             Text(tag)
                 .font(.caption)
             Button {
@@ -80,9 +80,9 @@ struct TagTokenInputView: View {
             .buttonStyle(.plain)
             .help("Remove Tag")
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.quaternary, in: Capsule())
+        .padding(.horizontal, DesignTokens.Spacing.chipHorizontal)
+        .padding(.vertical, DesignTokens.Spacing.chipVertical)
+        .background(DesignTokens.Surface.chipFill, in: Capsule())
     }
 
     private func commitDraft() {
@@ -104,7 +104,7 @@ struct TagTokenInputView: View {
 
 /// Simple wrapping layout for tag chips on macOS 14.
 private struct FlowLayout: Layout {
-    var spacing: CGFloat = 8
+    var spacing: CGFloat = DesignTokens.Spacing.sm
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let result = arrange(proposal: proposal, subviews: subviews)

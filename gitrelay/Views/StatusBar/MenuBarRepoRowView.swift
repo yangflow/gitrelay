@@ -17,12 +17,16 @@ struct MenuBarRepoRowView: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            StatusIconView(status: status)
-                .frame(width: 18, alignment: .center)
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: DesignTokens.Spacing.statusDotGap) {
+            StatusDotView(status: status)
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                 Text(repo.name)
-                    .foregroundStyle(isEscalatedFailure ? .red : .primary)
+                    .foregroundStyle(
+                        isEscalatedFailure
+                            ? DesignTokens.StatusColor.escalatedFailure
+                            : .primary
+                    )
                     .lineLimit(1)
                 RepoRowCaptionView(caption: presentation)
             }
@@ -40,11 +44,11 @@ struct MenuBarRepoRowView: View {
                 .disabled(!canSync)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
+        .padding(.vertical, DesignTokens.Spacing.sm)
         .background(
             isHovered
-                ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.12)
+                ? DesignTokens.Surface.selectionTint
                 : Color.clear
         )
         .contentShape(.rect)

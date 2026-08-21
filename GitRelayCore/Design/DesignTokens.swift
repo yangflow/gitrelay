@@ -1,8 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// In-repo visual language for the main window chrome.
+/// Shared visual language for app chrome, settings, sheets, menu bar, and widgets.
 /// Inspired by Luminare / Ice layout and atmosphere only — no design-system packages.
+/// Lives in GitRelayCore so the app and widget targets share one token source.
 enum DesignTokens {
     enum Layout {
         /// Narrow sidebar range (Ice-like); keeps filters + repo rows usable.
@@ -12,6 +13,15 @@ enum DesignTokens {
 
         static let windowMinWidth: CGFloat = 720
         static let windowMinHeight: CGFloat = 500
+
+        static let popoverWidth: CGFloat = 280
+        static let popoverListMaxHeight: CGFloat = 280
+        static let settingsMinWidth: CGFloat = 420
+        static let settingsMinHeight: CGFloat = 420
+        static let verificationSettingsMinHeight: CGFloat = 240
+        static let orgSubscriptionSettingsMinHeight: CGFloat = 320
+        static let aboutWidth: CGFloat = 280
+        static let aboutIconSize: CGFloat = 80
     }
 
     enum Spacing {
@@ -30,6 +40,19 @@ enum DesignTokens {
         static let detailSection: CGFloat = 20
         static let rowVertical: CGFloat = 4
         static let statusDotGap: CGFloat = 8
+
+        static let sheetHeaderHorizontal: CGFloat = 20
+        static let sheetHeaderTop: CGFloat = 20
+        static let sheetHeaderBottom: CGFloat = 12
+        static let sheetFooter: CGFloat = 16
+        static let sheetContent: CGFloat = 20
+        static let formFieldGap: CGFloat = 6
+        static let chipHorizontal: CGFloat = 8
+        static let chipVertical: CGFloat = 4
+        static let popoverChromeHorizontal: CGFloat = 12
+        static let popoverChromeVertical: CGFloat = 10
+        static let settingsForm: CGFloat = 16
+        static let aboutSection: CGFloat = 6
     }
 
     enum CornerRadius {
@@ -37,14 +60,18 @@ enum DesignTokens {
         static let panel: CGFloat = 10
         static let card: CGFloat = 12
         static let statusDot: CGFloat = 4
+        static let chip: CGFloat = 3
+        static let banner: CGFloat = 8
     }
 
     enum Size {
         static let statusDot: CGFloat = 8
         static let searchFieldMinHeight: CGFloat = 28
+        static let menuBarIconPointSize: CGFloat = 16
+        static let aboutIcon: CGFloat = 80
     }
 
-    /// Semantic status colors shared by sidebar dots and detail labels.
+    /// Semantic status colors shared by sidebar dots, detail labels, menu bar, and widgets.
     enum StatusColor {
         static let unknown = Color.secondary
         static let idle = Color.green
@@ -54,6 +81,15 @@ enum DesignTokens {
         static let failed = Color.orange
         static let escalatedFailure = Color.red
         static let pause = Color.orange
+
+        /// Alias for success / healthy states (matches idle green).
+        static let success = idle
+        /// Alias for destructive / error copy (matches escalated red).
+        static let error = escalatedFailure
+        /// Alias for caution / incomplete-auth banners (matches failed orange).
+        static let warning = failed
+        /// Informational accent (ahead / reused).
+        static let info = ahead
 
         static func forStatus(_ status: SyncStatus) -> Color {
             switch status {
@@ -72,6 +108,21 @@ enum DesignTokens {
             }
         }
 
+        static func forWidgetStatus(_ status: RepoSyncStatusKind) -> Color {
+            switch status {
+            case .success:
+                return success
+            case .failure:
+                return escalatedFailure
+            case .syncing:
+                return syncing
+            case .diverged:
+                return diverged
+            case .unknown:
+                return unknown
+            }
+        }
+
         /// Stable label for tests without importing SwiftUI Color equality.
         static func label(for status: SyncStatus) -> String {
             switch status {
@@ -83,6 +134,16 @@ enum DesignTokens {
             case .failed: return "failed"
             }
         }
+
+        static func label(forWidgetStatus status: RepoSyncStatusKind) -> String {
+            switch status {
+            case .success: return "success"
+            case .failure: return "failure"
+            case .syncing: return "syncing"
+            case .diverged: return "diverged"
+            case .unknown: return "unknown"
+            }
+        }
     }
 
     enum Surface {
@@ -92,20 +153,32 @@ enum DesignTokens {
         static let separator = Color(nsColor: .separatorColor)
         static let selectionTint = Color.accentColor.opacity(0.12)
         static let badgeFill = Color.red
+        static let chipFill = Color.primary.opacity(0.08)
+        static let suggestionFill = Color.primary.opacity(0.06)
+        static let bannerSuccessFill = StatusColor.success.opacity(0.12)
+        static let bannerWarningFill = StatusColor.warning.opacity(0.12)
+        static let destructiveFill = StatusColor.error.opacity(0.08)
+        static let forceUpdateFill = StatusColor.warning.opacity(0.08)
+        static let statusCalloutFill = StatusColor.diverged.opacity(0.08)
+        static let statusCalloutStroke = StatusColor.diverged.opacity(0.3)
     }
 
-    /// AppKit visual-effect materials for main-window chrome.
+    /// AppKit visual-effect materials for window chrome.
     /// Ordinary materials on 14/15; Tahoe may layer an extra wash behind `#available(macOS 26, *)`.
     enum Material: Equatable {
         case sidebar
         case detail
         case footer
+        case popover
+        case sheet
 
         var tokenName: String {
             switch self {
             case .sidebar: return "sidebar"
             case .detail: return "detail"
             case .footer: return "footer"
+            case .popover: return "popover"
+            case .sheet: return "sheet"
             }
         }
 
@@ -117,14 +190,18 @@ enum DesignTokens {
                 return .contentBackground
             case .footer:
                 return .headerView
+            case .popover:
+                return .popover
+            case .sheet:
+                return .contentBackground
             }
         }
 
         var blendingMode: NSVisualEffectView.BlendingMode {
             switch self {
-            case .sidebar, .footer:
+            case .sidebar, .footer, .popover:
                 return .behindWindow
-            case .detail:
+            case .detail, .sheet:
                 return .withinWindow
             }
         }
@@ -133,11 +210,15 @@ enum DesignTokens {
     enum ChromeRole: Equatable {
         case sidebar
         case detail
+        case popover
+        case sheet
 
         var material: Material {
             switch self {
             case .sidebar: return .sidebar
             case .detail: return .detail
+            case .popover: return .popover
+            case .sheet: return .sheet
             }
         }
     }
@@ -160,5 +241,20 @@ struct GitRelayVisualEffectView: NSViewRepresentable {
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         nsView.material = material
         nsView.blendingMode = blendingMode
+    }
+}
+
+/// Plain status color dot for widget attention rows (same palette as app ``StatusDotView``).
+struct WidgetStatusDotView: View {
+    let status: RepoSyncStatusKind
+
+    var body: some View {
+        Circle()
+            .fill(DesignTokens.StatusColor.forWidgetStatus(status))
+            .frame(
+                width: DesignTokens.Size.statusDot,
+                height: DesignTokens.Size.statusDot
+            )
+            .accessibilityHidden(true)
     }
 }

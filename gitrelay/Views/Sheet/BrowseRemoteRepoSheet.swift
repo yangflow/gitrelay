@@ -21,6 +21,7 @@ struct BrowseRemoteRepoSheet: View {
         }
         .frame(width: 640)
         .frame(minHeight: 560)
+        .gitRelayChrome(.sheet)
         .onAppear {
             vm.refreshSourceAccounts()
             vm.refreshTargetGiteaAccounts()
@@ -48,13 +49,12 @@ struct BrowseRemoteRepoSheet: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: DesignTokens.Spacing.popoverChromeVertical) {
             Text(headerTitle).font(.headline)
             Spacer()
             Text(phaseLabel).font(.caption).foregroundStyle(.secondary)
         }
-        .padding([.horizontal, .top], 20)
-        .padding(.bottom, 12)
+        .gitRelaySheetHeaderPadding()
     }
 
     private var headerTitle: String {
@@ -93,7 +93,7 @@ struct BrowseRemoteRepoSheet: View {
 
     private var connectView: some View {
         Form {
-            Section("Provider") {
+            Section {
                 Picker("Type", selection: $vm.provider) {
                     ForEach(GitProvider.listingCases) { p in
                         Text(p.displayName).tag(p)
@@ -119,10 +119,12 @@ struct BrowseRemoteRepoSheet: View {
                 Text(vm.provider.tokenHelpText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            } header: {
+                Text("Provider")
             }
 
             if vm.provider == .gitlab {
-                Section("GitLab Host (Self-Hosted Instance Optional)") {
+                Section {
                     TextField("https://gitlab.company.com", text: $vm.gitlabHost)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.caption, design: .monospaced))
@@ -132,6 +134,8 @@ struct BrowseRemoteRepoSheet: View {
                     Text("Leave blank to use gitlab.com. The /api/v4 path is appended automatically.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } header: {
+                    Text("GitLab Host (Self-Hosted Instance Optional)")
                 }
             }
 
@@ -139,11 +143,11 @@ struct BrowseRemoteRepoSheet: View {
                 Section {
                     Label(accountError, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(DesignTokens.StatusColor.error)
                 }
             }
 
-            Section("Personal Access Token") {
+            Section {
                 GatedSecureTokenField(
                     placeholder: "Used only to fetch the repository list, not for git sync",
                     text: $vm.token
@@ -153,9 +157,11 @@ struct BrowseRemoteRepoSheet: View {
                         vm.refreshCachedSourceScopeValidation()
                     }
                 Toggle("Save to Keychain (Autofill Next Time)", isOn: $vm.rememberToken)
+            } header: {
+                Text("Personal Access Token")
             }
 
-            Section("Scope") {
+            Section {
                 Picker("Select Scope", selection: $vm.scopeKind) {
                     ForEach(BrowseRemoteRepoViewModel.ScopeKind.allCases) { k in
                         Text(k.label).tag(k)
@@ -171,13 +177,15 @@ struct BrowseRemoteRepoSheet: View {
                               text: $vm.organizationName)
                         .textFieldStyle(.roundedBorder)
                 }
+            } header: {
+                Text("Scope")
             }
 
             if let err = vm.connectError {
                 Section {
                     Label(err, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(DesignTokens.StatusColor.error)
                 }
             }
         }
@@ -188,7 +196,7 @@ struct BrowseRemoteRepoSheet: View {
 
     private var selectView: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                 TextField("Search Names or Descriptions", text: $vm.searchText)
                     .textFieldStyle(.plain)
@@ -200,8 +208,8 @@ struct BrowseRemoteRepoSheet: View {
                     .buttonStyle(.borderless)
                     .controlSize(.small)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.horizontal, DesignTokens.Spacing.lg)
+            .padding(.vertical, DesignTokens.Spacing.sm)
 
             Divider()
 
@@ -224,7 +232,7 @@ struct BrowseRemoteRepoSheet: View {
                         .controlSize(.small)
                         Spacer()
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, DesignTokens.Spacing.xxs)
                 }
             }
             .listStyle(.inset)
@@ -243,13 +251,15 @@ struct BrowseRemoteRepoSheet: View {
 
     private var targetView: some View {
         Form {
-            Section("\(vm.selectedIDs.count) repositories selected") {
+            Section {
                 Text("Source URLs are generated from the selected repositories (choose SSH or HTTPS with the source authentication option below)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            } header: {
+                Text("\(vm.selectedIDs.count) repositories selected")
             }
 
-            Section("Source Repository Authentication (for git clone/fetch)") {
+            Section {
                 AuthFieldView(
                     label: "Source",
                     remoteURL: sourceRemoteURL,
@@ -257,9 +267,11 @@ struct BrowseRemoteRepoSheet: View {
                     keyPath: $vm.sourceKeyPath,
                     token: $vm.sourceToken
                 )
+            } header: {
+                Text("Source Repository Authentication (for git clone/fetch)")
             }
 
-            Section("Target Repository") {
+            Section {
                 Toggle("Automatically Create Repositories on the Target (Gitea)", isOn: $vm.targetAutoCreate)
                     .onChange(of: vm.targetAutoCreate) { _, enabled in
                         if enabled {
@@ -273,22 +285,26 @@ struct BrowseRemoteRepoSheet: View {
                      : "Target repositories must already exist; URLs are generated with the {name} template.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            } header: {
+                Text("Target Repository")
             }
 
             if vm.targetAutoCreate {
                 autoCreateFields
             } else {
-                Section("Target URL Template") {
+                Section {
                     TextField("git@github.com:myuser/{name}.git", text: $vm.targetURLTemplate)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.caption, design: .monospaced))
                     Text("Use {name} as the repository name placeholder.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } header: {
+                    Text("Target URL Template")
                 }
             }
 
-            Section("Target Repository Authentication (for git push)") {
+            Section {
                 AuthFieldView(
                     label: "Target",
                     remoteURL: targetRemoteURL,
@@ -296,18 +312,22 @@ struct BrowseRemoteRepoSheet: View {
                     keyPath: $vm.targetKeyPath,
                     token: $vm.targetToken
                 )
+            } header: {
+                Text("Target Repository Authentication (for git push)")
             }
 
-            Section("Naming & Frequency") {
+            Section {
                 TextField("Name Prefix (Optional)", text: $vm.namePrefix)
                     .textFieldStyle(.roundedBorder)
                 FrequencyPickerView(frequency: $vm.frequency)
+            } header: {
+                Text("Naming & Frequency")
             }
 
             if !vm.selectedRepos.isEmpty {
-                Section("Preview (First 3)") {
+                Section {
                     ForEach(vm.selectedRepos.prefix(3), id: \.id) { repo in
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                             Text(vm.previewName(for: repo)).font(.caption).bold()
                             Text("src: \(vm.sourceURL(for: repo))")
                                 .font(.system(.caption2, design: .monospaced))
@@ -317,6 +337,8 @@ struct BrowseRemoteRepoSheet: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                } header: {
+                    Text("Preview (First 3)")
                 }
             }
 
@@ -324,7 +346,7 @@ struct BrowseRemoteRepoSheet: View {
                 Section {
                     Label(err, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(DesignTokens.StatusColor.error)
                 }
             }
         }
@@ -341,7 +363,7 @@ struct BrowseRemoteRepoSheet: View {
             canDelete: vm.canDeleteTargetGiteaAccount
         )
 
-        Section("Gitea Host") {
+        Section {
             TextField("https://gitea.company.com", text: $vm.targetCreateHost)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(.caption, design: .monospaced))
@@ -351,9 +373,11 @@ struct BrowseRemoteRepoSheet: View {
             Text("The /api/v1 path is appended automatically.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        } header: {
+            Text("Gitea Host")
         }
 
-        Section("Gitea API Token") {
+        Section {
             GatedSecureTokenField(
                 placeholder: "Requires the write:repository scope",
                 text: $vm.targetCreateToken
@@ -363,13 +387,15 @@ struct BrowseRemoteRepoSheet: View {
                     vm.refreshCachedTargetScopeValidation()
                 }
             Toggle("Save to Keychain (Autofill Next Time)", isOn: $vm.rememberTargetCreateToken)
+        } header: {
+            Text("Gitea API Token")
         }
         .onChange(of: vm.targetCreateHost) { _, _ in
             vm.targetScopeValidation = nil
             vm.refreshCachedTargetScopeValidation()
         }
 
-        Section("Namespace") {
+        Section {
             Picker("Location", selection: $vm.targetNamespaceKind) {
                 ForEach(BrowseRemoteRepoViewModel.NamespaceKind.allCases) { k in
                     Text(k.label).tag(k)
@@ -391,13 +417,15 @@ struct BrowseRemoteRepoSheet: View {
             }
 
             Toggle("Create as Private Repositories", isOn: $vm.targetVisibilityPrivate)
+        } header: {
+            Text("Namespace")
         }
     }
 
     // MARK: - Phase 4 — submitting
 
     private var submittingView: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: DesignTokens.Spacing.lg - DesignTokens.Spacing.xxxs) {
             Spacer()
             ProgressView()
                 .controlSize(.large)
@@ -424,25 +452,27 @@ struct BrowseRemoteRepoSheet: View {
 
         return Form {
             Section {
-                HStack(spacing: 14) {
+                HStack(spacing: DesignTokens.Spacing.lg - DesignTokens.Spacing.xxxs) {
                     Label("Succeeded \(succeeded)", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(DesignTokens.StatusColor.success)
                     if existed > 0 {
                         Label("Reused \(existed)", systemImage: "arrow.counterclockwise.circle.fill")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(DesignTokens.StatusColor.info)
                     }
                     if failed > 0 {
                         Label("Failed \(failed)", systemImage: "xmark.octagon.fill")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(DesignTokens.StatusColor.error)
                     }
                 }
                 .font(.caption)
             }
 
-            Section("Details") {
+            Section {
                 ForEach(vm.batchResults) { outcome in
                     BatchOutcomeRow(outcome: outcome)
                 }
+            } header: {
+                Text("Details")
             }
         }
         .formStyle(.grouped)
@@ -463,7 +493,7 @@ struct BrowseRemoteRepoSheet: View {
             }
             primaryButton
         }
-        .padding(16)
+        .gitRelaySheetFooterPadding()
     }
 
     @ViewBuilder private var primaryButton: some View {
@@ -527,7 +557,7 @@ struct BrowseRemoteRepoSheet: View {
         onDelete: @escaping (String) -> Void,
         canDelete: Bool
     ) -> some View {
-        Section("Account") {
+        Section {
             Picker("Account", selection: Binding(
                 get: { selectedLabel },
                 set: { onSelect($0) }
@@ -537,7 +567,7 @@ struct BrowseRemoteRepoSheet: View {
                 }
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
                 TextField("New account name (for example, work)", text: $vm.newAccountLabelInput)
                     .textFieldStyle(.roundedBorder)
                 Button("Add") {
@@ -560,6 +590,8 @@ struct BrowseRemoteRepoSheet: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+        } header: {
+            Text("Account")
         }
     }
 
@@ -578,20 +610,20 @@ private struct RepoPickerRow: View {
 
     var body: some View {
         Button(action: onToggle) {
-            HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.popoverChromeVertical) {
                 Image(systemName: isSelected ? "checkmark.square.fill" : "square")
                     .foregroundStyle(isSelected ? Color.accentColor : .secondary)
-                    .font(.system(size: 16))
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
+                    .font(.system(size: DesignTokens.Size.menuBarIconPointSize))
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
+                    HStack(spacing: DesignTokens.Spacing.xs) {
                         Text(repo.fullName).font(.caption).bold()
                         if repo.isPrivate {
                             Text("private")
                                 .font(.caption2)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(Color.secondary.opacity(0.15))
-                                .clipShape(RoundedRectangle(cornerRadius: 3))
+                                .padding(.horizontal, DesignTokens.Spacing.xxs)
+                                .padding(.vertical, DesignTokens.Spacing.xxxs / 2)
+                                .background(DesignTokens.Surface.chipFill)
+                                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.chip, style: .continuous))
                         }
                     }
                     if let d = repo.description, !d.isEmpty {
@@ -612,12 +644,12 @@ private struct BatchOutcomeRow: View {
     var body: some View {
         switch outcome {
         case .success(let repo, _, let existed):
-            HStack(alignment: .top, spacing: 8) {
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: existed
                       ? "arrow.counterclockwise.circle.fill"
                       : "checkmark.circle.fill")
-                    .foregroundStyle(existed ? Color.blue : Color.green)
-                VStack(alignment: .leading, spacing: 2) {
+                    .foregroundStyle(existed ? DesignTokens.StatusColor.info : DesignTokens.StatusColor.success)
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                     Text(repo.fullName).font(.caption).bold()
                     Text(existed ? "Remote already exists and will be reused" : "Created Successfully")
                         .font(.caption2)
@@ -626,12 +658,12 @@ private struct BatchOutcomeRow: View {
                 Spacer()
             }
         case .failed(let repo, let message):
-            HStack(alignment: .top, spacing: 8) {
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: "xmark.octagon.fill")
-                    .foregroundStyle(.red)
-                VStack(alignment: .leading, spacing: 2) {
+                    .foregroundStyle(DesignTokens.StatusColor.error)
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                     Text(repo.fullName).font(.caption).bold()
-                    Text(message).font(.caption2).foregroundStyle(.red)
+                    Text(message).font(.caption2).foregroundStyle(DesignTokens.StatusColor.error)
                 }
                 Spacer()
             }

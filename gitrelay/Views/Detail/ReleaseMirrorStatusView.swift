@@ -6,7 +6,7 @@ struct ReleaseMirrorStatusView: View {
     let isSyncing: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
             if !repo.mirrorReleases {
                 ContentUnavailableView {
                     Label("Release Mirroring Is Disabled", systemImage: "shippingbox")
@@ -29,7 +29,7 @@ struct ReleaseMirrorStatusView: View {
 
     @ViewBuilder
     private func targetSection(_ status: ReleaseTargetMirrorStatus) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             HStack {
                 Text(status.targetURL)
                     .font(.system(.caption, design: .monospaced))
@@ -49,7 +49,7 @@ struct ReleaseMirrorStatusView: View {
             if let error = status.lastError {
                 Text(error)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DesignTokens.StatusColor.error)
             }
 
             if status.tags.isEmpty {
@@ -62,17 +62,23 @@ struct ReleaseMirrorStatusView: View {
                 }
             }
         }
-        .padding(12)
-        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
+        .padding(DesignTokens.Spacing.md)
+        .background(
+            DesignTokens.Surface.suggestionFill,
+            in: RoundedRectangle(
+                cornerRadius: DesignTokens.CornerRadius.banner,
+                style: .continuous
+            )
+        )
     }
 
     @ViewBuilder
     private func tagRow(_ tag: ReleaseTagStatus) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: DesignTokens.Spacing.sm) {
             Image(systemName: iconName(for: tag.state))
                 .foregroundStyle(color(for: tag.state))
-                .frame(width: 16)
-            VStack(alignment: .leading, spacing: 2) {
+                .frame(width: DesignTokens.Size.menuBarIconPointSize)
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                 Text(tag.tagName)
                     .font(.system(.body, design: .monospaced))
                 if tag.totalAssets > 0 {
@@ -87,7 +93,7 @@ struct ReleaseMirrorStatusView: View {
                 if let error = tag.error {
                     Text(error)
                         .font(.caption2)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(DesignTokens.StatusColor.error)
                 }
             }
             Spacer()
@@ -109,11 +115,11 @@ struct ReleaseMirrorStatusView: View {
 
     private func color(for state: ReleaseTagSyncState) -> Color {
         switch state {
-        case .pending:  .secondary
-        case .syncing:  .blue
-        case .synced:   .green
-        case .partial:  .orange
-        case .failed:   .red
+        case .pending:  DesignTokens.StatusColor.unknown
+        case .syncing:  DesignTokens.StatusColor.info
+        case .synced:   DesignTokens.StatusColor.success
+        case .partial:  DesignTokens.StatusColor.warning
+        case .failed:   DesignTokens.StatusColor.error
         }
     }
 

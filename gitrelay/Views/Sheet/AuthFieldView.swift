@@ -17,7 +17,7 @@ struct AuthFieldView: View {
     @State private var previewError: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
             Picker("\(label) Authentication", selection: $mode) {
                 ForEach(AuthMode.allCases) { m in
                     Text(m.rawValue).tag(m)
@@ -51,7 +51,7 @@ struct AuthFieldView: View {
                         previewError = nil
                     }
                 }
-                HStack(spacing: 8) {
+                HStack(spacing: DesignTokens.Spacing.sm) {
                     Button("View Key") { loadPublicKeyPreview() }
                         .buttonStyle(.borderless)
                         .controlSize(.small)
@@ -59,7 +59,7 @@ struct AuthFieldView: View {
                     if let previewError {
                         Text(previewError)
                             .font(.caption)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(DesignTokens.StatusColor.error)
                     }
                 }
             case .httpsToken:

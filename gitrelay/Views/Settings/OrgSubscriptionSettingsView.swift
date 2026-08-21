@@ -68,7 +68,8 @@ struct OrgSubscriptionSettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(minWidth: 420, minHeight: 320)
+        .frame(minWidth: DesignTokens.Layout.settingsMinWidth, minHeight: DesignTokens.Layout.orgSubscriptionSettingsMinHeight)
+        .gitRelayChrome(.sheet)
         .sheet(item: $editingSubscription) { subscription in
             OrgSubscriptionEditorSheet(subscription: subscription)
         }
@@ -104,10 +105,10 @@ private struct OrgSubscriptionRow: View {
     let subscription: OrgSubscription
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
             Text(subscription.organizationName)
                 .font(.headline)
-            HStack(spacing: 8) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
                 Text(subscription.provider.displayName)
                 Text("·")
                 Text(subscription.accountLabel)
@@ -120,7 +121,7 @@ private struct OrgSubscriptionRow: View {
             .font(.caption)
             .foregroundStyle(.secondary)
             if let checked = subscription.lastCheckedAt {
-                HStack(spacing: 4) {
+                HStack(spacing: DesignTokens.Spacing.xxs) {
                     Text(String(localized: "Last checked"))
                     Text(checked, format: .relative(presentation: .named))
                 }
@@ -128,7 +129,7 @@ private struct OrgSubscriptionRow: View {
                 .foregroundStyle(.tertiary)
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, DesignTokens.Spacing.xxxs)
     }
 }
 
@@ -164,7 +165,7 @@ struct OrgSubscriptionEditorSheet: View {
                  : String(localized: "Edit Subscription"))
                 .font(.headline)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
+                .padding(DesignTokens.Spacing.settingsForm)
 
             Divider()
 
@@ -205,7 +206,7 @@ struct OrgSubscriptionEditorSheet: View {
 
                         Text(String(localized: "Mirror Template"))
                             .font(.headline)
-                            .padding(.top, 4)
+                            .padding(.top, DesignTokens.Spacing.xxs)
 
                         Picker(String(localized: "Source Auth"), selection: $template.sourceAuthMode) {
                             ForEach(AuthMode.allCases) { mode in
@@ -263,9 +264,10 @@ struct OrgSubscriptionEditorSheet: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(!canSave)
             }
-            .padding()
+            .padding(DesignTokens.Spacing.settingsForm)
         }
         .frame(width: 520, height: autoAddEnabled ? 620 : 420)
+        .gitRelayChrome(.sheet)
         .onAppear {
             refreshAccounts()
             if let id = existingID {

@@ -36,7 +36,8 @@ struct VerificationSettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(minWidth: 420, minHeight: 240)
+        .frame(minWidth: DesignTokens.Layout.settingsMinWidth, minHeight: DesignTokens.Layout.verificationSettingsMinHeight)
+        .gitRelayChrome(.sheet)
     }
 
     private var frequencyBinding: Binding<VerificationFrequency> {

@@ -4,7 +4,7 @@ struct SyncHistorySparklineView: View {
     let sparkline: SyncHistorySparkline
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             HStack {
                 Text("Syncs in the Last 30 Days")
                     .font(.headline)
@@ -13,7 +13,7 @@ struct SyncHistorySparklineView: View {
             }
 
             GeometryReader { geometry in
-                HStack(alignment: .bottom, spacing: 2) {
+                HStack(alignment: .bottom, spacing: DesignTokens.Spacing.xxxs) {
                     ForEach(sparkline.days) { day in
                         dayColumn(day, maxHeight: geometry.size.height)
                     }
@@ -26,9 +26,9 @@ struct SyncHistorySparklineView: View {
     }
 
     private var legend: some View {
-        HStack(spacing: 10) {
-            legendItem(title: "Succeeded", color: .green)
-            legendItem(title: "Failed", color: .red)
+        HStack(spacing: DesignTokens.Spacing.popoverChromeVertical) {
+            legendItem(title: "Succeeded", color: DesignTokens.StatusColor.success)
+            legendItem(title: "Failed", color: DesignTokens.StatusColor.escalatedFailure)
         }
         .font(.caption2)
         .foregroundStyle(.secondary)
@@ -52,12 +52,12 @@ struct SyncHistorySparklineView: View {
             VStack(spacing: 0) {
                 if failureHeight > 0 {
                     Rectangle()
-                        .fill(Color.red.opacity(day.failures > 0 ? 0.85 : 0.15))
+                        .fill(DesignTokens.StatusColor.escalatedFailure.opacity(day.failures > 0 ? 0.85 : 0.15))
                         .frame(height: failureHeight)
                 }
                 if successHeight > 0 {
                     Rectangle()
-                        .fill(Color.green.opacity(day.successes > 0 ? 0.85 : 0.15))
+                        .fill(DesignTokens.StatusColor.success.opacity(day.successes > 0 ? 0.85 : 0.15))
                         .frame(height: successHeight)
                 }
                 if day.total == 0 {

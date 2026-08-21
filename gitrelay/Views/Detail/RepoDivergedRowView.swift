@@ -8,10 +8,10 @@ struct RepoDivergedRowView: View {
     let onSyncNow: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: DesignTokens.Spacing.popoverChromeVertical) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.yellow)
-            VStack(alignment: .leading, spacing: 4) {
+                .foregroundStyle(DesignTokens.StatusColor.diverged)
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
                 Text("Backup content may have diverged from the source repository")
                     .font(.callout)
                     .fontWeight(.medium)
@@ -26,7 +26,7 @@ struct RepoDivergedRowView: View {
                 }
             }
             Spacer()
-            VStack(spacing: 6) {
+            VStack(spacing: DesignTokens.Spacing.xs) {
                 Button("Verify Now", action: onVerifyNow)
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -36,12 +36,20 @@ struct RepoDivergedRowView: View {
                     .controlSize(.small)
             }
         }
-        .padding(12)
-        .background(Color.yellow.opacity(0.08))
-        .clipShape(.rect(cornerRadius: 8))
+        .padding(DesignTokens.Spacing.md)
+        .background(DesignTokens.Surface.statusCalloutFill)
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: DesignTokens.CornerRadius.banner,
+                style: .continuous
+            )
+        )
         .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
+            RoundedRectangle(
+                cornerRadius: DesignTokens.CornerRadius.banner,
+                style: .continuous
+            )
+            .stroke(DesignTokens.Surface.statusCalloutStroke, lineWidth: 1)
         }
     }
 }

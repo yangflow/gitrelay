@@ -11,7 +11,7 @@ struct GatedSecureTokenField: View {
     @State private var isAuthenticating = false
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: DesignTokens.Spacing.sm) {
             Group {
                 if isRevealed {
                     TextField(placeholder, text: $text)

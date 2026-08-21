@@ -14,7 +14,7 @@ struct MenuBarPopoverView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 8) {
+            VStack(spacing: DesignTokens.Spacing.sm) {
                 HStack {
                     Button("Sync All") { appVM.triggerSyncAll() }
                         .buttonStyle(.borderedProminent)
@@ -25,7 +25,7 @@ struct MenuBarPopoverView: View {
                         .controlSize(.small)
                 }
 
-                HStack(spacing: 6) {
+                HStack(spacing: DesignTokens.Spacing.xs) {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
                         .font(.caption)
@@ -33,21 +33,27 @@ struct MenuBarPopoverView: View {
                         .textFieldStyle(.plain)
                         .font(.caption)
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .background(Color(nsColor: .controlBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .padding(.horizontal, DesignTokens.Spacing.sm)
+                .padding(.vertical, DesignTokens.Spacing.xs)
+                .frame(minHeight: DesignTokens.Size.searchFieldMinHeight)
+                .background(DesignTokens.Surface.searchFieldFill)
+                .clipShape(
+                    RoundedRectangle(
+                        cornerRadius: DesignTokens.CornerRadius.control,
+                        style: .continuous
+                    )
+                )
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
+            .padding(.vertical, DesignTokens.Spacing.popoverChromeVertical)
 
             if let pauseReason = appVM.scheduledSyncPauseReason {
                 Divider()
                 Label(pauseReason.displayMessage, systemImage: "pause.circle.fill")
                     .font(.caption)
-                    .foregroundStyle(.orange)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .foregroundStyle(DesignTokens.StatusColor.pause)
+                    .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
+                    .padding(.vertical, DesignTokens.Spacing.sm)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
@@ -57,11 +63,11 @@ struct MenuBarPopoverView: View {
                 Text("No Repositories")
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
-                    .padding(20)
+                    .padding(DesignTokens.Spacing.xl)
             } else {
                 SyncHealthSummaryView(summary: appVM.healthSummary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
+                    .padding(.vertical, DesignTokens.Spacing.sm)
 
                 Divider()
 
@@ -69,7 +75,7 @@ struct MenuBarPopoverView: View {
                     Text("No Matching Repositories")
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
-                        .padding(20)
+                        .padding(DesignTokens.Spacing.xl)
                 } else {
                     ScrollView {
                         VStack(spacing: 0) {
@@ -81,18 +87,19 @@ struct MenuBarPopoverView: View {
                                     onSync: { appVM.triggerSync(repoID: repo.id) }
                                 )
                                 if repo.id != filteredRepos.last?.id {
-                                    Divider().padding(.leading, 36)
+                                    Divider()
+                                        .padding(.leading, DesignTokens.Spacing.xxl + DesignTokens.Spacing.md)
                                 }
                             }
                         }
                     }
-                    .frame(maxHeight: 280)
+                    .frame(maxHeight: DesignTokens.Layout.popoverListMaxHeight)
                 }
             }
 
             Divider()
 
-            HStack(spacing: 20) {
+            HStack(spacing: DesignTokens.Spacing.xl) {
                 Button(action: openAbout) {
                     Image(systemName: "info.circle")
                 }
@@ -118,10 +125,11 @@ struct MenuBarPopoverView: View {
             .buttonStyle(.borderless)
             .font(.caption)
             .foregroundStyle(.secondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, DesignTokens.Spacing.lg - DesignTokens.Spacing.xxxs)
+            .padding(.vertical, DesignTokens.Spacing.popoverChromeVertical)
         }
-        .frame(width: 280)
+        .frame(width: DesignTokens.Layout.popoverWidth)
+        .gitRelayChrome(.popover)
         .onReceive(NotificationCenter.default.publisher(for: .gitrelayOpenMainWindow)) { _ in
             openMainWindow(focusing: nil)
         }
