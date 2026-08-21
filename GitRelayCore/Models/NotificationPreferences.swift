@@ -33,6 +33,10 @@ struct NotificationPreferences: Equatable, Sendable {
     /// Max concurrent clone/fetch/push jobs (manual, webhook, and scheduled share this cap).
     var maxConcurrentSyncs: Int
 
+    /// Explicit pause of frequency-driven syncs, toggled from the sidebar footer.
+    /// Manual sync and instant webhook sync stay unaffected.
+    var scheduledSyncManuallyPaused: Bool = false
+
     static let maxConcurrentSyncsRange = SyncConcurrencyGate.allowedRange
 
     static let `default` = NotificationPreferences(
@@ -44,7 +48,8 @@ struct NotificationPreferences: Equatable, Sendable {
         pauseOnLowPowerMode: true,
         pauseOnExpensiveNetwork: true,
         quietHours: .default,
-        maxConcurrentSyncs: SyncConcurrencyGate.defaultMaxConcurrent
+        maxConcurrentSyncs: SyncConcurrencyGate.defaultMaxConcurrent,
+        scheduledSyncManuallyPaused: false
     )
 
     static func clampedMaxConcurrentSyncs(_ value: Int) -> Int {
@@ -63,7 +68,8 @@ struct NotificationPreferences: Equatable, Sendable {
         SyncPausePolicy(
             pauseOnLowPowerMode: pauseOnLowPowerMode,
             pauseOnExpensiveNetwork: pauseOnExpensiveNetwork,
-            quietHours: quietHours
+            quietHours: quietHours,
+            manualPause: scheduledSyncManuallyPaused
         )
     }
 

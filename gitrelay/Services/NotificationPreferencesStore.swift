@@ -17,6 +17,7 @@ final class NotificationPreferencesStore {
         static let quietHoursStartMinutes = "NotificationPreferences.quietHoursStartMinutes"
         static let quietHoursEndMinutes = "NotificationPreferences.quietHoursEndMinutes"
         static let maxConcurrentSyncs = "NotificationPreferences.maxConcurrentSyncs"
+        static let scheduledSyncManuallyPaused = "NotificationPreferences.scheduledSyncManuallyPaused"
     }
 
     private let defaults: UserDefaults
@@ -55,6 +56,7 @@ final class NotificationPreferencesStore {
         defaults.set(value.quietHours.startMinutes, forKey: Keys.quietHoursStartMinutes)
         defaults.set(value.quietHours.endMinutes, forKey: Keys.quietHoursEndMinutes)
         defaults.set(value.maxConcurrentSyncs, forKey: Keys.maxConcurrentSyncs)
+        defaults.set(value.scheduledSyncManuallyPaused, forKey: Keys.scheduledSyncManuallyPaused)
     }
 
     private static func normalized(_ value: NotificationPreferences) -> NotificationPreferences {
@@ -138,7 +140,11 @@ final class NotificationPreferencesStore {
             pauseOnLowPowerMode: bool(forKey: Keys.pauseOnLowPowerMode, default: fallback.pauseOnLowPowerMode),
             pauseOnExpensiveNetwork: bool(forKey: Keys.pauseOnExpensiveNetwork, default: fallback.pauseOnExpensiveNetwork),
             quietHours: quietHours,
-            maxConcurrentSyncs: maxConcurrent
+            maxConcurrentSyncs: maxConcurrent,
+            scheduledSyncManuallyPaused: bool(
+                forKey: Keys.scheduledSyncManuallyPaused,
+                default: fallback.scheduledSyncManuallyPaused
+            )
         )
     }
 }
