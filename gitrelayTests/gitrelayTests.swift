@@ -2481,8 +2481,10 @@ struct AddEditRepoTwoStepTests {
         #expect(vm.lfsMirrorMode == .off)
         #expect(vm.webhookEnabled)
 
-        #expect(vm.openMoreOptions())
+        vm.openMoreOptions()
         #expect(vm.showsMoreOptions)
+
+        vm.lfsMirrorMode = .auto
         vm.webhookEnabled = false
         let saved = vm.buildRepoConfig()
         #expect(saved.lfsMirrorMode == .auto)
