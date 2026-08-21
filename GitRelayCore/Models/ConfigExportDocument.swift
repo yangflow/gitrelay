@@ -2,7 +2,7 @@ import Foundation
 
 /// Portable configuration snapshot for moving GitRelay between machines.
 /// Secrets (HTTPS tokens, Keychain values, private key material) are never included.
-struct ConfigExportDocument: Codable, Equatable, Sendable {
+nonisolated struct ConfigExportDocument: Codable, Equatable, Sendable {
     static let currentSchemaVersion = 1
 
     var schemaVersion: Int
@@ -29,13 +29,13 @@ struct ConfigExportDocument: Codable, Equatable, Sendable {
     }
 }
 
-struct ExportedProviderAccount: Codable, Equatable, Hashable, Sendable {
+nonisolated struct ExportedProviderAccount: Codable, Equatable, Hashable, Sendable {
     var provider: GitProvider
     var label: String
     var host: String?
 }
 
-struct ExportedOrgSubscription: Codable, Equatable, Hashable, Sendable {
+nonisolated struct ExportedOrgSubscription: Codable, Equatable, Hashable, Sendable {
     var id: UUID
     var provider: GitProvider
     var accountLabel: String
@@ -68,7 +68,7 @@ struct ExportedOrgSubscription: Codable, Equatable, Hashable, Sendable {
 }
 
 /// Org template with machine-local SSH paths stripped.
-struct ExportedOrgSubscriptionTemplate: Codable, Equatable, Hashable, Sendable {
+nonisolated struct ExportedOrgSubscriptionTemplate: Codable, Equatable, Hashable, Sendable {
     var sourceAuthMode: AuthMode
     var sourceKeyPath: String
     var targetURLTemplate: String
@@ -123,7 +123,7 @@ struct ExportedOrgSubscriptionTemplate: Codable, Equatable, Hashable, Sendable {
     }
 }
 
-struct ExportedMirrorTarget: Codable, Equatable, Hashable, Sendable {
+nonisolated struct ExportedMirrorTarget: Codable, Equatable, Hashable, Sendable {
     var id: UUID
     var kind: MirrorTargetKind
     var url: String
@@ -164,7 +164,7 @@ struct ExportedMirrorTarget: Codable, Equatable, Hashable, Sendable {
     }
 }
 
-struct ExportedRepo: Codable, Equatable, Hashable, Sendable {
+nonisolated struct ExportedRepo: Codable, Equatable, Hashable, Sendable {
     var id: UUID
     var name: String
     var srcURL: String
@@ -224,7 +224,7 @@ struct ExportedRepo: Codable, Equatable, Hashable, Sendable {
     }
 }
 
-enum RepoCredentialTags {
+nonisolated enum RepoCredentialTags {
     static func sourceTokenTag(repoID: UUID) -> String {
         "\(repoID.uuidString)-src"
     }

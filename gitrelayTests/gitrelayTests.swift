@@ -5986,7 +5986,7 @@ struct LFSMirrorServiceTests {
         )
         #expect(prepare == .warnedMissingTool)
         #expect(await runner.fetchCount == 0)
-        #expect(logs.contains(where: LFSMirrorMessages.isMissingGitLFSWarning))
+        #expect(logs.contains(where: { lfsLineIsMissingGitLFSWarning($0) }))
         #expect(logs.contains(where: { $0.contains("brew install git-lfs") || $0.contains("git-lfs") }))
         // Missing tool is a soft warning: callers treat git sync as success.
         #expect(prepare != .readyToPush)

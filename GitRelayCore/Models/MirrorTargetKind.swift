@@ -1,6 +1,6 @@
 import Foundation
 
-enum MirrorTargetKind: String, Codable, CaseIterable, Identifiable {
+nonisolated enum MirrorTargetKind: String, Codable, CaseIterable, Identifiable {
     case gitRemote
     case filesystem
 

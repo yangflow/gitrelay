@@ -1,6 +1,6 @@
 import Foundation
 
-struct SyncRecord: Identifiable {
+nonisolated struct SyncRecord: Identifiable, Sendable {
     let id: UUID
     let repoID: UUID
     let startedAt: Date

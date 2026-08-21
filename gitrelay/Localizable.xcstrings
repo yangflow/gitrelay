@@ -681,23 +681,6 @@
         }
       }
     },
-    "After a sync, the Release and asset progress for each target will appear here.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "After a sync, the Release and asset progress for each target will appear here."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "执行一次同步后，此处会显示各目标的 Release 与 asset 进度。"
-          }
-        }
-      }
-    },
     "After syncing the git repository, incrementally copy source Release tags, titles, bodies, and attachments such as .dmg and .tar.gz files to each enabled target. A GitHub or GitLab API token is required.": {
       "extractionState": "manual",
       "localizations": {
@@ -2500,23 +2483,6 @@
         }
       }
     },
-    "Enable “Mirror Releases and Binary Assets” when editing the repository to copy Release attachments to each enabled target during sync.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enable “Mirror Releases and Binary Assets” when editing the repository to copy Release attachments to each enabled target during sync."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在编辑仓库中开启「镜像 Releases 及二进制 assets」，同步时会将 Release 附件复制到每个已启用目标。"
-          }
-        }
-      }
-    },
     "Enabled": {
       "extractionState": "manual",
       "localizations": {
@@ -3125,23 +3091,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gitea (Gitee 开源版)"
-          }
-        }
-      }
-    },
-    "Group Actions": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Group Actions"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "组操作"
           }
         }
       }
@@ -4251,23 +4200,6 @@
         }
       }
     },
-    "No Release Sync Records Yet": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No Release Sync Records Yet"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "尚无 Release 同步记录"
-          }
-        }
-      }
-    },
     "No Repositories": {
       "extractionState": "manual",
       "localizations": {
@@ -5182,23 +5114,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Release 镜像"
-          }
-        }
-      }
-    },
-    "Release Mirroring Is Disabled": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Release Mirroring Is Disabled"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Release 镜像未启用"
           }
         }
       }
@@ -7158,23 +7073,6 @@
         }
       }
     },
-    "Waiting for the First Release Sync…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Waiting for the First Release Sync…"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "等待首次 Release 同步…"
-          }
-        }
-      }
-    },
     "Warning: This repository uses Git LFS, but git-lfs was not found. Install it (for example: brew install git-lfs), then sync again. Git objects were still mirrored successfully.": {
       "extractionState": "manual",
       "localizations": {
@@ -8769,6 +8667,57 @@
           "stringUnit": {
             "state": "translated",
             "value": "筛选与显示"
+          }
+        }
+      }
+    },
+    "Release mirroring is off. Enable it when editing this repository.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release mirroring is off. Enable it when editing this repository."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release 镜像未开启。可在编辑仓库时启用。"
+          }
+        }
+      }
+    },
+    "No release syncs yet. They appear here after a sync.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No release syncs yet. They appear here after a sync."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚无 Release 同步记录。同步后会显示在这里。"
+          }
+        }
+      }
+    },
+    "Waiting for the first release sync…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for the first release sync…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待首次 Release 同步…"
           }
         }
       }

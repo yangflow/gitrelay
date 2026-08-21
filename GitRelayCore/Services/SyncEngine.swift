@@ -1,6 +1,6 @@
 import Foundation
 
-enum SyncEvent {
+nonisolated enum SyncEvent: Sendable {
     case started
     case phase(SyncPhase)
     case log(String)
@@ -492,8 +492,8 @@ final class SyncEngine {
 }
 
 /// Forwards parsed git progress onto the main-actor SyncEngine without capturing it in a Sendable closure.
-private final class SyncPhaseProgressBridge: @unchecked Sendable {
-    private weak var engine: SyncEngine?
+private nonisolated final class SyncPhaseProgressBridge: @unchecked Sendable {
+    private nonisolated(unsafe) weak var engine: SyncEngine?
     private let phase: SyncPhase
 
     init(engine: SyncEngine, phase: SyncPhase) {
@@ -512,7 +512,7 @@ private final class SyncPhaseProgressBridge: @unchecked Sendable {
 }
 
 /// Forwards target log lines onto a MainActor sink without converting a MainActor function to `@Sendable`.
-private final class SyncTargetLogBridge: @unchecked Sendable {
+private nonisolated final class SyncTargetLogBridge: @unchecked Sendable {
     private let onLine: @MainActor (String) -> Void
 
     init(onLine: @escaping @MainActor (String) -> Void) {
@@ -526,7 +526,7 @@ private final class SyncTargetLogBridge: @unchecked Sendable {
     }
 }
 
-enum SyncEngineError: LocalizedError {
+nonisolated enum SyncEngineError: LocalizedError {
     case noEnabledTargets
 
     var errorDescription: String? {
@@ -538,9 +538,9 @@ enum SyncEngineError: LocalizedError {
 }
 
 /// Thread-safe cancel flag shared with the retry executor (which is not MainActor-isolated).
-final class SyncCancellationFlag: @unchecked Sendable {
+nonisolated final class SyncCancellationFlag: @unchecked Sendable {
     private let lock = NSLock()
-    private var cancelled = false
+    private nonisolated(unsafe) var cancelled = false
 
     var isCancelled: Bool {
         lock.lock()

@@ -142,7 +142,7 @@ final class AppViewModel {
     init(
         verificationPreferencesStore: VerificationPreferencesStore? = nil,
         orgSubscriptionStore: OrgSubscriptionStore? = nil,
-        orgSubscriptionFetcher: OrgRemoteRepoFetcher = .live,
+        orgSubscriptionFetcher: OrgRemoteRepoFetcher? = nil,
         webhookPreferencesStore: WebhookPreferencesStore? = nil,
         securityPreferencesStore: SecurityPreferencesStore? = nil,
         cachePreferencesStore: CachePreferencesStore? = nil,
@@ -158,7 +158,10 @@ final class AppViewModel {
         self.orgSubscriptionStore = orgStore
         self.orgSubscriptionPreferences = orgStore.preferences
         self.orgSubscriptions = orgStore.subscriptions
-        self.orgSubscriptionPoller = OrgSubscriptionPoller(store: orgStore, fetcher: orgSubscriptionFetcher)
+        self.orgSubscriptionPoller = OrgSubscriptionPoller(
+            store: orgStore,
+            fetcher: orgSubscriptionFetcher ?? .live
+        )
         let webhookStore = webhookPreferencesStore ?? WebhookPreferencesStore()
         self.webhookPreferences = webhookStore
         self.securityPreferences = securityPreferencesStore ?? SecurityPreferencesStore()
@@ -197,9 +200,8 @@ final class AppViewModel {
         UNUserNotificationCenter.current().delegate = failureNotifier
 
         scheduler.onFire = { [weak self] id in
-            Task { @MainActor in
-                guard let self else { return }
-                self.handleScheduledSyncFire(repoID: id)
+            Task { @MainActor [weak self] in
+                self?.handleScheduledSyncFire(repoID: id)
             }
         }
         verificationScheduler.onFire = { [weak self] in
@@ -229,7 +231,7 @@ final class AppViewModel {
         }
 
         webhookListener.onRequest = { [weak self] request in
-            await MainActor.run {
+            await MainActor.run { [weak self] in
                 self?.handleWebhookRequest(request)
                     ?? WebhookHTTPResponse.plain(503, "Service Unavailable", message: "unavailable\n")
             }
@@ -435,7 +437,9 @@ final class AppViewModel {
                 self.patchLastSynced(repoID: repoID, error: nil)
                 self.statuses[repoID] = .idle
                 self.failureNotifier.clearPending(for: repoID)
-                Task { await self.enforceMirrorCacheQuotaIfNeeded(excluding: [repoID]) }
+                Task { [self] in
+                    await self.enforceMirrorCacheQuotaIfNeeded(excluding: [repoID])
+                }
             case .failed(let message, let record):
                 self.appendRecord(record, for: repoID)
                 self.finishSync(repoID: repoID)
@@ -600,14 +604,14 @@ final class AppViewModel {
     func importConfiguration(
         from data: Data,
         mode: ConfigImportMode,
-        probe: CredentialProbe = .live
+        probe: CredentialProbe? = nil
     ) throws -> ConfigImportPlan {
         let document = try ConfigExportCodec.decode(data)
         let plan = ConfigExportCodec.planImport(
             document: document,
             mode: mode,
             existingRepos: repos,
-            probe: probe
+            probe: probe ?? .live
         )
 
         // Persist repos first (atomic file replace). Only then update account / org stores.

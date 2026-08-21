@@ -65,8 +65,8 @@ enum RepoSyncStatusKindEntity: String, AppEnum {
 
 struct RepoSyncStatusEntityQuery: EntityQuery {
     func entities(for identifiers: [String]) async throws -> [RepoSyncStatusEntity] {
-        try await MainActor.run {
-            try identifiers.compactMap { identifier in
+        await MainActor.run {
+            identifiers.compactMap { identifier in
                 guard let snapshot = try? AppIntentBridge.syncStatusSnapshot(repoName: identifier) else {
                     return nil
                 }
@@ -76,7 +76,7 @@ struct RepoSyncStatusEntityQuery: EntityQuery {
     }
 
     func suggestedEntities() async throws -> [RepoSyncStatusEntity] {
-        try await MainActor.run {
+        await MainActor.run {
             guard let viewModel = AppIntentBridge.viewModel else { return [] }
             return viewModel.repos.map { repo in
                 RepoSyncStatusEntity(

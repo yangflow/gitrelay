@@ -1,6 +1,6 @@
 import Foundation
 
-struct TargetSyncResult: Identifiable, Equatable {
+nonisolated struct TargetSyncResult: Identifiable, Equatable, Sendable {
     let targetID: UUID
     let targetURL: String
     var succeeded: Bool

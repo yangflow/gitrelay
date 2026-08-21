@@ -1,7 +1,7 @@
 import Foundation
 
 /// A subscribed GitHub organization or GitLab group whose repo list is polled for newcomers.
-struct OrgSubscription: Identifiable, Codable, Equatable, Hashable, Sendable {
+nonisolated struct OrgSubscription: Identifiable, Codable, Equatable, Hashable, Sendable {
     var id: UUID
     var provider: GitProvider
     var accountLabel: String
@@ -35,7 +35,7 @@ struct OrgSubscription: Identifiable, Codable, Equatable, Hashable, Sendable {
 }
 
 /// Global preferences for org/group subscription polling.
-struct OrgSubscriptionPreferences: Equatable, Codable, Sendable {
+nonisolated struct OrgSubscriptionPreferences: Equatable, Codable, Sendable {
     var pollFrequency: OrgSubscriptionPollFrequency
     var notificationsEnabled: Bool
 

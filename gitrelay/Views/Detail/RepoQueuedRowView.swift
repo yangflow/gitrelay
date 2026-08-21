@@ -10,18 +10,10 @@ struct RepoQueuedRowView: View {
             Text(String(localized: "Queued"))
                 .font(.callout)
                 .foregroundStyle(DesignTokens.StatusColor.queued)
-            Spacer()
+            Spacer(minLength: DesignTokens.Spacing.md)
             Button(String(localized: "Cancel"), action: onCancel)
                 .buttonStyle(.bordered)
                 .controlSize(.small)
         }
-        .padding(DesignTokens.Spacing.md)
-        .background(DesignTokens.Surface.panelFill)
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: DesignTokens.CornerRadius.banner,
-                style: .continuous
-            )
-        )
     }
 }

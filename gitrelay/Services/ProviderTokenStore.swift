@@ -1,6 +1,6 @@
 import Foundation
 
-enum ProviderTokenStore {
+nonisolated enum ProviderTokenStore {
     static let defaultAccountLabel = ProviderAccount.defaultLabel
 
     static func legacyTag(for provider: GitProvider) -> String {

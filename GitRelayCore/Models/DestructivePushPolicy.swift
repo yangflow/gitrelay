@@ -1,6 +1,6 @@
 import Foundation
 
-enum DestructivePushPolicy: String, Codable, CaseIterable, Identifiable {
+nonisolated enum DestructivePushPolicy: String, Codable, CaseIterable, Identifiable {
     case strict
     case auto
 
@@ -23,7 +23,7 @@ enum DestructivePushPolicy: String, Codable, CaseIterable, Identifiable {
     }
 
     /// strict 策略在 dry-run 发现删除 / 强制更新时需要用户显式确认。
-    func requiresConfirmation(for plan: DestructivePushPlan) -> Bool {
+    nonisolated func requiresConfirmation(for plan: DestructivePushPlan) -> Bool {
         self == .strict && plan.isDestructive
     }
 }

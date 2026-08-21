@@ -1,6 +1,6 @@
 import Foundation
 
-enum SyncFrequency: String, Codable, CaseIterable, Identifiable {
+nonisolated enum SyncFrequency: String, Codable, CaseIterable, Identifiable {
     case manual = "手动"
     case min15  = "每 15 分钟"
     case min30  = "每 30 分钟"

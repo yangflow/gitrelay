@@ -11,15 +11,15 @@ struct RepoFailureRowView: View {
     let onOpenLog: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: DesignTokens.Spacing.popoverChromeVertical) {
+        HStack(alignment: .top, spacing: DesignTokens.Spacing.sm) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(DesignTokens.StatusColor.diverged)
+                .foregroundStyle(DesignTokens.StatusColor.failed)
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
-                Text("Last Sync Failed")
+                Text(String(localized: "Last Sync Failed"))
                     .font(.callout)
                     .fontWeight(.medium)
                 if consecutiveFailureCount > 0 {
-                    Text("\(consecutiveFailureCount) consecutive failures")
+                    Text(String(localized: "\(consecutiveFailureCount) consecutive failures"))
                         .font(.caption)
                         .foregroundStyle(
                             consecutiveFailureCount >= 3
@@ -32,7 +32,7 @@ struct RepoFailureRowView: View {
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                 if let lastSuccessfulSyncedAt {
-                    Text("Last success: \(lastSuccessfulSyncedAt.formatted(.relative(presentation: .named)))")
+                    Text(String(localized: "Last success: \(lastSuccessfulSyncedAt.formatted(.relative(presentation: .named)))"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -48,25 +48,10 @@ struct RepoFailureRowView: View {
                     onOpenLog: onOpenLog
                 )
             }
-            Spacer()
-            Button("Retry", action: onRetry)
+            Spacer(minLength: DesignTokens.Spacing.md)
+            Button(String(localized: "Retry"), action: onRetry)
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
-        }
-        .padding(DesignTokens.Spacing.md)
-        .background(DesignTokens.Surface.statusCalloutFill)
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: DesignTokens.CornerRadius.banner,
-                style: .continuous
-            )
-        )
-        .overlay {
-            RoundedRectangle(
-                cornerRadius: DesignTokens.CornerRadius.banner,
-                style: .continuous
-            )
-            .stroke(DesignTokens.Surface.statusCalloutStroke, lineWidth: 1)
         }
     }
 }

@@ -6,25 +6,41 @@ struct ReleaseMirrorStatusView: View {
     let isSyncing: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+        Group {
             if !repo.mirrorReleases {
-                ContentUnavailableView {
-                    Label("Release Mirroring Is Disabled", systemImage: "shippingbox")
-                } description: {
-                    Text("Enable “Mirror Releases and Binary Assets” when editing the repository to copy Release attachments to each enabled target during sync.")
-                }
+                quietEmpty(
+                    symbol: "shippingbox",
+                    message: String(localized: "Release mirroring is off. Enable it when editing this repository.")
+                )
             } else if statuses.isEmpty {
-                ContentUnavailableView {
-                    Label("No Release Sync Records Yet", systemImage: "clock")
-                } description: {
-                    Text("After a sync, the Release and asset progress for each target will appear here.")
-                }
+                quietEmpty(
+                    symbol: "clock",
+                    message: String(localized: "No release syncs yet. They appear here after a sync.")
+                )
             } else {
-                ForEach(statuses, id: \.targetID) { status in
-                    targetSection(status)
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                    ForEach(statuses, id: \.targetID) { status in
+                        targetSection(status)
+                    }
                 }
             }
         }
+    }
+
+    private func quietEmpty(symbol: String, message: String) -> some View {
+        VStack(spacing: DesignTokens.Spacing.sm) {
+            Image(systemName: symbol)
+                .font(.title2)
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+            Text(message)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, DesignTokens.Spacing.md)
     }
 
     @ViewBuilder
@@ -40,7 +56,7 @@ struct ReleaseMirrorStatusView: View {
                     ProgressView()
                         .controlSize(.small)
                 } else if let lastSyncedAt = status.lastSyncedAt {
-                    Text("Last \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))")
+                    Text(String(localized: "Last \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -53,7 +69,7 @@ struct ReleaseMirrorStatusView: View {
             }
 
             if status.tags.isEmpty {
-                Text("Waiting for the First Release Sync…")
+                Text(String(localized: "Waiting for the first release sync…"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
@@ -63,12 +79,9 @@ struct ReleaseMirrorStatusView: View {
             }
         }
         .padding(DesignTokens.Spacing.md)
-        .background(
-            DesignTokens.Surface.suggestionFill,
-            in: RoundedRectangle(
-                cornerRadius: DesignTokens.CornerRadius.banner,
-                style: .continuous
-            )
+        .gitRelayPanelSurface(
+            fill: DesignTokens.Surface.panelFill,
+            cornerRadius: DesignTokens.CornerRadius.banner
         )
     }
 

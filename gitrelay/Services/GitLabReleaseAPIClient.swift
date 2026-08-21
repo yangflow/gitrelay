@@ -79,7 +79,7 @@ struct GitLabReleaseAPIClient: ReleaseProviderClient {
         body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
 
         let path = ReleaseProviderEndpoints.gitlabUploadFile(projectPath: projectPath)
-        var components = URLComponents(string: baseURL.absoluteString + path)!
+        let components = URLComponents(string: baseURL.absoluteString + path)!
         var req = URLRequest(url: components.url!)
         req.httpMethod = "POST"
         req.setValue(token, forHTTPHeaderField: "PRIVATE-TOKEN")

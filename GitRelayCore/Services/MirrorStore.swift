@@ -1,6 +1,6 @@
 import Foundation
 
-struct MirrorStore {
+nonisolated struct MirrorStore {
     static func mirrorPath(for repoID: UUID) -> URL {
         Constants.mirrorsDirectory.appendingPathComponent(repoID.uuidString)
     }

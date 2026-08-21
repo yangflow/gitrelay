@@ -1,6 +1,6 @@
 import Foundation
 
-struct DestructivePushPlan: Equatable {
+nonisolated struct DestructivePushPlan: Equatable, Sendable {
     var deletedRefs: [String]
     var forcedUpdateRefs: [String]
 

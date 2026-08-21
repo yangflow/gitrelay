@@ -1,6 +1,6 @@
 import Foundation
 
-struct MirrorTarget: Codable, Identifiable, Equatable {
+nonisolated struct MirrorTarget: Codable, Identifiable, Equatable, Sendable {
     var id: UUID
     var kind: MirrorTargetKind
     var url: String

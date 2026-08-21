@@ -4,16 +4,11 @@ struct SyncLogView: View {
     let records: [SyncRecord]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
-            Text("Sync Log")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.bottom, DesignTokens.Spacing.xxxs)
-
+        Group {
             if records.isEmpty {
-                Text("No Records")
+                Text(String(localized: "No Records"))
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {

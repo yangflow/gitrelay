@@ -2,7 +2,7 @@ import Foundation
 
 /// High-level stage of an in-flight sync, shown in detail / sidebar / menu bar.
 /// Optional `progressDetail` is a **parsed** objects/bytes summary — never raw git stderr.
-struct SyncPhase: Equatable, Sendable {
+nonisolated struct SyncPhase: Equatable, Sendable {
     enum Kind: Equatable, Sendable {
         case cloningSource
         case fetchingSource

@@ -304,7 +304,7 @@ final class AddEditRepoViewModel {
             )
         }
         if webhookEnabled {
-            try? WebhookSecretStore.ensureSecret(repoID: repoID)
+            _ = try? WebhookSecretStore.ensureSecret(repoID: repoID)
         }
     }
 

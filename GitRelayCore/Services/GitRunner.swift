@@ -1,6 +1,6 @@
 import Foundation
 
-enum GitError: LocalizedError {
+nonisolated enum GitError: LocalizedError {
     case gitNotFound
     case processError(Int32, String)
     case cancelled
@@ -327,7 +327,7 @@ actor GitRunner {
         let existing = merged["PATH"]
             ?? ProcessInfo.processInfo.environment["PATH"]
             ?? "/usr/bin:/bin:/usr/sbin:/sbin"
-        let extras = GitLFSTool.pathDirectories()
+        let extras = gitLFSPathDirectories()
         var parts = existing.split(separator: ":").map(String.init)
         for dir in extras.reversed() where !parts.contains(dir) {
             parts.insert(dir, at: 0)
@@ -337,7 +337,7 @@ actor GitRunner {
     }
 
     func isGitLFSAvailable() async throws -> Bool {
-        if GitLFSTool.isAvailable() {
+        if gitLFSToolIsAvailable() {
             return true
         }
         do {
@@ -409,7 +409,7 @@ actor GitRunner {
                 paths = stdout
                     .split(separator: "\n")
                     .map(String.init)
-                    .filter(LFSAttributesDetector.isGitAttributesPath)
+                    .filter(isGitAttributesPath)
             } catch GitError.cancelled {
                 throw GitError.cancelled
             } catch {
@@ -422,7 +422,7 @@ actor GitRunner {
                         args: ["show", "\(treeIsh):\(path)"],
                         cwd: mirrorPath
                     )
-                    if LFSAttributesDetector.containsLFSFilter(content) {
+                    if lfsAttributesIndicateFilter(content) {
                         return true
                     }
                 } catch GitError.cancelled {
@@ -437,59 +437,3 @@ actor GitRunner {
 }
 
 extension GitRunner: LFSCommandRunning {}
-
-/// Accumulates stderr while optionally emitting `\r`/`\n`-delimited progress lines.
-private final class GitStderrStream: @unchecked Sendable {
-    private let lock = NSLock()
-    private var accumulated = Data()
-    private var pending = Data()
-    private let onProgressLine: (@Sendable (String) -> Void)?
-
-    init(onProgressLine: (@Sendable (String) -> Void)?) {
-        self.onProgressLine = onProgressLine
-    }
-
-    func append(_ chunk: Data) {
-        lock.lock()
-        defer { lock.unlock() }
-        accumulated.append(chunk)
-        guard onProgressLine != nil else { return }
-
-        pending.append(chunk)
-        while let separator = pending.firstIndex(where: { $0 == 0x0A || $0 == 0x0D }) {
-            let lineData = pending.subdata(in: pending.startIndex..<separator)
-            let separatorByte = pending[separator]
-            let afterSeparator = pending.index(after: separator)
-            // Treat `\r\n` as one separator.
-            if separatorByte == 0x0D,
-               afterSeparator < pending.endIndex,
-               pending[afterSeparator] == 0x0A {
-                pending.removeSubrange(pending.startIndex...afterSeparator)
-            } else {
-                pending.removeSubrange(pending.startIndex...separator)
-            }
-            emitLine(Data(lineData))
-        }
-    }
-
-    func finish() -> String {
-        lock.lock()
-        defer { lock.unlock() }
-        if !pending.isEmpty {
-            emitLine(pending)
-            pending.removeAll(keepingCapacity: false)
-        }
-        return String(data: accumulated, encoding: .utf8) ?? ""
-    }
-
-    private func emitLine(_ data: Data) {
-        guard let onProgressLine,
-              let line = String(data: data, encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines),
-              !line.isEmpty
-        else {
-            return
-        }
-        onProgressLine(line)
-    }
-}

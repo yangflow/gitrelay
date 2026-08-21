@@ -72,10 +72,11 @@ final class LoginItemController {
     private(set) var requiresApproval: Bool
     var lastErrorMessage: String?
 
-    init(service: LoginItemManaging = LoginItemService()) {
-        self.service = service
-        self.isEnabled = service.isEnabled
-        self.requiresApproval = service.requiresApproval
+    init(service: (any LoginItemManaging)? = nil) {
+        let resolved = service ?? LoginItemService()
+        self.service = resolved
+        self.isEnabled = resolved.isEnabled
+        self.requiresApproval = resolved.requiresApproval
     }
 
     func refresh() {

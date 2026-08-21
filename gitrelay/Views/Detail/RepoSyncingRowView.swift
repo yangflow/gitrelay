@@ -8,7 +8,7 @@ struct RepoSyncingRowView: View {
     var body: some View {
         HStack(spacing: DesignTokens.Spacing.md) {
             ProgressView()
-                .scaleEffect(0.8)
+                .controlSize(.small)
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                 Text(statusTitle)
                     .font(.callout)
@@ -19,18 +19,10 @@ struct RepoSyncingRowView: View {
                         .lineLimit(1)
                 }
             }
-            Spacer()
-            Button("Cancel", action: onCancel)
+            Spacer(minLength: DesignTokens.Spacing.md)
+            Button(String(localized: "Cancel"), action: onCancel)
                 .buttonStyle(.bordered)
                 .controlSize(.small)
         }
-        .padding(DesignTokens.Spacing.md)
-        .background(DesignTokens.Surface.panelFill)
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: DesignTokens.CornerRadius.banner,
-                style: .continuous
-            )
-        )
     }
 }

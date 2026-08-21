@@ -1,31 +1,79 @@
 import Foundation
 
+// MARK: - File-level LFS helpers (cannot inherit SWIFT_DEFAULT_ACTOR_ISOLATION)
+
+/// Returns true when `.gitattributes` content declares the LFS filter.
+nonisolated func lfsAttributesIndicateFilter(_ content: String) -> Bool {
+    for rawLine in content.split(separator: "\n", omittingEmptySubsequences: false) {
+        var line = String(rawLine)
+        if let commentIndex = line.firstIndex(of: "#") {
+            line = String(line[..<commentIndex])
+        }
+        let tokens = line.split(whereSeparator: { $0.isWhitespace || $0 == "\t" })
+            .map(String.init)
+        guard tokens.count >= 2 else { continue }
+        if tokens.dropFirst().contains(where: isLFSFilterAttributeToken) {
+            return true
+        }
+    }
+    return false
+}
+
+nonisolated func isGitAttributesPath(_ path: String) -> Bool {
+    let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmed == ".gitattributes" || trimmed.hasSuffix("/.gitattributes")
+}
+
+nonisolated private func isLFSFilterAttributeToken(_ token: String) -> Bool {
+    token == "filter=lfs" || token.hasPrefix("filter=lfs=")
+}
+
+/// Avoid `FileManager.default` — it is MainActor-isolated under the app target.
+nonisolated func gitLFSIsExecutable(_ path: String) -> Bool {
+    FileManager().isExecutableFile(atPath: path)
+}
+
+nonisolated func gitLFSDefaultHomeDirectory() -> String {
+    NSHomeDirectory()
+}
+
+nonisolated func gitLFSCandidatePaths(homeDirectory: String? = nil) -> [String] {
+    let home = homeDirectory ?? gitLFSDefaultHomeDirectory()
+    return [
+        "/opt/homebrew/bin/git-lfs",
+        "/usr/local/bin/git-lfs",
+        "/usr/bin/git-lfs",
+        "\(home)/.local/bin/git-lfs"
+    ]
+}
+
+nonisolated func gitLFSToolIsAvailable(
+    fileExists: ((String) -> Bool)? = nil,
+    homeDirectory: String? = nil
+) -> Bool {
+    let exists = fileExists ?? gitLFSIsExecutable(_:)
+    return gitLFSCandidatePaths(homeDirectory: homeDirectory).contains(where: exists)
+}
+
+/// Directories to prepend to PATH so `git lfs` can resolve `git-lfs`.
+nonisolated func gitLFSPathDirectories(homeDirectory: String? = nil) -> [String] {
+    Array(Set(gitLFSCandidatePaths(homeDirectory: homeDirectory).map {
+        URL(fileURLWithPath: $0).deletingLastPathComponent().path
+    }))
+}
+
+// MARK: - Thin wrappers (tests may still import enum names)
+
 /// Pure helpers for Git LFS detection and sync planning (unit-testable without spawning git).
 enum LFSAttributesDetector {
-    /// Returns true when `.gitattributes` content declares the LFS filter.
     static func containsLFSFilter(_ content: String) -> Bool {
-        for rawLine in content.split(separator: "\n", omittingEmptySubsequences: false) {
-            var line = String(rawLine)
-            if let commentIndex = line.firstIndex(of: "#") {
-                line = String(line[..<commentIndex])
-            }
-            let tokens = line.split(whereSeparator: { $0.isWhitespace || $0 == "\t" })
-                .map(String.init)
-            guard tokens.count >= 2 else { continue }
-            if tokens.dropFirst().contains(where: isLFSFilterAttribute) {
-                return true
-            }
-        }
-        return false
+        lfsAttributesIndicateFilter(content)
     }
 
     static func isGitAttributesPath(_ path: String) -> Bool {
+        // Forward to the file-level helper (unqualified name would recurse into this method).
         let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed == ".gitattributes" || trimmed.hasSuffix("/.gitattributes")
-    }
-
-    private static func isLFSFilterAttribute(_ token: String) -> Bool {
-        token == "filter=lfs" || token.hasPrefix("filter=lfs=")
     }
 }
 
@@ -50,6 +98,10 @@ enum LFSMirrorPlanner {
             return gitLFSAvailable ? .fetchThenPush : .warnMissingTool
         }
     }
+}
+
+nonisolated func lfsLineIsMissingGitLFSWarning(_ line: String) -> Bool {
+    line == String(localized: "Warning: This repository uses Git LFS, but git-lfs was not found. Install it (for example: brew install git-lfs), then sync again. Git objects were still mirrored successfully.")
 }
 
 enum LFSMirrorMessages {
@@ -82,16 +134,16 @@ enum LFSMirrorMessages {
     }
 
     static func isMissingGitLFSWarning(_ line: String) -> Bool {
-        line == missingGitLFSWarning
+        lfsLineIsMissingGitLFSWarning(line)
     }
 
     /// True when any recent sync log (or per-target log) recorded the missing-git-lfs warning.
     static func recentRecordsContainMissingToolWarning(_ records: [SyncRecord]) -> Bool {
         for record in records.reversed() {
-            if record.logLines.contains(where: isMissingGitLFSWarning) {
+            if record.logLines.contains(where: { lfsLineIsMissingGitLFSWarning($0) }) {
                 return true
             }
-            for target in record.targetResults where target.logLines.contains(where: isMissingGitLFSWarning) {
+            for target in record.targetResults where target.logLines.contains(where: { lfsLineIsMissingGitLFSWarning($0) }) {
                 return true
             }
         }
@@ -101,31 +153,19 @@ enum LFSMirrorMessages {
 
 /// Candidate locations for the `git-lfs` binary (GUI apps often lack Homebrew on PATH).
 enum GitLFSTool {
-    static func candidatePaths(
-        homeDirectory: String = NSHomeDirectory()
-    ) -> [String] {
-        [
-            "/opt/homebrew/bin/git-lfs",
-            "/usr/local/bin/git-lfs",
-            "/usr/bin/git-lfs",
-            "\(homeDirectory)/.local/bin/git-lfs"
-        ]
+    static func candidatePaths(homeDirectory: String? = nil) -> [String] {
+        gitLFSCandidatePaths(homeDirectory: homeDirectory)
     }
 
     static func isAvailable(
-        fileExists: (String) -> Bool = { FileManager.default.isExecutableFile(atPath: $0) },
-        homeDirectory: String = NSHomeDirectory()
+        fileExists: ((String) -> Bool)? = nil,
+        homeDirectory: String? = nil
     ) -> Bool {
-        candidatePaths(homeDirectory: homeDirectory).contains(where: fileExists)
+        gitLFSToolIsAvailable(fileExists: fileExists, homeDirectory: homeDirectory)
     }
 
-    /// Directories to prepend to PATH so `git lfs` can resolve `git-lfs`.
-    static func pathDirectories(
-        homeDirectory: String = NSHomeDirectory()
-    ) -> [String] {
-        Array(Set(candidatePaths(homeDirectory: homeDirectory).map {
-            URL(fileURLWithPath: $0).deletingLastPathComponent().path
-        }))
+    static func pathDirectories(homeDirectory: String? = nil) -> [String] {
+        gitLFSPathDirectories(homeDirectory: homeDirectory)
     }
 }
 

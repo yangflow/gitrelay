@@ -1,6 +1,6 @@
 import Foundation
 
-enum AuthConfig: Codable, Equatable {
+nonisolated enum AuthConfig: Codable, Equatable, Sendable {
     case sshAgent
     case sshKey(privateKeyPath: String)
     case httpsToken(keychainTag: String)

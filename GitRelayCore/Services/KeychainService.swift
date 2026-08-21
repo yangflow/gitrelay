@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-enum KeychainError: LocalizedError {
+nonisolated enum KeychainError: LocalizedError {
     case saveFailure(OSStatus)
     case loadFailure(OSStatus)
     case deleteFailure(OSStatus)
@@ -17,7 +17,7 @@ enum KeychainError: LocalizedError {
     }
 }
 
-struct KeychainService {
+nonisolated struct KeychainService {
     private static let service = Constants.bundleID
 
     static func saveToken(_ token: String, tag: String) throws {

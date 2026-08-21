@@ -1,7 +1,7 @@
 import Foundation
 
 /// Preset mirror settings applied when auto-adding repos discovered via org subscription.
-struct OrgSubscriptionTemplate: Codable, Equatable, Hashable, Sendable {
+nonisolated struct OrgSubscriptionTemplate: Codable, Equatable, Hashable, Sendable {
     var sourceAuthMode: AuthMode
     var sourceKeyPath: String
     var targetURLTemplate: String
@@ -31,7 +31,7 @@ struct OrgSubscriptionTemplate: Codable, Equatable, Hashable, Sendable {
     )
 }
 
-enum OrgSubscriptionTargetNamespaceKind: String, Codable, CaseIterable, Identifiable, Sendable {
+nonisolated enum OrgSubscriptionTargetNamespaceKind: String, Codable, CaseIterable, Identifiable, Sendable {
     case currentUser, organization, adminForUser
 
     var id: String { rawValue }

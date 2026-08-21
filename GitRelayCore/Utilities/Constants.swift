@@ -1,9 +1,10 @@
 import Foundation
 
-enum Constants {
+nonisolated enum Constants {
     static let bundleID = "com.yangflow.gitrelay"
 
-    private static var testingBaseDirectory: URL?
+    /// Test-only override; written from test setup before concurrent work.
+    nonisolated(unsafe) private static var testingBaseDirectory: URL?
 
     static var baseDirectory: URL {
         if let testingBaseDirectory {

@@ -1,6 +1,6 @@
 import Foundation
 
-struct RepoConfig: Codable, Identifiable, Equatable {
+nonisolated struct RepoConfig: Codable, Identifiable, Equatable, Sendable {
     var id: UUID
     var name: String
     var srcURL: String

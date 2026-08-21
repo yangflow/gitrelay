@@ -53,7 +53,8 @@ extension View {
         }
     }
 
-    /// Soft panel surface used inside the detail scroll (branch list, logs, etc.).
+    /// Soft panel surface used inside the detail scroll (logs, callouts, etc.).
+    /// Low-contrast fill + hairline only — no drop shadow (including dark mode).
     func gitRelayPanelSurface(
         fill: Color = DesignTokens.Surface.panelFill,
         cornerRadius: CGFloat = DesignTokens.CornerRadius.control
@@ -62,7 +63,7 @@ extension View {
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(DesignTokens.Surface.separator, lineWidth: 1)
+                    .strokeBorder(DesignTokens.Surface.separator, lineWidth: 1)
             }
     }
 

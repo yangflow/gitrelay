@@ -17,7 +17,7 @@ struct SyncLogRecordView: View {
 
             if !record.targetResults.isEmpty {
                 if !record.logLines.isEmpty {
-                    logBlock(title: "Source", lines: record.logLines)
+                    logBlock(title: String(localized: "Source"), lines: record.logLines)
                 }
                 ForEach(record.targetResults) { result in
                     targetBlock(result)
@@ -28,8 +28,8 @@ struct SyncLogRecordView: View {
                 }
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.bottom, 4)
+        .padding(.horizontal, DesignTokens.Spacing.sm)
+        .padding(.bottom, DesignTokens.Spacing.xxs)
     }
 
     @ViewBuilder

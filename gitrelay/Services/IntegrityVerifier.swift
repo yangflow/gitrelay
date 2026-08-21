@@ -34,7 +34,7 @@ final class IntegrityVerifier {
 
         guard !verifiableTargets.isEmpty else {
             let message = enabledTargets.isEmpty
-                ? (SyncEngineError.noEnabledTargets.localizedDescription ?? "No enabled mirror targets")
+                ? SyncEngineError.noEnabledTargets.localizedDescription
                 : "No git remote targets to verify (filesystem archive targets skipped)"
             log(String(localized: "Error: \(message)"))
             record.finishedAt = Date()

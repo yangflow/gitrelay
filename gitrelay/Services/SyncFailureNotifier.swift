@@ -12,26 +12,26 @@ struct PendingFailureAlert: Equatable, Sendable {
 }
 
 /// User-facing routes from a sync-failure notification action (or body tap).
-enum SyncFailureNotificationAction: Equatable, Sendable {
+nonisolated enum SyncFailureNotificationAction: Equatable, Sendable {
     case syncAgain
     case open
 }
 
 /// Builds and reads the failure-notification `userInfo` payload (repo id only).
-enum SyncFailureNotificationPayload {
-    static func userInfo(repoID: UUID) -> [AnyHashable: Any] {
+nonisolated enum SyncFailureNotificationPayload {
+    nonisolated static func userInfo(repoID: UUID) -> [AnyHashable: Any] {
         [SyncFailureNotifier.repoIDKey: repoID.uuidString]
     }
 
-    static func repoID(from userInfo: [AnyHashable: Any]) -> UUID? {
+    nonisolated static func repoID(from userInfo: [AnyHashable: Any]) -> UUID? {
         guard let raw = userInfo[SyncFailureNotifier.repoIDKey] as? String else { return nil }
         return UUID(uuidString: raw)
     }
 }
 
 /// Maps `UNNotificationResponse.actionIdentifier` values to failure-notification actions.
-enum SyncFailureNotificationRouting {
-    static func action(for identifier: String) -> SyncFailureNotificationAction? {
+nonisolated enum SyncFailureNotificationRouting {
+    nonisolated static func action(for identifier: String) -> SyncFailureNotificationAction? {
         switch identifier {
         case SyncFailureNotifier.syncAgainActionIdentifier:
             return .syncAgain
@@ -49,13 +49,13 @@ enum SyncFailureNotificationRouting {
 @MainActor
 @Observable
 final class SyncFailureNotifier: NSObject {
-    static let categoryIdentifier = "GITRELAY_SYNC_FAILURE"
+    nonisolated static let categoryIdentifier = "GITRELAY_SYNC_FAILURE"
     /// Kept as the historical identifier so already-delivered notifications still route.
-    static let syncAgainActionIdentifier = "GITRELAY_RETRY_SYNC"
-    static let retryActionIdentifier = syncAgainActionIdentifier
-    static let openActionIdentifier = "GITRELAY_OPEN_REPO"
-    static let aggregatedCategoryIdentifier = "GITRELAY_SYNC_FAILURE_SUMMARY"
-    static let repoIDKey = "repoID"
+    nonisolated static let syncAgainActionIdentifier = "GITRELAY_RETRY_SYNC"
+    nonisolated static let retryActionIdentifier = syncAgainActionIdentifier
+    nonisolated static let openActionIdentifier = "GITRELAY_OPEN_REPO"
+    nonisolated static let aggregatedCategoryIdentifier = "GITRELAY_SYNC_FAILURE_SUMMARY"
+    nonisolated static let repoIDKey = "repoID"
 
     private let center: UNUserNotificationCenter
     private let focusStatusProvider: () -> Bool?
@@ -75,10 +75,10 @@ final class SyncFailureNotifier: NSObject {
 
     init(
         center: UNUserNotificationCenter = .current(),
-        focusStatusProvider: @escaping () -> Bool? = SyncFailureNotifier.readFocusStatus
+        focusStatusProvider: (() -> Bool?)? = nil
     ) {
         self.center = center
-        self.focusStatusProvider = focusStatusProvider
+        self.focusStatusProvider = focusStatusProvider ?? SyncFailureNotifier.readFocusStatus
         super.init()
         center.delegate = self
         registerCategories()
@@ -278,12 +278,28 @@ extension SyncFailureNotifier: UNUserNotificationCenterDelegate {
         let action = response.actionIdentifier
         let category = response.notification.request.content.categoryIdentifier
         let userInfo = response.notification.request.content.userInfo
+        let repoID = (userInfo[SyncFailureNotifier.repoIDKey] as? String)
+            .flatMap(UUID.init(uuidString:))
+        let subscriptionID = (userInfo[OrgDiscoveryNotifier.subscriptionIDKey] as? String)
+            .flatMap(UUID.init(uuidString:))
 
         Task { @MainActor in
             if category == OrgDiscoveryNotifier.categoryIdentifier {
-                handleOrgDiscoveryAction(identifier: action, userInfo: userInfo)
+                if let subscriptionID,
+                   action == OrgDiscoveryNotifier.viewActionIdentifier
+                    || action == UNNotificationDefaultActionIdentifier {
+                    onOrgDiscoveryView?(subscriptionID)
+                }
             } else if category == SyncFailureNotifier.categoryIdentifier {
-                handleAction(identifier: action, userInfo: userInfo)
+                if let repoID,
+                   let routed = SyncFailureNotificationRouting.action(for: action) {
+                    switch routed {
+                    case .syncAgain:
+                        onSyncAgain?(repoID)
+                    case .open:
+                        onOpen?(repoID)
+                    }
+                }
             }
             completionHandler()
         }

@@ -1,7 +1,7 @@
 import Foundation
 
 /// A labeled credential context for a Git provider (personal, work, etc.).
-struct ProviderAccount: Hashable, Codable, Identifiable, Sendable {
+nonisolated struct ProviderAccount: Hashable, Codable, Identifiable, Sendable {
     let provider: GitProvider
     let label: String
 
@@ -30,7 +30,7 @@ struct ProviderAccount: Hashable, Codable, Identifiable, Sendable {
     }
 }
 
-enum BrowseRemoteAccountSelection {
+nonisolated enum BrowseRemoteAccountSelection {
     /// Returns a normalized label when `raw` is valid and not already used.
     static func validatedNewLabel(_ raw: String, existing: [String]) -> String? {
         guard let label = ProviderAccount.normalizeLabel(raw) else { return nil }

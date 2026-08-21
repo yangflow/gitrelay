@@ -17,25 +17,29 @@ struct RepoDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Picker("Detail Page", selection: $selectedTab) {
+            Picker(String(localized: "Detail Page"), selection: $selectedTab) {
                 ForEach(RepoDetailTab.allCases) { tab in
                     Text(tab.localizedTitle).tag(tab)
                 }
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
+            .controlSize(.regular)
+            .accessibilityLabel(String(localized: "Detail Page"))
             .padding(.horizontal, DesignTokens.Spacing.detailContent)
-            .padding(.top, DesignTokens.Spacing.lg)
-            .padding(.bottom, DesignTokens.Spacing.md)
+            .padding(.top, DesignTokens.Spacing.sm)
+            .padding(.bottom, DesignTokens.Spacing.xs)
 
             ScrollViewReader { proxy in
-                ScrollView {
+                Form {
                     switch selectedTab {
                     case .overview:
-                        overviewContent
+                        overviewSections
                     case .releases:
-                        releasesContent
+                        releasesSections
                     }
                 }
+                .formStyle(.grouped)
                 .onChange(of: scrollToSyncLogToken) { _, token in
                     guard token != nil else { return }
                     selectedTab = .overview
@@ -77,12 +81,13 @@ struct RepoDetailView: View {
         }
     }
 
-    private var overviewContent: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.detailSection) {
+    @ViewBuilder
+    private var overviewSections: some View {
+        Section {
             RepoHeaderView(repo: repo, recentSyncRecords: records)
+        }
 
-            detailDivider
-
+        Section {
             RepoStatusSectionView(
                 repo: repo,
                 status: status,
@@ -97,40 +102,47 @@ struct RepoDetailView: View {
                 onReenterCredentials: { appVM.requestReenterCredentials(repoID: repo.id) },
                 onOpenLog: { scrollToSyncLog() }
             )
+        } header: {
+            Text(String(localized: "Status"))
+        }
 
-            detailDivider
-
+        Section {
             SyncHistorySparklineView(
                 sparkline: SyncHistorySparkline.make(from: repo.dailySyncOutcomes)
             )
+        } header: {
+            Text(String(localized: "Syncs in the Last 30 Days"))
+        }
 
-            detailDivider
-
+        Section {
             BranchListView(branches: detailVM.branches, isLoading: detailVM.isLoadingBranches)
+        } header: {
+            Text(String(localized: "Branches"))
+        }
 
-            detailDivider
-
+        Section {
             SyncLogView(records: records)
                 .id(RepoDetailScrollTarget.syncLog)
+        } header: {
+            Text(String(localized: "Sync Log"))
         }
-        .padding(DesignTokens.Spacing.detailContent)
     }
 
-    private var releasesContent: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+    @ViewBuilder
+    private var releasesSections: some View {
+        Section {
             RepoHeaderView(repo: repo, recentSyncRecords: records)
+        }
 
+        Section {
             ReleaseMirrorStatusView(
                 repo: repo,
                 statuses: detailVM.releaseStatuses,
                 isSyncing: isSyncing
             )
+        } header: {
+            Text(String(localized: "Releases"))
         }
-        .padding(DesignTokens.Spacing.detailContent)
-    }
-
-    private var detailDivider: some View {
-        Divider()
     }
 
     private func restoreDetailTabIfNeeded() {

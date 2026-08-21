@@ -1,22 +1,22 @@
 import Foundation
 
-struct MirrorCacheEntry: Equatable, Sendable {
+nonisolated struct MirrorCacheEntry: Equatable, Sendable {
     let repoID: UUID
     let lastAccessedAt: Date
     let sizeBytes: Int64
 }
 
-enum MirrorCacheEvictionStep: Equatable, Sendable {
+nonisolated enum MirrorCacheEvictionStep: Equatable, Sendable {
     case garbageCollect(repoID: UUID)
     case deleteMirror(repoID: UUID)
 }
 
-struct MirrorCacheCleanupPlan: Equatable, Sendable {
+nonisolated struct MirrorCacheCleanupPlan: Equatable, Sendable {
     let steps: [MirrorCacheEvictionStep]
     let finalUsageBytes: Int64
 }
 
-enum MirrorCacheManager {
+nonisolated enum MirrorCacheManager {
     static let bytesPerGB: Int64 = 1_073_741_824
 
     static func quotaLimitBytes(for quotaGB: Int?) -> Int64? {
@@ -81,7 +81,7 @@ enum MirrorCacheManager {
     }
 }
 
-enum MirrorDirectorySizer {
+nonisolated enum MirrorDirectorySizer {
     static func directorySize(
         at url: URL,
         fileManager: FileManager = .default
