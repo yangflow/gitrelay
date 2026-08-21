@@ -31,6 +31,15 @@ final class AppViewModel {
     /// Opens the browse-remote sheet prefilled from an org subscription discovery notification.
     var pendingBrowsePrefill: BrowseRemotePrefill?
 
+    /// Opens the add-repository sheet from the main-window ⌘N / File menu command.
+    var pendingOpenAddRepository = false
+
+    /// Focuses the sidebar search field from the main-window ⌘F / Edit menu command.
+    var pendingFocusSidebarSearch = false
+
+    /// Sidebar selection mirrored from the main window for ⌘R sync.
+    var mainWindowSelectedRepoID: UUID?
+
     var errorMessage: String?
     /// FIFO queue: parallel syncs may each need a destructive-push prompt.
     var pendingDestructiveConfirmations: [DestructivePushConfirmationRequest] = []
@@ -734,6 +743,37 @@ final class AppViewModel {
         return pendingBrowsePrefill
     }
 
+    /// Opens the add-repository two-step sheet (⌘N). Brings the main window forward.
+    func requestOpenAddRepository() {
+        pendingOpenAddRepository = true
+        bringMainWindowForwardForCommands()
+    }
+
+    func consumePendingOpenAddRepository() -> Bool {
+        guard pendingOpenAddRepository else { return false }
+        pendingOpenAddRepository = false
+        return true
+    }
+
+    /// Focuses the sidebar search field (⌘F). Brings the main window forward.
+    func requestFocusSidebarSearch() {
+        pendingFocusSidebarSearch = true
+        bringMainWindowForwardForCommands()
+    }
+
+    func consumePendingFocusSidebarSearch() -> Bool {
+        guard pendingFocusSidebarSearch else { return false }
+        pendingFocusSidebarSearch = false
+        return true
+    }
+
+    /// Syncs the main-window selection (⌘R). No-op when nothing is selected or
+    /// ``triggerSync(repoID:)`` would already refuse (e.g. already syncing).
+    func syncMainWindowSelectedRepository() {
+        guard let id = mainWindowSelectedRepoID else { return }
+        triggerSync(repoID: id)
+    }
+
     /// Opens the edit sheet for a repo with the authentication fields focused.
     /// Does not mutate repository configuration.
     func requestReenterCredentials(repoID: UUID) {
@@ -1002,12 +1042,16 @@ final class AppViewModel {
     }
 
     private func bringAppForwardForConfirmation() {
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
-        NotificationCenter.default.post(name: .gitrelayOpenMainWindow, object: nil)
+        bringMainWindowForwardForCommands()
         for window in NSApp.windows where window.styleMask.contains(.titled) {
             window.makeKeyAndOrderFront(nil)
         }
+    }
+
+    private func bringMainWindowForwardForCommands() {
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        NotificationCenter.default.post(name: .gitrelayOpenMainWindow, object: nil)
     }
 
     private func patchLastSynced(repoID: UUID, error: String?) {

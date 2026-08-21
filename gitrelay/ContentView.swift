@@ -34,9 +34,14 @@ struct ContentView: View {
             handleDrop(providers: providers)
         }
         .onAppear {
+            appVM.mainWindowSelectedRepoID = selectedRepoID
             applyPendingMainWindowSelection()
             applyPendingBrowsePrefill()
             applyPendingEditFocusAuth()
+            applyPendingOpenAddRepository()
+        }
+        .onChange(of: selectedRepoID) { _, newValue in
+            appVM.mainWindowSelectedRepoID = newValue
         }
         .onChange(of: appVM.pendingMainWindowRepoID) { _, _ in
             applyPendingMainWindowSelection()
@@ -46,6 +51,10 @@ struct ContentView: View {
         }
         .onChange(of: appVM.pendingEditFocusAuthRepoID) { _, _ in
             applyPendingEditFocusAuth()
+        }
+        .onChange(of: appVM.pendingOpenAddRepository) { _, isPending in
+            guard isPending else { return }
+            applyPendingOpenAddRepository()
         }
         .sheet(item: $sheetMode) { mode in
             switch mode {
@@ -96,6 +105,7 @@ struct ContentView: View {
     private func applyPendingMainWindowSelection() {
         guard let repoID = appVM.pendingMainWindowRepoID else { return }
         selectedRepoID = repoID
+        appVM.mainWindowSelectedRepoID = repoID
         appVM.pendingMainWindowRepoID = nil
     }
 
@@ -110,5 +120,11 @@ struct ContentView: View {
         selectedRepoID = repoID
         guard let repo = appVM.repos.first(where: { $0.id == repoID }) else { return }
         sheetMode = .edit(repo, focusAuth: true)
+    }
+
+    private func applyPendingOpenAddRepository() {
+        guard appVM.consumePendingOpenAddRepository() else { return }
+        addPrefill = nil
+        sheetMode = .add
     }
 }
