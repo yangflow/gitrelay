@@ -5,7 +5,7 @@ import Observation
 @MainActor
 @Observable
 final class BrowseRemoteRepoViewModel {
-    enum Phase: Hashable { case connect, selecting, configureTarget, submitting, result }
+    typealias Phase = BrowseRemotePhase
 
     enum ScopeKind: String, CaseIterable, Identifiable {
         case currentUser, organization
@@ -105,6 +105,9 @@ final class BrowseRemoteRepoViewModel {
     // Phase state
     var phase: Phase = .connect
 
+    /// Rail position (1 / 2 / 3). Submitting and result stay on step 3.
+    var step: BrowseRemoteStep { phase.step }
+
     // MARK: - Derived
 
     var filteredRepos: [RemoteRepo] {
@@ -154,6 +157,8 @@ final class BrowseRemoteRepoViewModel {
 
     private let accountDefaults: UserDefaults
 
+    @ObservationIgnored private var didRestoreContext = false
+
     init(defaults: UserDefaults = .standard) {
         self.accountDefaults = defaults
         ProviderAccountStore.migrateIfNeeded(defaults: defaults)
@@ -161,6 +166,61 @@ final class BrowseRemoteRepoViewModel {
         refreshTargetGiteaAccounts()
         restoreSourceAccountContext()
         restoreTargetGiteaAccountContext()
+    }
+
+    /// Re-reads accounts, tokens, and cached scopes the first time the pane
+    /// appears. The wizard outlives the pane, so later appearances must not
+    /// overwrite a token the user is midway through typing.
+    func restoreContextIfNeeded() {
+        guard !didRestoreContext else { return }
+        didRestoreContext = true
+        refreshSourceAccounts()
+        refreshTargetGiteaAccounts()
+        restoreSourceAccountContext()
+        restoreTargetGiteaAccountContext()
+    }
+
+    /// Points the wizard at a provider before the pane appears (the Browse
+    /// Remote button on the GitHub / GitLab account panes).
+    func selectProvider(_ newValue: GitProvider) {
+        guard GitProvider.listingCases.contains(newValue), newValue != provider else { return }
+        provider = newValue
+        applyProviderChange()
+    }
+
+    /// Reloads the account list and token after the host popup changes.
+    func applyProviderChange() {
+        refreshSourceAccounts()
+        restoreSourceAccountContext()
+    }
+
+    // MARK: - Navigation
+
+    func goBack() {
+        guard let previous = phase.previous else { return }
+        phase = previous
+    }
+
+    func advanceToTargetConfiguration() async {
+        phase = .configureTarget
+        await prepareTargetConfiguration()
+    }
+
+    /// Returns the wizard to step 1 without discarding the connected account,
+    /// host, or token, so a second batch does not start from nothing.
+    func startOver() {
+        phase = .connect
+        repos = []
+        selectedIDs = []
+        searchText = ""
+        hasMore = false
+        nextPage = 1
+        batchResults = []
+        submitProgress = 0
+        submitTotal = 0
+        connectError = nil
+        submitError = nil
+        accountActionError = nil
     }
 
     /// Applies org-subscription discovery prefill and jumps to repo selection.

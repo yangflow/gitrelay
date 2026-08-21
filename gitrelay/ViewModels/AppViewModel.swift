@@ -29,7 +29,7 @@ final class AppViewModel {
     /// After selecting a repo, scroll the detail pane to the Sync Log section.
     var pendingScrollToSyncLogRepoID: UUID?
 
-    /// Opens the browse-remote sheet prefilled from an org subscription discovery notification.
+    /// Opens the browse-remote pane prefilled from an org subscription discovery notification.
     var pendingBrowsePrefill: BrowseRemotePrefill?
 
     /// Opens the add-repository sheet from the main-window ⌘N / File menu command.

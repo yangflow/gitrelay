@@ -256,19 +256,19 @@
         }
       }
     },
-    "%lld repositories selected": {
+    "%lld selected": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld repositories selected"
+            "value": "%lld selected"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已选择 %lld 个仓库"
+            "value": "已选 %lld 个"
           }
         }
       }
@@ -524,6 +524,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加 %lld 个到同步列表"
+          }
+        }
+      }
+    },
+    "Add Account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Account"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加账号"
           }
         }
       }
@@ -1310,23 +1327,6 @@
         }
       }
     },
-    "Browse and Select Remote Repositories": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Browse and Select Remote Repositories"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浏览并选择远端仓库"
-          }
-        }
-      }
-    },
     "Browse and select from GitHub or GitLab": {
       "extractionState": "manual",
       "localizations": {
@@ -1429,6 +1429,23 @@
         }
       }
     },
+    "Choose a Host": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a Host"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择主机"
+          }
+        }
+      }
+    },
     "Choose an archive directory": {
       "extractionState": "manual",
       "localizations": {
@@ -1459,6 +1476,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "选择归档输出目录"
+          }
+        }
+      }
+    },
+    "Choose the Git host and account to browse.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the Git host and account to browse."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择要浏览的 Git 托管平台和账号。"
+          }
+        }
+      }
+    },
+    "Choose where the mirrors live and how they authenticate.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose where the mirrors live and how they authenticate."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择镜像的存放位置及其认证方式。"
           }
         }
       }
@@ -1633,19 +1684,19 @@
         }
       }
     },
-    "Configure Target Repositories": {
+    "Configure the Target": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Configure Target Repositories"
+            "value": "Configure the Target"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "配置目标仓库"
+            "value": "配置目标"
           }
         }
       }
@@ -1663,6 +1714,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "破坏性镜像推送确认"
+          }
+        }
+      }
+    },
+    "Connection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接"
           }
         }
       }
@@ -2088,23 +2156,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "将删除 %lld 个 ref"
-          }
-        }
-      }
-    },
-    "Delete Current Account": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete Current Account"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "删除当前账号"
           }
         }
       }
@@ -2653,19 +2704,19 @@
         }
       }
     },
-    "Failed %@": {
+    "Failed %lld": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Failed %@"
+            "value": "Failed %lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "失败 %@"
+            "value": "失败 %lld"
           }
         }
       }
@@ -3010,6 +3061,23 @@
         }
       }
     },
+    "Gitea Account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gitea Account"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gitea 账号"
+          }
+        }
+      }
+    },
     "GitHub Token (Requires admin:repo_hook)": {
       "extractionState": "manual",
       "localizations": {
@@ -3027,36 +3095,36 @@
         }
       }
     },
-    "GitLab Host (Self-Hosted Instance Optional)": {
+    "GitLab Host": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "GitLab Host (Self-Hosted Instance Optional)"
+            "value": "GitLab Host"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "GitLab Host(自建实例可选)"
+            "value": "GitLab 主机"
           }
         }
       }
     },
-    "GitRelay notifies you and opens a prefilled browse sheet so you can review before mirroring.": {
+    "GitRelay notifies you and opens Browse Remote prefilled so you can review before mirroring.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "GitRelay notifies you and opens a prefilled browse sheet so you can review before mirroring."
+            "value": "GitRelay notifies you and opens Browse Remote prefilled so you can review before mirroring."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "GitRelay 会通知您并打开预填充的浏览面板，供您在镜像前审核。"
+            "value": "GitRelay 会通知你，并打开已预填的“浏览远程”，你可以先检查再开始镜像。"
           }
         }
       }
@@ -3142,6 +3210,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "HMAC 密钥已存入 Keychain"
+          }
+        }
+      }
+    },
+    "Host": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主机"
           }
         }
       }
@@ -4846,6 +4931,23 @@
         }
       }
     },
+    "Pick Repositories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick Repositories"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择仓库"
+          }
+        }
+      }
+    },
     "Policy": {
       "extractionState": "manual",
       "localizations": {
@@ -4927,6 +5029,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "私钥路径"
+          }
+        }
+      }
+    },
+    "Private repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private repository"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "私有仓库"
           }
         }
       }
@@ -5169,6 +5288,23 @@
         }
       }
     },
+    "Remove Account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Account"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除账号"
+          }
+        }
+      }
+    },
     "Remove Tag": {
       "extractionState": "manual",
       "localizations": {
@@ -5305,19 +5441,36 @@
         }
       }
     },
-    "Reused %@": {
+    "Reused %lld": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reused %@"
+            "value": "Reused %lld"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "复用 %@"
+            "value": "复用 %lld"
+          }
+        }
+      }
+    },
+    "Review the outcome, then add the pairs to the sync list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review the outcome, then add the pairs to the sync list."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看结果，然后把这些配对加入同步列表。"
           }
         }
       }
@@ -5373,6 +5526,23 @@
         }
       }
     },
+    "Select the repositories you want to mirror.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select the repositories you want to mirror."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "勾选要镜像的仓库。"
+          }
+        }
+      }
+    },
     "shallow clone (history truncated)": {
       "extractionState": "manual",
       "localizations": {
@@ -5386,6 +5556,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "浅克隆（历史被截断）"
+          }
+        }
+      }
+    },
+    "Source URLs come from the repositories you picked; this choice decides whether they use SSH or HTTPS.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source URLs come from the repositories you picked; this choice decides whether they use SSH or HTTPS."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "源地址来自所选仓库；此处的选择决定它们使用 SSH 还是 HTTPS。"
           }
         }
       }
@@ -5573,23 +5760,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "全选当前"
-          }
-        }
-      }
-    },
-    "Select Repositories to Mirror": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Select Repositories to Mirror"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "选择要镜像的仓库"
           }
         }
       }
@@ -5815,23 +5985,6 @@
         }
       }
     },
-    "Source URLs are generated from the selected repositories (choose SSH or HTTPS with the source authentication option below)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Source URLs are generated from the selected repositories (choose SSH or HTTPS with the source authentication option below)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "源 URL 由所选仓库自动生成(按下方的源认证方式选择 SSH 或 HTTPS)"
-          }
-        }
-      }
-    },
     "Source repository is missing branch %@": {
       "extractionState": "manual",
       "localizations": {
@@ -5883,6 +6036,23 @@
         }
       }
     },
+    "Start Over": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Over"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新开始"
+          }
+        }
+      }
+    },
     "Status Filter": {
       "extractionState": "manual",
       "localizations": {
@@ -5896,6 +6066,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "状态过滤"
+          }
+        }
+      }
+    },
+    "Step %lld of %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step %lld of %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld 步，共 %lld 步"
           }
         }
       }

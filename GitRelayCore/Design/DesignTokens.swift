@@ -32,6 +32,12 @@ enum DesignTokens {
         static let addEditRepoSheetMinWidth: CGFloat = 640
         static let addEditRepoSheetMinHeight: CGFloat = 420
 
+        /// Browse-remote wizard rail: keeps 1–2–3 centered instead of stretching
+        /// across a wide, resized detail pane.
+        static let browseStepBarMaxWidth: CGFloat = 320
+        /// Repository picker keeps a workable height on a short window.
+        static let browseRepoListMinHeight: CGFloat = 200
+
         /// Pair-table column sizing (源 / 目标 / 状态 / 上次).
         static let pairTablePathColumnMin: CGFloat = 140
         static let pairTablePathColumnIdeal: CGFloat = 220
@@ -95,6 +101,8 @@ enum DesignTokens {
         static let aboutIcon: CGFloat = 80
         static let runIndicatorDot: CGFloat = 7
         static let paneTabUnderline: CGFloat = 2
+        /// Numbered circle on the browse-remote step rail.
+        static let stepMarker: CGFloat = 26
     }
 
     /// Semantic status colors shared by sidebar dots, detail labels, menu bar, and widgets.

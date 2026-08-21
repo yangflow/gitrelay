@@ -243,7 +243,7 @@ struct OrgSubscriptionEditorSheet: View {
                             )
                         }
                     } else {
-                        Text(String(localized: "GitRelay notifies you and opens a prefilled browse sheet so you can review before mirroring."))
+                        Text(String(localized: "GitRelay notifies you and opens Browse Remote prefilled so you can review before mirroring."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
