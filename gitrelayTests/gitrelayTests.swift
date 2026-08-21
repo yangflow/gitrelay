@@ -1765,6 +1765,11 @@ struct DesignTokensTests {
         #expect(DesignTokens.Layout.sidebarIdealWidth < DesignTokens.Layout.sidebarMaxWidth)
     }
 
+    @Test func addEditRepoSheetUsesResizableTwoColumnMinimum() {
+        #expect(DesignTokens.Layout.addEditRepoSheetMinWidth == 640)
+        #expect(DesignTokens.Layout.addEditRepoSheetMinHeight == 420)
+    }
+
     @Test func statusColorMappingCoversEverySyncStatus() {
         // Color equality needs SwiftUI in the test target; assert via a pure label instead.
         #expect(DesignTokens.StatusColor.label(for: .idle) == "idle")
@@ -2144,6 +2149,7 @@ struct AddEditRepoValidationTests {
     @Test func emptyNameIsInvalid() {
         let vm = AddEditRepoViewModel()
         vm.srcURL = "git@github.com:user/repo.git"
+        vm.updateName("")
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
         _ = vm.validate()
         #expect(vm.nameError != nil)
@@ -2151,8 +2157,8 @@ struct AddEditRepoValidationTests {
 
     @Test func whitespaceOnlyNameIsInvalid() {
         let vm = AddEditRepoViewModel()
-        vm.name = "   "
         vm.srcURL = "git@github.com:user/repo.git"
+        vm.updateName("   ")
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
         _ = vm.validate()
         #expect(vm.nameError != nil)
@@ -2160,8 +2166,8 @@ struct AddEditRepoValidationTests {
 
     @Test func sshURLsAreValid() {
         let vm = AddEditRepoViewModel()
-        vm.name = "my-repo"
         vm.srcURL = "git@gitlab.com:org/repo.git"
+        vm.updateName("my-repo")
         setPrimaryTargetURL(vm, "git@github.com:user/repo.git")
         #expect(vm.validate())
         #expect(vm.srcError == nil)
@@ -2170,15 +2176,15 @@ struct AddEditRepoValidationTests {
 
     @Test func httpsURLsAreValid() {
         let vm = AddEditRepoViewModel()
-        vm.name = "my-repo"
         vm.srcURL = "https://github.com/user/repo.git"
+        vm.updateName("my-repo")
         setPrimaryTargetURL(vm, "https://github.com/user/mirror.git")
         #expect(vm.validate())
     }
 
     @Test func invalidURLIsRejected() {
         let vm = AddEditRepoViewModel()
-        vm.name = "my-repo"
+        vm.updateName("my-repo")
         vm.srcURL = "not-a-url"
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
         _ = vm.validate()
@@ -2188,7 +2194,7 @@ struct AddEditRepoValidationTests {
 
     @Test func emptyURLsAreInvalid() {
         let vm = AddEditRepoViewModel()
-        vm.name = "my-repo"
+        vm.updateName("my-repo")
         _ = vm.validate()
         #expect(vm.srcError != nil)
         #expect(!vm.targetErrors.isEmpty)
@@ -2196,8 +2202,8 @@ struct AddEditRepoValidationTests {
 
     @Test func allDisabledTargetsAreInvalid() {
         let vm = AddEditRepoViewModel()
-        vm.name = "my-repo"
         vm.srcURL = "git@github.com:user/repo.git"
+        vm.updateName("my-repo")
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
         vm.targets[0].enabled = false
         _ = vm.validate()
@@ -2206,8 +2212,8 @@ struct AddEditRepoValidationTests {
 
     @Test func buildRepoConfigKeepsDestructivePushPolicy() {
         let vm = AddEditRepoViewModel()
-        vm.name = "my-repo"
         vm.srcURL = "git@gitlab.com:org/repo.git"
+        vm.updateName("my-repo")
         setPrimaryTargetURL(vm, "git@github.com:user/repo.git")
         vm.destructivePushPolicy = .auto
 
@@ -2252,8 +2258,8 @@ struct AddEditRepoValidationTests {
 
     @Test func buildRepoConfigSupportsMultipleTargets() {
         let vm = AddEditRepoViewModel()
-        vm.name = "multi"
         vm.srcURL = "git@github.com:user/repo.git"
+        vm.updateName("multi")
         vm.targets[0].url = "git@github.com:user/mirror-a.git"
         vm.addTarget()
         vm.targets[1].url = "git@gitlab.com:user/mirror-b.git"
@@ -2268,8 +2274,8 @@ struct AddEditRepoValidationTests {
 
     @Test func buildRepoConfigNormalizesTags() {
         let vm = AddEditRepoViewModel()
-        vm.name = "tagged"
         vm.srcURL = "git@github.com:user/repo.git"
+        vm.updateName("tagged")
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
         vm.tags = [" work ", "work", "oss", "  "]
 
@@ -2280,8 +2286,8 @@ struct AddEditRepoValidationTests {
 
     @Test func buildRepoConfigPersistsDepthAndRefSpecs() {
         let vm = AddEditRepoViewModel()
-        vm.name = "partial"
         vm.srcURL = "git@github.com:user/repo.git"
+        vm.updateName("partial")
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
         vm.depthText = "50"
         vm.refSpecsText = """
@@ -2301,8 +2307,8 @@ struct AddEditRepoValidationTests {
 
     @Test func invalidDepthIsRejected() {
         let vm = AddEditRepoViewModel()
-        vm.name = "partial"
         vm.srcURL = "git@github.com:user/repo.git"
+        vm.updateName("partial")
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
         vm.depthText = "0"
 
@@ -2371,16 +2377,17 @@ struct AddEditRepoTwoStepTests {
     @Test func requiredFieldsAloneValidateAndBuildConfigForSync() {
         let vm = AddEditRepoViewModel()
         #expect(!vm.showsMoreOptions)
-        vm.name = "quick-add"
         vm.srcURL = "git@github.com:acme/source.git"
         setPrimaryTargetURL(vm, "git@github.com:acme/mirror.git")
         vm.frequency = .hour1
 
+        #expect(vm.name == "source")
+        #expect(vm.srcAuthMode == .sshAgent)
         #expect(vm.validate())
         #expect(!vm.showsMoreOptions)
 
         let repo = vm.buildRepoConfig()
-        #expect(repo.name == "quick-add")
+        #expect(repo.name == "source")
         #expect(repo.srcURL == "git@github.com:acme/source.git")
         #expect(repo.targets.count == 1)
         #expect(repo.targets[0].url == "git@github.com:acme/mirror.git")
@@ -2391,17 +2398,73 @@ struct AddEditRepoTwoStepTests {
         #expect(repo.depth == nil)
     }
 
-    @Test func openMoreOptionsStaysOnStepOneWhenInvalid() {
+    @Test func openMoreOptionsWorksWithoutFilledBasics() {
         let vm = AddEditRepoViewModel()
-        #expect(!vm.openMoreOptions())
         #expect(!vm.showsMoreOptions)
-        #expect(vm.nameError != nil)
 
-        vm.name = "ready"
+        vm.openMoreOptions()
+        #expect(vm.showsMoreOptions)
+        // Validation is deferred to Save / Add and Start Syncing.
+        #expect(vm.nameError == nil)
+
+        vm.backToBasics()
+        #expect(!vm.showsMoreOptions)
+    }
+
+    @Test func saveStillRequiresBasicsEvenAfterVisitingMoreOptions() {
+        let vm = AddEditRepoViewModel()
+        vm.openMoreOptions()
+        #expect(!vm.validate())
+        #expect(vm.nameError != nil)
+        #expect(vm.srcError != nil)
+
         vm.srcURL = "git@github.com:acme/source.git"
         setPrimaryTargetURL(vm, "git@github.com:acme/mirror.git")
-        #expect(vm.openMoreOptions())
-        #expect(vm.showsMoreOptions)
+        #expect(vm.name == "source")
+        #expect(vm.validate())
+    }
+
+    @Test func infersNameAndSSHAgentFromGitAtSourceURL() {
+        let vm = AddEditRepoViewModel()
+        vm.srcURL = "git@gitlab.com:org/my-project.git"
+        #expect(vm.name == "my-project")
+        #expect(vm.srcAuthMode == .sshAgent)
+        #expect(vm.basicsInferenceCaption == "SSH Agent · my-project")
+    }
+
+    @Test func infersHTTPSTokenAuthFromHTTPSSourceURL() {
+        let suite = "AddEditRepoInference.https.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let vm = AddEditRepoViewModel(defaults: defaults)
+        vm.srcURL = "https://github.com/acme/widget.git"
+        #expect(vm.name == "widget")
+        #expect(vm.srcAuthMode == .httpsToken)
+        #expect(vm.basicsInferenceCaption == "HTTPS Token · widget")
+    }
+
+    @Test func userEditedNameIsNotOverwrittenBySourceURLChange() {
+        let vm = AddEditRepoViewModel()
+        vm.srcURL = "git@github.com:acme/original.git"
+        #expect(vm.name == "original")
+
+        vm.updateName("custom-name")
+        #expect(vm.nameIsUserOverride)
+        #expect(vm.name == "custom-name")
+
+        vm.srcURL = "git@github.com:acme/other-repo.git"
+        #expect(vm.name == "custom-name")
+        #expect(vm.srcAuthMode == .sshAgent)
+        #expect(vm.basicsInferenceCaption == "SSH Agent · custom-name")
+    }
+
+    @Test func staticInferenceHelpersMatchURLSchemes() {
+        #expect(AddEditRepoViewModel.inferredRepoName(fromSourceURL: "git@github.com:a/b.git") == "b")
+        #expect(AddEditRepoViewModel.inferredRepoName(fromSourceURL: "https://github.com/a/c.git") == "c")
+        #expect(AddEditRepoViewModel.inferredAuthMode(fromSourceURL: "git@x:y/z.git") == .sshAgent)
+        #expect(AddEditRepoViewModel.inferredAuthMode(fromSourceURL: "ssh://git@host/path/repo.git") == .sshAgent)
+        #expect(AddEditRepoViewModel.inferredAuthMode(fromSourceURL: "https://host/a/b.git") == .httpsToken)
     }
 
     @Test func droppedURLPrefillsSourceAndInferredName() {
@@ -2458,9 +2521,13 @@ struct AddEditRepoTwoStepTests {
             webhookEnabled: true
         )
         let vm = AddEditRepoViewModel(editing: existing)
-        #expect(vm.showsMoreOptions)
+        // Edit uses the same quiet two-step: optional fields stay behind More Options.
+        #expect(!vm.showsMoreOptions)
         #expect(vm.lfsMirrorMode == .off)
         #expect(vm.webhookEnabled)
+
+        vm.openMoreOptions()
+        #expect(vm.showsMoreOptions)
 
         vm.lfsMirrorMode = .auto
         vm.webhookEnabled = false
@@ -4251,8 +4318,8 @@ struct FilesystemMirrorTargetTests {
 struct FilesystemTargetValidationTests {
     @Test func filesystemTargetRequiresDirectory() {
         let vm = AddEditRepoViewModel()
-        vm.name = "archived"
         vm.srcURL = "git@github.com:user/repo.git"
+        vm.updateName("archived")
         vm.targets[0].kind = .filesystem
         vm.targets[0].filesystemPath = ""
 
@@ -4262,8 +4329,8 @@ struct FilesystemTargetValidationTests {
 
     @Test func filesystemTargetBuildsRepoConfig() {
         let vm = AddEditRepoViewModel()
-        vm.name = "archived"
         vm.srcURL = "git@github.com:user/repo.git"
+        vm.updateName("archived")
         vm.targets[0].kind = .filesystem
         vm.targets[0].filesystemPath = "/Volumes/Backup/git"
         vm.targets[0].archiveFormat = .gitBundle
@@ -4280,8 +4347,8 @@ struct FilesystemTargetValidationTests {
 
     @Test func mixedGitAndFilesystemTargetsValidate() {
         let vm = AddEditRepoViewModel()
-        vm.name = "mixed"
         vm.srcURL = "git@github.com:user/repo.git"
+        vm.updateName("mixed")
         vm.targets[0].url = "git@github.com:user/mirror.git"
         vm.addTarget()
         vm.targets[1].kind = .filesystem
@@ -4700,8 +4767,8 @@ struct ProviderTokenWebhookScopeTests {
 struct AddEditRepoWebhookTests {
     @Test func buildRepoConfigIncludesWebhookFlag() {
         let vm = AddEditRepoViewModel()
-        vm.name = "w"
         vm.srcURL = "git@github.com:user/repo.git"
+        vm.updateName("w")
         vm.targets[0].url = "git@github.com:user/mirror.git"
         vm.webhookEnabled = true
         #expect(vm.validate())
@@ -6066,8 +6133,8 @@ struct RepoConfigLFSMirrorModeTests {
 struct AddEditRepoLFSMirrorModeTests {
     @Test func buildRepoConfigPreservesLFSMode() {
         let vm = AddEditRepoViewModel()
-        vm.name = "demo"
         vm.srcURL = "git@github.com:org/src.git"
+        vm.updateName("demo")
         vm.targets[0].url = "git@github.com:org/dst.git"
         vm.lfsMirrorMode = .off
         #expect(vm.validate())
@@ -7042,6 +7109,12 @@ struct StringCatalogLocaleTests {
             "Configuration",
             "More Options",
             "Add and Start Syncing",
+            "Source URL",
+            "Target URL",
+            "Additional Targets",
+            "Targets",
+            "Source Authentication",
+            "Authentication Method",
             "Re-enter credentials",
             "Open Log",
             "Personal Access Token",
