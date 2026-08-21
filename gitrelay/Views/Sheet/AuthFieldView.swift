@@ -7,6 +7,8 @@ struct AuthFieldView: View {
     @Binding var mode: AuthMode
     @Binding var keyPath: String
     @Binding var token: String
+    /// When set, replaces the default "%@ Authentication" picker title (e.g. quiet Add/Edit sheet).
+    var pickerTitle: String? = nil
 
     @State private var isPickingKey = false
     @State private var showGenerateKeySheet = false
@@ -16,9 +18,13 @@ struct AuthFieldView: View {
     @State private var previewPublicKeyPath: String?
     @State private var previewError: String?
 
+    private var resolvedPickerTitle: String {
+        pickerTitle ?? String(localized: "\(label) Authentication")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-            Picker("\(label) Authentication", selection: $mode) {
+            Picker(resolvedPickerTitle, selection: $mode) {
                 ForEach(AuthMode.allCases) { m in
                     Text(m.rawValue).tag(m)
                 }

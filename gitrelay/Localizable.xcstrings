@@ -5798,23 +5798,6 @@
         }
       }
     },
-    "Source Repository": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Source Repository"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Source(源仓库)"
-          }
-        }
-      }
-    },
     "Source Repository Authentication (for git clone/fetch)": {
       "extractionState": "manual",
       "localizations": {
@@ -6474,23 +6457,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "目标仓库缺少分支 %@"
-          }
-        }
-      }
-    },
-    "Targets": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Targets"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Targets(目标仓库)"
           }
         }
       }
@@ -7719,23 +7685,6 @@
         }
       }
     },
-    "Add more targets under More Options.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add more targets under More Options."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可在「更多选项」中添加更多目标。"
-          }
-        }
-      }
-    },
     "Re-enter credentials": {
       "extractionState": "manual",
       "localizations": {
@@ -8718,6 +8667,91 @@
           "stringUnit": {
             "state": "translated",
             "value": "等待首次 Release 同步…"
+          }
+        }
+      }
+    },
+    "Source URL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source URL"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "源 URL"
+          }
+        }
+      }
+    },
+    "Target URL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target URL"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标 URL"
+          }
+        }
+      }
+    },
+    "Additional Targets": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Additional Targets"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多目标"
+          }
+        }
+      }
+    },
+    "Archive Directory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive Directory"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "归档目录"
+          }
+        }
+      }
+    },
+    "Authentication Method": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authentication Method"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "认证方式"
           }
         }
       }

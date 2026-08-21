@@ -10,7 +10,6 @@ struct MirrorTargetDraft: Identifiable, Equatable {
     var keyPath: String
     var token: String
     var enabled: Bool
-    var isExpanded: Bool
     let preservedAuth: AuthConfig?
     var filesystemPath: String
     var archiveFormat: ArchiveFormat
@@ -25,7 +24,6 @@ struct MirrorTargetDraft: Identifiable, Equatable {
         keyPath: String = "",
         token: String = "",
         enabled: Bool = true,
-        isExpanded: Bool = true,
         preservedAuth: AuthConfig? = nil,
         filesystemPath: String = "",
         archiveFormat: ArchiveFormat = .tarGz,
@@ -39,7 +37,6 @@ struct MirrorTargetDraft: Identifiable, Equatable {
         self.keyPath = keyPath
         self.token = token
         self.enabled = enabled
-        self.isExpanded = isExpanded
         self.preservedAuth = preservedAuth
         self.filesystemPath = filesystemPath
         self.archiveFormat = archiveFormat
@@ -47,12 +44,11 @@ struct MirrorTargetDraft: Identifiable, Equatable {
         self.retentionCount = retentionCount
     }
 
-    init(from target: MirrorTarget, isExpanded: Bool = true) {
+    init(from target: MirrorTarget) {
         self.id = target.id
         self.kind = target.kind
         self.url = target.url
         self.enabled = target.enabled
-        self.isExpanded = isExpanded
         self.preservedAuth = target.auth
         self.keyPath = ""
         self.token = ""
@@ -145,7 +141,8 @@ final class AddEditRepoViewModel {
             refSpecsText = repo.resolvedRefSpecs.joined(separator: "\n")
             webhookEnabled = repo.webhookEnabled
             populate(auth: repo.srcAuth, mode: &srcAuthMode, keyPath: &srcKeyPath, token: &srcToken)
-            showsMoreOptions = true
+            // Same quiet two-step as Add: optional fields stay behind More Options.
+            showsMoreOptions = false
         } else {
             let defaultAuth = LastUsedAuthMode.load(from: defaults) ?? .sshAgent
             srcAuthMode = defaultAuth
@@ -253,7 +250,7 @@ final class AddEditRepoViewModel {
     }
 
     func addTarget() {
-        targets.append(MirrorTargetDraft(isExpanded: true))
+        targets.append(MirrorTargetDraft())
     }
 
     func removeTarget(id: UUID) {

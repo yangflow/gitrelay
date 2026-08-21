@@ -1765,6 +1765,11 @@ struct DesignTokensTests {
         #expect(DesignTokens.Layout.sidebarIdealWidth < DesignTokens.Layout.sidebarMaxWidth)
     }
 
+    @Test func addEditRepoSheetUsesResizableTwoColumnMinimum() {
+        #expect(DesignTokens.Layout.addEditRepoSheetMinWidth == 640)
+        #expect(DesignTokens.Layout.addEditRepoSheetMinHeight == 420)
+    }
+
     @Test func statusColorMappingCoversEverySyncStatus() {
         // Color equality needs SwiftUI in the test target; assert via a pure label instead.
         #expect(DesignTokens.StatusColor.label(for: .idle) == "idle")
@@ -2458,9 +2463,13 @@ struct AddEditRepoTwoStepTests {
             webhookEnabled: true
         )
         let vm = AddEditRepoViewModel(editing: existing)
-        #expect(vm.showsMoreOptions)
+        // Edit uses the same quiet two-step: optional fields stay behind More Options.
+        #expect(!vm.showsMoreOptions)
         #expect(vm.lfsMirrorMode == .off)
         #expect(vm.webhookEnabled)
+
+        #expect(vm.openMoreOptions())
+        #expect(vm.showsMoreOptions)
 
         vm.lfsMirrorMode = .auto
         vm.webhookEnabled = false
@@ -7042,6 +7051,10 @@ struct StringCatalogLocaleTests {
             "Configuration",
             "More Options",
             "Add and Start Syncing",
+            "Source URL",
+            "Target URL",
+            "Additional Targets",
+            "Authentication Method",
             "Re-enter credentials",
             "Open Log",
             "Personal Access Token",
