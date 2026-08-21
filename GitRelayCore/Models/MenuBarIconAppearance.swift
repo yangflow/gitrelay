@@ -1,13 +1,13 @@
 import Foundation
 
 /// How the status item renders. The mark never changes: failure tints the same
-/// template glyph red instead of swapping in a second symbol (#92).
+/// Y-branch red instead of swapping in a second symbol (#92).
+///
+/// The shape itself comes from ``GitRelayMark``, the same geometry the AppIcon is
+/// drawn from, so there is no SF Symbol name to pick here.
 nonisolated enum MenuBarIconAppearance: Equatable, Sendable {
     case normal
     case failed
-
-    /// One glyph for both states. Replaced wholesale when the Y-branch asset lands.
-    static let symbolName = "arrow.triangle.2.circlepath"
 
     static func make(hasFailure: Bool, hasDivergence: Bool) -> MenuBarIconAppearance {
         hasFailure || hasDivergence ? .failed : .normal

@@ -29,20 +29,23 @@ struct SSHKeyGeneratedSheet: View {
                     .font(.title2)
                     .foregroundStyle(DesignTokens.StatusColor.success)
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-                    Text("SSH Key Generated")
+                    Text(String(localized: "SSH Key Generated"))
                         .font(.headline)
-                    Text("Add the public key to \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) to use SSH authentication.")
+                    Text(String(localized: "Add the public key to \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) to use SSH authentication."))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     if didCopy {
-                        Label("Copied to Clipboard", systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(DesignTokens.StatusColor.success)
+                        Label(
+                            String(localized: "Copied to Clipboard"),
+                            systemImage: "checkmark.circle.fill"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(DesignTokens.StatusColor.success)
                     }
                 }
                 Spacer(minLength: 0)
             }
-            .padding(DesignTokens.Spacing.sheetContent)
+            .gitRelaySheetHeaderPadding()
 
             Divider()
 
@@ -58,11 +61,11 @@ struct SSHKeyGeneratedSheet: View {
             Divider()
 
             HStack {
-                Button("Copy Public Key") {
+                Button(String(localized: "Copy Public Key")) {
                     ClipboardService.copy(result.publicKey)
                     didCopy = true
                 }
-                Button("Open \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) SSH Settings") {
+                Button(String(localized: "Open \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) SSH Settings")) {
                     if !didCopy {
                         ClipboardService.copy(result.publicKey)
                         didCopy = true
@@ -70,7 +73,7 @@ struct SSHKeyGeneratedSheet: View {
                     NSWorkspace.shared.open(settingsURL)
                 }
                 Spacer()
-                Button("Done") { dismiss() }
+                Button(String(localized: "Done")) { dismiss() }
                     .keyboardShortcut(.return)
                     .buttonStyle(.borderedProminent)
             }

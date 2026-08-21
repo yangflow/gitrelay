@@ -3078,6 +3078,23 @@
         }
       }
     },
+    "GitHub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub"
+          }
+        }
+      }
+    },
     "GitHub Token (Requires admin:repo_hook)": {
       "extractionState": "manual",
       "localizations": {
@@ -3108,6 +3125,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "GitLab 主机"
+          }
+        }
+      }
+    },
+    "GitRelay": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitRelay"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitRelay"
           }
         }
       }
@@ -3465,6 +3499,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "参数错误：%@"
+          }
+        }
+      }
+    },
+    "Key Location": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key Location"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "密钥位置"
           }
         }
       }
@@ -4757,6 +4808,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "被动（不打断专注）"
+          }
+        }
+      }
+    },
+    "Passphrase": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passphrase"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "密码短语"
           }
         }
       }
@@ -7375,6 +7443,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "未找到 ssh-keygen，请确认 macOS 命令行工具已安装。"
+          }
+        }
+      }
+    },
+    "© 2026 yangflow · MIT License": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 yangflow · MIT License"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 yangflow · MIT 许可证"
           }
         }
       }

@@ -14,7 +14,7 @@ struct DestructivePushConfirmationSheet: View {
                     .font(.title2)
                     .foregroundStyle(DesignTokens.StatusColor.diverged)
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-                    Text("Confirm Destructive Mirror Push")
+                    Text(String(localized: "Confirm Destructive Mirror Push"))
                         .font(.headline)
                     Text(repoName)
                         .font(.subheadline)
@@ -30,7 +30,7 @@ struct DestructivePushConfirmationSheet: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(DesignTokens.Spacing.sheetContent)
+            .gitRelaySheetHeaderPadding()
 
             Divider()
 
@@ -38,7 +38,7 @@ struct DestructivePushConfirmationSheet: View {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
                     if !plan.deletedRefs.isEmpty {
                         refSection(
-                            title: "Delete \(plan.deletedRefs.count) refs",
+                            title: String(localized: "Delete \(plan.deletedRefs.count) refs"),
                             refs: plan.deletedRefs,
                             symbol: "trash",
                             tint: DesignTokens.StatusColor.error,
@@ -47,7 +47,7 @@ struct DestructivePushConfirmationSheet: View {
                     }
                     if !plan.forcedUpdateRefs.isEmpty {
                         refSection(
-                            title: "Force-update \(plan.forcedUpdateRefs.count) refs",
+                            title: String(localized: "Force-update \(plan.forcedUpdateRefs.count) refs"),
                             refs: plan.forcedUpdateRefs,
                             symbol: "arrow.triangle.2.circlepath",
                             tint: DesignTokens.StatusColor.warning,
@@ -64,9 +64,9 @@ struct DestructivePushConfirmationSheet: View {
 
             HStack {
                 Spacer()
-                Button("Cancel", action: onCancel)
+                Button(String(localized: "Cancel"), action: onCancel)
                     .keyboardShortcut(.escape)
-                Button("Continue", action: onConfirm)
+                Button(String(localized: "Continue"), action: onConfirm)
                     .buttonStyle(.borderedProminent)
                     .tint(DesignTokens.StatusColor.warning)
                     .keyboardShortcut(.return)
@@ -100,12 +100,9 @@ struct DestructivePushConfirmationSheet: View {
                 }
             }
             .padding(DesignTokens.Spacing.popoverChromeVertical)
-            .background(fill)
-            .clipShape(
-                RoundedRectangle(
-                    cornerRadius: DesignTokens.CornerRadius.banner,
-                    style: .continuous
-                )
+            .gitRelayPanelSurface(
+                fill: fill,
+                cornerRadius: DesignTokens.CornerRadius.banner
             )
         }
     }

@@ -2,11 +2,18 @@
 //
 // generate-icon.swift — Produce the GitRelay AppIcon asset from scratch.
 //
-// Run once from the repo root:
+// Run once from the repo root, on a Mac:
 //     swift scripts/generate-icon.swift
 //
 // Writes 10 PNG files into gitrelay/Assets.xcassets/AppIcon.appiconset/
 // at exact pixel dimensions (no Retina-doubling).
+//
+// The mark is a purple squircle plate carrying a white Y-shaped git branch of
+// three hollow nodes (#92). Its geometry mirrors `GitRelayMark` in
+// GitRelayCore/Design/GitRelayMark.swift, which is what the menu-bar status item
+// draws from. A standalone `swift` script cannot import the app module, so the
+// numbers below are duplicated; `GitRelayMarkTests` pins the same values so a
+// change on either side fails the test suite instead of drifting silently.
 
 import AppKit
 import Foundation
@@ -26,14 +33,117 @@ let sizes: [(filename: String, pixels: Int)] = [
     ("icon_512@2x.png",  1024),
 ]
 
+// MARK: - Mark geometry (mirrors GitRelayCore/Design/GitRelayMark.swift)
+
+struct MarkPoint {
+    var x: Double
+    var y: Double
+}
+
+enum Mark {
+    static let strokeWidth = 0.044
+    static let nodeRadius = 0.072
+    static var outerRadius: Double { nodeRadius + strokeWidth / 2 }
+    static var innerRadius: Double { nodeRadius - strokeWidth / 2 }
+
+    static let fork = MarkPoint(x: 0.5, y: 0.505)
+    static let nodes = [
+        MarkPoint(x: 0.5, y: 0.69),     // trunk
+        MarkPoint(x: 0.293, y: 0.283),  // left branch
+        MarkPoint(x: 0.707, y: 0.283),  // right branch
+    ]
+
+    static let plateExponent = 5.0
+    static let plateSampleCount = 720
+
+    static func edgePoint(from node: MarkPoint, towards target: MarkPoint) -> MarkPoint {
+        let dx = target.x - node.x
+        let dy = target.y - node.y
+        let length = (dx * dx + dy * dy).squareRoot()
+        guard length > 0 else { return node }
+        return MarkPoint(
+            x: node.x + dx / length * outerRadius,
+            y: node.y + dy / length * outerRadius
+        )
+    }
+
+    static func plateOutline() -> [MarkPoint] {
+        let exponent = 2 / plateExponent
+        return (0..<plateSampleCount).map { index in
+            let angle = 2 * Double.pi * Double(index) / Double(plateSampleCount)
+            return MarkPoint(
+                x: 0.5 + 0.5 * signedPower(cos(angle), exponent),
+                y: 0.5 + 0.5 * signedPower(sin(angle), exponent)
+            )
+        }
+    }
+
+    private static func signedPower(_ value: Double, _ exponent: Double) -> Double {
+        let magnitude = pow(abs(value), exponent)
+        return value < 0 ? -magnitude : magnitude
+    }
+}
+
 // MARK: - Palette
 
-let canvas    = NSColor(calibratedRed: 0.082, green: 0.094, blue: 0.114, alpha: 1) // dark navy
-let highlight = NSColor(calibratedRed: 0.118, green: 0.137, blue: 0.165, alpha: 1) // panel
-let teal      = NSColor(calibratedRed: 0.196, green: 0.745, blue: 0.820, alpha: 1) // hairline accent
-let symbol    = NSColor(calibratedRed: 0.875, green: 0.953, blue: 1.000, alpha: 1) // near-white blue
+let plateTop = NSColor(srgbRed: 0.443, green: 0.400, blue: 0.831, alpha: 1)
+let plateBottom = NSColor(srgbRed: 0.357, green: 0.306, blue: 0.745, alpha: 1)
+let branchColor = NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1)
 
 // MARK: - Drawing
+
+/// Unit-square, y-down mark coordinates onto an AppKit y-up canvas.
+func canvasPoint(_ point: MarkPoint, size: CGFloat) -> NSPoint {
+    NSPoint(x: CGFloat(point.x) * size, y: (1 - CGFloat(point.y)) * size)
+}
+
+func platePath(size: CGFloat) -> NSBezierPath {
+    let path = NSBezierPath()
+    for (index, point) in Mark.plateOutline().enumerated() {
+        let canvas = canvasPoint(point, size: size)
+        if index == 0 {
+            path.move(to: canvas)
+        } else {
+            path.line(to: canvas)
+        }
+    }
+    path.close()
+    return path
+}
+
+/// One even-odd path holding all three rings, so each hollow core stays clear.
+func ringsPath(size: CGFloat) -> NSBezierPath {
+    let path = NSBezierPath()
+    path.windingRule = .evenOdd
+    for node in Mark.nodes {
+        let center = canvasPoint(node, size: size)
+        for radius in [Mark.outerRadius, Mark.innerRadius] {
+            let scaled = CGFloat(radius) * size
+            path.appendOval(in: NSRect(
+                x: center.x - scaled,
+                y: center.y - scaled,
+                width: scaled * 2,
+                height: scaled * 2
+            ))
+        }
+    }
+    return path
+}
+
+/// Lines from each ring's outer edge to the fork. Round caps tuck the ends back
+/// under the ring stroke without reaching into the hollow core.
+func branchLinesPath(size: CGFloat) -> NSBezierPath {
+    let path = NSBezierPath()
+    path.lineWidth = CGFloat(Mark.strokeWidth) * size
+    path.lineCapStyle = .round
+    path.lineJoinStyle = .round
+    for node in Mark.nodes {
+        let start = Mark.edgePoint(from: node, towards: Mark.fork)
+        path.move(to: canvasPoint(start, size: size))
+        path.line(to: canvasPoint(Mark.fork, size: size))
+    }
+    return path
+}
 
 func iconPNG(pixelSize px: Int) -> Data? {
     guard let rep = NSBitmapImageRep(
@@ -54,50 +164,37 @@ func iconPNG(pixelSize px: Int) -> Data? {
     defer { NSGraphicsContext.restoreGraphicsState() }
     guard let ctx = NSGraphicsContext(bitmapImageRep: rep) else { return nil }
     NSGraphicsContext.current = ctx
+    ctx.shouldAntialias = true
+    ctx.imageInterpolation = .high
 
     let size = CGFloat(px)
-    let rect = NSRect(x: 0, y: 0, width: size, height: size)
-    let corner = size * 0.22
 
-    // Base fill
-    canvas.setFill()
-    NSBezierPath(roundedRect: rect, xRadius: corner, yRadius: corner).fill()
-
-    // Inner highlight panel
-    let inner = rect.insetBy(dx: size * 0.07, dy: size * 0.07)
-    let innerCorner = corner * 0.70
-    highlight.setFill()
-    NSBezierPath(roundedRect: inner, xRadius: innerCorner, yRadius: innerCorner).fill()
-
-    // Teal hairline inside the panel
-    teal.withAlphaComponent(0.55).setStroke()
-    let ring = NSBezierPath(
-        roundedRect: inner.insetBy(dx: size * 0.015, dy: size * 0.015),
-        xRadius: innerCorner * 0.92,
-        yRadius: innerCorner * 0.92
-    )
-    ring.lineWidth = max(1, size * 0.01)
-    ring.stroke()
-
-    // SF Symbol: arrow.triangle.2.circlepath — relay / sync concept
-    let config = NSImage.SymbolConfiguration(pointSize: size * 0.46, weight: .medium)
-        .applying(NSImage.SymbolConfiguration(paletteColors: [symbol]))
-    if let base = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil),
-       let sym = base.withSymbolConfiguration(config) {
-        let ss = sym.size
-        let symbolRect = NSRect(
-            x: (size - ss.width)  / 2,
-            y: (size - ss.height) / 2,
-            width: ss.width,
-            height: ss.height
-        )
-        sym.draw(in: symbolRect)
+    // Purple plate, lighter at the top.
+    let plate = platePath(size: size)
+    if let gradient = NSGradient(starting: plateBottom, ending: plateTop) {
+        gradient.draw(in: plate, angle: 90)
+    } else {
+        plateBottom.setFill()
+        plate.fill()
     }
 
-    return rep.representation(using: .png, properties: [:])
+    // White Y branch.
+    branchColor.setStroke()
+    branchLinesPath(size: size).stroke()
+    branchColor.setFill()
+    ringsPath(size: size).fill()
+
+    let tagged = rep.converting(to: .sRGB, renderingIntent: .default) ?? rep
+    return tagged.representation(using: .png, properties: [:])
 }
 
 // MARK: - Main
+
+func warn(_ message: String) {
+    if let data = (message + "\n").data(using: .utf8) {
+        FileHandle.standardError.write(data)
+    }
+}
 
 let fm = FileManager.default
 if !fm.fileExists(atPath: assetPath) {
@@ -106,7 +203,7 @@ if !fm.fileExists(atPath: assetPath) {
 
 for (filename, px) in sizes {
     guard let data = iconPNG(pixelSize: px) else {
-        FileHandle.standardError.write("failed to encode \(filename)\n".data(using: .utf8)!)
+        warn("failed to encode \(filename)")
         continue
     }
     let url = URL(fileURLWithPath: "\(assetPath)/\(filename)")
