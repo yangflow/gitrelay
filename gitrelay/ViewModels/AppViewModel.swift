@@ -117,6 +117,15 @@ final class AppViewModel {
         RepoTagGrouping.allUniqueTags(from: repos)
     }
 
+    /// The single quiet line under the menu-bar search field: why the schedule
+    /// is paused, or how far behind the wake-up catch-up still is (#107).
+    var menuBarStatusLine: MenuBarStatusLine? {
+        MenuBarStatusLine.make(
+            pauseReason: scheduledSyncPauseReason,
+            missedRuns: missedRunCatchUp.isCatchingUp ? missedRunCatchUp.missedRunCount : 0
+        )
+    }
+
     /// Current reason scheduled syncs are paused, if any.
     var scheduledSyncPauseReason: SyncPauseReason? {
         // Touch QuietHoursMonitor.isActive so Observation refreshes the menu bar
@@ -155,7 +164,9 @@ final class AppViewModel {
     private var activeVerifiers: [UUID: IntegrityVerifier] = [:]
     private var focusFlushTask: Task<Void, Never>?
     private var activationObserver: NSObjectProtocol?
+    private var wakeObserver: NSObjectProtocol?
     private var quietHoursCatchUp = QuietHoursCatchUpTracker()
+    private var missedRunCatchUp = MissedRunCatchUpProgress()
     private var lastScheduledSkipLogAt: Date?
     private var wasScheduledSyncPaused = false
 
@@ -366,6 +377,7 @@ final class AppViewModel {
     func deleteRepo(id: UUID) {
         scheduler.deschedule(repoID: id)
         cancelSync(repoID: id)
+        missedRunCatchUp.noteFinished(repoID: id)
         cancelVerify(repoID: id)
         repos.removeAll { $0.id == id }
         statuses.removeValue(forKey: id)
@@ -711,6 +723,7 @@ final class AppViewModel {
 
     func cancelSync(repoID: UUID) {
         if syncConcurrencyGate.cancelQueued(repoID) {
+            missedRunCatchUp.noteFinished(repoID: repoID)
             if let repo = repos.first(where: { $0.id == repoID }) {
                 statuses[repoID] = initialStatus(for: repo)
             } else {
@@ -893,6 +906,30 @@ final class AppViewModel {
         records[repoID]?.last
     }
 
+    /// Runs the schedule's backlog after the machine wakes or the app becomes
+    /// active. `Timer` does not fire with the lid closed, so without this the
+    /// ticks slept through are lost until the next full interval.
+    func catchUpMissedScheduledRuns(now: Date = Date()) {
+        // A paused schedule has nothing to catch up; the pause line shows instead.
+        guard scheduledSyncPauseReason == nil else { return }
+        let expectations = repos.compactMap { scheduler.runExpectation(for: $0.id) }
+        let outcome = MissedScheduledRuns.evaluate(expectations: expectations, now: now)
+        guard outcome.hasMissedRuns else { return }
+
+        var admitted: [UUID] = []
+        for id in outcome.dueRepoIDs {
+            triggerSync(repoID: id)
+            if inProgressSyncIDs.contains(id) || syncConcurrencyGate.isQueued(id) {
+                admitted.append(id)
+            }
+            // Re-arm so the catch-up run does not stack with the next due tick.
+            if let repo = repos.first(where: { $0.id == id }) {
+                scheduler.reschedule(repo: repo)
+            }
+        }
+        missedRunCatchUp.begin(missedRunCount: outcome.missedRunCount, repoIDs: admitted)
+    }
+
     func flushDeferredFailureNotifications() {
         failureNotifier.flushPendingIfFocusEnded(
             level: notificationPreferences.preferences.interruptionLevel
@@ -1058,6 +1095,7 @@ final class AppViewModel {
 
     private func finishSync(repoID: UUID) {
         denyPendingDestructiveConfirmation(for: repoID)
+        missedRunCatchUp.noteFinished(repoID: repoID)
         inProgressSyncIDs.remove(repoID)
         activeSyncEngines.removeValue(forKey: repoID)
         syncPhases.removeValue(forKey: repoID)
@@ -1173,6 +1211,17 @@ final class AppViewModel {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.flushDeferredFailureNotifications()
+                self?.catchUpMissedScheduledRuns()
+            }
+        }
+        // A menu-bar-only session may never become active, so watch the lid too.
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.catchUpMissedScheduledRuns()
             }
         }
     }
