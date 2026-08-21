@@ -30,10 +30,10 @@ struct GitStderrStream: Sendable {
 }
 
 /// Lock-protected mutable buffers. `NSLock` is created in ``nonisolated`` init (not a MainActor default).
-private final class GitStderrStreamStorage: @unchecked Sendable {
-    private let lock: NSLock
-    private var accumulated: Data
-    private var pending: Data
+private nonisolated final class GitStderrStreamStorage: @unchecked Sendable {
+    private nonisolated(unsafe) let lock: NSLock
+    private nonisolated(unsafe) var accumulated: Data
+    private nonisolated(unsafe) var pending: Data
     let onProgressLine: (@Sendable (String) -> Void)?
 
     nonisolated init(onProgressLine: (@Sendable (String) -> Void)?) {
