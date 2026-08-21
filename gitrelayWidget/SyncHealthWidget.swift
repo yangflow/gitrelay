@@ -95,44 +95,80 @@ struct SyncHealthWidgetEntryView: View {
     }
 }
 
+/// Widget face chrome: the day label, nothing else. The counts carry the meaning.
+private struct SyncHealthTodayLabel: View {
+    var body: some View {
+        Text(String(localized: "Today"))
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+}
+
+/// Succeeded / failed / not-run counts as SF Symbols plus a number, so no
+/// catalog key has to start with a glyph like ✓ that cannot become a Swift
+/// symbol under `STRING_CATALOG_GENERATE_SYMBOLS`.
+private struct SyncHealthCountsView: View {
+    let summary: WidgetHealthSummaryPayload
+
+    var body: some View {
+        HStack(spacing: DesignTokens.Spacing.sm) {
+            count(
+                symbol: "checkmark.circle.fill",
+                value: summary.succeededToday,
+                color: DesignTokens.StatusColor.success
+            )
+            count(
+                symbol: "xmark.octagon.fill",
+                value: summary.failedToday,
+                color: DesignTokens.StatusColor.escalatedFailure
+            )
+            count(
+                symbol: "minus.circle",
+                value: summary.notRunToday,
+                color: DesignTokens.StatusColor.unknown
+            )
+        }
+        .font(.caption.weight(.semibold))
+        .monospacedDigit()
+        .minimumScaleFactor(0.75)
+        .lineLimit(1)
+    }
+
+    private func count(symbol: String, value: Int, color: Color) -> some View {
+        Label {
+            Text(value, format: .number)
+        } icon: {
+            Image(systemName: symbol)
+        }
+        .foregroundStyle(color)
+        .labelStyle(.titleAndIcon)
+    }
+
+    static func accessibilitySummary(for summary: WidgetHealthSummaryPayload) -> String {
+        String(
+            format: String(localized: "Today: %lld succeeded, %lld failed, %lld not run"),
+            summary.succeededToday,
+            summary.failedToday,
+            summary.notRunToday
+        )
+    }
+}
+
 private struct SyncHealthSmallWidgetView: View {
     let snapshot: WidgetHealthSnapshot
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            Label(String(localized: "Today"), systemImage: "calendar")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            SyncHealthTodayLabel()
 
             Spacer(minLength: 0)
 
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                widgetCount(symbol: "checkmark.circle.fill", value: snapshot.summary.succeededToday, color: DesignTokens.StatusColor.success)
-                widgetCount(symbol: "xmark.octagon.fill", value: snapshot.summary.failedToday, color: DesignTokens.StatusColor.escalatedFailure)
-                widgetCount(symbol: "minus.circle", value: snapshot.summary.notRunToday, color: DesignTokens.StatusColor.unknown)
-            }
-            .font(.caption.weight(.semibold))
-            .monospacedDigit()
-            .minimumScaleFactor(0.75)
-            .lineLimit(1)
+            SyncHealthCountsView(summary: snapshot.summary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text(accessibilitySummary))
-    }
-
-    private func widgetCount(symbol: String, value: Int, color: Color) -> some View {
-        Label("\(value)", systemImage: symbol)
-            .foregroundStyle(color)
-            .labelStyle(.titleAndIcon)
-    }
-
-    private var accessibilitySummary: String {
-        String(
-            format: String(localized: "Today: %lld succeeded, %lld failed, %lld not run"),
-            snapshot.summary.succeededToday,
-            snapshot.summary.failedToday,
-            snapshot.summary.notRunToday
+        .accessibilityLabel(
+            Text(SyncHealthCountsView.accessibilitySummary(for: snapshot.summary))
         )
     }
 }
@@ -143,23 +179,14 @@ private struct SyncHealthMediumWidgetView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.popoverChromeVertical) {
             HStack {
-                Label(String(localized: "Today"), systemImage: "calendar")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                SyncHealthTodayLabel()
                 Spacer(minLength: 0)
-                HStack(spacing: DesignTokens.Spacing.xs) {
-                    Text(String(localized: "✓ \(snapshot.summary.succeededToday)"))
-                        .foregroundStyle(DesignTokens.StatusColor.success)
-                    Text(String(localized: "✗ \(snapshot.summary.failedToday)"))
-                        .foregroundStyle(DesignTokens.StatusColor.escalatedFailure)
-                    Text(String(localized: "— \(snapshot.summary.notRunToday)"))
-                        .foregroundStyle(DesignTokens.StatusColor.unknown)
-                }
-                .font(.caption.weight(.semibold))
-                .monospacedDigit()
-                .minimumScaleFactor(0.8)
-                .lineLimit(1)
+                SyncHealthCountsView(summary: snapshot.summary)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+                Text(SyncHealthCountsView.accessibilitySummary(for: snapshot.summary))
+            )
 
             if snapshot.attentionRepos.isEmpty {
                 Text(String(localized: "All mirrors look healthy"))
