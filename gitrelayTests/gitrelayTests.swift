@@ -1074,6 +1074,7 @@ struct RepoRowHealthPresentationTests {
 
 // MARK: - RepoFailureNextStep
 
+@MainActor
 struct RepoFailureNextStepTests {
     @Test func authFailureOffersReenterCredentialsAndOpenLog() {
         guard let message = SyncFailureClassifier.displayMessage(for: .authentication) else {

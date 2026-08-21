@@ -38,7 +38,7 @@ enum SyncFailureClassifier {
             return destructivePushError.localizedDescription
         }
         if let archiveError = error as? ArchiveError {
-            return archiveError.localizedDescription ?? "Archive failed"
+            return archiveError.errorDescription ?? "Archive failed"
         }
 
         let raw = SyncEngine.redactCredentials(error.localizedDescription)
