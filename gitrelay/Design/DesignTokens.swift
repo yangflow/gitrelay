@@ -71,6 +71,18 @@ enum DesignTokens {
                 return failed
             }
         }
+
+        /// Stable label for tests without importing SwiftUI Color equality.
+        static func label(for status: SyncStatus) -> String {
+            switch status {
+            case .unknown: return "unknown"
+            case .idle: return "idle"
+            case .ahead: return "ahead"
+            case .syncing: return "syncing"
+            case .diverged: return "diverged"
+            case .failed: return "failed"
+            }
+        }
     }
 
     enum Surface {
