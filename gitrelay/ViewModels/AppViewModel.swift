@@ -23,6 +23,10 @@ final class AppViewModel {
     /// When opening the main window from the menu bar, select this repo in the sidebar.
     var pendingMainWindowRepoID: UUID?
 
+    /// Sidebar row the main window should show when it comes forward. The
+    /// menu-bar footer uses it for Settings, which lives in the window now.
+    var pendingMainWindowSidebarItem: MainSidebarItem?
+
     /// After selecting a repo, open the edit sheet focused on authentication fields.
     var pendingEditFocusAuthRepoID: UUID?
 

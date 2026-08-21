@@ -4,7 +4,6 @@ import AppKit
 struct MenuBarPopoverView: View {
     @Environment(AppViewModel.self) private var appVM
     @Environment(\.openWindow) private var openWindow
-    @Environment(\.openSettings) private var openSettings
 
     @State private var searchText = ""
 
@@ -27,7 +26,7 @@ struct MenuBarPopoverView: View {
         .frame(width: DesignTokens.Layout.popoverWidth)
         .gitRelayChrome(.popover)
         .onReceive(NotificationCenter.default.publisher(for: .gitrelayOpenMainWindow)) { _ in
-            openMainWindow(focusing: nil)
+            openMainWindow()
         }
     }
 
@@ -127,14 +126,15 @@ struct MenuBarPopoverView: View {
 
     private var footer: some View {
         HStack(spacing: DesignTokens.Spacing.md) {
-            Button { openMainWindow(focusing: nil) } label: {
+            Button { openMainWindow() } label: {
                 Label(String(localized: "Open Main Window"), systemImage: "macwindow")
             }
 
             Divider()
                 .frame(height: DesignTokens.Spacing.md)
 
-            Button { openSettings() } label: {
+            // The six locked settings panes live in the main window since #109.
+            Button { openMainWindow(showing: .settings) } label: {
                 Label(String(localized: "Settings"), systemImage: "gearshape")
             }
 
@@ -173,8 +173,12 @@ struct MenuBarPopoverView: View {
             .padding(.vertical, DesignTokens.Spacing.md)
     }
 
-    private func openMainWindow(focusing repoID: UUID?) {
+    private func openMainWindow(
+        focusing repoID: UUID? = nil,
+        showing item: MainSidebarItem? = nil
+    ) {
         appVM.pendingMainWindowRepoID = repoID
+        appVM.pendingMainWindowSidebarItem = item
         let popover = NSApp.keyWindow
         NSApp.setActivationPolicy(.regular)
         openWindow(id: "main")
