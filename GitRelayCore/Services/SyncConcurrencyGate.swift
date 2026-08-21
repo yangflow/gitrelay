@@ -4,8 +4,8 @@ import Foundation
 /// MainActor-only — owned by the app scheduler / view model. Process quit drops the queue.
 @MainActor
 final class SyncConcurrencyGate {
-    static let allowedRange = 1...4
-    static let defaultMaxConcurrent = 2
+    nonisolated static let allowedRange = 1...4
+    nonisolated static let defaultMaxConcurrent = 2
 
     private(set) var maxConcurrent: Int
     private var activeIDs: Set<UUID> = []
@@ -19,7 +19,7 @@ final class SyncConcurrencyGate {
         self.maxConcurrent = Self.clamped(maxConcurrent)
     }
 
-    static func clamped(_ value: Int) -> Int {
+    nonisolated static func clamped(_ value: Int) -> Int {
         min(max(value, allowedRange.lowerBound), allowedRange.upperBound)
     }
 
