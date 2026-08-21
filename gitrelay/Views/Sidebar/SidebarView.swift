@@ -82,11 +82,12 @@ struct SidebarView: View {
         }
         .toolbar {
             // Add / Browse live on the detail toolbar only (issue #81).
-            ToolbarItem(placement: .automatic) {
-                Button("Sync All", systemImage: "arrow.triangle.2.circlepath") {
-                    appVM.triggerSyncAll()
+            if !appVM.repos.isEmpty {
+                ToolbarItem(placement: .automatic) {
+                    Button("Sync All", systemImage: "arrow.triangle.2.circlepath") {
+                        appVM.triggerSyncAll()
+                    }
                 }
-                .disabled(appVM.repos.isEmpty)
             }
             if displayMode == .byTag {
                 ToolbarItem(placement: .automatic) {
