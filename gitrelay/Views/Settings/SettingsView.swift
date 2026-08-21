@@ -2,12 +2,60 @@ import SwiftUI
 import UniformTypeIdentifiers
 import AppKit
 
+enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
+    case security
+    case notifications
+    case schedule
+    case webhook
+    case cache
+    case configuration
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .security:
+            String(localized: "Security")
+        case .notifications:
+            String(localized: "Notifications")
+        case .schedule:
+            String(localized: "Schedule")
+        case .webhook:
+            String(localized: "Webhook")
+        case .cache:
+            String(localized: "Cache")
+        case .configuration:
+            String(localized: "Configuration")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .security:
+            "lock.shield"
+        case .notifications:
+            "bell"
+        case .schedule:
+            "calendar"
+        case .webhook:
+            "bolt.horizontal"
+        case .cache:
+            "internaldrive"
+        case .configuration:
+            "gearshape"
+        }
+    }
+}
+
 struct SettingsView: View {
     @Environment(NotificationPreferencesStore.self) private var preferencesStore
     @Environment(SecurityPreferencesStore.self) private var securityStore
     @Environment(CachePreferencesStore.self) private var cacheStore
+    @Environment(AppBehaviorPreferencesStore.self) private var behaviorStore
     @Environment(AppViewModel.self) private var appVM
 
+    @State private var selectedPane: SettingsPane = .security
+    @State private var loginItem = LoginItemController()
     @State private var limitMirrorCache = false
     @State private var mirrorCacheQuotaGB = 50
     @State private var showImportModePicker = false
@@ -15,242 +63,30 @@ struct SettingsView: View {
     @State private var configMessage: String?
 
     var body: some View {
-        @Bindable var store = preferencesStore
-        @Bindable var security = securityStore
-        @Bindable var cache = cacheStore
-        @Bindable var webhookStore = appVM.webhookPreferences
-        Form {
-            Section {
-                Toggle(
-                    String(localized: "Require Touch ID or password for sensitive actions"),
-                    isOn: $security.preferences.requireBiometricForSensitive
+        NavigationSplitView {
+            List(SettingsPane.allCases, selection: $selectedPane) { pane in
+                Label(pane.title, systemImage: pane.systemImage)
+                    .tag(pane)
+            }
+            .listStyle(.sidebar)
+            .gitRelaySettingsSidebarColumnWidth()
+            .gitRelayChrome(.sidebar)
+        } detail: {
+            detailForm
+                .formStyle(.grouped)
+                .frame(
+                    minWidth: DesignTokens.Layout.settingsDetailMinWidth,
+                    minHeight: DesignTokens.Layout.settingsMinHeight
                 )
-            } header: {
-                Text(String(localized: "Security"))
-            } footer: {
-                Text("When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action.")
-            }
-
-            Section {
-                Toggle("Enable sync failure notifications", isOn: $store.preferences.notificationsEnabled)
-
-                Toggle("Notify on the first failure", isOn: $store.preferences.notifyOnFirstFailure)
-                    .disabled(!store.preferences.notificationsEnabled)
-
-                Stepper(
-                    value: $store.preferences.consecutiveFailureThreshold,
-                    in: 1...20
-                ) {
-                    Text("Consecutive failure threshold: \(store.preferences.consecutiveFailureThreshold)")
-                }
-                .disabled(!store.preferences.notificationsEnabled)
-
-                Picker("Notification Level", selection: $store.preferences.interruptionLevel) {
-                    ForEach(NotificationInterruptionPreference.allCases) { level in
-                        Text(level.displayName).tag(level)
-                    }
-                }
-                .disabled(!store.preferences.notificationsEnabled)
-
-                Text(store.preferences.interruptionLevel.helpText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } header: {
-                Text("Failure Notifications")
-            } footer: {
-                Text("Notify only on the first failure (optional), or when consecutive failures reach the threshold and its multiples, to avoid alerts from brief network interruptions. Notifications are deferred while Focus is on and combined into a summary afterward.")
-            }
-
-            Section {
-                Stepper(
-                    value: $store.preferences.transientGitMaxAttempts,
-                    in: 1...GitRetryPolicy.clampedMaxAttempts(100)
-                ) {
-                    Text(
-                        String(
-                            localized: "Transient network retries: \(store.preferences.transientGitMaxAttempts) attempts"
-                        )
-                    )
-                }
-            } header: {
-                Text(String(localized: "Sync Retries"))
-            } footer: {
-                Text(String(localized: "Within a single sync, retry fetch/clone/push (and LFS) on brief network errors using 2s / 8s / 32s backoff. Total wait is capped at 3 minutes. Auth failures and local corruption are not retried."))
-            }
-
-            Section {
-                Stepper(
-                    value: $store.preferences.maxConcurrentSyncs,
-                    in: NotificationPreferences.maxConcurrentSyncsRange
-                ) {
-                    Text(
-                        String(
-                            localized: "Max concurrent syncs: \(store.preferences.maxConcurrentSyncs)"
-                        )
-                    )
-                }
-            } header: {
-                Text(String(localized: "Sync Concurrency"))
-            } footer: {
-                Text(String(localized: "Manual, webhook, and scheduled syncs share this limit. Extra requests wait in a queue (Queued) until a slot frees. Quitting the app discards the queue."))
-            }
-
-            Section {
-                Toggle("Pause scheduled sync in Low Power Mode", isOn: $store.preferences.pauseOnLowPowerMode)
-                Toggle("Pause scheduled sync on expensive networks or hotspots", isOn: $store.preferences.pauseOnExpensiveNetwork)
-
-                Toggle(String(localized: "Enable quiet hours"), isOn: quietHoursEnabledBinding)
-
-                if store.preferences.quietHours.isEnabled {
-                    DatePicker(
-                        String(localized: "Quiet hours start"),
-                        selection: quietHoursStartBinding,
-                        displayedComponents: .hourAndMinute
-                    )
-                    DatePicker(
-                        String(localized: "Quiet hours end"),
-                        selection: quietHoursEndBinding,
-                        displayedComponents: .hourAndMinute
-                    )
-                    Text(String(localized: "Uses this Mac's local timezone. A window such as 23:00–07:00 wraps midnight."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                if let reason = appVM.scheduledSyncPauseReason {
-                    Label(reason.displayMessage, systemImage: "pause.circle")
-                        .foregroundStyle(DesignTokens.StatusColor.pause)
-                        .font(.callout)
-                }
-            } header: {
-                Text("Scheduled Sync Pausing")
-            } footer: {
-                Text("This affects only syncs triggered automatically by frequency. Manual sync and instant webhook sync are unaffected.")
-            }
-
-            Section {
-                Toggle("Enable local webhook listener", isOn: $webhookStore.preferences.listenerEnabled)
-
-                if webhookStore.preferences.listenerEnabled {
-                    if let port = appVM.webhookListenPort {
-                        LabeledContent("Listening Address") {
-                            Text("127.0.0.1:\(port)")
-                                .font(.system(.body, design: .monospaced))
-                                .textSelection(.enabled)
-                        }
-                    } else {
-                        Text(appVM.isWebhookListenerRunning ? String(localized: "Binding port…") : String(localized: "Listener Not Running"))
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Picker("External Access", selection: $webhookStore.preferences.exposureMode) {
-                        ForEach(WebhookExposureMode.allCases) { mode in
-                            Text(mode.displayName).tag(mode)
-                        }
-                    }
-
-                    Text(webhookStore.preferences.exposureMode.helpText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    if webhookStore.preferences.exposureMode != .off {
-                        TextField("Public Base URL (Optional)", text: $webhookStore.preferences.publicBaseURL)
-                            .font(.system(.body, design: .monospaced))
-
-                        if let port = appVM.webhookListenPort {
-                            switch webhookStore.preferences.exposureMode {
-                            case .cloudflareTunnel:
-                                tunnelHint(
-                                    available: WebhookTunnelToolDetector.isCloudflaredAvailable(),
-                                    tool: "cloudflared",
-                                    command: WebhookURLTemplate.cloudflaredCommand(port: port)
-                                )
-                            case .tailscaleFunnel:
-                                tunnelHint(
-                                    available: WebhookTunnelToolDetector.isTailscaleAvailable(),
-                                    tool: "tailscale",
-                                    command: WebhookURLTemplate.tailscaleFunnelCommand(port: port)
-                                )
-                            case .relaySketch:
-                                Text("Relay mode is a configuration example only. A Worker or GitHub App can forward to the local listener using long polling; this version does not deploy a hosted service.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            case .off:
-                                EmptyView()
-                            }
-                        }
-                    }
-                }
-            } header: {
-                Text("Instant Webhook Sync")
-            } footer: {
-                Text("Off by default. When enabled, a random port on 127.0.0.1 accepts POST /hook/<id>. The HMAC secret is stored only in Keychain. Cloudflare and Tailscale are optional runtime dependencies that must be installed locally.")
-            }
-
-            Section {
-                Toggle(String(localized: "Limit local mirror cache size"), isOn: $limitMirrorCache)
-                    .onChange(of: limitMirrorCache) { _, enabled in
-                        cache.preferences.cacheQuotaGB = enabled ? mirrorCacheQuotaGB : nil
-                        appVM.refreshMirrorCacheUsage()
-                    }
-
-                if limitMirrorCache {
-                    Stepper(value: $mirrorCacheQuotaGB, in: 1...1000) {
-                        Text(String(format: String(localized: "Cache quota: %lld GB"), mirrorCacheQuotaGB))
-                    }
-                    .onChange(of: mirrorCacheQuotaGB) { _, value in
-                        if limitMirrorCache {
-                            cache.preferences.cacheQuotaGB = value
-                        }
-                    }
-                }
-
-                LabeledContent(String(localized: "Current Usage")) {
-                    Text(MirrorCacheFormatting.usageSummary(
-                        usageBytes: appVM.mirrorCacheUsageBytes,
-                        quotaGB: cache.preferences.cacheQuotaGB
-                    ))
-                }
-
-                Button(String(localized: "Clean Now")) {
-                    Task { await appVM.cleanMirrorCacheNow() }
-                }
-                .disabled(appVM.isCleaningMirrorCache)
-            } header: {
-                Text(String(localized: "Mirror Cache"))
-            } footer: {
-                Text(String(localized: "Bare clones are stored under ~/.local/share/gitrelay/mirrors/. When over quota, GitRelay runs git gc on least-recently synced mirrors first, then deletes entire clones if needed. The next sync rebuilds deleted mirrors."))
-            }
-
-            Section {
-                Button(String(localized: "Export Configuration…")) {
-                    exportConfiguration()
-                }
-                Button(String(localized: "Import Configuration…")) {
-                    presentImportPanel()
-                }
-            } header: {
-                Text(String(localized: "Configuration"))
-            } footer: {
-                Text(String(localized: "Export repository pairs, targets, tags, frequency, shallow/ref filters, LFS, org subscriptions, and account labels. Tokens and private keys are never written to the file. After import, repositories missing credentials are marked and stay unscheduled until you fill them in."))
-            }
-
-            Section {
-                Button("Restore Defaults") {
-                    store.resetToDefaults()
-                    security.resetToDefaults()
-                    cache.resetToDefaults()
-                    webhookStore.resetToDefaults()
-                    syncCacheControlsFromStore()
-                    appVM.refreshMirrorCacheUsage()
-                }
-            }
+                .padding(DesignTokens.Spacing.settingsForm)
+                .gitRelayChrome(.sheet)
         }
-        .formStyle(.grouped)
-        .frame(minWidth: DesignTokens.Layout.settingsMinWidth, minHeight: DesignTokens.Layout.settingsMinHeight)
-        .padding(DesignTokens.Spacing.settingsForm)
-        .gitRelayChrome(.sheet)
+        .frame(
+            minWidth: DesignTokens.Layout.settingsMinWidth,
+            minHeight: DesignTokens.Layout.settingsMinHeight
+        )
         .onAppear {
+            loginItem.refresh()
             syncCacheControlsFromStore()
             appVM.refreshMirrorCacheUsage()
         }
@@ -280,6 +116,318 @@ struct SettingsView: View {
             Button(String(localized: "OK"), role: .cancel) {}
         } message: {
             Text(configMessage ?? "")
+        }
+    }
+
+    @ViewBuilder
+    private var detailForm: some View {
+        switch selectedPane {
+        case .security:
+            Form { securitySections() }
+        case .notifications:
+            Form { notificationsSection() }
+        case .schedule:
+            Form { scheduleSections() }
+        case .webhook:
+            Form { webhookSection() }
+        case .cache:
+            Form { cacheSection() }
+        case .configuration:
+            Form { configurationSections() }
+        }
+    }
+
+    @ViewBuilder
+    private func securitySections() -> some View {
+        @Bindable var security = securityStore
+        @Bindable var behavior = behaviorStore
+
+        Section {
+            Toggle(
+                String(localized: "Open at Login"),
+                isOn: Binding(
+                    get: { loginItem.isEnabled },
+                    set: { loginItem.setEnabled($0) }
+                )
+            )
+
+            if let message = loginItem.lastErrorMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(DesignTokens.StatusColor.error)
+            } else if loginItem.requiresApproval {
+                Text(
+                    String(
+                        localized: "Open at Login needs approval in System Settings → General → Login Items."
+                    )
+                )
+                .font(.caption)
+                .foregroundStyle(DesignTokens.StatusColor.warning)
+            }
+
+            Toggle(
+                String(localized: "Keep in Menu Bar when closing main window"),
+                isOn: $behavior.preferences.keepInMenuBarWhenMainWindowCloses
+            )
+        } header: {
+            Text(String(localized: "Startup & Menu Bar"))
+        } footer: {
+            Text(
+                String(
+                    localized: "When enabled, closing the main window leaves GitRelay in the menu bar (Dock icon may hide). Turn off to quit when the last window closes."
+                )
+            )
+        }
+
+        Section {
+            Toggle(
+                String(localized: "Require Touch ID or password for sensitive actions"),
+                isOn: $security.preferences.requireBiometricForSensitive
+            )
+        } header: {
+            Text(String(localized: "Security"))
+        } footer: {
+            Text("When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action.")
+        }
+    }
+
+    @ViewBuilder
+    private func notificationsSection() -> some View {
+        @Bindable var store = preferencesStore
+
+        Section {
+            Toggle("Enable sync failure notifications", isOn: $store.preferences.notificationsEnabled)
+
+            Toggle("Notify on the first failure", isOn: $store.preferences.notifyOnFirstFailure)
+                .disabled(!store.preferences.notificationsEnabled)
+
+            Stepper(
+                value: $store.preferences.consecutiveFailureThreshold,
+                in: 1...20
+            ) {
+                Text("Consecutive failure threshold: \(store.preferences.consecutiveFailureThreshold)")
+            }
+            .disabled(!store.preferences.notificationsEnabled)
+
+            Picker("Notification Level", selection: $store.preferences.interruptionLevel) {
+                ForEach(NotificationInterruptionPreference.allCases) { level in
+                    Text(level.displayName).tag(level)
+                }
+            }
+            .disabled(!store.preferences.notificationsEnabled)
+
+            Text(store.preferences.interruptionLevel.helpText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("Failure Notifications")
+        } footer: {
+            Text("Notify only on the first failure (optional), or when consecutive failures reach the threshold and its multiples, to avoid alerts from brief network interruptions. Notifications are deferred while Focus is on and combined into a summary afterward.")
+        }
+    }
+
+    @ViewBuilder
+    private func scheduleSections() -> some View {
+        @Bindable var store = preferencesStore
+
+        Section {
+            Stepper(
+                value: $store.preferences.transientGitMaxAttempts,
+                in: 1...GitRetryPolicy.clampedMaxAttempts(100)
+            ) {
+                Text(
+                    String(
+                        localized: "Transient network retries: \(store.preferences.transientGitMaxAttempts) attempts"
+                    )
+                )
+            }
+        } header: {
+            Text(String(localized: "Sync Retries"))
+        } footer: {
+            Text(String(localized: "Within a single sync, retry fetch/clone/push (and LFS) on brief network errors using 2s / 8s / 32s backoff. Total wait is capped at 3 minutes. Auth failures and local corruption are not retried."))
+        }
+
+        Section {
+            Stepper(
+                value: $store.preferences.maxConcurrentSyncs,
+                in: NotificationPreferences.maxConcurrentSyncsRange
+            ) {
+                Text(
+                    String(
+                        localized: "Max concurrent syncs: \(store.preferences.maxConcurrentSyncs)"
+                    )
+                )
+            }
+        } header: {
+            Text(String(localized: "Sync Concurrency"))
+        } footer: {
+            Text(String(localized: "Manual, webhook, and scheduled syncs share this limit. Extra requests wait in a queue (Queued) until a slot frees. Quitting the app discards the queue."))
+        }
+
+        Section {
+            Toggle("Pause scheduled sync in Low Power Mode", isOn: $store.preferences.pauseOnLowPowerMode)
+            Toggle("Pause scheduled sync on expensive networks or hotspots", isOn: $store.preferences.pauseOnExpensiveNetwork)
+
+            Toggle(String(localized: "Enable quiet hours"), isOn: quietHoursEnabledBinding)
+
+            if store.preferences.quietHours.isEnabled {
+                DatePicker(
+                    String(localized: "Quiet hours start"),
+                    selection: quietHoursStartBinding,
+                    displayedComponents: .hourAndMinute
+                )
+                DatePicker(
+                    String(localized: "Quiet hours end"),
+                    selection: quietHoursEndBinding,
+                    displayedComponents: .hourAndMinute
+                )
+                Text(String(localized: "Uses this Mac's local timezone. A window such as 23:00–07:00 wraps midnight."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let reason = appVM.scheduledSyncPauseReason {
+                Label(reason.displayMessage, systemImage: "pause.circle")
+                    .foregroundStyle(DesignTokens.StatusColor.pause)
+                    .font(.callout)
+            }
+        } header: {
+            Text("Scheduled Sync Pausing")
+        } footer: {
+            Text("This affects only syncs triggered automatically by frequency. Manual sync and instant webhook sync are unaffected.")
+        }
+    }
+
+    @ViewBuilder
+    private func webhookSection() -> some View {
+        @Bindable var webhookStore = appVM.webhookPreferences
+
+        Section {
+            Toggle("Enable local webhook listener", isOn: $webhookStore.preferences.listenerEnabled)
+
+            if webhookStore.preferences.listenerEnabled {
+                if let port = appVM.webhookListenPort {
+                    LabeledContent("Listening Address") {
+                        Text("127.0.0.1:\(port)")
+                            .font(.system(.body, design: .monospaced))
+                            .textSelection(.enabled)
+                    }
+                } else {
+                    Text(appVM.isWebhookListenerRunning ? String(localized: "Binding port…") : String(localized: "Listener Not Running"))
+                        .foregroundStyle(.secondary)
+                }
+
+                Picker("External Access", selection: $webhookStore.preferences.exposureMode) {
+                    ForEach(WebhookExposureMode.allCases) { mode in
+                        Text(mode.displayName).tag(mode)
+                    }
+                }
+
+                Text(webhookStore.preferences.exposureMode.helpText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                if webhookStore.preferences.exposureMode != .off {
+                    TextField("Public Base URL (Optional)", text: $webhookStore.preferences.publicBaseURL)
+                        .font(.system(.body, design: .monospaced))
+
+                    if let port = appVM.webhookListenPort {
+                        switch webhookStore.preferences.exposureMode {
+                        case .cloudflareTunnel:
+                            tunnelHint(
+                                available: WebhookTunnelToolDetector.isCloudflaredAvailable(),
+                                tool: "cloudflared",
+                                command: WebhookURLTemplate.cloudflaredCommand(port: port)
+                            )
+                        case .tailscaleFunnel:
+                            tunnelHint(
+                                available: WebhookTunnelToolDetector.isTailscaleAvailable(),
+                                tool: "tailscale",
+                                command: WebhookURLTemplate.tailscaleFunnelCommand(port: port)
+                            )
+                        case .relaySketch:
+                            Text("Relay mode is a configuration example only. A Worker or GitHub App can forward to the local listener using long polling; this version does not deploy a hosted service.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        case .off:
+                            EmptyView()
+                        }
+                    }
+                }
+            }
+        } header: {
+            Text("Instant Webhook Sync")
+        } footer: {
+            Text("Off by default. When enabled, a random port on 127.0.0.1 accepts POST /hook/<id>. The HMAC secret is stored only in Keychain. Cloudflare and Tailscale are optional runtime dependencies that must be installed locally.")
+        }
+    }
+
+    @ViewBuilder
+    private func cacheSection() -> some View {
+        @Bindable var cache = cacheStore
+
+        Section {
+            Toggle(String(localized: "Limit local mirror cache size"), isOn: $limitMirrorCache)
+                .onChange(of: limitMirrorCache) { _, enabled in
+                    cache.preferences.cacheQuotaGB = enabled ? mirrorCacheQuotaGB : nil
+                    appVM.refreshMirrorCacheUsage()
+                }
+
+            if limitMirrorCache {
+                Stepper(value: $mirrorCacheQuotaGB, in: 1...1000) {
+                    Text(String(format: String(localized: "Cache quota: %lld GB"), mirrorCacheQuotaGB))
+                }
+                .onChange(of: mirrorCacheQuotaGB) { _, value in
+                    if limitMirrorCache {
+                        cache.preferences.cacheQuotaGB = value
+                    }
+                }
+            }
+
+            LabeledContent(String(localized: "Current Usage")) {
+                Text(MirrorCacheFormatting.usageSummary(
+                    usageBytes: appVM.mirrorCacheUsageBytes,
+                    quotaGB: cache.preferences.cacheQuotaGB
+                ))
+            }
+
+            Button(String(localized: "Clean Now")) {
+                Task { await appVM.cleanMirrorCacheNow() }
+            }
+            .disabled(appVM.isCleaningMirrorCache)
+        } header: {
+            Text(String(localized: "Mirror Cache"))
+        } footer: {
+            Text(String(localized: "Bare clones are stored under ~/.local/share/gitrelay/mirrors/. When over quota, GitRelay runs git gc on least-recently synced mirrors first, then deletes entire clones if needed. The next sync rebuilds deleted mirrors."))
+        }
+    }
+
+    @ViewBuilder
+    private func configurationSections() -> some View {
+        Section {
+            Button(String(localized: "Export Configuration…")) {
+                exportConfiguration()
+            }
+            Button(String(localized: "Import Configuration…")) {
+                presentImportPanel()
+            }
+        } header: {
+            Text(String(localized: "Configuration"))
+        } footer: {
+            Text(String(localized: "Export repository pairs, targets, tags, frequency, shallow/ref filters, LFS, org subscriptions, and account labels. Tokens and private keys are never written to the file. After import, repositories missing credentials are marked and stay unscheduled until you fill them in."))
+        }
+
+        Section {
+            Button("Restore Defaults") {
+                preferencesStore.resetToDefaults()
+                securityStore.resetToDefaults()
+                cacheStore.resetToDefaults()
+                behaviorStore.resetToDefaults()
+                appVM.webhookPreferences.resetToDefaults()
+                loginItem.setEnabled(false)
+                syncCacheControlsFromStore()
+                appVM.refreshMirrorCacheUsage()
+            }
         }
     }
 

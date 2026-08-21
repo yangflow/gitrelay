@@ -93,6 +93,7 @@ final class AppViewModel {
     let orgSubscriptionStore: OrgSubscriptionStore
     let securityPreferences: SecurityPreferencesStore
     let cachePreferences: CachePreferencesStore
+    let appBehaviorPreferences: AppBehaviorPreferencesStore
     let environmentMonitor = SyncEnvironmentMonitor()
     let quietHoursMonitor = QuietHoursMonitor()
     let failureNotifier = SyncFailureNotifier()
@@ -135,6 +136,7 @@ final class AppViewModel {
         securityPreferencesStore: SecurityPreferencesStore? = nil,
         cachePreferencesStore: CachePreferencesStore? = nil,
         notificationPreferencesStore: NotificationPreferencesStore? = nil,
+        appBehaviorPreferencesStore: AppBehaviorPreferencesStore? = nil,
         biometricAuthenticator: BiometricAuthenticating? = nil
     ) {
         let store = verificationPreferencesStore ?? VerificationPreferencesStore()
@@ -150,6 +152,7 @@ final class AppViewModel {
         self.securityPreferences = securityPreferencesStore ?? SecurityPreferencesStore()
         self.cachePreferences = cachePreferencesStore ?? CachePreferencesStore()
         self.notificationPreferences = notificationPreferencesStore ?? NotificationPreferencesStore()
+        self.appBehaviorPreferences = appBehaviorPreferencesStore ?? AppBehaviorPreferencesStore()
         self.biometricAuthenticator = biometricAuthenticator ?? LocalAuthenticationClient()
         syncConcurrencyGate.updateMaxConcurrent(
             notificationPreferences.preferences.maxConcurrentSyncs
