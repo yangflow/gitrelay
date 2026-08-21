@@ -35,6 +35,40 @@
         }
       }
     },
+    "%@ already has %lld commits that the source does not.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ already has %lld commits that the source does not."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 里已有 %lld 个提交，与源仓不同。"
+          }
+        }
+      }
+    },
+    "%@ already has commits that the source does not.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ already has commits that the source does not."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 里已有与源仓不同的提交。"
+          }
+        }
+      }
+    },
     "%@ Authentication": {
       "extractionState": "manual",
       "localizations": {
@@ -1735,23 +1769,6 @@
         }
       }
     },
-    "Confirm Destructive Mirror Push": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Confirm Destructive Mirror Push"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "破坏性镜像推送确认"
-          }
-        }
-      }
-    },
     "Connection": {
       "extractionState": "manual",
       "localizations": {
@@ -1850,6 +1867,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "检测到删除或强制更新也继续推送,适合临时镜像或已确认的目标仓库。"
+          }
+        }
+      }
+    },
+    "Continuing replaces those commits with the source, and the branches already on the target are replaced.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuing replaces those commits with the source, and the branches already on the target are replaced."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "继续会用源仓覆盖这些提交，目标上原有分支会被替换。"
           }
         }
       }
@@ -2415,19 +2449,19 @@
         }
       }
     },
-    "Destructive mirror push blocked: %@. Sync again and choose Continue in the confirmation dialog, or change the policy to Run Automatically.": {
+    "Destructive mirror push blocked: %@. Sync again and choose Push to Check Branch to keep the target's branches, or Overwrite and Sync to replace them.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Destructive mirror push blocked: %@. Sync again and choose Continue in the confirmation dialog, or change the policy to Run Automatically."
+            "value": "Destructive mirror push blocked: %@. Sync again and choose Push to Check Branch to keep the target's branches, or Overwrite and Sync to replace them."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已阻断破坏性镜像推送: %@。可再次同步并在确认弹窗中选择继续,或将策略改为自动执行。"
+            "value": "已阻断破坏性镜像推送：%@。可再次同步并选择「改推到检查分支」以保留目标仓分支，或选择「覆盖并同步」进行替换。"
           }
         }
       }
@@ -4999,6 +5033,23 @@
         }
       }
     },
+    "Overwrite and Sync": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overwrite and Sync"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "覆盖并同步"
+          }
+        }
+      }
+    },
     "Partial ref sync (not a complete backup)": {
       "extractionState": "manual",
       "localizations": {
@@ -5437,6 +5488,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "未找到公钥文件：%@"
+          }
+        }
+      }
+    },
+    "Push to Check Branch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Push to Check Branch"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "改推到检查分支"
           }
         }
       }
@@ -6801,6 +6869,23 @@
         }
       }
     },
+    "Target already has different history": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target already has different history"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标已有不同历史"
+          }
+        }
+      }
+    },
     "Target Auth": {
       "extractionState": "manual",
       "localizations": {
@@ -7188,23 +7273,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "已有这条镜像，打开它或改个目标。"
-          }
-        }
-      }
-    },
-    "This will delete %lld refs and force-update %lld refs. Continue?": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This will delete %lld refs and force-update %lld refs. Continue?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本次将删除 %lld 个 ref / 强制更新 %lld 个 ref,是否继续?"
           }
         }
       }
@@ -7783,6 +7851,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "未找到 ssh-keygen，请确认 macOS 命令行工具已安装。"
+          }
+        }
+      }
+    },
+    "You can push to check branches under %@ first and leave the target's own branches where they are.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can push to check branches under %@ first and leave the target's own branches where they are."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可以先推到 %@ 下的检查分支，目标仓原有分支保持不动。"
           }
         }
       }

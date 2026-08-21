@@ -120,8 +120,7 @@ struct ContentView: View {
                 repoName: request.repoName,
                 targetURL: request.targetURL,
                 plan: request.plan,
-                onConfirm: { appVM.confirmPendingDestructivePush() },
-                onCancel: { appVM.cancelPendingDestructivePush() }
+                onDecision: { appVM.resolvePendingDestructivePush($0) }
             )
             .interactiveDismissDisabled()
         }

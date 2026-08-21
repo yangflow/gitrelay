@@ -455,7 +455,7 @@ final class AppViewModel {
         activeSyncEngines[repoID] = engine
 
         engine.confirmDestructivePush = { [weak self] plan, target in
-            guard let self else { return false }
+            guard let self else { return .cancel }
             return await self.requestDestructiveConfirmation(
                 repoID: repoID,
                 repoName: repo.name,
@@ -751,16 +751,10 @@ final class AppViewModel {
         activeSyncEngines[repoID]?.cancel()
     }
 
-    func confirmPendingDestructivePush() {
+    func resolvePendingDestructivePush(_ decision: DestructivePushDecision) {
         guard !pendingDestructiveConfirmations.isEmpty else { return }
         let pending = pendingDestructiveConfirmations.removeFirst()
-        pending.respond(true)
-    }
-
-    func cancelPendingDestructivePush() {
-        guard !pendingDestructiveConfirmations.isEmpty else { return }
-        let pending = pendingDestructiveConfirmations.removeFirst()
-        pending.respond(false)
+        pending.respond(decision)
     }
 
     // MARK: - Org subscription
@@ -1119,7 +1113,7 @@ final class AppViewModel {
         repoName: String,
         targetURL: String?,
         plan: DestructivePushPlan
-    ) async -> Bool {
+    ) async -> DestructivePushDecision {
         denyPendingDestructiveConfirmation(for: repoID)
         bringAppForwardForConfirmation()
 
@@ -1139,7 +1133,7 @@ final class AppViewModel {
         guard let repoID else { return }
         let matching = pendingDestructiveConfirmations.filter { $0.repoID == repoID }
         pendingDestructiveConfirmations.removeAll { $0.repoID == repoID }
-        matching.forEach { $0.respond(false) }
+        matching.forEach { $0.respond(.cancel) }
     }
 
     private func bringAppForwardForConfirmation() {

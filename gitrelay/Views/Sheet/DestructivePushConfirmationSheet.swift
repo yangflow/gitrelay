@@ -1,80 +1,85 @@
 import SwiftUI
 
+/// Shown when the destination turns out to hold a history the source does not
+/// share. It explains the overwrite in plain sentences and defaults to the
+/// choice that leaves the destination's branches untouched.
 struct DestructivePushConfirmationSheet: View {
     let repoName: String
     let targetURL: String?
     let plan: DestructivePushPlan
-    let onConfirm: () -> Void
-    let onCancel: () -> Void
+    let onDecision: (DestructivePushDecision) -> Void
+
+    private var destinationLabel: String {
+        DestructivePushCopy.destinationLabel(targetURL: targetURL, fallback: repoName)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top, spacing: DesignTokens.Spacing.md) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.title2)
-                    .foregroundStyle(DesignTokens.StatusColor.diverged)
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-                    Text(String(localized: "Confirm Destructive Mirror Push"))
-                        .font(.headline)
-                    Text(repoName)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    if let targetURL {
-                        Text(targetURL)
-                            .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-                    Text(plan.confirmationPrompt)
-                        .font(.callout)
-                }
-                Spacer(minLength: 0)
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
+                Text(DestructivePushCopy.title)
+                    .font(.headline)
+                Text(repoName)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(DestructivePushCopy.divergence(destinationLabel: destinationLabel, plan: plan))
+                    .font(.callout)
+                Text(DestructivePushCopy.overwriteExplanation)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                Text(DestructivePushCopy.checkBranchExplanation)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .gitRelaySheetHeaderPadding()
 
-            Divider()
+            if plan.isDestructive {
+                Divider()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                    if !plan.deletedRefs.isEmpty {
-                        refSection(
-                            title: String(localized: "Delete \(plan.deletedRefs.count) refs"),
-                            refs: plan.deletedRefs,
-                            symbol: "trash",
-                            tint: DesignTokens.StatusColor.error,
-                            fill: DesignTokens.Surface.destructiveFill
-                        )
+                ScrollView {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                        if !plan.deletedRefs.isEmpty {
+                            refSection(
+                                title: String(localized: "Delete \(plan.deletedRefs.count) refs"),
+                                refs: plan.deletedRefs,
+                                symbol: "trash",
+                                tint: DesignTokens.StatusColor.error,
+                                fill: DesignTokens.Surface.destructiveFill
+                            )
+                        }
+                        if !plan.forcedUpdateRefs.isEmpty {
+                            refSection(
+                                title: String(localized: "Force-update \(plan.forcedUpdateRefs.count) refs"),
+                                refs: plan.forcedUpdateRefs,
+                                symbol: "arrow.triangle.2.circlepath",
+                                tint: DesignTokens.StatusColor.warning,
+                                fill: DesignTokens.Surface.forceUpdateFill
+                            )
+                        }
                     }
-                    if !plan.forcedUpdateRefs.isEmpty {
-                        refSection(
-                            title: String(localized: "Force-update \(plan.forcedUpdateRefs.count) refs"),
-                            refs: plan.forcedUpdateRefs,
-                            symbol: "arrow.triangle.2.circlepath",
-                            tint: DesignTokens.StatusColor.warning,
-                            fill: DesignTokens.Surface.forceUpdateFill
-                        )
-                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(DesignTokens.Spacing.sheetContent)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(DesignTokens.Spacing.sheetContent)
+                .frame(maxHeight: 320)
             }
-            .frame(maxHeight: 320)
 
             Divider()
 
             HStack {
-                Spacer()
-                Button(String(localized: "Cancel"), action: onCancel)
+                Button(DestructivePushCopy.cancelTitle) { onDecision(.cancel) }
                     .keyboardShortcut(.escape)
-                Button(String(localized: "Continue"), action: onConfirm)
+                Spacer()
+                Button(DestructivePushCopy.overwriteTitle, role: .destructive) {
+                    onDecision(.overwrite)
+                }
+                Button(DestructivePushCopy.checkBranchTitle) { onDecision(.checkBranch) }
                     .buttonStyle(.borderedProminent)
-                    .tint(DesignTokens.StatusColor.warning)
                     .keyboardShortcut(.return)
             }
             .gitRelaySheetFooterPadding()
         }
         .frame(width: 480)
-        .frame(minHeight: 280)
+        .frame(minHeight: 240)
         .gitRelayChrome(.sheet)
     }
 

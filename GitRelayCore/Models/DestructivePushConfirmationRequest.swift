@@ -1,6 +1,7 @@
 import Foundation
 
-/// Pending UI confirmation for a destructive mirror push under `.strict` policy.
+/// Pending UI decision for a destination whose history differs from the source,
+/// raised under `.strict` policy.
 @MainActor
 final class DestructivePushConfirmationRequest: Identifiable {
     let id: UUID
@@ -9,7 +10,7 @@ final class DestructivePushConfirmationRequest: Identifiable {
     let targetURL: String?
     let plan: DestructivePushPlan
 
-    private let continuation: CheckedContinuation<Bool, Never>
+    private let continuation: CheckedContinuation<DestructivePushDecision, Never>
     private var responded = false
 
     init(
@@ -18,7 +19,7 @@ final class DestructivePushConfirmationRequest: Identifiable {
         repoName: String,
         targetURL: String? = nil,
         plan: DestructivePushPlan,
-        continuation: CheckedContinuation<Bool, Never>
+        continuation: CheckedContinuation<DestructivePushDecision, Never>
     ) {
         self.id = id
         self.repoID = repoID
@@ -28,9 +29,9 @@ final class DestructivePushConfirmationRequest: Identifiable {
         self.continuation = continuation
     }
 
-    func respond(_ confirmed: Bool) {
+    func respond(_ decision: DestructivePushDecision) {
         guard !responded else { return }
         responded = true
-        continuation.resume(returning: confirmed)
+        continuation.resume(returning: decision)
     }
 }

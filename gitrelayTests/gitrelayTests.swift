@@ -110,13 +110,13 @@ struct DestructivePushPlanTests {
         #expect(DestructivePushPlan.parse(gitOutput: output) == .empty)
     }
 
-    @Test func confirmationPromptMatchesIssueCopy() {
+    @Test func summaryCountsBothKindsOfRefChange() {
         let plan = DestructivePushPlan(
             deletedRefs: ["stale-branch", "refs/tags/v1.0.0"],
             forcedUpdateRefs: ["main"]
         )
 
-        #expect(plan.confirmationPrompt == "This will delete 2 refs and force-update 1 refs. Continue?")
+        #expect(plan.summary == "2 deletions, 1 forced updates")
     }
 
     @Test func parsesMixedDestructiveDryRunOutput() {
@@ -4962,7 +4962,7 @@ struct LocalizationTests {
     @Test func destructivePushCopyUsesLocalizedEnglishDefaults() {
         let plan = DestructivePushPlan(deletedRefs: ["a"], forcedUpdateRefs: ["main"])
         #expect(plan.summary == "1 deletions, 1 forced updates")
-        #expect(plan.confirmationPrompt.contains("Continue?"))
+        #expect(DestructivePushCopy.title == "Target already has different history")
         #expect(DestructivePushPolicy.strict.displayName == "Strict Protection")
         #expect(DestructivePushPolicy.auto.displayName == "Run Automatically")
     }

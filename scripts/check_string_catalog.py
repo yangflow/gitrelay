@@ -82,6 +82,14 @@ REQUIRED_KEYS = {
         "Create and Start Sync",
         "Open the Existing One",
         "Add Anyway",
+        # Different-history sheet copy and its three choices (issue #102).
+        "Target already has different history",
+        "%@ already has %lld commits that the source does not.",
+        "%@ already has commits that the source does not.",
+        "Continuing replaces those commits with the source, and the branches already on the target are replaced.",
+        "You can push to check branches under %@ first and leave the target's own branches where they are.",
+        "Overwrite and Sync",
+        "Push to Check Branch",
     ),
     # Quiet widget face (issue #89): 今日 + three counts, no glyph-leading keys.
     ROOT / "gitrelayWidget" / "Localizable.xcstrings": (

@@ -235,6 +235,16 @@ actor GitRunner {
         return DestructivePushPlan.parse(gitOutput: [stdout, stderr].joined(separator: "\n"))
     }
 
+    /// How many commits the destination is carrying that the source never had.
+    /// Needs `fetchDstRefs` to have populated `refs/dst/*` first.
+    func countDestinationOnlyCommits(mirrorPath: String) async throws -> Int {
+        let (stdout, _) = try await run(
+            args: GitSyncArguments.destinationOnlyCommitCountArgs,
+            cwd: mirrorPath
+        )
+        return Int(stdout.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
+    }
+
     func countCommitsAhead(mirrorPath: String) async throws -> Int {
         let (stdout, _) = try await run(
             args: ["rev-list", "--count", "refs/dst/HEAD..HEAD"],

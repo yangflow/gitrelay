@@ -21,9 +21,9 @@ final class SyncEngine {
 
     var onEvent: ((SyncEvent) -> Void)?
 
-    /// Called when `.strict` policy needs an explicit continue/cancel decision.
-    /// Return `true` to proceed with the destructive push, `false` to block.
-    var confirmDestructivePush: ((DestructivePushPlan, MirrorTarget) async -> Bool)?
+    /// Called when `.strict` policy needs the user to choose between overwriting
+    /// the destination, pushing to check branches instead, or stopping the sync.
+    var confirmDestructivePush: ((DestructivePushPlan, MirrorTarget) async -> DestructivePushDecision)?
 
     /// Called after a successful git mirror push when `repo.mirrorReleases` is enabled.
     var mirrorReleases: ((RepoConfig, MirrorTarget, @escaping @Sendable (String) -> Void) async throws -> Void)?
@@ -311,6 +311,7 @@ final class SyncEngine {
                     )
                 }
             }
+            var pushesToCheckBranches = false
             if plan.isDestructive {
                 targetLog("Dry-run detected destructive changes: \(plan.summary).")
                 plan.deletedRefs.forEach { targetLog("  delete: \($0)") }
@@ -318,11 +319,21 @@ final class SyncEngine {
 
                 if repo.destructivePushPolicy.requiresConfirmation(for: plan) {
                     targetLog("Waiting for confirmation of destructive push...")
-                    let confirmed = await confirmDestructivePush?(plan, target) ?? false
-                    guard confirmed else {
+                    let divergence = try? await runner.countDestinationOnlyCommits(mirrorPath: mirrorPath)
+                    let decision = await confirmDestructivePush?(
+                        plan.withDestinationOnlyCommits(divergence),
+                        target
+                    ) ?? .cancel
+
+                    switch decision {
+                    case .cancel:
                         throw DestructivePushError.blocked(plan)
+                    case .overwrite:
+                        targetLog("User chose to overwrite the destination; continuing.")
+                    case .checkBranch:
+                        pushesToCheckBranches = true
+                        targetLog("User chose check branches; the destination's own branches stay put.")
                     }
-                    targetLog("User confirmed destructive push; continuing.")
                 } else {
                     targetLog("Destructive push policy is automatic; continuing.")
                 }
@@ -332,7 +343,20 @@ final class SyncEngine {
 
             targetLog("Pushing to destination...")
             emit(.phase(pushPhase))
-            if repo.usesSelectiveRefSync {
+            if pushesToCheckBranches {
+                let checkRefSpecs = CheckBranchRefMapping.refSpecs(from: pushRefSpecs)
+                targetLog("Pushing source refs under \(CheckBranchRefMapping.displayPrefix) instead.")
+                checkRefSpecs.forEach { targetLog("  check branch: \($0)") }
+                try await withTransientRetry(log: targetLog) {
+                    try await self.runner.pushSelectiveRefs(
+                        mirrorPath: mirrorPath,
+                        dstURL: dstURL,
+                        refSpecs: checkRefSpecs,
+                        env: dstEnv,
+                        onProgressLine: progressCallback(for: pushPhase)
+                    )
+                }
+            } else if repo.usesSelectiveRefSync {
                 try await withTransientRetry(log: targetLog) {
                     try await self.runner.pushSelectiveRefs(
                         mirrorPath: mirrorPath,
@@ -376,7 +400,9 @@ final class SyncEngine {
                 }
             }
 
-            if repo.mirrorReleases, let mirrorReleases {
+            if repo.mirrorReleases, pushesToCheckBranches {
+                targetLog("Skipping release mirroring: check branches leave the destination's releases alone.")
+            } else if repo.mirrorReleases, let mirrorReleases {
                 targetLog("Mirroring releases...")
                 do {
                     try await mirrorReleases(repo, target, sendableTargetLog(targetLog))

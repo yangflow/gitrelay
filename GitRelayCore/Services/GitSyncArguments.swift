@@ -57,6 +57,12 @@ enum GitSyncArguments {
         ["push", "--mirror", "--dry-run", dstURL]
     }
 
+    /// Commits reachable from the destination's branches but from no source
+    /// branch. Reads `refs/dst/*`, so it only answers after `fetchDstRefs`.
+    static let destinationOnlyCommitCountArgs = [
+        "rev-list", "--count", "--glob=refs/dst/heads", "--not", "--glob=refs/heads"
+    ]
+
     static func pushSelectiveArgs(dstURL: String, refSpecs: [String], dryRun: Bool = false) -> [String] {
         var args = ["push"]
         if dryRun {
