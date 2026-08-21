@@ -2024,6 +2024,23 @@
         }
       }
     },
+    "custom ref filters (only selected refs sync)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "custom ref filters (only selected refs sync)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定义 ref 过滤（仅同步所选 ref）"
+          }
+        }
+      }
+    },
     "Custom ref filters are set. Only the selected refs will sync, so this is not a complete backup.": {
       "extractionState": "manual",
       "localizations": {
@@ -3027,6 +3044,23 @@
         }
       }
     },
+    "git-lfs missing while the source uses Git LFS": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "git-lfs missing while the source uses Git LFS"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "源仓库使用 Git LFS，但缺少 git-lfs"
+          }
+        }
+      }
+    },
     "GitHub Token (Requires admin:repo_hook)": {
       "extractionState": "manual",
       "localizations": {
@@ -3244,6 +3278,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "每小时"
+          }
+        }
+      }
+    },
+    "Incomplete backup": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incomplete backup"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "非完整备份"
+          }
+        }
+      }
+    },
+    "Incomplete backup: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incomplete backup: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "非完整备份：%@"
           }
         }
       }
@@ -5403,6 +5471,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "ls-remote 目标仓库..."
+          }
+        }
+      }
+    },
+    "shallow clone (history truncated)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "shallow clone (history truncated)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浅克隆（历史被截断）"
           }
         }
       }

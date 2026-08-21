@@ -51,7 +51,7 @@ struct RepoFailureNextStep: Equatable, Sendable {
         status: SyncStatus,
         recentRecords: [SyncRecord] = []
     ) -> RepoFailureNextStep {
-        let hasMissingGitLFS = recentRecordsContainsMissingGitLFS(recentRecords)
+        let hasMissingGitLFS = LFSMirrorMessages.recentRecordsContainMissingToolWarning(recentRecords)
         let lfsHint = hasMissingGitLFS ? LFSMirrorMessages.installHint : nil
 
         if repo.needsCredentials {
@@ -150,18 +150,6 @@ struct RepoFailureNextStep: Equatable, Sendable {
     }
 
     // MARK: - Helpers
-
-    private static func recentRecordsContainsMissingGitLFS(_ records: [SyncRecord]) -> Bool {
-        for record in records.reversed() {
-            if record.logLines.contains(where: LFSMirrorMessages.isMissingGitLFSWarning) {
-                return true
-            }
-            for target in record.targetResults where target.logLines.contains(where: LFSMirrorMessages.isMissingGitLFSWarning) {
-                return true
-            }
-        }
-        return false
-    }
 
     private static func isMissingCredentialsMessage(_ message: String) -> Bool {
         message == RepoCredentialGate.missingCredentialsMessage
