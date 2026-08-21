@@ -275,9 +275,12 @@ struct SidebarView: View {
         return RepoRowView(
             repo: repo,
             status: status,
+            recentRecords: appVM.records[repo.id] ?? [],
             onSyncNow: { appVM.triggerSync(repoID: repo.id) },
             onVerifyNow: { appVM.triggerVerify(repoID: repo.id) },
-            onEdit: { sheetMode = .edit(repo) },
+            onEdit: { sheetMode = .edit(repo, focusAuth: false) },
+            onReenterCredentials: { appVM.requestReenterCredentials(repoID: repo.id) },
+            onOpenLog: { appVM.requestOpenSyncLog(repoID: repo.id) },
             onFreeSpace: {
                 Task { await appVM.freeMirrorSpace(for: repo.id) }
             },

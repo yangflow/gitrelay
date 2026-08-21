@@ -83,8 +83,17 @@ struct MenuBarPopoverView: View {
                                 MenuBarRepoRowView(
                                     repo: repo,
                                     status: appVM.statuses[repo.id] ?? .unknown,
+                                    recentRecords: appVM.records[repo.id] ?? [],
                                     onOpen: { openMainWindow(focusing: repo.id) },
-                                    onSync: { appVM.triggerSync(repoID: repo.id) }
+                                    onSync: { appVM.triggerSync(repoID: repo.id) },
+                                    onReenterCredentials: {
+                                        appVM.requestReenterCredentials(repoID: repo.id)
+                                        openMainWindow(focusing: repo.id)
+                                    },
+                                    onOpenLog: {
+                                        appVM.requestOpenSyncLog(repoID: repo.id)
+                                        openMainWindow(focusing: repo.id)
+                                    }
                                 )
                                 if repo.id != filteredRepos.last?.id {
                                     Divider()

@@ -13,6 +13,7 @@ struct RepoDetailView: View {
 
     @State private var detailVM = RepoDetailViewModel()
     @State private var selectedTab: RepoDetailTab = .overview
+    @State private var scrollToSyncLogToken: UUID?
 
     private var status: SyncStatus { appVM.statuses[repo.id] ?? .unknown }
     private var records: [SyncRecord] { appVM.records[repo.id] ?? [] }
@@ -31,12 +32,23 @@ struct RepoDetailView: View {
             .padding(.top, DesignTokens.Spacing.lg)
             .padding(.bottom, DesignTokens.Spacing.md)
 
-            ScrollView {
-                switch selectedTab {
-                case .overview:
-                    overviewContent
-                case .releases:
-                    releasesContent
+            ScrollViewReader { proxy in
+                ScrollView {
+                    switch selectedTab {
+                    case .overview:
+                        overviewContent
+                    case .releases:
+                        releasesContent
+                    }
+                }
+                .onChange(of: scrollToSyncLogToken) { _, token in
+                    guard token != nil else { return }
+                    selectedTab = .overview
+                    DispatchQueue.main.async {
+                        withAnimation {
+                            proxy.scrollTo(RepoDetailScrollTarget.syncLog, anchor: .top)
+                        }
+                    }
                 }
             }
         }
@@ -44,6 +56,7 @@ struct RepoDetailView: View {
         .task(id: repo.id) {
             await detailVM.loadBranches(for: repo.id)
             await detailVM.loadReleaseStatus(for: repo)
+            applyPendingScrollToSyncLogIfNeeded()
         }
         .onChange(of: status) {
             if case .idle = status {
@@ -55,6 +68,10 @@ struct RepoDetailView: View {
         }
         .onChange(of: repo.mirrorReleases) {
             Task { await detailVM.loadReleaseStatus(for: repo) }
+        }
+        .onChange(of: appVM.pendingScrollToSyncLogRepoID) { _, repoID in
+            guard repoID == repo.id else { return }
+            applyPendingScrollToSyncLogIfNeeded()
         }
     }
 
@@ -75,7 +92,9 @@ struct RepoDetailView: View {
                 nextFireDate: appVM.nextFireDate(for: repo.id),
                 onSyncNow: { appVM.triggerSync(repoID: repo.id) },
                 onVerifyNow: { appVM.triggerVerify(repoID: repo.id) },
-                onCancel: { appVM.cancelSync(repoID: repo.id) }
+                onCancel: { appVM.cancelSync(repoID: repo.id) },
+                onReenterCredentials: { appVM.requestReenterCredentials(repoID: repo.id) },
+                onOpenLog: { scrollToSyncLog() }
             )
 
             detailDivider
@@ -91,6 +110,7 @@ struct RepoDetailView: View {
             detailDivider
 
             SyncLogView(records: records)
+                .id(RepoDetailScrollTarget.syncLog)
         }
         .padding(DesignTokens.Spacing.detailContent)
     }
@@ -111,4 +131,19 @@ struct RepoDetailView: View {
     private var detailDivider: some View {
         Divider()
     }
+
+    private func scrollToSyncLog() {
+        selectedTab = .overview
+        scrollToSyncLogToken = UUID()
+    }
+
+    private func applyPendingScrollToSyncLogIfNeeded() {
+        guard appVM.pendingScrollToSyncLogRepoID == repo.id else { return }
+        _ = appVM.consumePendingScrollToSyncLogRepoID()
+        scrollToSyncLog()
+    }
+}
+
+private enum RepoDetailScrollTarget {
+    static let syncLog = "repo-detail-sync-log"
 }

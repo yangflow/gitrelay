@@ -12,6 +12,12 @@ struct RepoStatusSectionView: View {
     let onSyncNow: () -> Void
     let onVerifyNow: () -> Void
     let onCancel: () -> Void
+    let onReenterCredentials: () -> Void
+    let onOpenLog: () -> Void
+
+    private var nextStep: RepoFailureNextStep {
+        RepoFailureNextStep.make(repo: repo, status: status, recentRecords: records)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
@@ -27,7 +33,10 @@ struct RepoStatusSectionView: View {
                     lastSyncedAt: repo.lastSyncedAt,
                     lastSuccessfulSyncedAt: repo.lastSuccessfulSyncedAt,
                     consecutiveFailureCount: repo.consecutiveFailureCount,
-                    onRetry: onSyncNow
+                    nextStep: nextStep,
+                    onRetry: onSyncNow,
+                    onReenterCredentials: onReenterCredentials,
+                    onOpenLog: onOpenLog
                 )
             } else if case .diverged(let detail) = status {
                 RepoDivergedRowView(

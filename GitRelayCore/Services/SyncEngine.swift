@@ -415,34 +415,7 @@ final class SyncEngine {
     }
 
     private func classifyError(_ error: Error) -> String {
-        if let syncError = error as? SyncEngineError {
-            return syncError.localizedDescription
-        }
-        if let destructivePushError = error as? DestructivePushError {
-            return destructivePushError.localizedDescription
-        }
-        if let archiveError = error as? ArchiveError {
-            return archiveError.localizedDescription ?? "Archive failed"
-        }
-
-        let raw = SyncEngine.redactCredentials(error.localizedDescription)
-        let lower = raw.lowercased()
-        if lower.contains("authentication failed") || lower.contains("permission denied") ||
-           lower.contains("could not read username") || lower.contains("invalid username or password") ||
-           lower.contains("access denied") {
-            return "Authentication failed — check credentials"
-        }
-        if lower.contains("repository not found") || (lower.contains("not found") && lower.contains("git")) {
-            return "Repository not found — check URL"
-        }
-        if lower.contains("could not resolve host") || lower.contains("connection timed out") ||
-           lower.contains("network is unreachable") || lower.contains("ssl certificate") {
-            return "Network error — check connectivity"
-        }
-        if lower.contains("rejected") || lower.contains("non-fast-forward") {
-            return "Push rejected — destination has diverged"
-        }
-        return raw
+        SyncFailureClassifier.classifyError(error)
     }
 
     nonisolated static func redactCredentials(_ message: String) -> String {

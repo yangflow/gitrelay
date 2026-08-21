@@ -3,14 +3,21 @@ import SwiftUI
 struct RepoRowView: View {
     let repo: RepoConfig
     let status: SyncStatus
+    var recentRecords: [SyncRecord] = []
     let onSyncNow: () -> Void
     let onVerifyNow: () -> Void
     let onEdit: () -> Void
+    let onReenterCredentials: () -> Void
+    let onOpenLog: () -> Void
     let onFreeSpace: () -> Void
     let onDelete: () -> Void
 
     private var presentation: RepoRowHealthPresentation.Caption {
         RepoRowHealthPresentation.caption(for: repo, status: status)
+    }
+
+    private var nextStep: RepoFailureNextStep {
+        RepoFailureNextStep.make(repo: repo, status: status, recentRecords: recentRecords)
     }
 
     var body: some View {
@@ -27,6 +34,13 @@ struct RepoRowView: View {
                     .lineLimit(1)
 
                 RepoRowCaptionView(caption: presentation)
+
+                RepoFailureNextStepActionsView(
+                    nextStep: nextStep,
+                    compact: true,
+                    onReenterCredentials: onReenterCredentials,
+                    onOpenLog: onOpenLog
+                )
             }
             Spacer(minLength: DesignTokens.Spacing.xxs)
             if isEscalatedFailure, let count = RepoRowHealthPresentation.failureBadgeCount(for: repo) {
@@ -43,6 +57,12 @@ struct RepoRowView: View {
                 .disabled(status == .syncing)
             Button(String(localized: "Free Space"), action: onFreeSpace)
                 .disabled(status == .syncing)
+            if nextStep.showsReenterCredentials {
+                Button(String(localized: "Re-enter credentials"), action: onReenterCredentials)
+            }
+            if nextStep.showsOpenLog {
+                Button(String(localized: "Open Log"), action: onOpenLog)
+            }
             Divider()
             Button("Edit...", action: onEdit)
             Button("Delete...", role: .destructive, action: onDelete)
