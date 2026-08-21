@@ -9,6 +9,7 @@ struct RepoFailureRowView: View {
     let onRetry: () -> Void
     let onReenterCredentials: () -> Void
     let onOpenLog: () -> Void
+    var onCopyFailure: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .top, spacing: DesignTokens.Spacing.sm) {
@@ -45,7 +46,8 @@ struct RepoFailureRowView: View {
                     nextStep: nextStep,
                     compact: false,
                     onReenterCredentials: onReenterCredentials,
-                    onOpenLog: onOpenLog
+                    onOpenLog: onOpenLog,
+                    onCopyFailure: onCopyFailure
                 )
             }
             Spacer(minLength: DesignTokens.Spacing.md)

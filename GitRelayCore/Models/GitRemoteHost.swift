@@ -59,10 +59,6 @@ nonisolated enum GitRemoteHost {
     }
 
     static func sshKeysSettingsLabel(for provider: GitProvider) -> String {
-        switch provider {
-        case .github: "GitHub"
-        case .gitlab: "GitLab"
-        case .gitea:  "Gitea"
-        }
+        provider.shortName
     }
 }

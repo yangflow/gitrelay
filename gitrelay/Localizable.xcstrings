@@ -511,6 +511,23 @@
         }
       }
     },
+    "Account · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account · %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "账号 · %@"
+          }
+        }
+      }
+    },
     "Add": {
       "extractionState": "manual",
       "localizations": {
@@ -1888,6 +1905,23 @@
         }
       }
     },
+    "Copied": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已复制"
+          }
+        }
+      }
+    },
     "Copied to Clipboard": {
       "extractionState": "manual",
       "localizations": {
@@ -1901,6 +1935,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "已复制到剪贴板"
+          }
+        }
+      }
+    },
+    "Copies the failed run's log with credentials redacted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copies the failed run's log with credentials redacted"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制这次失败的日志（凭据已脱敏）"
           }
         }
       }
@@ -1952,6 +2003,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "复制密钥"
+          }
+        }
+      }
+    },
+    "Copy this failure": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy this failure"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制这次失败"
           }
         }
       }
@@ -2908,6 +2976,23 @@
         }
       }
     },
+    "Failed at: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed at: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失败时间：%@"
+          }
+        }
+      }
+    },
     "Failed to load repository configuration: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -3431,6 +3516,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gitea (Gitee 开源版)"
+          }
+        }
+      }
+    },
+    "GitRelay sync failure": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitRelay sync failure"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitRelay 同步失败"
           }
         }
       }
@@ -4098,6 +4200,23 @@
         }
       }
     },
+    "Log:": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日志："
+          }
+        }
+      }
+    },
     "Low Power Mode is on and the network is expensive; scheduled sync is paused": {
       "extractionState": "manual",
       "localizations": {
@@ -4145,6 +4264,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "手动"
+          }
+        }
+      }
+    },
+    "Manual sync only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual sync only"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅手动同步"
           }
         }
       }
@@ -4438,6 +4574,23 @@
         }
       }
     },
+    "Next at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next at %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下次 %@"
+          }
+        }
+      }
+    },
     "Next Poll": {
       "extractionState": "manual",
       "localizations": {
@@ -4468,23 +4621,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "下次抽样"
-          }
-        }
-      }
-    },
-    "Next sync: %@ (the app must remain running)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next sync: %@ (the app must remain running)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下次同步：%@(需 App 保持运行)"
           }
         }
       }
@@ -4638,6 +4774,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "未运行"
+          }
+        }
+      }
+    },
+    "Not scheduled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not scheduled"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未排期"
           }
         }
       }
@@ -5135,6 +5288,40 @@
         }
       }
     },
+    "Pause": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂停"
+          }
+        }
+      }
+    },
+    "Pause scheduled sync for this pair; manual sync still works": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause scheduled sync for this pair; manual sync still works"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂停该仓库的计划同步；手动同步仍然可用"
+          }
+        }
+      }
+    },
     "Pause scheduled sync in Low Power Mode": {
       "extractionState": "manual",
       "localizations": {
@@ -5165,6 +5352,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "昂贵网络 / 热点时暂停计划同步"
+          }
+        }
+      }
+    },
+    "Paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已暂停"
           }
         }
       }
@@ -5713,6 +5917,23 @@
         }
       }
     },
+    "Repository: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repository: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仓库：%@"
+          }
+        }
+      }
+    },
     "Require Touch ID or password for sensitive actions": {
       "extractionState": "manual",
       "localizations": {
@@ -5794,6 +6015,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "执行结果"
+          }
+        }
+      }
+    },
+    "Resume": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复"
+          }
+        }
+      }
+    },
+    "Resume scheduled sync for this pair": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume scheduled sync for this pair"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复该仓库的计划同步"
           }
         }
       }
@@ -5900,6 +6155,23 @@
         }
       }
     },
+    "Scheduled sync runs only while GitRelay stays open. Manual sync is unaffected.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled sync runs only while GitRelay stays open. Manual sync is unaffected."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "计划同步仅在 GitRelay 保持运行时执行；手动同步不受影响。"
+          }
+        }
+      }
+    },
     "Select the repositories you want to mirror.": {
       "extractionState": "manual",
       "localizations": {
@@ -5934,6 +6206,40 @@
         }
       }
     },
+    "Show in Finder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in Finder"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Finder 中显示"
+          }
+        }
+      }
+    },
+    "Showing the last %lld log lines": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Showing the last %lld log lines"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅显示最后 %lld 行日志"
+          }
+        }
+      }
+    },
     "Source URLs come from the repositories you picked; this choice decides whether they use SSH or HTTPS.": {
       "extractionState": "manual",
       "localizations": {
@@ -5947,6 +6253,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "源地址来自所选仓库；此处的选择决定它们使用 SSH 还是 HTTPS。"
+          }
+        }
+      }
+    },
+    "Source: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "源：%@"
           }
         }
       }
@@ -7035,6 +7358,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "目标仓库缺少分支 %@"
+          }
+        }
+      }
+    },
+    "Target: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标：%@"
           }
         }
       }

@@ -4,7 +4,6 @@ struct RepoIdleRowView: View {
     let status: SyncStatus
     let lastSyncedAt: Date?
     let lastVerifiedAt: Date?
-    let nextFireDate: Date?
     let isVerifying: Bool
     let onSyncNow: () -> Void
     let onVerifyNow: () -> Void
@@ -20,11 +19,6 @@ struct RepoIdleRowView: View {
                 }
                 if let lastVerifiedAt {
                     Text(String(localized: "Last verified: \(lastVerifiedAt.formatted(.relative(presentation: .named)))"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                if let nextFireDate {
-                    Text(String(localized: "Next sync: \(nextFireDate.formatted(.relative(presentation: .named))) (the app must remain running)"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

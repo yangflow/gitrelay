@@ -5,9 +5,14 @@ struct RepoFailureNextStepActionsView: View {
     var compact: Bool = false
     let onReenterCredentials: () -> Void
     let onOpenLog: () -> Void
+    /// 复制这次失败: absent where there is no failed run to copy (or no
+    /// clipboard affordance, such as the menu-bar row).
+    var onCopyFailure: (() -> Void)?
+
+    @State private var didCopy = false
 
     var body: some View {
-        if nextStep == .none {
+        if nextStep == .none, onCopyFailure == nil {
             EmptyView()
         } else {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
@@ -36,8 +41,26 @@ struct RepoFailureNextStepActionsView: View {
                             .buttonStyle(.borderless)
                             .controlSize(compact ? .mini : .small)
                     }
+                    if let onCopyFailure {
+                        Button(copyTitle) {
+                            onCopyFailure()
+                            didCopy = true
+                        }
+                        .buttonStyle(.borderless)
+                        .controlSize(compact ? .mini : .small)
+                        .help(String(localized: "Copies the failed run's log with credentials redacted"))
+                    }
                 }
             }
+            .task(id: didCopy) {
+                guard didCopy else { return }
+                try? await Task.sleep(for: .seconds(1.5))
+                didCopy = false
+            }
         }
+    }
+
+    private var copyTitle: String {
+        didCopy ? String(localized: "Copied") : String(localized: "Copy this failure")
     }
 }

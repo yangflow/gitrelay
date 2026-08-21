@@ -100,7 +100,8 @@ struct RepoDetailView: View {
                 onVerifyNow: { appVM.triggerVerify(repoID: repo.id) },
                 onCancel: { appVM.cancelSync(repoID: repo.id) },
                 onReenterCredentials: { appVM.requestReenterCredentials(repoID: repo.id) },
-                onOpenLog: { scrollToSyncLog() }
+                onOpenLog: { scrollToSyncLog() },
+                onCopyFailure: copyFailureAction
             )
         } header: {
             Text(String(localized: "Status"))
@@ -154,6 +155,16 @@ struct RepoDetailView: View {
     private func scrollToSyncLog() {
         selectedTab = .overview
         scrollToSyncLogToken = UUID()
+    }
+
+    /// 复制这次失败 builds its payload on the press, not on every body pass: it
+    /// may have to read the log file for a failure from an earlier session.
+    private var copyFailureAction: (() -> Void)? {
+        guard appVM.hasFailureToCopy(repoID: repo.id) else { return nil }
+        return {
+            guard let text = appVM.failureCopyText(for: repo.id) else { return }
+            ClipboardService.copy(text)
+        }
     }
 
     private func applyPendingScrollToSyncLogIfNeeded() {

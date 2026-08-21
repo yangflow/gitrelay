@@ -17,12 +17,12 @@ final class SyncScheduler {
     var now: () -> Date = { Date() }
 
     func schedule(repo: RepoConfig) {
-        // Imported repos missing Token/SSH stay unscheduled until credentials are filled in.
-        guard !repo.needsCredentials else {
+        // Manual-only pairs, a paused pair, and imported repos still missing
+        // Token/SSH all stay unscheduled. Manual 同步 goes around this.
+        guard RepoScheduleState.armsTimer(for: repo), let interval = repo.frequency.interval else {
             deschedule(repoID: repo.id)
             return
         }
-        guard let interval = repo.frequency.interval else { return }
         deschedule(repoID: repo.id)
         let id = repo.id
         let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in

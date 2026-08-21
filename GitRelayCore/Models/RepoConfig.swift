@@ -34,6 +34,8 @@ nonisolated struct RepoConfig: Codable, Identifiable, Equatable, Sendable {
     var webhookEnabled: Bool
     /// Set after import when HTTPS tokens or SSH keys are missing; blocks scheduling until fixed.
     var needsCredentials: Bool
+    /// Pauses this pair's frequency-driven syncs. Manual 同步 and webhook syncs still run.
+    var scheduledSyncPaused: Bool
 
     static let defaultRefSpecs: [String] = [
         "+refs/heads/*:refs/heads/*",
@@ -99,7 +101,8 @@ nonisolated struct RepoConfig: Codable, Identifiable, Equatable, Sendable {
         depth: Int? = nil,
         refSpecs: [String] = RepoConfig.defaultRefSpecs,
         webhookEnabled: Bool = false,
-        needsCredentials: Bool = false
+        needsCredentials: Bool = false,
+        scheduledSyncPaused: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -126,6 +129,7 @@ nonisolated struct RepoConfig: Codable, Identifiable, Equatable, Sendable {
             : Self.normalizedRefSpecs(refSpecs)
         self.webhookEnabled = webhookEnabled
         self.needsCredentials = needsCredentials
+        self.scheduledSyncPaused = scheduledSyncPaused
     }
 
     /// Convenience for tests and single-target call sites.
@@ -153,7 +157,8 @@ nonisolated struct RepoConfig: Codable, Identifiable, Equatable, Sendable {
         depth: Int? = nil,
         refSpecs: [String] = RepoConfig.defaultRefSpecs,
         webhookEnabled: Bool = false,
-        needsCredentials: Bool = false
+        needsCredentials: Bool = false,
+        scheduledSyncPaused: Bool = false
     ) {
         self.init(
             id: id,
@@ -178,7 +183,8 @@ nonisolated struct RepoConfig: Codable, Identifiable, Equatable, Sendable {
             depth: depth,
             refSpecs: refSpecs,
             webhookEnabled: webhookEnabled,
-            needsCredentials: needsCredentials
+            needsCredentials: needsCredentials,
+            scheduledSyncPaused: scheduledSyncPaused
         )
     }
 
@@ -213,6 +219,7 @@ nonisolated struct RepoConfig: Codable, Identifiable, Equatable, Sendable {
         case refSpecs
         case webhookEnabled
         case needsCredentials
+        case scheduledSyncPaused
     }
 
     init(from decoder: Decoder) throws {
@@ -259,6 +266,7 @@ nonisolated struct RepoConfig: Codable, Identifiable, Equatable, Sendable {
             : Self.normalizedRefSpecs(decodedRefSpecs)
         webhookEnabled = try container.decodeIfPresent(Bool.self, forKey: .webhookEnabled) ?? false
         needsCredentials = try container.decodeIfPresent(Bool.self, forKey: .needsCredentials) ?? false
+        scheduledSyncPaused = try container.decodeIfPresent(Bool.self, forKey: .scheduledSyncPaused) ?? false
 
         if let decodedTargets = try container.decodeIfPresent([MirrorTarget].self, forKey: .targets),
            !decodedTargets.isEmpty {
@@ -306,6 +314,9 @@ nonisolated struct RepoConfig: Codable, Identifiable, Equatable, Sendable {
         }
         if needsCredentials {
             try container.encode(needsCredentials, forKey: .needsCredentials)
+        }
+        if scheduledSyncPaused {
+            try container.encode(scheduledSyncPaused, forKey: .scheduledSyncPaused)
         }
     }
 

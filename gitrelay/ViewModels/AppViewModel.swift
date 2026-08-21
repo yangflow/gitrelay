@@ -95,6 +95,26 @@ final class AppViewModel {
         setScheduledSyncManuallyPaused(!isScheduledSyncManuallyPaused)
     }
 
+    /// Whether this one pair's frequency-driven syncs are paused, independent of
+    /// the app-wide pause in the sidebar footer.
+    func isScheduledSyncPaused(repoID: UUID) -> Bool {
+        repos.first(where: { $0.id == repoID })?.scheduledSyncPaused ?? false
+    }
+
+    /// Pauses or resumes the frequency timer of one pair. Manual 同步 and
+    /// webhook syncs keep working while it is paused.
+    func setScheduledSyncPaused(_ paused: Bool, repoID: UUID) {
+        guard let index = repos.firstIndex(where: { $0.id == repoID }),
+              repos[index].scheduledSyncPaused != paused else { return }
+        repos[index].scheduledSyncPaused = paused
+        scheduler.reschedule(repo: repos[index])
+        saveRepos()
+    }
+
+    func toggleScheduledSyncPause(repoID: UUID) {
+        setScheduledSyncPaused(!isScheduledSyncPaused(repoID: repoID), repoID: repoID)
+    }
+
     var presentedDestructiveConfirmation: DestructivePushConfirmationRequest? {
         pendingDestructiveConfirmations.first
     }
@@ -902,6 +922,49 @@ final class AppViewModel {
 
     func latestRecord(for repoID: UUID) -> SyncRecord? {
         records[repoID]?.last
+    }
+
+    /// Whether 复制这次失败 has anything to copy. Cheap enough for a view body,
+    /// unlike ``failureCopyText(for:)`` which may read the log file.
+    func hasFailureToCopy(repoID: UUID) -> Bool {
+        guard let repo = repos.first(where: { $0.id == repoID }) else { return false }
+        if case .failed = statuses[repoID] { return true }
+        return repo.lastSyncError != nil
+    }
+
+    /// Redacted clipboard payload behind 复制这次失败, or nil when this pair has
+    /// no failure to copy.
+    func failureCopyText(for repoID: UUID) -> String? {
+        guard let repo = repos.first(where: { $0.id == repoID }) else { return nil }
+
+        let message: String
+        if case .failed(let statusMessage) = statuses[repoID] {
+            message = statusMessage
+        } else if let storedError = repo.lastSyncError {
+            message = storedError
+        } else {
+            return nil
+        }
+
+        let failedRun = latestFailedRun(for: repoID)
+        return SyncFailureCopy.text(
+            repo: repo,
+            message: message,
+            logLines: failedRun?.logLines ?? [],
+            failedAt: failedRun?.finishedAt ?? repo.lastSyncedAt
+        )
+    }
+
+    /// The last failed run: the in-memory record when the failure happened in
+    /// this session, otherwise the last failed run persisted in the log file.
+    private func latestFailedRun(for repoID: UUID) -> (logLines: [String], finishedAt: Date?)? {
+        if let record = records[repoID]?.last(where: { !$0.succeeded }) {
+            return (record.logLines, record.finishedAt)
+        }
+        guard let persisted = try? SyncLogStore.loadRecords(for: repoID),
+              let failed = persisted.last(where: { !$0.succeeded })
+        else { return nil }
+        return (failed.logLines, failed.finishedAt)
     }
 
     /// Runs the schedule's backlog after the machine wakes or the app becomes
