@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UserNotifications
 @testable import GitRelay
 
 // MARK: - SyncFrequency
@@ -3041,6 +3042,185 @@ struct SyncFailureNotifierFocusTests {
         )
 
         #expect(notifier.pendingDuringFocus.isEmpty)
+    }
+
+    @Test func deferredAlertPayloadCarriesRepoIDOnly() {
+        var focused: Bool? = true
+        let notifier = SyncFailureNotifier(focusStatusProvider: { focused })
+        let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000034")!
+
+        notifier.handleSyncFailure(
+            repoID: repoID,
+            repoName: "demo",
+            message: "Network error — check connectivity",
+            consecutiveFailureCount: 1,
+            preferences: .default
+        )
+
+        let alert = notifier.pendingDuringFocus[repoID]
+        #expect(alert?.repoID == repoID)
+        let userInfo = SyncFailureNotificationPayload.userInfo(repoID: repoID)
+        #expect(SyncFailureNotificationPayload.repoID(from: userInfo) == repoID)
+        #expect(userInfo.keys.count == 1)
+        #expect(userInfo[SyncFailureNotifier.repoIDKey] as? String == repoID.uuidString)
+    }
+
+    @Test func redactsCredentialsBeforeQueuingAlert() {
+        var focused: Bool? = true
+        let notifier = SyncFailureNotifier(focusStatusProvider: { focused })
+        let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000035")!
+
+        notifier.handleSyncFailure(
+            repoID: repoID,
+            repoName: "demo",
+            message: "fatal: could not read https://ghp_secretTOKEN@github.com/org/repo.git",
+            consecutiveFailureCount: 1,
+            preferences: .default
+        )
+
+        let message = notifier.pendingDuringFocus[repoID]?.message ?? ""
+        #expect(!message.contains("ghp_secretTOKEN"))
+        #expect(message.contains("****@") || message.contains("github.com"))
+    }
+}
+
+// MARK: - SyncFailureNotification actions
+
+struct SyncFailureNotificationRoutingTests {
+    @Test func payloadCarriesRepoID() {
+        let repoID = UUID(uuidString: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")!
+        let userInfo = SyncFailureNotificationPayload.userInfo(repoID: repoID)
+        #expect(SyncFailureNotificationPayload.repoID(from: userInfo) == repoID)
+        #expect(userInfo[SyncFailureNotifier.repoIDKey] as? String == repoID.uuidString)
+    }
+
+    @Test func payloadRejectsMissingOrInvalidRepoID() {
+        #expect(SyncFailureNotificationPayload.repoID(from: [:]) == nil)
+        #expect(SyncFailureNotificationPayload.repoID(from: [SyncFailureNotifier.repoIDKey: "not-a-uuid"]) == nil)
+    }
+
+    @Test func actionsMapToSyncAgainAndOpen() {
+        #expect(
+            SyncFailureNotificationRouting.action(for: SyncFailureNotifier.syncAgainActionIdentifier)
+                == .syncAgain
+        )
+        #expect(
+            SyncFailureNotificationRouting.action(for: SyncFailureNotifier.retryActionIdentifier)
+                == .syncAgain
+        )
+        #expect(
+            SyncFailureNotificationRouting.action(for: SyncFailureNotifier.openActionIdentifier)
+                == .open
+        )
+        #expect(
+            SyncFailureNotificationRouting.action(for: UNNotificationDefaultActionIdentifier)
+                == .open
+        )
+        #expect(SyncFailureNotificationRouting.action(for: UNNotificationDismissActionIdentifier) == nil)
+        #expect(SyncFailureNotificationRouting.action(for: "unknown") == nil)
+    }
+}
+
+@MainActor
+struct SyncFailureNotificationActionMappingTests {
+    private func makeViewModel(defaults: UserDefaults) -> AppViewModel {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-failure-notif-actions-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        Constants.setBaseDirectoryForTesting(base)
+        let vm = AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
+            notificationPreferencesStore: NotificationPreferencesStore(defaults: defaults),
+            biometricAuthenticator: PermissiveBiometricAuthenticator()
+        )
+        vm.suspendSyncEngineForTesting = true
+        return vm
+    }
+
+    private func addSSHRepo(to vm: AppViewModel, name: String) -> UUID {
+        let id = UUID()
+        vm.addRepo(
+            RepoConfig(
+                id: id,
+                name: name,
+                srcURL: "git@github.com:user/\(name).git",
+                dstURL: "git@github.com:user/\(name)-mirror.git",
+                frequency: .manual
+            )
+        )
+        return id
+    }
+
+    @Test func syncAgainActionMapsToTriggerSync() {
+        let suite = "gitrelay.tests.failure-notif-sync-again.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+        let repoID = addSSHRepo(to: vm, name: "retry-me")
+
+        let userInfo = SyncFailureNotificationPayload.userInfo(repoID: repoID)
+        vm.failureNotifier.handleAction(
+            identifier: SyncFailureNotifier.syncAgainActionIdentifier,
+            userInfo: userInfo
+        )
+
+        #expect(vm.inProgressSyncIDs.contains(repoID))
+        #expect(vm.statuses[repoID] == .syncing)
+    }
+
+    @Test func openActionMapsToSelectRepoPath() {
+        let suite = "gitrelay.tests.failure-notif-open.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+        let repoID = addSSHRepo(to: vm, name: "open-me")
+
+        let userInfo = SyncFailureNotificationPayload.userInfo(repoID: repoID)
+        vm.failureNotifier.handleAction(
+            identifier: SyncFailureNotifier.openActionIdentifier,
+            userInfo: userInfo
+        )
+
+        #expect(vm.pendingMainWindowRepoID == repoID)
+        #expect(vm.pendingScrollToSyncLogRepoID == repoID)
+    }
+
+    @Test func defaultTapMapsToSelectRepoPath() {
+        let suite = "gitrelay.tests.failure-notif-default.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+        let repoID = addSSHRepo(to: vm, name: "tap-me")
+
+        vm.failureNotifier.handleAction(
+            identifier: UNNotificationDefaultActionIdentifier,
+            userInfo: SyncFailureNotificationPayload.userInfo(repoID: repoID)
+        )
+
+        #expect(vm.pendingMainWindowRepoID == repoID)
+    }
+
+    @Test func notifierCallbacksFireForMappedActions() {
+        let notifier = SyncFailureNotifier(focusStatusProvider: { false })
+        let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000036")!
+        var synced: UUID?
+        var opened: UUID?
+        notifier.onSyncAgain = { synced = $0 }
+        notifier.onOpen = { opened = $0 }
+
+        let userInfo = SyncFailureNotificationPayload.userInfo(repoID: repoID)
+        notifier.handleAction(
+            identifier: SyncFailureNotifier.syncAgainActionIdentifier,
+            userInfo: userInfo
+        )
+        notifier.handleAction(
+            identifier: SyncFailureNotifier.openActionIdentifier,
+            userInfo: userInfo
+        )
+
+        #expect(synced == repoID)
+        #expect(opened == repoID)
     }
 }
 

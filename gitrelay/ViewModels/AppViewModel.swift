@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import AppKit
 import Observation
+import UserNotifications
 
 @MainActor
 @Observable
@@ -174,13 +175,21 @@ final class AppViewModel {
             errorMessage = String(localized: "Failed to load repository configuration: \(error.localizedDescription)")
         }
 
-        failureNotifier.onRetry = { [weak self] id in
+        failureNotifier.onSyncAgain = { [weak self] id in
             self?.triggerSync(repoID: id)
         }
+        failureNotifier.onOpen = { [weak self] id in
+            self?.requestFocusRepositoryFromFailureNotification(repoID: id)
+        }
 
-        orgDiscoveryNotifier.onView = { [weak self] subscriptionID in
+        let openDiscovery: (UUID) -> Void = { [weak self] subscriptionID in
             self?.openBrowsePrefill(for: subscriptionID)
         }
+        orgDiscoveryNotifier.onView = openDiscovery
+        failureNotifier.onOrgDiscoveryView = openDiscovery
+        // OrgDiscoveryNotifier registers categories after us; keep this notifier as the
+        // center delegate so Sync again / Open (and forwarded discovery) responses arrive.
+        UNUserNotificationCenter.current().delegate = failureNotifier
 
         scheduler.onFire = { [weak self] id in
             Task { @MainActor in
@@ -788,6 +797,15 @@ final class AppViewModel {
         guard repos.contains(where: { $0.id == repoID }) else { return }
         pendingScrollToSyncLogRepoID = repoID
         pendingMainWindowRepoID = repoID
+    }
+
+    /// Focuses the main window on a repository from a sync-failure notification Open action.
+    /// Scrolls to Sync Log when the detail pane loads. Does not mutate repository configuration.
+    func requestFocusRepositoryFromFailureNotification(repoID: UUID) {
+        guard repos.contains(where: { $0.id == repoID }) else { return }
+        pendingScrollToSyncLogRepoID = repoID
+        pendingMainWindowRepoID = repoID
+        bringMainWindowForwardForCommands()
     }
 
     func consumePendingEditFocusAuthRepoID() -> UUID? {

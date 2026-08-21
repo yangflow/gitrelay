@@ -4540,6 +4540,23 @@
         }
       }
     },
+    "Open": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开"
+          }
+        }
+      }
+    },
     "Open %@ SSH Settings": {
       "extractionState": "manual",
       "localizations": {
@@ -6151,6 +6168,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "全部同步"
+          }
+        }
+      }
+    },
+    "Sync again": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync again"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再同步"
           }
         }
       }

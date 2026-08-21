@@ -11,13 +11,49 @@ struct PendingFailureAlert: Equatable, Sendable {
     var consecutiveFailureCount: Int
 }
 
-/// Posts sync-failure alerts via `UNUserNotificationCenter`, with a Retry action,
+/// User-facing routes from a sync-failure notification action (or body tap).
+enum SyncFailureNotificationAction: Equatable, Sendable {
+    case syncAgain
+    case open
+}
+
+/// Builds and reads the failure-notification `userInfo` payload (repo id only).
+enum SyncFailureNotificationPayload {
+    static func userInfo(repoID: UUID) -> [AnyHashable: Any] {
+        [SyncFailureNotifier.repoIDKey: repoID.uuidString]
+    }
+
+    static func repoID(from userInfo: [AnyHashable: Any]) -> UUID? {
+        guard let raw = userInfo[SyncFailureNotifier.repoIDKey] as? String else { return nil }
+        return UUID(uuidString: raw)
+    }
+}
+
+/// Maps `UNNotificationResponse.actionIdentifier` values to failure-notification actions.
+enum SyncFailureNotificationRouting {
+    static func action(for identifier: String) -> SyncFailureNotificationAction? {
+        switch identifier {
+        case SyncFailureNotifier.syncAgainActionIdentifier:
+            return .syncAgain
+        case SyncFailureNotifier.openActionIdentifier,
+             UNNotificationDefaultActionIdentifier:
+            return .open
+        default:
+            return nil
+        }
+    }
+}
+
+/// Posts sync-failure alerts via `UNUserNotificationCenter`, with Sync again / Open actions,
 /// Focus-aware deferral, and an aggregated summary when Focus ends.
 @MainActor
 @Observable
 final class SyncFailureNotifier: NSObject {
     static let categoryIdentifier = "GITRELAY_SYNC_FAILURE"
-    static let retryActionIdentifier = "GITRELAY_RETRY_SYNC"
+    /// Kept as the historical identifier so already-delivered notifications still route.
+    static let syncAgainActionIdentifier = "GITRELAY_RETRY_SYNC"
+    static let retryActionIdentifier = syncAgainActionIdentifier
+    static let openActionIdentifier = "GITRELAY_OPEN_REPO"
     static let aggregatedCategoryIdentifier = "GITRELAY_SYNC_FAILURE_SUMMARY"
     static let repoIDKey = "repoID"
 
@@ -28,8 +64,14 @@ final class SyncFailureNotifier: NSObject {
     /// Failures deferred while Focus was active (deduped by repo ID, latest wins).
     private(set) var pendingDuringFocus: [UUID: PendingFailureAlert] = [:]
 
-    /// Called when the user taps Retry on a notification.
-    var onRetry: ((UUID) -> Void)?
+    /// Called when the user chooses Sync again on a failure notification.
+    var onSyncAgain: ((UUID) -> Void)?
+
+    /// Called when the user chooses Open (or taps the banner body) on a failure notification.
+    var onOpen: ((UUID) -> Void)?
+
+    /// Forwards org-discovery notification responses when this notifier owns the center delegate.
+    var onOrgDiscoveryView: ((UUID) -> Void)?
 
     init(
         center: UNUserNotificationCenter = .current(),
@@ -68,7 +110,7 @@ final class SyncFailureNotifier: NSObject {
         let alert = PendingFailureAlert(
             repoID: repoID,
             repoName: repoName,
-            message: message,
+            message: SyncEngine.redactCredentials(message),
             consecutiveFailureCount: consecutiveFailureCount
         )
 
@@ -100,6 +142,51 @@ final class SyncFailureNotifier: NSObject {
         }
     }
 
+    /// Applies a failure-notification action using the same mapping as the system delegate.
+    /// Exposed for unit tests; production paths go through `UNUserNotificationCenterDelegate`.
+    func handleAction(identifier: String, userInfo: [AnyHashable: Any]) {
+        guard let repoID = SyncFailureNotificationPayload.repoID(from: userInfo),
+              let action = SyncFailureNotificationRouting.action(for: identifier) else {
+            return
+        }
+
+        switch action {
+        case .syncAgain:
+            onSyncAgain?(repoID)
+        case .open:
+            onOpen?(repoID)
+        }
+    }
+
+    // MARK: - Categories
+
+    /// Failure + summary categories shared with ``OrgDiscoveryNotifier`` registration.
+    static func makeFailureCategories() -> Set<UNNotificationCategory> {
+        let syncAgain = UNNotificationAction(
+            identifier: syncAgainActionIdentifier,
+            title: String(localized: "Sync again"),
+            options: [.foreground]
+        )
+        let open = UNNotificationAction(
+            identifier: openActionIdentifier,
+            title: String(localized: "Open"),
+            options: [.foreground]
+        )
+        let failure = UNNotificationCategory(
+            identifier: categoryIdentifier,
+            actions: [syncAgain, open],
+            intentIdentifiers: [],
+            options: []
+        )
+        let summary = UNNotificationCategory(
+            identifier: aggregatedCategoryIdentifier,
+            actions: [],
+            intentIdentifiers: [],
+            options: []
+        )
+        return [failure, summary]
+    }
+
     // MARK: - Private
 
     private var isFocused: Bool {
@@ -111,36 +198,19 @@ final class SyncFailureNotifier: NSObject {
     }
 
     private func registerCategories() {
-        let retry = UNNotificationAction(
-            identifier: Self.retryActionIdentifier,
-            title: String(localized: "Retry"),
-            options: [.foreground]
-        )
-        let failure = UNNotificationCategory(
-            identifier: Self.categoryIdentifier,
-            actions: [retry],
-            intentIdentifiers: [],
-            options: []
-        )
-        let summary = UNNotificationCategory(
-            identifier: Self.aggregatedCategoryIdentifier,
-            actions: [],
-            intentIdentifiers: [],
-            options: []
-        )
-        center.setNotificationCategories([failure, summary])
+        center.setNotificationCategories(Self.makeFailureCategories())
     }
 
     private func postSingleFailure(_ alert: PendingFailureAlert, level: NotificationInterruptionPreference) {
         let content = UNMutableNotificationContent()
         content.title = FailureNotificationCopy.title(repoName: alert.repoName)
         content.body = FailureNotificationCopy.body(
-            message: alert.message,
+            message: SyncEngine.redactCredentials(alert.message),
             consecutiveFailureCount: alert.consecutiveFailureCount
         )
         content.sound = .default
         content.categoryIdentifier = Self.categoryIdentifier
-        content.userInfo = [Self.repoIDKey: alert.repoID.uuidString]
+        content.userInfo = SyncFailureNotificationPayload.userInfo(repoID: alert.repoID)
         applyInterruptionLevel(level, to: content)
 
         let request = UNNotificationRequest(
@@ -158,7 +228,9 @@ final class SyncFailureNotifier: NSObject {
         let content = UNMutableNotificationContent()
         content.title = FailureNotificationCopy.aggregatedTitle(failureCount: items.count)
         content.body = FailureNotificationCopy.aggregatedBody(
-            items: items.map { ($0.repoName, $0.message, $0.consecutiveFailureCount) }
+            items: items.map {
+                ($0.repoName, SyncEngine.redactCredentials($0.message), $0.consecutiveFailureCount)
+            }
         )
         content.sound = .default
         content.categoryIdentifier = Self.aggregatedCategoryIdentifier
@@ -185,6 +257,16 @@ final class SyncFailureNotifier: NSObject {
             content.interruptionLevel = .timeSensitive
         }
     }
+
+    private func handleOrgDiscoveryAction(identifier: String, userInfo: [AnyHashable: Any]) {
+        let subscriptionIDString = userInfo[OrgDiscoveryNotifier.subscriptionIDKey] as? String
+        let subscriptionID = subscriptionIDString.flatMap(UUID.init(uuidString:))
+        guard let subscriptionID else { return }
+        if identifier == OrgDiscoveryNotifier.viewActionIdentifier
+            || identifier == UNNotificationDefaultActionIdentifier {
+            onOrgDiscoveryView?(subscriptionID)
+        }
+    }
 }
 
 extension SyncFailureNotifier: UNUserNotificationCenterDelegate {
@@ -194,12 +276,14 @@ extension SyncFailureNotifier: UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let action = response.actionIdentifier
-        let repoIDString = response.notification.request.content.userInfo[SyncFailureNotifier.repoIDKey] as? String
-        let repoID = repoIDString.flatMap(UUID.init(uuidString:))
+        let category = response.notification.request.content.categoryIdentifier
+        let userInfo = response.notification.request.content.userInfo
 
         Task { @MainActor in
-            if action == SyncFailureNotifier.retryActionIdentifier, let repoID {
-                onRetry?(repoID)
+            if category == OrgDiscoveryNotifier.categoryIdentifier {
+                handleOrgDiscoveryAction(identifier: action, userInfo: userInfo)
+            } else if category == SyncFailureNotifier.categoryIdentifier {
+                handleAction(identifier: action, userInfo: userInfo)
             }
             completionHandler()
         }
