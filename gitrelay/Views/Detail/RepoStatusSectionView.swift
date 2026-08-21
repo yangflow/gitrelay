@@ -13,9 +13,14 @@ struct RepoStatusSectionView: View {
     let onCancel: () -> Void
     let onReenterCredentials: () -> Void
     let onOpenLog: () -> Void
+    var onCopyFailure: (() -> Void)?
 
     private var nextStep: RepoFailureNextStep {
         RepoFailureNextStep.make(repo: repo, status: status, recentRecords: records)
+    }
+
+    private var scheduleState: RepoScheduleState {
+        RepoScheduleState.make(repo: repo, nextFireDate: nextFireDate)
     }
 
     var body: some View {
@@ -37,7 +42,8 @@ struct RepoStatusSectionView: View {
                     nextStep: nextStep,
                     onRetry: onSyncNow,
                     onReenterCredentials: onReenterCredentials,
-                    onOpenLog: onOpenLog
+                    onOpenLog: onOpenLog,
+                    onCopyFailure: onCopyFailure
                 )
             } else if case .diverged(let detail) = status {
                 RepoDivergedRowView(
@@ -52,12 +58,27 @@ struct RepoStatusSectionView: View {
                     status: status,
                     lastSyncedAt: repo.lastSyncedAt,
                     lastVerifiedAt: repo.lastVerifiedAt,
-                    nextFireDate: nextFireDate,
                     isVerifying: isVerifying,
                     onSyncNow: onSyncNow,
                     onVerifyNow: onVerifyNow
                 )
             }
+
+            scheduleLine
         }
+    }
+
+    /// When the schedule fires next, on the face of the detail rather than in a
+    /// tooltip — and 已暂停 when this pair's schedule is paused.
+    @ViewBuilder
+    private var scheduleLine: some View {
+        let state = scheduleState
+        HStack(spacing: DesignTokens.Spacing.xs) {
+            Image(systemName: state.isPaused ? "pause.circle" : "clock")
+            Text(state.nextRun.text())
+        }
+        .font(.caption)
+        .foregroundStyle(state.isPaused ? DesignTokens.StatusColor.pause : Color.secondary)
+        .help(String(localized: "Scheduled sync runs only while GitRelay stays open. Manual sync is unaffected."))
     }
 }

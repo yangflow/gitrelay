@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct RepoHeaderView: View {
@@ -11,15 +12,19 @@ struct RepoHeaderView: View {
                 .fontWeight(.semibold)
 
             LabeledContent(String(localized: "Source")) {
-                Text(repo.srcURL)
-                    .font(.system(.caption, design: .monospaced))
-                    .textSelection(.enabled)
-                    .lineLimit(1)
+                HStack(spacing: DesignTokens.Spacing.xs) {
+                    locationText(repo.srcURL)
+                    openButton(
+                        for: RepoOpenLocation.source(of: repo),
+                        sideLabel: String(localized: "Source"),
+                        help: repo.srcURL
+                    )
+                }
             }
 
             if repo.targets.count == 1 {
                 LabeledContent(String(localized: "Target")) {
-                    targetLabel(repo.targets[0])
+                    targetRow(repo.targets[0])
                 }
             } else {
                 LabeledContent(String(localized: "Targets (\(repo.targets.count))")) {
@@ -28,11 +33,17 @@ struct RepoHeaderView: View {
                             HStack(spacing: DesignTokens.Spacing.xs) {
                                 Text(String(localized: "\(index + 1)."))
                                     .foregroundStyle(.secondary)
-                                targetLabel(target)
+                                targetRow(target)
                             }
                         }
                     }
                 }
+            }
+
+            if let accountLine = RepoAccountLine.resolve(for: repo) {
+                Text(accountLine.text)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             if repo.usesSelectiveRefSync {
@@ -74,17 +85,14 @@ struct RepoHeaderView: View {
     }
 
     @ViewBuilder
-    private func targetLabel(_ target: MirrorTarget) -> some View {
+    private func targetRow(_ target: MirrorTarget) -> some View {
         HStack(spacing: DesignTokens.Spacing.xs) {
             if target.kind == .filesystem {
                 Text(String(localized: "Archive"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
-            Text(target.displayLabel)
-                .font(.system(.caption, design: .monospaced))
-                .textSelection(.enabled)
-                .lineLimit(1)
+            locationText(target.displayLabel)
             if target.kind == .filesystem {
                 Text(target.resolvedArchiveFormat.displayName)
                     .font(.caption2)
@@ -95,6 +103,48 @@ struct RepoHeaderView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
+            openButton(
+                for: RepoOpenLocation.target(target),
+                sideLabel: String(localized: "Target"),
+                help: target.displayLabel
+            )
+        }
+    }
+
+    private func locationText(_ text: String) -> some View {
+        Text(text)
+            .font(.system(.caption, design: .monospaced))
+            .textSelection(.enabled)
+            .lineLimit(1)
+            .truncationMode(.middle)
+    }
+
+    /// 打开 for a remote page, Finder wording for an archive folder, nothing
+    /// when the endpoint names no place this Mac can reach.
+    @ViewBuilder
+    private func openButton(for location: RepoOpenLocation?, sideLabel: String, help: String) -> some View {
+        if let location {
+            Spacer(minLength: DesignTokens.Spacing.sm)
+            Button(location.actionTitle) {
+                open(location)
+            }
+            .buttonStyle(.link)
+            .font(.caption)
+            .help(help)
+            .accessibilityLabel(accessibilityLabel(for: location, sideLabel: sideLabel))
+        }
+    }
+
+    private func accessibilityLabel(for location: RepoOpenLocation, sideLabel: String) -> String {
+        "\(location.actionTitle) \(sideLabel)"
+    }
+
+    private func open(_ location: RepoOpenLocation) {
+        switch location {
+        case .web(let url):
+            NSWorkspace.shared.open(url)
+        case .revealInFinder(let url):
+            NSWorkspace.shared.activateFileViewerSelecting([url])
         }
     }
 }
