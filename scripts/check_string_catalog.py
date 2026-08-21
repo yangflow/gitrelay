@@ -66,6 +66,14 @@ REQUIRED_KEYS = {
         "Private repository",
         "Reused %lld",
         "Failed %lld",
+        # Quiet menu-bar popover status line (issues #87 / #107).
+        "Schedule paused · %@",
+        "Missed runs: %lld · catching up",
+        "Manual pause",
+        "Quiet hours",
+        "Low Power Mode",
+        "Metered network",
+        "Low Power Mode · Metered network",
     ),
     ROOT / "gitrelayWidget" / "Localizable.xcstrings": (
         "Queued",
