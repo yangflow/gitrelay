@@ -8045,11 +8045,25 @@ struct GitRelayMarkTests {
     @Test func plateIsAClosedSquircleFillingTheUnitSquare() {
         let outline = GitRelayMark.plateOutline()
         #expect(outline.count == GitRelayMark.plateSampleCount)
-        #expect(outline.allSatisfy({ $0.x >= 0 && $0.x <= 1 && $0.y >= 0 && $0.y <= 1 }))
+
+        // Kept out of the #expect arguments: the macro re-type-checks whatever it
+        // wraps, and a closure of chained Double comparisons blows past the
+        // solver's budget.
+        let insideUnitSquare = outline.allSatisfy { point in
+            point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1
+        }
+        #expect(insideUnitSquare)
+
         // Touches the middle of each edge. The 2/n exponent magnifies the tiny
         // residue `cos(.pi / 2)` leaves behind, hence the looser tolerance.
-        #expect(outline.contains(where: { isClose($0.x, 1) && isClose($0.y, 0.5, tolerance: 1e-5) }))
-        #expect(outline.contains(where: { isClose($0.y, 1) && isClose($0.x, 0.5, tolerance: 1e-5) }))
+        let touchesRightEdge = outline.contains { point in
+            isClose(point.x, 1) && isClose(point.y, 0.5, tolerance: 1e-5)
+        }
+        let touchesTopEdge = outline.contains { point in
+            isClose(point.y, 1) && isClose(point.x, 0.5, tolerance: 1e-5)
+        }
+        #expect(touchesRightEdge)
+        #expect(touchesTopEdge)
     }
 
     /// A squircle corner sits between a circle's and a square's: fuller than a
