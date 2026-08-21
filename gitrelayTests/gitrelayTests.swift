@@ -6432,8 +6432,7 @@ struct MainWindowShortcutBindingTests {
         #expect(MainWindowShortcutBinding.syncSelected.keyCharacter == "r")
         #expect(MainWindowShortcutBinding.allCases.count == 3)
         for binding in MainWindowShortcutBinding.allCases {
-            #expect(binding.modifiers == .command)
-            #expect(binding.keyboardShortcut == KeyboardShortcut(binding.keyEquivalent, modifiers: .command))
+            #expect(binding.isCommandOnly)
         }
     }
 

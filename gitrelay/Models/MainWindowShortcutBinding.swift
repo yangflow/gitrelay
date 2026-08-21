@@ -19,6 +19,9 @@ enum MainWindowShortcutBinding: String, CaseIterable, Sendable {
         KeyEquivalent(keyCharacter)
     }
 
+    /// ⌘ only — exposed as a Bool so unit tests need no SwiftUI import.
+    var isCommandOnly: Bool { true }
+
     var modifiers: EventModifiers { .command }
 
     var keyboardShortcut: KeyboardShortcut {
