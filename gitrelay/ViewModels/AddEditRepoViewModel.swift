@@ -72,7 +72,12 @@ struct MirrorTargetDraft: Identifiable, Equatable {
 @Observable
 final class AddEditRepoViewModel {
     var name: String           = ""
-    var srcURL: String         = ""
+    var srcURL: String         = "" {
+        didSet {
+            guard srcURL != oldValue else { return }
+            applySourceURLInference()
+        }
+    }
     var targets: [MirrorTargetDraft] = [MirrorTargetDraft()]
     var srcAuthMode: AuthMode  = .sshAgent
     var srcKeyPath: String     = ""
@@ -91,8 +96,11 @@ final class AddEditRepoViewModel {
     var webhookRegistrationMessage: String?
     var webhookScopeValidation: TokenScopeValidation?
 
-    /// Add flow only: when false, the sheet shows the required-fields step.
+    /// When false, the sheet shows the quiet two-field basics step.
     var showsMoreOptions: Bool = false
+
+    /// Once the user edits name in More Options, stop auto-replacing from the source URL.
+    private(set) var nameIsUserOverride: Bool = false
 
     var nameError: String?
     var srcError: String?
@@ -110,6 +118,8 @@ final class AddEditRepoViewModel {
     private let lastVerifiedAt: Date?
     private let divergedDetail: String?
     private let defaults: UserDefaults
+    /// HTTPS / token default used when the source URL is http(s).
+    private let preferredHTTPSAuthMode: AuthMode
 
     init(
         editing repo: RepoConfig? = nil,
@@ -127,7 +137,13 @@ final class AddEditRepoViewModel {
         divergedDetail = repo?.divergedDetail
         self.defaults = defaults
 
+        let lastUsed = LastUsedAuthMode.load(from: defaults)
+        // HTTPS remotes use the app's existing token auth mode (not a new mode).
+        preferredHTTPSAuthMode = .httpsToken
+
         if let repo {
+            // Saved name is authoritative — don't clobber it when the URL is edited.
+            nameIsUserOverride = true
             name      = repo.name
             srcURL    = repo.srcURL
             targets   = repo.targets.map { MirrorTargetDraft(from: $0) }
@@ -141,10 +157,9 @@ final class AddEditRepoViewModel {
             refSpecsText = repo.resolvedRefSpecs.joined(separator: "\n")
             webhookEnabled = repo.webhookEnabled
             populate(auth: repo.srcAuth, mode: &srcAuthMode, keyPath: &srcKeyPath, token: &srcToken)
-            // Same quiet two-step as Add: optional fields stay behind More Options.
             showsMoreOptions = false
         } else {
-            let defaultAuth = LastUsedAuthMode.load(from: defaults) ?? .sshAgent
+            let defaultAuth = lastUsed ?? .sshAgent
             srcAuthMode = defaultAuth
             targets = [MirrorTargetDraft(authMode: defaultAuth)]
             if let prefill {
@@ -155,8 +170,12 @@ final class AddEditRepoViewModel {
 
     func applyPrefill(_ prefill: RepoSourceDropPrefill) {
         srcURL = prefill.srcURL
-        let trimmedName = name.trimmingCharacters(in: .whitespaces)
-        if trimmedName.isEmpty, let inferred = prefill.inferredName, !inferred.isEmpty {
+        // didSet does not run during init assignment chains reliably for the first
+        // write in all paths — apply inference explicitly after setting the URL.
+        applySourceURLInference()
+        if !nameIsUserOverride,
+           let inferred = prefill.inferredName,
+           !inferred.isEmpty {
             name = inferred
         }
         if let dstURL = prefill.dstURL?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -169,6 +188,13 @@ final class AddEditRepoViewModel {
         }
     }
 
+    /// Records a user edit to the display name (More Options). Further source URL
+    /// changes will not overwrite it.
+    func updateName(_ newValue: String) {
+        name = newValue
+        nameIsUserOverride = true
+    }
+
     /// Opens the optional more-options step. Does not validate — Save / Add and Start Syncing own validation.
     func openMoreOptions() {
         showsMoreOptions = true
@@ -176,6 +202,106 @@ final class AddEditRepoViewModel {
 
     func backToBasics() {
         showsMoreOptions = false
+    }
+
+    /// Secondary caption under the source URL on the basics step, e.g. "SSH Agent · my-project".
+    var basicsInferenceCaption: String? {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedURL = srcURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedURL.isEmpty || !trimmedName.isEmpty else { return nil }
+        if trimmedName.isEmpty {
+            return srcAuthMode.rawValue
+        }
+        return "\(srcAuthMode.rawValue) · \(trimmedName)"
+    }
+
+    /// Primary target location shown on the basics step (Git URL or archive path).
+    var primaryTargetLocation: String {
+        get {
+            guard let target = targets.first else { return "" }
+            switch target.kind {
+            case .gitRemote:
+                return target.url
+            case .filesystem:
+                return target.filesystemPath
+            }
+        }
+        set {
+            guard !targets.isEmpty else { return }
+            switch targets[0].kind {
+            case .gitRemote:
+                targets[0].url = newValue
+            case .filesystem:
+                targets[0].filesystemPath = newValue
+            }
+        }
+    }
+
+    var primaryTargetUsesFilesystemPath: Bool {
+        targets.first?.kind == .filesystem
+    }
+
+    /// Derives a repo display name from a source URL or local path (strips `.git`).
+    nonisolated static func inferredRepoName(fromSourceURL url: String) -> String? {
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        if let remoteName = GitRemoteRepoPath.parse(from: trimmed)?.name, !remoteName.isEmpty {
+            return remoteName
+        }
+
+        let path: String
+        if trimmed.hasPrefix("file://"), let fileURL = URL(string: trimmed) {
+            path = fileURL.standardizedFileURL.path
+        } else if trimmed.hasPrefix("~") {
+            path = NSString(string: trimmed).expandingTildeInPath
+        } else {
+            path = trimmed
+        }
+
+        let fileURL = URL(fileURLWithPath: path, isDirectory: true)
+        if fileURL.lastPathComponent == ".git" {
+            let parent = fileURL.deletingLastPathComponent().lastPathComponent
+            return parent.isEmpty ? nil : parent
+        }
+        var name = fileURL.lastPathComponent
+        if name.hasSuffix(".git") {
+            name = String(name.dropLast(4))
+        }
+        return name.isEmpty ? nil : name
+    }
+
+    /// Infers auth from the source URL scheme. SSH → SSH Agent; http(s) → HTTPS Token.
+    nonisolated static func inferredAuthMode(
+        fromSourceURL url: String,
+        httpsDefault: AuthMode = .httpsToken
+    ) -> AuthMode? {
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        if trimmed.hasPrefix("git@") || trimmed.lowercased().hasPrefix("ssh://") {
+            return .sshAgent
+        }
+        if let parsed = URL(string: trimmed), let scheme = parsed.scheme?.lowercased() {
+            if scheme == "https" || scheme == "http" {
+                return httpsDefault
+            }
+        }
+        return nil
+    }
+
+    /// Re-applies name/auth inference from the current source URL.
+    func applySourceURLInference() {
+        if let inferredAuth = Self.inferredAuthMode(
+            fromSourceURL: srcURL,
+            httpsDefault: preferredHTTPSAuthMode
+        ) {
+            srcAuthMode = inferredAuth
+        }
+        guard !nameIsUserOverride else { return }
+        if let inferred = Self.inferredRepoName(fromSourceURL: srcURL) {
+            name = inferred
+        }
     }
 
     var partialSyncWarning: String? {
@@ -194,10 +320,11 @@ final class AddEditRepoViewModel {
         nameError == nil && srcError == nil && depthError == nil && targetErrors.isEmpty
     }
 
-    /// Validates name, source, and targets only. Failures keep the add flow on step 1.
+    /// Validates name, source, and targets only.
     @discardableResult
     func validateBasics() -> Bool {
         normalizeSourceURLIfNeeded()
+        applySourceURLInference()
 
         nameError = name.trimmingCharacters(in: .whitespaces).isEmpty ? String(localized: "Enter a name") : nil
         srcError = isValidSourceURL(srcURL) ? nil : String(localized: "Enter a valid Git URL")

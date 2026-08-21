@@ -32,13 +32,27 @@ struct AddEditRepoSheet: View {
         editingRepo == nil ? String(localized: "Add and Start Syncing") : String(localized: "Save")
     }
 
-    /// Basics step: required fields in the locked two-column layout.
+    /// Basics step: quiet two stacked URL fields (source + target).
     private var showsBasicsOnly: Bool {
         !vm.showsMoreOptions
     }
 
     private var primaryTargetID: UUID? {
         vm.targets.first?.id
+    }
+
+    private var nameFieldBinding: Binding<String> {
+        Binding(
+            get: { vm.name },
+            set: { vm.updateName($0) }
+        )
+    }
+
+    private var primaryTargetLocationBinding: Binding<String> {
+        Binding(
+            get: { vm.primaryTargetLocation },
+            set: { vm.primaryTargetLocation = $0 }
+        )
     }
 
     var body: some View {
@@ -57,15 +71,19 @@ struct AddEditRepoSheet: View {
                         ScrollView {
                             basicsContent
                                 .padding(DesignTokens.Spacing.sheetContent)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         }
                     } else {
                         Form {
-                            moreOptionsSections(includeExtraTargets: true)
+                            moreOptionsSections()
                         }
                         .formStyle(.grouped)
                     }
                 }
                 .onAppear {
+                    if focusAuth, editingRepo != nil {
+                        vm.openMoreOptions()
+                    }
                     scrollToAuthIfNeeded(proxy: proxy)
                 }
             }
@@ -112,66 +130,74 @@ struct AddEditRepoSheet: View {
         .gitRelaySheetFooterPadding()
     }
 
-    /// Name (full width) + Source | Target columns + frequency.
+    /// Locked basics: two stacked fields (Source URL + Target URL), lots of air.
     @ViewBuilder
     private var basicsContent: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxl) {
             if focusAuth, editingRepo != nil {
                 Text(String(localized: "Update the token or SSH key for this repository, then save."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-                Text(String(localized: "Name"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("For example: my-project", text: $vm.name)
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                Text(String(localized: "Source"))
+                    .font(.headline)
+
+                TextField("git@gitlab.com:org/repo.git", text: $vm.srcURL)
                     .textFieldStyle(.roundedBorder)
+                    .font(.system(.body, design: .monospaced))
+
+                if let caption = vm.basicsInferenceCaption {
+                    Text(caption)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let err = vm.srcError {
+                    Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
+                }
                 if let err = vm.nameError {
                     Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
                 }
             }
 
-            Divider()
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                Text(String(localized: "Target"))
+                    .font(.headline)
 
-            HStack(alignment: .top, spacing: 0) {
-                sourceColumn
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.trailing, DesignTokens.Spacing.lg)
+                TextField(
+                    vm.primaryTargetUsesFilesystemPath
+                        ? "/Volumes/Backup/git-archives"
+                        : "git@github.com:user/repo.git",
+                    text: primaryTargetLocationBinding
+                )
+                .textFieldStyle(.roundedBorder)
+                .font(.system(.body, design: .monospaced))
 
-                Rectangle()
-                    .fill(DesignTokens.Surface.separator)
-                    .frame(width: 1)
-                    .padding(.vertical, DesignTokens.Spacing.xxs)
-
-                targetColumn
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, DesignTokens.Spacing.lg)
-            }
-
-            FrequencyPickerView(frequency: $vm.frequency)
-        }
-    }
-
-    @ViewBuilder
-    private var sourceColumn: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            Text(String(localized: "Source"))
-                .font(.headline)
-
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-                Text(String(localized: "Source URL"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("git@gitlab.com:org/repo.git", text: $vm.srcURL)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(.caption, design: .monospaced))
-                if let err = vm.srcError {
+                if let id = primaryTargetID, let err = vm.targetErrors[id] {
                     Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
                 }
             }
 
+            Spacer(minLength: DesignTokens.Spacing.xxl)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, DesignTokens.Spacing.lg)
+    }
+
+    @ViewBuilder
+    private func moreOptionsSections() -> some View {
+        Section {
+            TextField("For example: my-project", text: nameFieldBinding)
+            if let err = vm.nameError {
+                Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
+            }
+        } header: {
+            Text(String(localized: "Name"))
+        }
+
+        Section {
             AuthFieldView(
                 label: String(localized: "Source"),
                 remoteURL: vm.srcURL,
@@ -181,60 +207,40 @@ struct AddEditRepoSheet: View {
                 pickerTitle: String(localized: "Authentication Method")
             )
             .id(AddEditRepoScrollTarget.sourceAuth)
+        } header: {
+            Text(String(localized: "Source Authentication"))
         }
-    }
 
-    @ViewBuilder
-    private var targetColumn: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-            Text(String(localized: "Target"))
-                .font(.headline)
-
-            if let id = primaryTargetID {
+        Section {
+            ForEach(Array(vm.targets.enumerated()), id: \.element.id) { index, _ in
                 MirrorTargetFieldsView(
-                    index: 0,
-                    target: binding(for: id),
-                    error: vm.targetErrors[id],
-                    canRemove: false,
-                    onRemove: {},
-                    showsHeader: false,
+                    index: index,
+                    target: binding(for: vm.targets[index].id),
+                    error: vm.targetErrors[vm.targets[index].id],
+                    canRemove: vm.targets.count > 1,
+                    onRemove: { vm.removeTarget(id: vm.targets[index].id) },
+                    showsHeader: true,
                     urlFieldTitle: String(localized: "Target URL"),
                     authPickerTitle: String(localized: "Authentication Method")
                 )
             }
-        }
-    }
 
-    @ViewBuilder
-    private func moreOptionsSections(includeExtraTargets: Bool) -> some View {
-        if includeExtraTargets {
-            Section {
-                ForEach(Array(vm.targets.enumerated()), id: \.element.id) { index, _ in
-                    if index > 0 {
-                        MirrorTargetFieldsView(
-                            index: index,
-                            target: binding(for: vm.targets[index].id),
-                            error: vm.targetErrors[vm.targets[index].id],
-                            canRemove: vm.targets.count > 1,
-                            onRemove: { vm.removeTarget(id: vm.targets[index].id) },
-                            showsHeader: true,
-                            urlFieldTitle: String(localized: "Target URL"),
-                            authPickerTitle: String(localized: "Authentication Method")
-                        )
-                    }
-                }
-
-                Button {
-                    vm.addTarget()
-                } label: {
-                    Label(String(localized: "Add Target"), systemImage: "plus.circle")
-                }
-            } header: {
-                Text(String(localized: "Additional Targets"))
-            } footer: {
-                Text(String(localized: "A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync."))
-                    .font(.caption)
+            Button {
+                vm.addTarget()
+            } label: {
+                Label(String(localized: "Add Target"), systemImage: "plus.circle")
             }
+        } header: {
+            Text(String(localized: "Targets"))
+        } footer: {
+            Text(String(localized: "A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync."))
+                .font(.caption)
+        }
+
+        Section {
+            FrequencyPickerView(frequency: $vm.frequency)
+        } header: {
+            Text(String(localized: "Sync Frequency"))
         }
 
         Section {

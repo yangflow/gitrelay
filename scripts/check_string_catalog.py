@@ -38,6 +38,8 @@ REQUIRED_KEYS = {
         "Source URL",
         "Target URL",
         "Additional Targets",
+        "Targets",
+        "Source Authentication",
         "Authentication Method",
         "Archive Directory",
         "Re-enter credentials",
