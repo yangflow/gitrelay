@@ -7058,6 +7058,21 @@ struct StringCatalogLocaleTests {
             "Search Repositories",
             "Sync Selected Repository",
             "Repository",
+            // Locked main-window chrome (issue #100).
+            "Overview",
+            "Accounts",
+            "Repositories",
+            "Queue",
+            "Browse Remote",
+            "Settings",
+            "Running",
+            "%lld repos · %lld failed",
+            "Pause Scheduled Sync",
+            "Resume Scheduled Sync",
+            "Source",
+            "Target",
+            "Status",
+            "Last",
         ]
 
         for key in required {
@@ -7232,5 +7247,420 @@ struct SyncPhaseLifecycleTests {
         #expect(vm.statuses[second] == .syncing)
         #expect(vm.syncPhases[second] != nil)
         #expect(vm.syncPhases[first] == nil)
+    }
+}
+
+// MARK: - Main sidebar chrome (issue #100)
+
+struct MainSidebarItemTests {
+    @Test func sectionsExposeOnlyTheLockedRows() {
+        #expect(MainSidebarSection.allCases.map(\.rawValue) == ["overview", "accounts", "settings"])
+        #expect(MainSidebarSection.overview.items == [.repositories, .queue, .browseRemote])
+        #expect(MainSidebarSection.accounts.items == [.githubAccounts, .gitlabAccounts])
+        #expect(MainSidebarSection.settings.items == [.settings])
+        #expect(MainSidebarItem.allCases.count == 6)
+    }
+
+    @Test func defaultRowIsRepositories() {
+        #expect(MainSidebarItem.default == .repositories)
+    }
+
+    @Test func accountRowsCarryTheirProvider() {
+        #expect(MainSidebarItem.githubAccounts.provider == .github)
+        #expect(MainSidebarItem.gitlabAccounts.provider == .gitlab)
+        #expect(MainSidebarItem.repositories.provider == nil)
+        #expect(MainSidebarItem.settings.provider == nil)
+    }
+
+    @Test func onlyBrowseRemoteIsATransientAction() {
+        let transient = MainSidebarItem.allCases.filter(\.isTransientAction)
+        #expect(transient == [.browseRemote])
+    }
+
+    @Test func everyRowHasATitleAndSymbol() {
+        for item in MainSidebarItem.allCases {
+            #expect(!item.title.isEmpty)
+            #expect(!item.systemImage.isEmpty)
+        }
+    }
+}
+
+// MARK: - Repository pair table (issue #100)
+
+struct RepoPairTableTests {
+    private func repo(
+        name: String = "keychord",
+        srcURL: String = "https://github.com/yangflow/keychord.git",
+        targets: [MirrorTarget] = [MirrorTarget(url: "git@gitlab.com:yangflow/keychord.git")],
+        lastSyncedAt: Date? = nil,
+        lastSuccessfulSyncedAt: Date? = nil,
+        lastSyncError: String? = nil,
+        divergedDetail: String? = nil,
+        needsCredentials: Bool = false,
+        frequency: SyncFrequency = .manual
+    ) -> RepoConfig {
+        RepoConfig(
+            id: UUID(),
+            name: name,
+            srcURL: srcURL,
+            targets: targets,
+            frequency: frequency,
+            lastSyncedAt: lastSyncedAt,
+            lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
+            lastSyncError: lastSyncError,
+            divergedDetail: divergedDetail,
+            needsCredentials: needsCredentials
+        )
+    }
+
+    @Test func sourceShowsOwnerRepoAndTargetKeepsTheHost() {
+        let row = RepoPairTable.row(for: repo(), status: .idle)
+        #expect(row.sourceLabel == "yangflow/keychord")
+        #expect(row.targetLabel == "gitlab.com/yangflow/keychord")
+        #expect(row.sourceProvider == .github)
+        #expect(row.targetProvider == .gitlab)
+    }
+
+    @Test func unparseableRemoteFallsBackToTheRawString() {
+        #expect(RepoPairTable.sourceLabel(for: "not a url") == "not a url")
+    }
+
+    @Test func filesystemTargetShowsItsPathAndNoProvider() {
+        let target = MirrorTarget(
+            kind: .filesystem,
+            filesystemPath: "/Volumes/backup/keychord"
+        )
+        let row = RepoPairTable.row(for: repo(targets: [target]), status: .idle)
+        #expect(row.targetLabel == "/Volumes/backup/keychord")
+        #expect(row.targetProvider == nil)
+    }
+
+    @Test func extraEnabledTargetsAreCounted() {
+        let row = RepoPairTable.row(
+            for: repo(targets: [
+                MirrorTarget(url: "git@gitlab.com:yangflow/keychord.git"),
+                MirrorTarget(url: "git@gitlab.com:yangflow/keychord-2.git"),
+                MirrorTarget(url: "git@gitlab.com:yangflow/keychord-3.git", enabled: false),
+            ]),
+            status: .idle
+        )
+        #expect(row.additionalTargetCount == 1)
+    }
+
+    @Test func statusCollapsesToSucceededOrFailed() {
+        #expect(RepoPairTable.statusKind(for: repo(), status: .idle) == .succeeded)
+        #expect(RepoPairTable.statusKind(for: repo(), status: .ahead(3)) == .succeeded)
+        #expect(RepoPairTable.statusKind(for: repo(), status: .failed("boom")) == .failed)
+        #expect(RepoPairTable.statusKind(for: repo(), status: .syncing) == .syncing)
+        #expect(RepoPairTable.statusKind(for: repo(), status: .queued) == .queued)
+    }
+
+    @Test func divergenceReadsAsFailureRatherThanACautionState() {
+        #expect(RepoPairTable.statusKind(for: repo(), status: .diverged("tree differs")) == .failed)
+        let stored = repo(divergedDetail: "tree differs")
+        #expect(RepoPairTable.statusKind(for: stored, status: .unknown) == .failed)
+        #expect(RepoPairTable.statusDetail(for: stored, status: .unknown) == "tree differs")
+    }
+
+    @Test func unknownStatusUsesPersistedHistory() {
+        let never = repo()
+        #expect(RepoPairTable.statusKind(for: never, status: .unknown) == .notSynced)
+
+        let succeeded = repo(lastSyncedAt: .now, lastSuccessfulSyncedAt: .now)
+        #expect(RepoPairTable.statusKind(for: succeeded, status: .unknown) == .succeeded)
+
+        let failed = repo(lastSyncedAt: .now, lastSyncError: "auth failed")
+        #expect(RepoPairTable.statusKind(for: failed, status: .unknown) == .failed)
+        #expect(RepoPairTable.statusDetail(for: failed, status: .unknown) == "auth failed")
+
+        let missingCredentials = repo(needsCredentials: true)
+        #expect(RepoPairTable.statusKind(for: missingCredentials, status: .unknown) == .failed)
+    }
+
+    @Test func lastSyncedTextIsAbsentUntilTheFirstSync() {
+        #expect(RepoPairTable.row(for: repo(), status: .unknown).lastSyncedText == nil)
+        #expect(RepoPairTable.row(for: repo(lastSyncedAt: .now), status: .idle).lastSyncedText != nil)
+    }
+
+    @Test func rowsFollowTheConfiguredOrder() {
+        let first = repo(name: "a")
+        let second = repo(name: "b")
+        let rows = RepoPairTable.rows(repos: [first, second], statuses: [:])
+        #expect(rows.map(\.name) == ["a", "b"])
+        #expect(rows.map(\.id) == [first.id, second.id])
+    }
+}
+
+// MARK: - Sidebar footer summary (issue #100)
+
+struct SidebarFooterSummaryTests {
+    private func repo(
+        name: String,
+        frequency: SyncFrequency = .manual,
+        lastSyncError: String? = nil
+    ) -> RepoConfig {
+        RepoConfig(
+            name: name,
+            srcURL: "git@github.com:user/\(name).git",
+            dstURL: "git@gitlab.com:user/\(name).git",
+            frequency: frequency,
+            lastSyncedAt: lastSyncError == nil ? nil : .now,
+            lastSyncError: lastSyncError
+        )
+    }
+
+    @Test func countsReposAndFailures() {
+        let ok = repo(name: "ok")
+        let broken = repo(name: "broken", lastSyncError: "boom")
+        let summary = SidebarFooterSummary.make(
+            repos: [ok, broken],
+            statuses: [ok.id: .idle, broken.id: .failed("boom")],
+            pauseReason: nil
+        )
+        #expect(summary.repoCount == 2)
+        #expect(summary.failedCount == 1)
+        #expect(!summary.isPaused)
+        #expect(summary.stateText == String(localized: "Running"))
+    }
+
+    @Test func pauseControlAppearsOnlyWithAScheduledRepo() {
+        let manual = repo(name: "manual")
+        let scheduled = repo(name: "scheduled", frequency: .hour1)
+
+        let withoutSchedule = SidebarFooterSummary.make(
+            repos: [manual],
+            statuses: [:],
+            pauseReason: nil
+        )
+        #expect(!withoutSchedule.hasScheduledSync)
+        #expect(!withoutSchedule.showsPauseControl)
+
+        let withSchedule = SidebarFooterSummary.make(
+            repos: [manual, scheduled],
+            statuses: [:],
+            pauseReason: nil
+        )
+        #expect(withSchedule.hasScheduledSync)
+        #expect(withSchedule.showsPauseControl)
+    }
+
+    @Test func environmentPausesAreReportedButNotReversible() {
+        let scheduled = repo(name: "scheduled", frequency: .hour1)
+
+        let manualPause = SidebarFooterSummary.make(
+            repos: [scheduled],
+            statuses: [:],
+            pauseReason: .manual
+        )
+        #expect(manualPause.isPaused)
+        #expect(manualPause.showsPauseControl)
+        #expect(manualPause.stateText == SyncPauseReason.manual.displayMessage)
+
+        let quietHours = SidebarFooterSummary.make(
+            repos: [scheduled],
+            statuses: [:],
+            pauseReason: .quietHours
+        )
+        #expect(quietHours.isPaused)
+        #expect(!quietHours.showsPauseControl)
+    }
+
+    @Test func emptyLibraryHasNoPauseControl() {
+        let summary = SidebarFooterSummary.make(repos: [], statuses: [:], pauseReason: nil)
+        #expect(summary.repoCount == 0)
+        #expect(summary.failedCount == 0)
+        #expect(!summary.showsPauseControl)
+    }
+}
+
+// MARK: - Sync queue pane (issue #100)
+
+struct SyncQueueListTests {
+    private func repo(_ name: String) -> RepoConfig {
+        RepoConfig(
+            name: name,
+            srcURL: "git@github.com:user/\(name).git",
+            dstURL: "git@gitlab.com:user/\(name).git"
+        )
+    }
+
+    @Test func listsSyncingBeforeQueuedAndSkipsEverythingElse() {
+        let syncing = repo("syncing")
+        let queued = repo("queued")
+        let idle = repo("idle")
+        let failed = repo("failed")
+
+        let entries = SyncQueueList.entries(
+            repos: [queued, idle, syncing, failed],
+            statuses: [
+                queued.id: .queued,
+                idle.id: .idle,
+                syncing.id: .syncing,
+                failed.id: .failed("boom"),
+            ],
+            syncPhases: [:]
+        )
+
+        #expect(entries.map(\.name) == ["syncing", "queued"])
+        #expect(entries[0].state.isSyncing)
+        #expect(entries[1].state == .queued)
+    }
+
+    @Test func syncingCaptionUsesTheParsedPhase() {
+        let syncing = repo("syncing")
+        let phase = SyncPhase(.fetchingSource, progressDetail: "1 / 2 objects")
+
+        let entries = SyncQueueList.entries(
+            repos: [syncing],
+            statuses: [syncing.id: .syncing],
+            syncPhases: [syncing.id: phase]
+        )
+        #expect(entries.count == 1)
+        #expect(entries[0].state == .syncing(caption: phase.displayCaption))
+        #expect(entries[0].provider == .github)
+    }
+
+    @Test func syncingWithoutAPhaseFallsBackToGenericCopy() {
+        let syncing = repo("syncing")
+        let entries = SyncQueueList.entries(
+            repos: [syncing],
+            statuses: [syncing.id: .syncing],
+            syncPhases: [:]
+        )
+        #expect(entries[0].state == .syncing(caption: String(localized: "Syncing...")))
+    }
+
+    @Test func emptyWhenNothingIsMoving() {
+        let idle = repo("idle")
+        #expect(
+            SyncQueueList.entries(
+                repos: [idle],
+                statuses: [idle.id: .idle],
+                syncPhases: [:]
+            ).isEmpty
+        )
+    }
+}
+
+// MARK: - Manual scheduled-sync pause (issue #100)
+
+struct ManualSyncPauseTests {
+    @Test func manualPauseOutranksEveryEnvironmentCondition() {
+        let policy = SyncPausePolicy(
+            pauseOnLowPowerMode: true,
+            pauseOnExpensiveNetwork: true,
+            manualPause: true
+        )
+        #expect(
+            policy.pauseReason(isLowPowerMode: true, isExpensiveNetwork: true) == .manual
+        )
+        #expect(
+            policy.pauseReason(isLowPowerMode: false, isExpensiveNetwork: false) == .manual
+        )
+    }
+
+    @Test func defaultPolicyIsNotManuallyPaused() {
+        let policy = SyncPausePolicy(pauseOnLowPowerMode: false, pauseOnExpensiveNetwork: false)
+        #expect(!policy.manualPause)
+        #expect(policy.pauseReason(isLowPowerMode: false, isExpensiveNetwork: false) == nil)
+    }
+
+    @Test func preferencesFeedTheManualPauseIntoThePolicy() {
+        var prefs = NotificationPreferences.default
+        #expect(!prefs.scheduledSyncManuallyPaused)
+        #expect(!prefs.pausePolicy.manualPause)
+
+        prefs.scheduledSyncManuallyPaused = true
+        #expect(prefs.pausePolicy.manualPause)
+    }
+
+    @Test func manualPauseHasItsOwnMessage() {
+        #expect(!SyncPauseReason.manual.displayMessage.isEmpty)
+        #expect(!SyncPauseReason.manual.isQuietHours)
+        #expect(SyncPauseReason.manual != SyncPauseReason.quietHours)
+    }
+}
+
+@MainActor
+struct ManualSyncPauseStoreTests {
+    @Test func persistsAndReloadsTheManualPauseFlag() {
+        let suite = "gitrelay.tests.manual-pause.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = NotificationPreferencesStore(defaults: defaults)
+        #expect(!store.preferences.scheduledSyncManuallyPaused)
+
+        store.preferences.scheduledSyncManuallyPaused = true
+
+        let reloaded = NotificationPreferencesStore(defaults: defaults)
+        #expect(reloaded.preferences.scheduledSyncManuallyPaused)
+    }
+
+    @Test func resetClearsTheManualPause() {
+        let suite = "gitrelay.tests.manual-pause-reset.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = NotificationPreferencesStore(defaults: defaults)
+        store.preferences.scheduledSyncManuallyPaused = true
+        store.resetToDefaults()
+        #expect(!store.preferences.scheduledSyncManuallyPaused)
+    }
+}
+
+// MARK: - Provider account panes (issue #100)
+
+struct ProviderAccountSummaryTests {
+    @Test func fallsBackToTheProviderHostWhenNoneIsStored() {
+        let summary = ProviderAccountSummary(
+            provider: .github,
+            label: "personal",
+            host: nil,
+            hasToken: true
+        )
+        #expect(summary.hostText == "github.com")
+        #expect(summary.id == ProviderAccount.id(provider: .github, label: "personal"))
+    }
+
+    @Test func blankHostIsTreatedAsMissing() {
+        let summary = ProviderAccountSummary(
+            provider: .gitlab,
+            label: "work",
+            host: "   ",
+            hasToken: false
+        )
+        #expect(summary.hostText == "gitlab.com")
+    }
+
+    @Test func selfHostedHostIsKept() {
+        let summary = ProviderAccountSummary(
+            provider: .gitlab,
+            label: "work",
+            host: "git.example.com",
+            hasToken: true
+        )
+        #expect(summary.hostText == "git.example.com")
+    }
+
+    @Test func credentialCopyDistinguishesStoredTokens() {
+        let stored = ProviderAccountSummary(provider: .github, label: "a", host: nil, hasToken: true)
+        let missing = ProviderAccountSummary(provider: .github, label: "b", host: nil, hasToken: false)
+        #expect(stored.credentialText != missing.credentialText)
+        #expect(!stored.credentialText.isEmpty)
+        #expect(!missing.credentialText.isEmpty)
+    }
+
+    @Test func summariesSortByLabelAndReportTokenPresence() {
+        let summaries = ProviderAccountSummary.summaries(
+            provider: .github,
+            records: [
+                ProviderAccountRecord(label: "work", host: nil),
+                ProviderAccountRecord(label: "default", host: nil),
+            ],
+            hasToken: { $0 == "work" }
+        )
+        #expect(summaries.map(\.label) == ["default", "work"])
+        #expect(summaries.map(\.hasToken) == [false, true])
     }
 }
