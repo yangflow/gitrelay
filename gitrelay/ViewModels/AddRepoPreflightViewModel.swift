@@ -13,11 +13,20 @@ nonisolated struct AddPreflightInput: Equatable, Sendable {
     var destinationIsFilesystem: Bool = false
 
     var probesSource: Bool {
-        GitRemoteIdentity.remote(sourceURL) != nil
+        Self.namesARepository(sourceURL)
     }
 
     var probesDestination: Bool {
-        !destinationIsFilesystem && GitRemoteIdentity.remote(destinationURL) != nil
+        !destinationIsFilesystem && Self.namesARepository(destinationURL)
+    }
+
+    /// Both an owner and a repository name, so a half-typed URL is never
+    /// reported as missing — and never offered up for creation.
+    private static func namesARepository(_ url: String) -> Bool {
+        guard let host = GitRemoteHost.host(from: url), !host.isEmpty,
+              let path = GitRemoteRepoPath.parse(from: url)
+        else { return false }
+        return !path.namespace.isEmpty && !path.name.isEmpty
     }
 }
 
@@ -39,6 +48,7 @@ final class AddRepoPreflightViewModel {
     private var sourceResult: AddPreflightProbeResult = .pending
     private var destinationResult: AddPreflightProbeResult = .pending
     private var duplicateRepoID: UUID?
+    private var isFinished = false
 
     @ObservationIgnored private var probeTask: Task<Void, Never>?
     @ObservationIgnored private let probe: any RemoteExistenceProbing
@@ -91,6 +101,7 @@ final class AddRepoPreflightViewModel {
         existingRepos: [RepoConfig],
         excluding excludedID: UUID? = nil
     ) {
+        guard !isFinished else { return }
         let previous = input
         input = newInput
         actionMessage = nil
@@ -125,6 +136,13 @@ final class AddRepoPreflightViewModel {
         probeTask?.cancel()
         probeTask = nil
         isProbing = false
+    }
+
+    /// The pair is being saved: stop probing and stop reacting, so the sheet
+    /// cannot flash "already exists" at the repository it is adding right now.
+    func finish() {
+        isFinished = true
+        cancel()
     }
 
     /// Runs the probes without the debounce wait (tests, and the create path).

@@ -21,8 +21,9 @@ struct GitLabTargetAPIClient: TargetProviderAPIClient {
 
     nonisolated func fetchRepo(path: GitRemoteRepoPath) async throws -> TargetRepoLookup {
         do {
+            let owned = try await ownerQualified(path)
             let dto: GitLabTargetProjectDTO = try await get(
-                path: "/projects/\(Self.encodedFullPath(path.pathWithNamespace))",
+                path: "/projects/\(Self.encodedFullPath(owned.pathWithNamespace))",
                 query: []
             )
             return .found(httpsCloneURL: dto.http_url_to_repo, sshCloneURL: dto.ssh_url_to_repo)
@@ -54,6 +55,13 @@ struct GitLabTargetAPIClient: TargetProviderAPIClient {
     }
 
     // MARK: - Private
+
+    /// A URL without an owner segment means the token's own namespace.
+    private nonisolated func ownerQualified(_ path: GitRemoteRepoPath) async throws -> GitRemoteRepoPath {
+        guard path.namespace.isEmpty else { return path }
+        let me: GitLabTargetUserDTO = try await get(path: "/user", query: [])
+        return GitRemoteRepoPath(namespace: me.username, name: path.name)
+    }
 
     /// A group or user namespace has to be sent as an id. `currentUser` omits it
     /// so GitLab uses the token owner's own namespace.

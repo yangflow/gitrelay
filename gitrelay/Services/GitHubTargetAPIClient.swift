@@ -24,7 +24,8 @@ struct GitHubTargetAPIClient: TargetProviderAPIClient {
 
     nonisolated func fetchRepo(path: GitRemoteRepoPath) async throws -> TargetRepoLookup {
         do {
-            let dto: GitHubTargetRepoDTO = try await get(path: "/repos/\(Self.encodedPath(path))")
+            let owned = try await ownerQualified(path)
+            let dto: GitHubTargetRepoDTO = try await get(path: "/repos/\(Self.encodedPath(owned))")
             return .found(httpsCloneURL: dto.clone_url, sshCloneURL: dto.ssh_url)
         } catch TargetProviderAPIError.http(status: 404, message: _) {
             return .missing
@@ -53,6 +54,13 @@ struct GitHubTargetAPIClient: TargetProviderAPIClient {
     }
 
     // MARK: - Private
+
+    /// A URL without an owner segment means the token's own account.
+    private nonisolated func ownerQualified(_ path: GitRemoteRepoPath) async throws -> GitRemoteRepoPath {
+        guard path.namespace.isEmpty else { return path }
+        let me: GitHubTargetUserDTO = try await get(path: "/user")
+        return GitRemoteRepoPath(namespace: me.login, name: path.name)
+    }
 
     /// GitHub has no "create for another user" endpoint, and a personal
     /// namespace has to go through `/user/repos` rather than `/orgs/{owner}`.

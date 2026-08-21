@@ -24,7 +24,12 @@ struct GiteaTargetAPIClient: TargetProviderAPIClient {
     }
 
     nonisolated func fetchRepo(path: GitRemoteRepoPath) async throws -> TargetRepoLookup {
-        let owner = path.namespace.isEmpty ? path.name : path.namespace
+        // A URL without an owner segment means the token's own account.
+        var owner = path.namespace
+        if owner.isEmpty {
+            let me: GiteaUserDTO = try await get(path: "/user")
+            owner = me.login
+        }
         let encodedOwner = owner.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? owner
         let encodedName = path.name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path.name
         do {

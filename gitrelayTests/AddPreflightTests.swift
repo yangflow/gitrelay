@@ -329,7 +329,8 @@ struct AddPreflightProbeClassifierTests {
             "git@github.com: Permission denied (publickey).",
             "remote: HTTP Basic: Access denied. The provided password or token is incorrect.",
             "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
-            "fatal: Authentication failed for 'https://gitlab.com/a/b.git/'"
+            "fatal: Authentication failed for 'https://gitlab.com/a/b.git/'",
+            "fatal: unable to access 'https://gitea.example.com/a/b.git/': The requested URL returned error: 403"
         ]
 
         for message in messages {
@@ -535,6 +536,33 @@ struct AddRepoPreflightViewModelTests {
         #expect(probe.probedURLs.isEmpty)
         #expect(vm.decision == .ready)
         #expect(vm.caption == nil)
+    }
+
+    @Test func aURLWithoutARepositoryNameIsNotOfferedForCreation() async {
+        let probe = StubRemoteProbe(results: ["https://gitlab.com/yangflow": .missing])
+        let vm = makeViewModel(probe: probe)
+
+        vm.update(
+            input(source: source, destination: "https://gitlab.com/yangflow"),
+            existingRepos: []
+        )
+        await vm.probeNow()
+
+        #expect(probe.probedURLs == [source])
+        #expect(vm.decision == .ready)
+    }
+
+    @Test func savingStopsThePreflightFromSpeakingAgain() async {
+        let saved = RepoConfig(name: "keychord", srcURL: source, dstURL: destination)
+        let probe = StubRemoteProbe(results: [:])
+        let vm = makeViewModel(probe: probe)
+
+        vm.update(input(source: source, destination: destination), existingRepos: [])
+        vm.finish()
+        // The repository the sheet just added must not read back as a duplicate.
+        vm.update(input(source: source, destination: destination), existingRepos: [saved])
+
+        #expect(!vm.offersOpenExistingPair)
     }
 
     @Test func creatingWithoutASavedTokenExplainsItselfAndKeepsTheSheet() async {

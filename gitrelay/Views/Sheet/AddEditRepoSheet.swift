@@ -45,8 +45,9 @@ struct AddEditRepoSheet: View {
     }
 
     /// A pair GitRelay already mirrors replaces 更多选项 with open / add anyway.
+    /// Only on the basics step: the more-options step must keep its way back.
     private var showsDuplicatePairChoice: Bool {
-        runsPreflight && preflight.offersOpenExistingPair
+        runsPreflight && showsBasicsOnly && preflight.offersOpenExistingPair
     }
 
     private var preflightInput: AddPreflightInput {
@@ -531,6 +532,7 @@ struct AddEditRepoSheet: View {
     }
 
     private func performSave() {
+        preflight.finish()
         let config = vm.buildRepoConfig()
         vm.saveTokensToKeychain(repoID: config.id)
         vm.rememberLastUsedAuthMode()

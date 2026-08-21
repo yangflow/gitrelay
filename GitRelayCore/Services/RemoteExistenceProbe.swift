@@ -34,6 +34,8 @@ nonisolated enum AddPreflightProbeClassifier {
         "authentication required",
         "unauthorized",
         "403 forbidden",
+        "error: 403",
+        "http 403",
         "publickey"
     ]
 
