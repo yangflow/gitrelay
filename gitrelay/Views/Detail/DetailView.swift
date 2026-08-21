@@ -30,7 +30,6 @@ struct DetailView: View {
                     Label(String(localized: "Add Manually"), systemImage: "plus")
                 }
                 .help(String(localized: "Add a Repository Manually"))
-                .buttonStyle(QuietPressButtonStyle(pressedOpacity: 0.7))
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -39,7 +38,6 @@ struct DetailView: View {
                     Label(String(localized: "Browse Remote Repositories"), systemImage: "magnifyingglass")
                 }
                 .help(String(localized: "Browse and select from GitHub or GitLab"))
-                .buttonStyle(QuietPressButtonStyle(pressedOpacity: 0.7))
             }
         }
     }
