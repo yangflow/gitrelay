@@ -6423,6 +6423,98 @@ struct SyncConcurrencyAppViewModelTests {
     }
 }
 
+// MARK: - Main window keyboard shortcuts (issue #69)
+
+struct MainWindowShortcutBindingTests {
+    @Test func bindingsUseCommandNFR() {
+        #expect(MainWindowShortcutBinding.addRepository.keyCharacter == "n")
+        #expect(MainWindowShortcutBinding.focusSearch.keyCharacter == "f")
+        #expect(MainWindowShortcutBinding.syncSelected.keyCharacter == "r")
+        #expect(MainWindowShortcutBinding.allCases.count == 3)
+        for binding in MainWindowShortcutBinding.allCases {
+            #expect(binding.isCommandOnly)
+        }
+    }
+
+    @Test func menuTitlesMatchLocalizedCatalogKeys() {
+        #expect(MainWindowShortcutBinding.addRepository.menuTitle == String(localized: "Add Repository"))
+        #expect(MainWindowShortcutBinding.focusSearch.menuTitle == String(localized: "Search Repositories"))
+        #expect(MainWindowShortcutBinding.syncSelected.menuTitle == String(localized: "Sync Selected Repository"))
+    }
+}
+
+@MainActor
+struct MainWindowShortcutCommandTests {
+    private func makeViewModel(defaults: UserDefaults) -> AppViewModel {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-main-shortcuts-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        Constants.setBaseDirectoryForTesting(base)
+        let vm = AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
+            notificationPreferencesStore: NotificationPreferencesStore(defaults: defaults)
+        )
+        vm.suspendSyncEngineForTesting = true
+        return vm
+    }
+
+    private func addSSHRepo(to vm: AppViewModel, name: String) -> UUID {
+        let id = UUID()
+        vm.addRepo(
+            RepoConfig(
+                id: id,
+                name: name,
+                srcURL: "git@github.com:user/\(name).git",
+                dstURL: "git@github.com:user/\(name)-mirror.git",
+                frequency: .manual
+            )
+        )
+        return id
+    }
+
+    @Test func openAddAndFocusSearchSetConsumablePendingFlags() {
+        let suite = "gitrelay.tests.main-shortcuts.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        #expect(!vm.consumePendingOpenAddRepository())
+        #expect(!vm.consumePendingFocusSidebarSearch())
+
+        vm.requestOpenAddRepository()
+        #expect(vm.pendingOpenAddRepository)
+        #expect(vm.consumePendingOpenAddRepository())
+        #expect(!vm.pendingOpenAddRepository)
+        #expect(!vm.consumePendingOpenAddRepository())
+
+        vm.requestFocusSidebarSearch()
+        #expect(vm.pendingFocusSidebarSearch)
+        #expect(vm.consumePendingFocusSidebarSearch())
+        #expect(!vm.pendingFocusSidebarSearch)
+        #expect(!vm.consumePendingFocusSidebarSearch())
+    }
+
+    @Test func syncSelectedIsNoOpWithoutSelectionOrWhenAlreadySyncing() {
+        let suite = "gitrelay.tests.main-shortcuts-sync.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        vm.syncMainWindowSelectedRepository()
+        #expect(vm.inProgressSyncIDs.isEmpty)
+
+        let repoID = addSSHRepo(to: vm, name: "selected")
+        vm.mainWindowSelectedRepoID = repoID
+        vm.syncMainWindowSelectedRepository()
+        #expect(vm.inProgressSyncIDs == Set([repoID]))
+        #expect(vm.statuses[repoID] == .syncing)
+
+        vm.syncMainWindowSelectedRepository()
+        #expect(vm.inProgressSyncIDs == Set([repoID]))
+    }
+}
+
 // MARK: - String Catalog (issue #65)
 
 struct StringCatalogLocaleTests {
@@ -6465,6 +6557,10 @@ struct StringCatalogLocaleTests {
             "Pushing...",
             "Pushing LFS...",
             "%lld / %lld objects",
+            "Add Repository",
+            "Search Repositories",
+            "Sync Selected Repository",
+            "Repository",
         ]
 
         for key in required {

@@ -24,6 +24,9 @@ struct gitrelayApp: App {
         }
         .windowResizability(.contentMinSize)
         .defaultSize(width: 900, height: 600)
+        .commands {
+            MainWindowCommands(appVM: appVM)
+        }
 
         Window("About GitRelay", id: "about") {
             AboutView()

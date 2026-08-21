@@ -8501,6 +8501,23 @@
         }
       }
     },
+    "Sync Selected Repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync Selected Repository"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步当前仓库"
+          }
+        }
+      }
+    },
     "Sync Status": {
       "extractionState": "manual",
       "localizations": {

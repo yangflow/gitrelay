@@ -21,6 +21,7 @@ struct SidebarView: View {
     @State private var pendingDeleteID: UUID?
     @State private var showDeleteAlert = false
     @State private var batchFrequencyGroup: TagGroupSheetItem?
+    @FocusState private var isSearchFieldFocused: Bool
 
     private var filteredRepos: [RepoConfig] {
         appVM.displayedSidebarRepos
@@ -115,6 +116,18 @@ struct SidebarView: View {
             let name = appVM.repos.first(where: { $0.id == id })?.name ?? ""
             Text("Delete “\(name)”? The local mirror cache will also be deleted. This action cannot be undone.")
         }
+        .onAppear {
+            applyPendingFocusSidebarSearch()
+        }
+        .onChange(of: appVM.pendingFocusSidebarSearch) { _, isPending in
+            guard isPending else { return }
+            applyPendingFocusSidebarSearch()
+        }
+    }
+
+    private func applyPendingFocusSidebarSearch() {
+        guard appVM.consumePendingFocusSidebarSearch() else { return }
+        isSearchFieldFocused = true
     }
 
     private func sidebarFilterChrome(
@@ -129,6 +142,7 @@ struct SidebarView: View {
                 TextField("Search Repositories", text: searchText)
                     .textFieldStyle(.plain)
                     .font(.caption)
+                    .focused($isSearchFieldFocused)
                 if !searchText.wrappedValue.isEmpty {
                     Button {
                         searchText.wrappedValue = ""
