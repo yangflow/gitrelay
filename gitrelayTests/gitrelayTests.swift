@@ -7146,6 +7146,22 @@ struct StringCatalogLocaleTests {
             "Target",
             "Status",
             "Last",
+            // Quiet browse-remote wizard (issue #85).
+            "Host",
+            "Connection",
+            "Account",
+            "Add Account",
+            "Remove Account",
+            "Gitea Account",
+            "Step %lld of %lld",
+            "Choose a Host",
+            "Pick Repositories",
+            "Configure the Target",
+            "Start Over",
+            "%lld selected",
+            "Private repository",
+            "Reused %lld",
+            "Failed %lld",
         ]
 
         for key in required {
@@ -7350,6 +7366,169 @@ struct MainSidebarItemTests {
             #expect(!item.title.isEmpty)
             #expect(!item.systemImage.isEmpty)
         }
+    }
+}
+
+// MARK: - Browse-remote wizard steps (issue #85)
+
+struct BrowseRemoteStepTests {
+    @Test func theRailStaysAtThreeNumberedSteps() {
+        #expect(BrowseRemoteStep.allCases == [.connect, .select, .configure])
+        #expect(BrowseRemoteStep.total == 3)
+        #expect(BrowseRemoteStep.allCases.map(\.number) == [1, 2, 3])
+        #expect(BrowseRemoteStep.connect.isFirst)
+        #expect(!BrowseRemoteStep.select.isFirst)
+    }
+
+    @Test func everyStepHasATitleSubtitleAndProgressLabel() {
+        for step in BrowseRemoteStep.allCases {
+            #expect(!step.title.isEmpty)
+            #expect(!step.subtitle.isEmpty)
+            #expect(!step.progressLabel.isEmpty)
+        }
+        #expect(BrowseRemoteStep.select.progressLabel == String(localized: "Step 2 of 3"))
+    }
+
+    @Test func creatingAndReviewingStayOnStepThree() {
+        #expect(BrowseRemotePhase.connect.step == .connect)
+        #expect(BrowseRemotePhase.selecting.step == .select)
+        #expect(BrowseRemotePhase.configureTarget.step == .configure)
+        #expect(BrowseRemotePhase.submitting.step == .configure)
+        #expect(BrowseRemotePhase.result.step == .configure)
+    }
+
+    @Test func backIsOfferedOnlyOnTheTwoMiddlePhases() {
+        #expect(BrowseRemotePhase.selecting.previous == .connect)
+        #expect(BrowseRemotePhase.configureTarget.previous == .selecting)
+        #expect(BrowseRemotePhase.connect.previous == nil)
+        #expect(BrowseRemotePhase.submitting.previous == nil)
+        #expect(BrowseRemotePhase.result.previous == nil)
+
+        let backable = [
+            BrowseRemotePhase.connect,
+            .selecting,
+            .configureTarget,
+            .submitting,
+            .result
+        ].filter(\.canGoBack)
+        #expect(backable == [.selecting, .configureTarget])
+    }
+}
+
+@MainActor
+struct BrowseRemoteWizardNavigationTests {
+    private struct Fixture {
+        let vm: BrowseRemoteRepoViewModel
+        let defaults: UserDefaults
+        let suite: String
+
+        func tearDown() {
+            defaults.removePersistentDomain(forName: suite)
+        }
+    }
+
+    private func makeFixture() throws -> Fixture {
+        let suite = "gitrelay.tests.browse-nav.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        return Fixture(
+            vm: BrowseRemoteRepoViewModel(defaults: defaults),
+            defaults: defaults,
+            suite: suite
+        )
+    }
+
+    @Test func goBackWalksTheStepsAndStopsAtTheFirst() throws {
+        let fixture = try makeFixture()
+        defer { fixture.tearDown() }
+        let vm = fixture.vm
+
+        vm.phase = .configureTarget
+        #expect(vm.step == .configure)
+
+        vm.goBack()
+        #expect(vm.phase == .selecting)
+        #expect(vm.step == .select)
+
+        vm.goBack()
+        #expect(vm.phase == .connect)
+        #expect(vm.step == .connect)
+
+        vm.goBack()
+        #expect(vm.phase == .connect)
+    }
+
+    @Test func goBackDoesNothingOnceTheBatchIsRunning() throws {
+        let fixture = try makeFixture()
+        defer { fixture.tearDown() }
+        let vm = fixture.vm
+
+        vm.phase = .submitting
+        vm.goBack()
+        #expect(vm.phase == .submitting)
+
+        vm.phase = .result
+        vm.goBack()
+        #expect(vm.phase == .result)
+    }
+
+    @Test func startOverClearsTheBatchButKeepsTheConnection() throws {
+        let fixture = try makeFixture()
+        defer { fixture.tearDown() }
+        let vm = fixture.vm
+
+        vm.token = "ghp_example"
+        vm.gitlabHost = "https://gitlab.company.com"
+        vm.organizationName = "acme"
+        vm.phase = .result
+        vm.repos = [
+            RemoteRepo(
+                id: "1",
+                name: "keychord",
+                fullName: "acme/keychord",
+                description: nil,
+                isPrivate: true,
+                httpsCloneURL: "https://github.com/acme/keychord.git",
+                sshCloneURL: "git@github.com:acme/keychord.git",
+                defaultBranch: "main"
+            )
+        ]
+        vm.selectedIDs = ["1"]
+        vm.searchText = "key"
+        vm.hasMore = true
+        vm.submitProgress = 1
+        vm.submitTotal = 1
+        vm.connectError = "boom"
+
+        vm.startOver()
+
+        #expect(vm.phase == .connect)
+        #expect(vm.repos.isEmpty)
+        #expect(vm.selectedIDs.isEmpty)
+        #expect(vm.searchText.isEmpty)
+        #expect(!vm.hasMore)
+        #expect(vm.batchResults.isEmpty)
+        #expect(vm.submitProgress == 0)
+        #expect(vm.submitTotal == 0)
+        #expect(vm.connectError == nil)
+        // The connection survives so a second batch does not start from nothing.
+        #expect(vm.token == "ghp_example")
+        #expect(vm.gitlabHost == "https://gitlab.company.com")
+        #expect(vm.organizationName == "acme")
+    }
+
+    @Test func selectProviderIgnoresTargetOnlyProviders() throws {
+        let fixture = try makeFixture()
+        defer { fixture.tearDown() }
+        let vm = fixture.vm
+
+        vm.selectProvider(.gitlab)
+        #expect(vm.provider == .gitlab)
+
+        vm.selectProvider(.gitea)
+        #expect(vm.provider == .gitlab)
+
+        vm.selectProvider(.github)
+        #expect(vm.provider == .github)
     }
 }
 
