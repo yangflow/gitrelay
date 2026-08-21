@@ -24,7 +24,12 @@ actor GitRunner {
 
     // MARK: - Core runner
 
-    func run(args: [String], env: [String: String] = [:], cwd: String? = nil) async throws -> (stdout: String, stderr: String) {
+    func run(
+        args: [String],
+        env: [String: String] = [:],
+        cwd: String? = nil,
+        onProgressLine: (@Sendable (String) -> Void)? = nil
+    ) async throws -> (stdout: String, stderr: String) {
         guard let gitPath = Self.gitPath else { throw GitError.gitNotFound }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: gitPath)
@@ -41,15 +46,38 @@ actor GitRunner {
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
         process.standardOutput = stdoutPipe
-        process.standardError  = stderrPipe
+        process.standardError = stderrPipe
+
+        let stderrAccumulator = GitStderrStream(onProgressLine: onProgressLine)
+        if onProgressLine != nil {
+            stderrPipe.fileHandleForReading.readabilityHandler = { handle in
+                let chunk = handle.availableData
+                if chunk.isEmpty {
+                    handle.readabilityHandler = nil
+                    return
+                }
+                stderrAccumulator.append(chunk)
+            }
+        }
 
         activeProcess = process
 
         return try await withCheckedThrowingContinuation { continuation in
             process.terminationHandler = { [weak self] proc in
                 Task { await self?.clearProcess() }
+                stderrPipe.fileHandleForReading.readabilityHandler = nil
                 let out = String(data: stdoutPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-                let err = String(data: stderrPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+                let err: String
+                if onProgressLine != nil {
+                    // Drain any remaining bytes the handler may have missed, then finalize.
+                    let leftover = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                    if !leftover.isEmpty {
+                        stderrAccumulator.append(leftover)
+                    }
+                    err = stderrAccumulator.finish()
+                } else {
+                    err = String(data: stderrPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+                }
 
                 if proc.terminationReason == .uncaughtSignal {
                     continuation.resume(throwing: GitError.cancelled)
@@ -77,8 +105,17 @@ actor GitRunner {
 
     // MARK: - Git operations
 
-    func cloneMirror(srcURL: String, mirrorPath: String, env: [String: String] = [:]) async throws {
-        _ = try await run(args: GitSyncArguments.cloneMirrorArgs(srcURL: srcURL, mirrorPath: mirrorPath), env: env)
+    func cloneMirror(
+        srcURL: String,
+        mirrorPath: String,
+        env: [String: String] = [:],
+        onProgressLine: (@Sendable (String) -> Void)? = nil
+    ) async throws {
+        _ = try await run(
+            args: GitSyncArguments.cloneMirrorArgs(srcURL: srcURL, mirrorPath: mirrorPath),
+            env: env,
+            onProgressLine: onProgressLine
+        )
     }
 
     func initBareMirror(at path: String, env: [String: String] = [:]) async throws {
@@ -106,17 +143,28 @@ actor GitRunner {
         mirrorPath: String,
         depth: Int?,
         refSpecs: [String],
-        env: [String: String] = [:]
+        env: [String: String] = [:],
+        onProgressLine: (@Sendable (String) -> Void)? = nil
     ) async throws {
         _ = try await run(
-            args: GitSyncArguments.fetchArgs(depth: depth, refSpecs: refSpecs),
+            args: GitSyncArguments.fetchArgs(depth: depth, refSpecs: refSpecs, progress: true),
             env: env,
-            cwd: mirrorPath
+            cwd: mirrorPath,
+            onProgressLine: onProgressLine
         )
     }
 
-    func fetchPrune(mirrorPath: String, env: [String: String] = [:]) async throws {
-        _ = try await run(args: ["fetch", "--prune", "origin"], env: env, cwd: mirrorPath)
+    func fetchPrune(
+        mirrorPath: String,
+        env: [String: String] = [:],
+        onProgressLine: (@Sendable (String) -> Void)? = nil
+    ) async throws {
+        _ = try await run(
+            args: ["fetch", "--prune", "--progress", "origin"],
+            env: env,
+            cwd: mirrorPath,
+            onProgressLine: onProgressLine
+        )
     }
 
     func gcAggressive(mirrorPath: String, env: [String: String] = [:]) async throws {
@@ -135,11 +183,17 @@ actor GitRunner {
         )
     }
 
-    func pushMirror(mirrorPath: String, dstURL: String, env: [String: String] = [:]) async throws {
+    func pushMirror(
+        mirrorPath: String,
+        dstURL: String,
+        env: [String: String] = [:],
+        onProgressLine: (@Sendable (String) -> Void)? = nil
+    ) async throws {
         _ = try await run(
             args: GitSyncArguments.pushMirrorArgs(dstURL: dstURL),
             env: env,
-            cwd: mirrorPath
+            cwd: mirrorPath,
+            onProgressLine: onProgressLine
         )
     }
 
@@ -147,12 +201,14 @@ actor GitRunner {
         mirrorPath: String,
         dstURL: String,
         refSpecs: [String],
-        env: [String: String] = [:]
+        env: [String: String] = [:],
+        onProgressLine: (@Sendable (String) -> Void)? = nil
     ) async throws {
         _ = try await run(
             args: GitSyncArguments.pushSelectiveArgs(dstURL: dstURL, refSpecs: refSpecs),
             env: env,
-            cwd: mirrorPath
+            cwd: mirrorPath,
+            onProgressLine: onProgressLine
         )
     }
 
@@ -314,19 +370,30 @@ actor GitRunner {
         }
     }
 
-    func lfsFetchAll(mirrorPath: String, env: [String: String] = [:]) async throws {
+    func lfsFetchAll(
+        mirrorPath: String,
+        env: [String: String] = [:],
+        onProgressLine: (@Sendable (String) -> Void)? = nil
+    ) async throws {
         _ = try await run(
             args: GitLFSArguments.fetchAllArgs,
             env: environmentWithGitLFSPath(env),
-            cwd: mirrorPath
+            cwd: mirrorPath,
+            onProgressLine: onProgressLine
         )
     }
 
-    func lfsPushAll(mirrorPath: String, remoteURL: String, env: [String: String] = [:]) async throws {
+    func lfsPushAll(
+        mirrorPath: String,
+        remoteURL: String,
+        env: [String: String] = [:],
+        onProgressLine: (@Sendable (String) -> Void)? = nil
+    ) async throws {
         _ = try await run(
             args: GitLFSArguments.pushAllArgs(remoteURL: remoteURL),
             env: environmentWithGitLFSPath(env),
-            cwd: mirrorPath
+            cwd: mirrorPath,
+            onProgressLine: onProgressLine
         )
     }
 
@@ -370,3 +437,59 @@ actor GitRunner {
 }
 
 extension GitRunner: LFSCommandRunning {}
+
+/// Accumulates stderr while optionally emitting `\r`/`\n`-delimited progress lines.
+private final class GitStderrStream: @unchecked Sendable {
+    private let lock = NSLock()
+    private var accumulated = Data()
+    private var pending = Data()
+    private let onProgressLine: (@Sendable (String) -> Void)?
+
+    init(onProgressLine: (@Sendable (String) -> Void)?) {
+        self.onProgressLine = onProgressLine
+    }
+
+    func append(_ chunk: Data) {
+        lock.lock()
+        defer { lock.unlock() }
+        accumulated.append(chunk)
+        guard onProgressLine != nil else { return }
+
+        pending.append(chunk)
+        while let separator = pending.firstIndex(where: { $0 == 0x0A || $0 == 0x0D }) {
+            let lineData = pending.subdata(in: pending.startIndex..<separator)
+            let separatorByte = pending[separator]
+            let afterSeparator = pending.index(after: separator)
+            // Treat `\r\n` as one separator.
+            if separatorByte == 0x0D,
+               afterSeparator < pending.endIndex,
+               pending[afterSeparator] == 0x0A {
+                pending.removeSubrange(pending.startIndex...afterSeparator)
+            } else {
+                pending.removeSubrange(pending.startIndex...separator)
+            }
+            emitLine(Data(lineData))
+        }
+    }
+
+    func finish() -> String {
+        lock.lock()
+        defer { lock.unlock() }
+        if !pending.isEmpty {
+            emitLine(pending)
+            pending.removeAll(keepingCapacity: false)
+        }
+        return String(data: accumulated, encoding: .utf8) ?? ""
+    }
+
+    private func emitLine(_ data: Data) {
+        guard let onProgressLine,
+              let line = String(data: data, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+              !line.isEmpty
+        else {
+            return
+        }
+        onProgressLine(line)
+    }
+}

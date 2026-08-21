@@ -569,6 +569,30 @@ struct GitSyncArgumentsTests {
         ])
         #expect(!args.contains("--mirror"))
     }
+
+    @Test func cloneAndPushArgsRequestProgress() {
+        let clone = GitSyncArguments.cloneMirrorArgs(
+            srcURL: "git@github.com:user/repo.git",
+            mirrorPath: "/tmp/mirror"
+        )
+        #expect(clone.contains("--progress"))
+
+        let push = GitSyncArguments.pushMirrorArgs(dstURL: "git@github.com:user/mirror.git")
+        #expect(push.contains("--progress"))
+
+        let selective = GitSyncArguments.pushSelectiveArgs(
+            dstURL: "git@github.com:user/mirror.git",
+            refSpecs: ["refs/heads/main:refs/heads/main"]
+        )
+        #expect(selective.contains("--progress"))
+
+        let fetch = GitSyncArguments.fetchArgs(
+            depth: nil,
+            refSpecs: RepoConfig.defaultRefSpecs,
+            progress: true
+        )
+        #expect(fetch.contains("--progress"))
+    }
 }
 
 // MARK: - RepoTagGrouping
@@ -1023,6 +1047,29 @@ struct RepoRowHealthPresentationTests {
         )
 
         #expect(caption.kind == .diverged)
+    }
+
+    @Test func queuedAndSyncingCaptionsPreferRuntimePhase() {
+        let now = Date(timeIntervalSince1970: 1_777_080_000)
+        let repo = makeRepo(lastSyncedAt: now, lastSuccessfulSyncedAt: now)
+
+        let queued = RepoRowHealthPresentation.caption(
+            for: repo,
+            status: .queued,
+            now: now
+        )
+        #expect(queued.kind == .queued)
+        #expect(!queued.isStale)
+
+        let phase = SyncPhase(.cloningSource, progressDetail: "12 / 100 objects")
+        let syncing = RepoRowHealthPresentation.caption(
+            for: repo,
+            status: .syncing,
+            syncPhase: phase,
+            now: now
+        )
+        #expect(syncing.kind == .syncing(phase.displayCaption))
+        #expect(phase.displayCaption.contains("12 / 100"))
     }
 
     @Test func failureBadgeAppearsFromThirdConsecutiveFailure() {
@@ -5269,12 +5316,21 @@ actor FakeLFSCommandRunner: LFSCommandRunning {
 
     func repositoryUsesLFS(mirrorPath: String) async throws -> Bool { usesLFS }
 
-    func lfsFetchAll(mirrorPath: String, env: [String: String]) async throws {
+    func lfsFetchAll(
+        mirrorPath: String,
+        env: [String: String],
+        onProgressLine: (@Sendable (String) -> Void)?
+    ) async throws {
         if let fetchError { throw fetchError }
         fetchCount += 1
     }
 
-    func lfsPushAll(mirrorPath: String, remoteURL: String, env: [String: String]) async throws {
+    func lfsPushAll(
+        mirrorPath: String,
+        remoteURL: String,
+        env: [String: String],
+        onProgressLine: (@Sendable (String) -> Void)?
+    ) async throws {
         if let pushError { throw pushError }
         pushedURLs.append(remoteURL)
     }
@@ -6304,6 +6360,12 @@ struct StringCatalogLocaleTests {
             "Provider",
             "Gitea Host",
             "Gitea API Token",
+            "Cloning...",
+            "Fetching...",
+            "Fetching LFS...",
+            "Pushing...",
+            "Pushing LFS...",
+            "%lld / %lld objects",
         ]
 
         for key in required {
@@ -6334,5 +6396,149 @@ struct StringCatalogLocaleTests {
             let value = try #require(unit["value"] as? String)
             #expect(!value.isEmpty)
         }
+    }
+}
+
+// MARK: - Sync phase progress (issue #67)
+
+struct SyncPhaseTests {
+    @Test func statusTitlesDistinguishCloneFetchLFSPush() {
+        #expect(SyncPhase(.cloningSource).statusTitle == String(localized: "Cloning..."))
+        #expect(SyncPhase(.fetchingSource).statusTitle == String(localized: "Fetching..."))
+        #expect(SyncPhase(.fetchingLFS).statusTitle == String(localized: "Fetching LFS..."))
+        #expect(SyncPhase(.pushingTarget("git@ex.com:a.git")).statusTitle == String(localized: "Pushing..."))
+        #expect(SyncPhase(.pushingLFS("git@ex.com:a.git")).statusTitle == String(localized: "Pushing LFS..."))
+        #expect(SyncPhase(.archivingTarget("/tmp/out")).statusTitle == String(localized: "Archiving..."))
+    }
+
+    @Test func displayCaptionIncludesParsedProgressWhenPresent() {
+        let phase = SyncPhase(.fetchingSource, progressDetail: "1,234 / 2,000 objects")
+        #expect(phase.displayCaption == "\(String(localized: "Fetching...")) · 1,234 / 2,000 objects")
+        #expect(SyncPhase(.pushingTarget("dst")).displayCaption == String(localized: "Pushing..."))
+    }
+}
+
+struct GitProgressParserTests {
+    @Test func parsesReceivingObjectsCounts() {
+        let detail = GitProgressParser.detail(
+            from: "Receiving objects:  45% (1234/2745), 1.23 MiB | 500.00 KiB/s"
+        )
+        #expect(detail == String(localized: "\(1234) / \(2745) objects"))
+    }
+
+    @Test func parsesWritingObjectsCounts() {
+        let detail = GitProgressParser.detail(
+            from: "Writing objects: 100% (100/100), 12.34 KiB | 1.23 MiB/s, done."
+        )
+        #expect(detail == String(localized: "\(100) / \(100) objects"))
+    }
+
+    @Test func parsesLFSDownloadCounts() {
+        let detail = GitProgressParser.detail(
+            from: "Downloading LFS objects:  50% (5/10), 150 MB"
+        )
+        #expect(detail == String(localized: "\(5) / \(10) objects"))
+    }
+
+    @Test func fallsBackToBytesWhenCountsAbsent() {
+        let detail = GitProgressParser.detail(
+            from: "Receiving objects:  10% , 12.50 MiB | 2.00 MiB/s"
+        )
+        #expect(detail == "12.50 MiB")
+    }
+
+    @Test func ignoresNonProgressLines() {
+        #expect(GitProgressParser.detail(from: "Fetching from source...") == nil)
+        #expect(GitProgressParser.detail(from: "") == nil)
+    }
+
+    @Test func neverReturnsCredentialBearingRawLine() {
+        let line = "https://ghp_secretTOKEN@github.com/org/repo.git"
+        #expect(GitProgressParser.detail(from: line) == nil)
+        let redacted = SyncEngine.redactCredentials(
+            "Receiving objects:  1% (1/2) from https://ghp_secretTOKEN@github.com/org/repo.git"
+        )
+        #expect(redacted.contains("****@"))
+        #expect(!redacted.contains("ghp_secretTOKEN"))
+        let detail = GitProgressParser.detail(from: redacted)
+        #expect(detail == String(localized: "\(1) / \(2) objects"))
+        #expect(detail?.contains("ghp_secretTOKEN") != true)
+        #expect(detail?.contains("https://") != true)
+    }
+}
+
+@MainActor
+struct SyncPhaseLifecycleTests {
+    private func makeViewModel(defaults: UserDefaults) -> AppViewModel {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-sync-phase-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        Constants.setBaseDirectoryForTesting(base)
+        let vm = AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
+            notificationPreferencesStore: NotificationPreferencesStore(defaults: defaults)
+        )
+        vm.suspendSyncEngineForTesting = true
+        return vm
+    }
+
+    private func addSSHRepo(to vm: AppViewModel, name: String) -> UUID {
+        let id = UUID()
+        vm.addRepo(
+            RepoConfig(
+                id: id,
+                name: name,
+                srcURL: "git@github.com:user/\(name).git",
+                dstURL: "git@github.com:user/\(name)-mirror.git",
+                frequency: .manual
+            )
+        )
+        return id
+    }
+
+    @Test func admittedSyncSetsPhaseAndClearsWhenDone() {
+        let suite = "gitrelay.tests.sync-phase.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        let repoID = addSSHRepo(to: vm, name: "phase-repo")
+        vm.triggerSync(repoID: repoID)
+
+        #expect(vm.statuses[repoID] == .syncing)
+        #expect(vm.syncPhases[repoID] != nil)
+        #expect(vm.syncPhases[repoID]?.kind == .fetchingSource)
+
+        vm.cancelSync(repoID: repoID)
+        #expect(vm.syncPhases[repoID] == nil)
+        #expect(vm.statuses[repoID] != .syncing)
+    }
+
+    @Test func queuedPromotesToSyncingWithPhase() {
+        let suite = "gitrelay.tests.sync-phase-queue.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        var prefs = vm.notificationPreferences.preferences
+        prefs.maxConcurrentSyncs = 1
+        vm.notificationPreferences.preferences = prefs
+
+        let first = addSSHRepo(to: vm, name: "running")
+        let second = addSSHRepo(to: vm, name: "waiting")
+
+        vm.triggerSync(repoID: first)
+        vm.triggerSync(repoID: second)
+
+        #expect(vm.statuses[first] == .syncing)
+        #expect(vm.syncPhases[first] != nil)
+        #expect(vm.statuses[second] == .queued)
+        #expect(vm.syncPhases[second] == nil)
+
+        vm.cancelSync(repoID: first)
+        #expect(vm.statuses[second] == .syncing)
+        #expect(vm.syncPhases[second] != nil)
+        #expect(vm.syncPhases[first] == nil)
     }
 }

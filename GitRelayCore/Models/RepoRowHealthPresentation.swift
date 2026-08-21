@@ -9,6 +9,8 @@ enum RepoRowHealthPresentation {
         case diverged
         case neverSynced
         case lastSync(Date)
+        case queued
+        case syncing(String)
     }
 
     struct Caption: Equatable {
@@ -19,8 +21,17 @@ enum RepoRowHealthPresentation {
     static func caption(
         for repo: RepoConfig,
         status: SyncStatus,
+        syncPhase: SyncPhase? = nil,
         now: Date = .now
     ) -> Caption {
+        if case .queued = status {
+            return Caption(kind: .queued, isStale: false)
+        }
+        if case .syncing = status {
+            let text = syncPhase?.displayCaption ?? String(localized: "Syncing...")
+            return Caption(kind: .syncing(text), isStale: false)
+        }
+
         let kind: CaptionKind
         if repo.needsCredentials {
             kind = .needsCredentials

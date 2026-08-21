@@ -131,8 +131,17 @@ enum GitLFSArguments {
 protocol LFSCommandRunning: Sendable {
     func isGitLFSAvailable() async throws -> Bool
     func repositoryUsesLFS(mirrorPath: String) async throws -> Bool
-    func lfsFetchAll(mirrorPath: String, env: [String: String]) async throws
-    func lfsPushAll(mirrorPath: String, remoteURL: String, env: [String: String]) async throws
+    func lfsFetchAll(
+        mirrorPath: String,
+        env: [String: String],
+        onProgressLine: (@Sendable (String) -> Void)?
+    ) async throws
+    func lfsPushAll(
+        mirrorPath: String,
+        remoteURL: String,
+        env: [String: String],
+        onProgressLine: (@Sendable (String) -> Void)?
+    ) async throws
 }
 
 struct LFSMirrorService: Sendable {
@@ -153,7 +162,8 @@ struct LFSMirrorService: Sendable {
         mode: LFSMirrorMode,
         mirrorPath: String,
         env: [String: String],
-        log: (String) -> Void
+        log: (String) -> Void,
+        onProgressLine: (@Sendable (String) -> Void)? = nil
     ) async throws -> PrepareResult {
         guard mode == .auto else { return .skipped }
 
@@ -168,7 +178,11 @@ struct LFSMirrorService: Sendable {
             return .warnedMissingTool
         case .fetchThenPush:
             log(LFSMirrorMessages.fetching)
-            try await runner.lfsFetchAll(mirrorPath: mirrorPath, env: env)
+            try await runner.lfsFetchAll(
+                mirrorPath: mirrorPath,
+                env: env,
+                onProgressLine: onProgressLine
+            )
             log(LFSMirrorMessages.fetchComplete)
             return .readyToPush
         }
@@ -179,10 +193,16 @@ struct LFSMirrorService: Sendable {
         mirrorPath: String,
         remoteURL: String,
         env: [String: String],
-        log: (String) -> Void
+        log: (String) -> Void,
+        onProgressLine: (@Sendable (String) -> Void)? = nil
     ) async throws {
         log(LFSMirrorMessages.pushing)
-        try await runner.lfsPushAll(mirrorPath: mirrorPath, remoteURL: remoteURL, env: env)
+        try await runner.lfsPushAll(
+            mirrorPath: mirrorPath,
+            remoteURL: remoteURL,
+            env: env,
+            onProgressLine: onProgressLine
+        )
         log(LFSMirrorMessages.pushComplete)
     }
 }

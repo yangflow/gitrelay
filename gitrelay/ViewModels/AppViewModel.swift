@@ -368,7 +368,7 @@ final class AppViewModel {
         inProgressSyncIDs.insert(repoID)
         statuses[repoID] = .syncing
         refreshWidgetSnapshot()
-        syncPhases[repoID] = .fetchingSource
+        syncPhases[repoID] = SyncPhase(.fetchingSource)
         liveSyncLogLines.removeValue(forKey: repoID)
 
         if suspendSyncEngineForTesting {

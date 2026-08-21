@@ -3,6 +3,7 @@ import SwiftUI
 struct MenuBarRepoRowView: View {
     let repo: RepoConfig
     let status: SyncStatus
+    var syncPhase: SyncPhase? = nil
     var recentRecords: [SyncRecord] = []
     let onOpen: () -> Void
     let onSync: () -> Void
@@ -12,7 +13,7 @@ struct MenuBarRepoRowView: View {
     @State private var isHovered = false
 
     private var presentation: RepoRowHealthPresentation.Caption {
-        RepoRowHealthPresentation.caption(for: repo, status: status)
+        RepoRowHealthPresentation.caption(for: repo, status: status, syncPhase: syncPhase)
     }
 
     private var nextStep: RepoFailureNextStep {
