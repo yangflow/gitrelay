@@ -66,7 +66,7 @@ struct RepoHeaderView: View {
 
     private var missingGitLFSWarningFromRecentSync: String? {
         for record in recentSyncRecords.reversed() {
-            if let line = record.logLines.first(where: LFSMirrorMessages.isMissingGitLFSWarning) {
+            if let line = record.logLines.first(where: { lfsLineIsMissingGitLFSWarning($0) }) {
                 return line
             }
         }

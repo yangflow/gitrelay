@@ -1,70 +1,86 @@
 import Foundation
-import os
 
 /// Accumulates stderr while optionally emitting `\r`/`\n`-delimited progress lines.
 ///
 /// Process `readabilityHandler` / `terminationHandler` call ``append`` / ``finish``
 /// synchronously off the main actor. Storage is locked; this type must not be an actor.
 struct GitStderrStream: Sendable {
-    private struct State: Sendable {
-        var accumulated = Data()
-        var pending = Data()
-    }
-
-    private let lock: OSAllocatedUnfairLock<State>
-    private let onProgressLine: (@Sendable (String) -> Void)?
+    private let storage: GitStderrStreamStorage
 
     nonisolated init(onProgressLine: (@Sendable (String) -> Void)?) {
-        self.lock = OSAllocatedUnfairLock(initialState: State())
-        self.onProgressLine = onProgressLine
+        self.storage = GitStderrStreamStorage(onProgressLine: onProgressLine)
     }
 
     nonisolated func append(_ chunk: Data) {
-        let callback = onProgressLine
-        var linesToEmit: [String] = []
-
-        lock.withLock { state in
-            state.accumulated.append(chunk)
-            guard callback != nil else { return }
-
-            state.pending.append(chunk)
-            while let separator = state.pending.firstIndex(where: { $0 == 0x0A || $0 == 0x0D }) {
-                let lineData = state.pending.subdata(in: state.pending.startIndex..<separator)
-                let separatorByte = state.pending[separator]
-                let afterSeparator = state.pending.index(after: separator)
-                // Treat `\r\n` as one separator.
-                if separatorByte == 0x0D,
-                   afterSeparator < state.pending.endIndex,
-                   state.pending[afterSeparator] == 0x0A {
-                    state.pending.removeSubrange(state.pending.startIndex...afterSeparator)
-                } else {
-                    state.pending.removeSubrange(state.pending.startIndex...separator)
-                }
-                if let line = decodedProgressLine(lineData) {
-                    linesToEmit.append(line)
-                }
-            }
-        }
-
+        let callback = storage.onProgressLine
+        let linesToEmit = storage.takeAppendedLines(chunk)
         for line in linesToEmit {
             callback?(line)
         }
     }
 
     nonisolated func finish() -> String {
-        let callback = onProgressLine
-        var trailingLine: String?
-        let accumulated: Data = lock.withLock { state in
-            if !state.pending.isEmpty {
-                trailingLine = decodedProgressLine(state.pending)
-                state.pending.removeAll(keepingCapacity: false)
-            }
-            return state.accumulated
-        }
-        if let trailingLine {
+        let callback = storage.onProgressLine
+        let result = storage.finalize()
+        if let trailingLine = result.trailingLine {
             callback?(trailingLine)
         }
-        return String(data: accumulated, encoding: .utf8) ?? ""
+        return String(data: result.accumulated, encoding: .utf8) ?? ""
+    }
+}
+
+/// Lock-protected mutable buffers. `NSLock` is created in ``nonisolated`` init (not a MainActor default).
+private final class GitStderrStreamStorage: @unchecked Sendable {
+    private let lock: NSLock
+    private var accumulated: Data
+    private var pending: Data
+    let onProgressLine: (@Sendable (String) -> Void)?
+
+    nonisolated init(onProgressLine: (@Sendable (String) -> Void)?) {
+        self.lock = NSLock()
+        self.accumulated = Data()
+        self.pending = Data()
+        self.onProgressLine = onProgressLine
+    }
+
+    nonisolated func takeAppendedLines(_ chunk: Data) -> [String] {
+        lock.lock()
+        defer { lock.unlock() }
+
+        accumulated.append(chunk)
+        guard onProgressLine != nil else { return [] }
+
+        pending.append(chunk)
+        var lines: [String] = []
+        while let separator = pending.firstIndex(where: { $0 == 0x0A || $0 == 0x0D }) {
+            let lineData = pending.subdata(in: pending.startIndex..<separator)
+            let separatorByte = pending[separator]
+            let afterSeparator = pending.index(after: separator)
+            // Treat `\r\n` as one separator.
+            if separatorByte == 0x0D,
+               afterSeparator < pending.endIndex,
+               pending[afterSeparator] == 0x0A {
+                pending.removeSubrange(pending.startIndex...afterSeparator)
+            } else {
+                pending.removeSubrange(pending.startIndex...separator)
+            }
+            if let line = decodedProgressLine(lineData) {
+                lines.append(line)
+            }
+        }
+        return lines
+    }
+
+    nonisolated func finalize() -> (accumulated: Data, trailingLine: String?) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        var trailingLine: String?
+        if !pending.isEmpty {
+            trailingLine = decodedProgressLine(pending)
+            pending.removeAll(keepingCapacity: false)
+        }
+        return (accumulated, trailingLine)
     }
 }
 

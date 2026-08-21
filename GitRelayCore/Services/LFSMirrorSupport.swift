@@ -100,6 +100,10 @@ enum LFSMirrorPlanner {
     }
 }
 
+nonisolated func lfsLineIsMissingGitLFSWarning(_ line: String) -> Bool {
+    line == String(localized: "Warning: This repository uses Git LFS, but git-lfs was not found. Install it (for example: brew install git-lfs), then sync again. Git objects were still mirrored successfully.")
+}
+
 enum LFSMirrorMessages {
     static var missingGitLFSWarning: String {
         String(localized: "Warning: This repository uses Git LFS, but git-lfs was not found. Install it (for example: brew install git-lfs), then sync again. Git objects were still mirrored successfully.")
@@ -130,16 +134,16 @@ enum LFSMirrorMessages {
     }
 
     static func isMissingGitLFSWarning(_ line: String) -> Bool {
-        line == missingGitLFSWarning
+        lfsLineIsMissingGitLFSWarning(line)
     }
 
     /// True when any recent sync log (or per-target log) recorded the missing-git-lfs warning.
     static func recentRecordsContainMissingToolWarning(_ records: [SyncRecord]) -> Bool {
         for record in records.reversed() {
-            if record.logLines.contains(where: isMissingGitLFSWarning) {
+            if record.logLines.contains(where: { lfsLineIsMissingGitLFSWarning($0) }) {
                 return true
             }
-            for target in record.targetResults where target.logLines.contains(where: isMissingGitLFSWarning) {
+            for target in record.targetResults where target.logLines.contains(where: { lfsLineIsMissingGitLFSWarning($0) }) {
                 return true
             }
         }
