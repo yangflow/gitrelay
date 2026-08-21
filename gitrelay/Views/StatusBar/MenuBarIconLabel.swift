@@ -8,24 +8,38 @@ struct MenuBarIconLabel: View {
         Image(nsImage: icon)
     }
 
-    private var icon: NSImage {
-        if appVM.hasAnyFailure || appVM.hasAnyDivergence {
-            return Self.failedIcon
-        }
-        return Self.normalIcon
+    private var appearance: MenuBarIconAppearance {
+        MenuBarIconAppearance.make(
+            hasFailure: appVM.hasAnyFailure,
+            hasDivergence: appVM.hasAnyDivergence
+        )
     }
 
-    private static let normalIcon: NSImage = makeIcon(name: "arrow.triangle.2.circlepath")
-    private static let failedIcon: NSImage = makeIcon(name: "exclamationmark.triangle.fill")
+    private var icon: NSImage {
+        switch appearance {
+        case .normal: return Self.normalIcon
+        case .failed: return Self.failedIcon
+        }
+    }
 
-    private static func makeIcon(name: String) -> NSImage {
-        let config = NSImage.SymbolConfiguration(
+    private static let normalIcon: NSImage = makeIcon(appearance: .normal)
+    private static let failedIcon: NSImage = makeIcon(appearance: .failed)
+
+    /// Same mark in both states. Failure tints it red rather than swapping in a
+    /// second glyph, so a red template image drops out of template rendering.
+    private static func makeIcon(appearance: MenuBarIconAppearance) -> NSImage {
+        var config = NSImage.SymbolConfiguration(
             pointSize: DesignTokens.Size.menuBarIconPointSize,
             weight: .semibold
         )
-        let image = NSImage(systemSymbolName: name, accessibilityDescription: "GitRelay")?
-            .withSymbolConfiguration(config) ?? NSImage()
-        image.isTemplate = true
+        if !appearance.isTemplate {
+            config = config.applying(NSImage.SymbolConfiguration(paletteColors: [.systemRed]))
+        }
+        let image = NSImage(
+            systemSymbolName: MenuBarIconAppearance.symbolName,
+            accessibilityDescription: "GitRelay"
+        )?.withSymbolConfiguration(config) ?? NSImage()
+        image.isTemplate = appearance.isTemplate
         return image
     }
 }
