@@ -4,7 +4,6 @@ import AppKit
 struct MenuBarPopoverView: View {
     @Environment(AppViewModel.self) private var appVM
     @Environment(\.openWindow) private var openWindow
-    @Environment(\.openSettings) private var openSettings
 
     @State private var searchText = ""
 
@@ -18,115 +17,134 @@ struct MenuBarPopoverView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: DesignTokens.Spacing.sm) {
-                HStack {
-                    Button("Sync All") { appVM.triggerSyncAll() }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-                        .disabled(appVM.repos.isEmpty)
-                    Spacer()
-                    Button("Open Main Window", action: { openMainWindow(focusing: nil) })
-                        .controlSize(.small)
-                }
+            header
+            Divider()
+            content
+            Divider()
+            footer
+        }
+        .frame(width: DesignTokens.Layout.popoverWidth)
+        .gitRelayChrome(.popover)
+        .onReceive(NotificationCenter.default.publisher(for: .gitrelayOpenMainWindow)) { _ in
+            openMainWindow()
+        }
+    }
 
-                HStack(spacing: DesignTokens.Spacing.xs) {
-                    Image(systemName: "magnifyingglass")
+    private var header: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+            HStack(spacing: DesignTokens.Spacing.xs) {
+                Text(verbatim: "GitRelay")
+                    .font(.headline)
+                Spacer(minLength: DesignTokens.Spacing.xs)
+                if !appVM.repos.isEmpty {
+                    Button(String(localized: "Sync All")) { appVM.triggerSyncAll() }
+                        .buttonStyle(QuietPressButtonStyle())
+                        .font(.caption)
                         .foregroundStyle(.secondary)
-                        .font(.caption)
-                    TextField("Search Repositories", text: $searchText)
-                        .textFieldStyle(.plain)
-                        .font(.caption)
                 }
-                .padding(.horizontal, DesignTokens.Spacing.sm)
-                .padding(.vertical, DesignTokens.Spacing.xs)
-                .frame(minHeight: DesignTokens.Size.searchFieldMinHeight)
-                .background(DesignTokens.Surface.searchFieldFill)
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: DesignTokens.CornerRadius.control,
-                        style: .continuous
-                    )
-                )
             }
-            .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
-            .padding(.vertical, DesignTokens.Spacing.popoverChromeVertical)
 
-            if let pauseReason = appVM.scheduledSyncPauseReason {
-                Divider()
-                Label(pauseReason.displayMessage, systemImage: "pause.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(DesignTokens.StatusColor.pause)
-                    .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
-                    .padding(.vertical, DesignTokens.Spacing.sm)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            searchField
+
+            if let line = appVM.menuBarStatusLine {
+                MenuBarStatusLineView(line: line)
             }
+        }
+        .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
+        .padding(.vertical, DesignTokens.Spacing.popoverChromeVertical)
+    }
+
+    private var searchField: some View {
+        HStack(spacing: DesignTokens.Spacing.xs) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+            TextField("Search Repositories", text: $searchText)
+                .textFieldStyle(.plain)
+                .font(.caption)
+        }
+        .padding(.horizontal, DesignTokens.Spacing.sm)
+        .padding(.vertical, DesignTokens.Spacing.xs)
+        .frame(minHeight: DesignTokens.Size.searchFieldMinHeight)
+        .background(DesignTokens.Surface.searchFieldFill)
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: DesignTokens.CornerRadius.control,
+                style: .continuous
+            )
+        )
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if appVM.repos.isEmpty {
+            quietLine(String(localized: "No Repositories"))
+        } else {
+            SyncHealthSummaryView(summary: appVM.healthSummary)
+                .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
+                .padding(.vertical, DesignTokens.Spacing.sm)
 
             Divider()
 
-            if appVM.repos.isEmpty {
-                Text("No Repositories")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(DesignTokens.Spacing.xl)
+            if filteredRepos.isEmpty {
+                quietLine(String(localized: "No Matching Repositories"))
             } else {
-                SyncHealthSummaryView(summary: appVM.healthSummary)
-                    .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
-                    .padding(.vertical, DesignTokens.Spacing.sm)
+                repoList
+            }
+        }
+    }
 
-                Divider()
-
-                if filteredRepos.isEmpty {
-                    Text("No Matching Repositories")
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(DesignTokens.Spacing.xl)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            ForEach(filteredRepos) { repo in
-                                MenuBarRepoRowView(
-                                    repo: repo,
-                                    status: appVM.statuses[repo.id] ?? .unknown,
-                                    syncPhase: appVM.syncPhases[repo.id],
-                                    recentRecords: appVM.records[repo.id] ?? [],
-                                    onOpen: { openMainWindow(focusing: repo.id) },
-                                    onSync: { appVM.triggerSync(repoID: repo.id) },
-                                    onReenterCredentials: {
-                                        appVM.requestReenterCredentials(repoID: repo.id)
-                                        openMainWindow(focusing: repo.id)
-                                    },
-                                    onOpenLog: {
-                                        appVM.requestOpenSyncLog(repoID: repo.id)
-                                        openMainWindow(focusing: repo.id)
-                                    }
-                                )
-                                if repo.id != filteredRepos.last?.id {
-                                    Divider()
-                                        .padding(.leading, DesignTokens.Spacing.xxl + DesignTokens.Spacing.md)
-                                }
-                            }
+    private var repoList: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(filteredRepos) { repo in
+                    MenuBarRepoRowView(
+                        repo: repo,
+                        status: appVM.statuses[repo.id] ?? .unknown,
+                        syncPhase: appVM.syncPhases[repo.id],
+                        recentRecords: appVM.records[repo.id] ?? [],
+                        onOpen: { openMainWindow(focusing: repo.id) },
+                        onSync: { appVM.triggerSync(repoID: repo.id) },
+                        onReenterCredentials: {
+                            appVM.requestReenterCredentials(repoID: repo.id)
+                            openMainWindow(focusing: repo.id)
+                        },
+                        onOpenLog: {
+                            appVM.requestOpenSyncLog(repoID: repo.id)
+                            openMainWindow(focusing: repo.id)
                         }
+                    )
+                    if repo.id != filteredRepos.last?.id {
+                        Divider()
+                            .padding(.leading, DesignTokens.Spacing.xxl + DesignTokens.Spacing.md)
                     }
-                    .frame(maxHeight: DesignTokens.Layout.popoverListMaxHeight)
                 }
+            }
+        }
+        .frame(maxHeight: DesignTokens.Layout.popoverListMaxHeight)
+    }
+
+    private var footer: some View {
+        HStack(spacing: DesignTokens.Spacing.md) {
+            Button { openMainWindow() } label: {
+                Label(String(localized: "Open Main Window"), systemImage: "macwindow")
             }
 
             Divider()
+                .frame(height: DesignTokens.Spacing.md)
 
-            HStack(spacing: DesignTokens.Spacing.xl) {
+            // The six locked settings panes live in the main window since #109.
+            Button { openMainWindow(showing: .settings) } label: {
+                Label(String(localized: "Settings"), systemImage: "gearshape")
+            }
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: DesignTokens.Spacing.sm) {
                 Button(action: openAbout) {
                     Image(systemName: "info.circle")
                 }
-                .help("About GitRelay")
-
-                Button {
-                    openSettings()
-                } label: {
-                    Image(systemName: "gearshape")
-                }
-                .help("Settings")
-
-                Spacer()
+                .help(String(localized: "About GitRelay"))
 
                 Button {
                     NSApp.terminate(nil)
@@ -134,23 +152,35 @@ struct MenuBarPopoverView: View {
                     Image(systemName: "power")
                 }
                 .keyboardShortcut("q")
-                .help("Quit GitRelay")
+                .help(String(localized: "Quit GitRelay"))
             }
-            .buttonStyle(.borderless)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, DesignTokens.Spacing.lg - DesignTokens.Spacing.xxxs)
-            .padding(.vertical, DesignTokens.Spacing.popoverChromeVertical)
         }
-        .frame(width: DesignTokens.Layout.popoverWidth)
-        .gitRelayChrome(.popover)
-        .onReceive(NotificationCenter.default.publisher(for: .gitrelayOpenMainWindow)) { _ in
-            openMainWindow(focusing: nil)
-        }
+        .buttonStyle(QuietPressButtonStyle())
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
+        .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
+        .padding(.vertical, DesignTokens.Spacing.popoverChromeVertical)
     }
 
-    private func openMainWindow(focusing repoID: UUID?) {
+    /// Empty and no-match states are one quiet line, not a centered slogan block.
+    private func quietLine(_ text: String) -> some View {
+        Text(text)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
+            .padding(.vertical, DesignTokens.Spacing.md)
+    }
+
+    private func openMainWindow(
+        focusing repoID: UUID? = nil,
+        showing item: MainSidebarItem? = nil
+    ) {
         appVM.pendingMainWindowRepoID = repoID
+        appVM.pendingMainWindowSidebarItem = item
         let popover = NSApp.keyWindow
         NSApp.setActivationPolicy(.regular)
         openWindow(id: "main")

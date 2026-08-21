@@ -145,6 +145,15 @@ enum DesignTokens {
             }
         }
 
+        static func forMenuBarStatusTone(_ tone: MenuBarStatusTone) -> Color {
+            switch tone {
+            case .pause:
+                return pause
+            case .info:
+                return info
+            }
+        }
+
         static func forWidgetStatus(_ status: RepoSyncStatusKind) -> Color {
             switch status {
             case .success:

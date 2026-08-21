@@ -83,6 +83,23 @@ enum SyncPauseReason: Equatable, Sendable {
         }
     }
 
+    /// Trailing half of the quiet menu-bar line ("Schedule paused · …"), where
+    /// ``displayMessage`` would be a sentence in a 280pt popover.
+    var shortLabel: String {
+        switch self {
+        case .manual:
+            return String(localized: "Manual pause")
+        case .quietHours:
+            return String(localized: "Quiet hours")
+        case .lowPowerMode:
+            return String(localized: "Low Power Mode")
+        case .expensiveNetwork:
+            return String(localized: "Metered network")
+        case .lowPowerAndExpensiveNetwork:
+            return String(localized: "Low Power Mode · Metered network")
+        }
+    }
+
     var isQuietHours: Bool {
         if case .quietHours = self { return true }
         return false

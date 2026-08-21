@@ -55,6 +55,7 @@ struct ContentView: View {
             restoreWindowLayoutIfNeeded()
             appVM.mainWindowSelectedRepoID = selectedRepoID
             applyPendingMainWindowSelection()
+            applyPendingSidebarItem()
             applyPendingBrowsePrefill()
             applyPendingEditFocusAuth()
             applyPendingOpenAddRepository()
@@ -73,6 +74,9 @@ struct ContentView: View {
         }
         .onChange(of: appVM.pendingMainWindowRepoID) { _, _ in
             applyPendingMainWindowSelection()
+        }
+        .onChange(of: appVM.pendingMainWindowSidebarItem) { _, _ in
+            applyPendingSidebarItem()
         }
         .onChange(of: appVM.pendingBrowsePrefill?.id) { _, _ in
             applyPendingBrowsePrefill()
@@ -199,6 +203,15 @@ struct ContentView: View {
         select(repoID: repoID)
         appVM.mainWindowSelectedRepoID = repoID
         appVM.pendingMainWindowRepoID = nil
+    }
+
+    private func applyPendingSidebarItem() {
+        guard let item = appVM.pendingMainWindowSidebarItem else { return }
+        appVM.pendingMainWindowSidebarItem = nil
+        sidebarSelection = item
+        if item != .repositories {
+            selectedRepoID = nil
+        }
     }
 
     private func applyPendingBrowsePrefill() {
