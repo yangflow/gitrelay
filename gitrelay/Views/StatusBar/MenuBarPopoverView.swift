@@ -9,7 +9,11 @@ struct MenuBarPopoverView: View {
     @State private var searchText = ""
 
     private var filteredRepos: [RepoConfig] {
-        MenuBarPopoverFilter.filteredRepos(appVM.repos, searchText: searchText)
+        MenuBarPopoverFilter.filteredRepos(
+            appVM.repos,
+            searchText: searchText,
+            statuses: appVM.statuses
+        )
     }
 
     var body: some View {
