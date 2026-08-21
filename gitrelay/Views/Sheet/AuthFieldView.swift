@@ -23,7 +23,7 @@ struct AuthFieldView: View {
                     Text(m.rawValue).tag(m)
                 }
             }
-            .pickerStyle(.segmented)
+            .pickerStyle(.menu)
 
             switch mode {
             case .sshAgent:

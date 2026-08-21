@@ -35,7 +35,7 @@ struct SidebarView: View {
     var body: some View {
         @Bindable var appVM = appVM
         VStack(spacing: 0) {
-            sidebarFilterChrome(
+            sidebarSearchChrome(
                 searchText: $appVM.sidebarSearchText,
                 statusFilter: $appVM.sidebarStatusFilter
             )
@@ -81,19 +81,13 @@ struct SidebarView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Add Manually", systemImage: "plus") { sheetMode = .add }
-                    .help("Add a Repository Manually")
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button("Browse Remote Repositories", systemImage: "magnifyingglass") { sheetMode = .browse }
-                    .help("Browse and select from GitHub or GitLab")
-            }
-            ToolbarItem(placement: .automatic) {
-                Button("Sync All", systemImage: "arrow.triangle.2.circlepath") {
-                    appVM.triggerSyncAll()
+            // Add / Browse live on the detail toolbar only (issue #81).
+            if !appVM.repos.isEmpty {
+                ToolbarItem(placement: .automatic) {
+                    Button("Sync All", systemImage: "arrow.triangle.2.circlepath") {
+                        appVM.triggerSyncAll()
+                    }
                 }
-                .disabled(appVM.repos.isEmpty)
             }
             if displayMode == .byTag {
                 ToolbarItem(placement: .automatic) {
@@ -130,60 +124,83 @@ struct SidebarView: View {
         isSearchFieldFocused = true
     }
 
-    private func sidebarFilterChrome(
+    private func sidebarSearchChrome(
         searchText: Binding<String>,
         statusFilter: Binding<SidebarRepoFilter.StatusFilter>
     ) -> some View {
-        VStack(spacing: DesignTokens.Spacing.sm) {
-            HStack(spacing: DesignTokens.Spacing.xs) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
-                TextField("Search Repositories", text: searchText)
-                    .textFieldStyle(.plain)
-                    .font(.caption)
-                    .focused($isSearchFieldFocused)
-                if !searchText.wrappedValue.isEmpty {
-                    Button {
-                        searchText.wrappedValue = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Clear Search")
+        HStack(spacing: DesignTokens.Spacing.xs) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+            TextField("Search Repositories", text: searchText)
+                .textFieldStyle(.plain)
+                .font(.caption)
+                .focused($isSearchFieldFocused)
+            if !searchText.wrappedValue.isEmpty {
+                Button {
+                    searchText.wrappedValue = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
                 }
+                .buttonStyle(.plain)
+                .help("Clear Search")
             }
-            .padding(.horizontal, DesignTokens.Spacing.sm)
-            .padding(.vertical, DesignTokens.Spacing.xs)
-            .frame(minHeight: DesignTokens.Size.searchFieldMinHeight)
-            .background(DesignTokens.Surface.searchFieldFill)
-            .clipShape(
-                RoundedRectangle(
-                    cornerRadius: DesignTokens.CornerRadius.control,
-                    style: .continuous
-                )
-            )
 
-            Picker("Status Filter", selection: statusFilter) {
+            sidebarFilterMenu(statusFilter: statusFilter)
+        }
+        .padding(.horizontal, DesignTokens.Spacing.sm)
+        .padding(.vertical, DesignTokens.Spacing.xs)
+        .frame(minHeight: DesignTokens.Size.searchFieldMinHeight)
+        .background(DesignTokens.Surface.searchFieldFill)
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: DesignTokens.CornerRadius.control,
+                style: .continuous
+            )
+        )
+        .padding(.horizontal, DesignTokens.Spacing.sidebarChromeHorizontal)
+        .padding(.vertical, DesignTokens.Spacing.sidebarChromeVertical)
+    }
+
+    private func sidebarFilterMenu(
+        statusFilter: Binding<SidebarRepoFilter.StatusFilter>
+    ) -> some View {
+        Menu {
+            Picker(String(localized: "Status Filter"), selection: statusFilter) {
                 ForEach(SidebarRepoFilter.StatusFilter.allCases) { filter in
                     Text(LocalizedStringKey(filter.rawValue)).tag(filter)
                 }
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .controlSize(.small)
 
-            Picker("Display", selection: $displayMode) {
+            Divider()
+
+            Picker(String(localized: "Display"), selection: $displayMode) {
                 ForEach(SidebarDisplayMode.allCases) { mode in
                     Text(LocalizedStringKey(mode.rawValue)).tag(mode)
                 }
             }
-            .pickerStyle(.segmented)
+        } label: {
+            Image(systemName: filterMenuSymbol)
+                .font(.caption)
+                .foregroundStyle(isFilterChromeActive ? Color.accentColor : Color.secondary)
+                .frame(width: 16, height: 16)
+                .contentShape(Rectangle())
         }
-        .padding(.horizontal, DesignTokens.Spacing.sidebarChromeHorizontal)
-        .padding(.vertical, DesignTokens.Spacing.sidebarChromeVertical)
+        .menuStyle(.borderlessButton)
+        .help(String(localized: "Filter and Display"))
+        .accessibilityLabel(String(localized: "Filter and Display"))
+    }
+
+    private var isFilterChromeActive: Bool {
+        appVM.sidebarStatusFilter != .all || displayMode != .all
+    }
+
+    private var filterMenuSymbol: String {
+        isFilterChromeActive
+            ? "line.3.horizontal.decrease.circle.fill"
+            : "line.3.horizontal.decrease.circle"
     }
 
     @ViewBuilder
@@ -218,7 +235,12 @@ struct SidebarView: View {
     @ViewBuilder
     private var emptyListPlaceholder: some View {
         if appVM.repos.isEmpty {
-            ContentUnavailableView("No Repositories", systemImage: "folder")
+            Text(String(localized: "No Repositories"))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DesignTokens.Spacing.xl)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
         } else if isFilterActive {
             Text("No Matching Repositories")
                 .foregroundStyle(.secondary)
@@ -286,6 +308,7 @@ struct SidebarView: View {
 
     private func repoRow(_ repo: RepoConfig) -> some View {
         let status = appVM.statuses[repo.id] ?? .unknown
+        let isSelected = selectedRepoID == repo.id
         return RepoRowView(
             repo: repo,
             status: status,
@@ -306,5 +329,18 @@ struct SidebarView: View {
             }
         )
         .tag(repo.id)
+        .listRowBackground(sidebarSelectionBackground(isSelected: isSelected))
+    }
+
+    @ViewBuilder
+    private func sidebarSelectionBackground(isSelected: Bool) -> some View {
+        if isSelected {
+            RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.control, style: .continuous)
+                .fill(DesignTokens.Surface.selectionTint)
+                .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                .padding(.vertical, 1)
+        } else {
+            Color.clear
+        }
     }
 }

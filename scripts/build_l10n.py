@@ -339,8 +339,6 @@ TRANSLATIONS: dict[str, str] = {
     "概览": "Overview",
     "详情页": "Detail Page",
     "未检测到分支(同步后可见)": "No Branches Detected (Visible After Sync)",
-    "把任意 Git 仓库镜像同步到另一个仓库\\nGitLab → GitHub · Gitea · Gitee": "Mirror any Git repository to another repository\\nGitLab → GitHub · Gitea · Gitee",
-    "添加第一个仓库": "Add Your First Repository",
     "检查更新": "Check for Updates",
 
     # View models and services

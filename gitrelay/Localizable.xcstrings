@@ -579,23 +579,6 @@
         }
       }
     },
-    "Add Your First Repository": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add Your First Repository"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加第一个仓库"
-          }
-        }
-      }
-    },
     "Add a Repository Manually": {
       "extractionState": "manual",
       "localizations": {
@@ -3890,23 +3873,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "镜像模板"
-          }
-        }
-      }
-    },
-    "Mirror any Git repository to another repository\\nGitLab → GitHub · Gitea · Gitee": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mirror any Git repository to another repository\\nGitLab → GitHub · Gitea · Gitee"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "把任意 Git 仓库镜像同步到另一个仓库\\nGitLab → GitHub · Gitea · Gitee"
           }
         }
       }
@@ -7872,23 +7838,6 @@
         }
       }
     },
-    "Drop a git URL or local .git folder to start.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drop a git URL or local .git folder to start."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "拖入 Git URL 或本地 .git 文件夹即可开始。"
-          }
-        }
-      }
-    },
     "Re-enter credentials": {
       "extractionState": "manual",
       "localizations": {
@@ -8786,6 +8735,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开带示例 URL 的添加表单。确认前不会保存。"
+          }
+        }
+      }
+    },
+    "Select a repository, or drop a git URL to add one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a repository, or drop a git URL to add one."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择一个仓库，或拖入 git URL 以添加。"
+          }
+        }
+      }
+    },
+    "Filter and Display": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter and Display"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "筛选与显示"
           }
         }
       }

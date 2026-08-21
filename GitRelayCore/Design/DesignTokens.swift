@@ -163,7 +163,8 @@ enum DesignTokens {
         static let panelFill = Color(nsColor: .controlBackgroundColor)
         static let logFill = Color(nsColor: .textBackgroundColor)
         static let separator = Color(nsColor: .separatorColor)
-        static let selectionTint = Color.accentColor.opacity(0.12)
+        /// Sidebar selection pill (stock macOS 14+ calm accent wash).
+        static let selectionTint = Color.accentColor.opacity(0.18)
         static let badgeFill = Color.red
         static let chipFill = Color.primary.opacity(0.08)
         static let suggestionFill = Color.primary.opacity(0.06)
@@ -197,8 +198,10 @@ enum DesignTokens {
         var nsMaterial: NSVisualEffectView.Material {
             switch self {
             case .sidebar:
+                // Stock sidebar material (reads as under-page / source-list depth).
                 return .sidebar
             case .detail:
+                // Flat detail plane (window / content background).
                 return .contentBackground
             case .footer:
                 return .headerView

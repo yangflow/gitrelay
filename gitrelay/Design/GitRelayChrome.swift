@@ -78,6 +78,17 @@ extension View {
     }
 }
 
+/// Quiet press feedback for chrome controls (toolbar, empty-state text links).
+struct QuietPressButtonStyle: ButtonStyle {
+    var pressedOpacity: Double = 0.55
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? pressedOpacity : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
 /// Compact status color dot for sidebar and menu-bar rows (Ice / Luminare atmosphere).
 struct StatusDotView: View {
     let status: SyncStatus

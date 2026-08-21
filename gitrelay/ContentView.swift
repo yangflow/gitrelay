@@ -37,6 +37,7 @@ struct ContentView: View {
             DetailView(
                 selectedRepoID: $selectedRepoID,
                 onAdd: { openAddSheet(prefill: nil) },
+                onBrowse: { sheetMode = .browse },
                 onExamplePrefill: { openAddSheet(prefill: $0) },
                 isDropTargeted: isDropTargeted
             )
