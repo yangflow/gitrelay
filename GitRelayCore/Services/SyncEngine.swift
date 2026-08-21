@@ -238,7 +238,7 @@ final class SyncEngine {
                 repo: repo,
                 target: target,
                 mirrorPath: mirrorPath,
-                log: targetLog
+                log: sendableTargetLog(targetLog)
             )
             result.succeeded = true
         } catch {
@@ -379,7 +379,7 @@ final class SyncEngine {
             if repo.mirrorReleases, let mirrorReleases {
                 targetLog("Mirroring releases...")
                 do {
-                    try await mirrorReleases(repo, target, targetLog)
+                    try await mirrorReleases(repo, target, sendableTargetLog(targetLog))
                     targetLog("Release mirror complete. ✓")
                 } catch {
                     let message = classifyError(error)
@@ -413,6 +413,16 @@ final class SyncEngine {
     /// Builds a thread-safe progress callback that never surfaces raw git stderr to the UI.
     private func progressCallback(for phase: SyncPhase) -> @Sendable (String) -> Void {
         let bridge = SyncPhaseProgressBridge(engine: self, phase: phase)
+        return { line in
+            bridge.handleLine(line)
+        }
+    }
+
+    /// Wraps a MainActor log sink as `@Sendable` without stripping isolation at the call site.
+    private func sendableTargetLog(
+        _ onLine: @escaping @MainActor (String) -> Void
+    ) -> @Sendable (String) -> Void {
+        let bridge = SyncTargetLogBridge(onLine: onLine)
         return { line in
             bridge.handleLine(line)
         }
@@ -497,6 +507,21 @@ private final class SyncPhaseProgressBridge: @unchecked Sendable {
         let updated = phase.withProgress(detail)
         Task { @MainActor [weak engine] in
             engine?.applyParsedProgress(updated)
+        }
+    }
+}
+
+/// Forwards target log lines onto a MainActor sink without converting a MainActor function to `@Sendable`.
+private final class SyncTargetLogBridge: @unchecked Sendable {
+    private let onLine: @MainActor (String) -> Void
+
+    init(onLine: @escaping @MainActor (String) -> Void) {
+        self.onLine = onLine
+    }
+
+    func handleLine(_ line: String) {
+        Task { @MainActor in
+            onLine(line)
         }
     }
 }
