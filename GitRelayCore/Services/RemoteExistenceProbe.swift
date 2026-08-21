@@ -50,17 +50,6 @@ nonisolated enum AddPreflightProbeClassifier {
         "404"
     ]
 
-    private static let unreachablePatterns = [
-        "could not resolve host",
-        "connection timed out",
-        "connection refused",
-        "network is unreachable",
-        "no route to host",
-        "operation timed out",
-        "temporary failure in name resolution",
-        "ssl certificate"
-    ]
-
     static func result(forFailureMessage message: String) -> AddPreflightProbeResult {
         let lower = message.lowercased()
         if authenticationPatterns.contains(where: lower.contains) {
@@ -69,9 +58,8 @@ nonisolated enum AddPreflightProbeClassifier {
         if missingPatterns.contains(where: lower.contains) {
             return .missing
         }
-        if unreachablePatterns.contains(where: lower.contains) {
-            return .unreachable
-        }
+        // DNS, timeouts, and wording nobody has taught this yet all leave the
+        // repository's existence unknown, which is what `unreachable` means.
         return .unreachable
     }
 }
