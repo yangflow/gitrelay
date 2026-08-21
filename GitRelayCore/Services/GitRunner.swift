@@ -1,6 +1,6 @@
 import Foundation
 
-enum GitError: LocalizedError {
+nonisolated enum GitError: LocalizedError {
     case gitNotFound
     case processError(Int32, String)
     case cancelled
@@ -439,17 +439,18 @@ actor GitRunner {
 extension GitRunner: LFSCommandRunning {}
 
 /// Accumulates stderr while optionally emitting `\r`/`\n`-delimited progress lines.
+/// Called from Process readability/termination handlers (nonisolated); lock serializes state.
 private final class GitStderrStream: @unchecked Sendable {
     private let lock = NSLock()
-    private var accumulated = Data()
-    private var pending = Data()
+    private nonisolated(unsafe) var accumulated = Data()
+    private nonisolated(unsafe) var pending = Data()
     private let onProgressLine: (@Sendable (String) -> Void)?
 
-    init(onProgressLine: (@Sendable (String) -> Void)?) {
+    nonisolated init(onProgressLine: (@Sendable (String) -> Void)?) {
         self.onProgressLine = onProgressLine
     }
 
-    func append(_ chunk: Data) {
+    nonisolated func append(_ chunk: Data) {
         lock.lock()
         defer { lock.unlock() }
         accumulated.append(chunk)
@@ -472,7 +473,7 @@ private final class GitStderrStream: @unchecked Sendable {
         }
     }
 
-    func finish() -> String {
+    nonisolated func finish() -> String {
         lock.lock()
         defer { lock.unlock() }
         if !pending.isEmpty {
@@ -482,7 +483,7 @@ private final class GitStderrStream: @unchecked Sendable {
         return String(data: accumulated, encoding: .utf8) ?? ""
     }
 
-    private func emitLine(_ data: Data) {
+    private nonisolated func emitLine(_ data: Data) {
         guard let onProgressLine,
               let line = String(data: data, encoding: .utf8)?
                 .trimmingCharacters(in: .whitespacesAndNewlines),

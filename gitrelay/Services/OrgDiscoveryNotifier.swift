@@ -22,10 +22,10 @@ final class OrgDiscoveryNotifier: NSObject {
 
     init(
         center: UNUserNotificationCenter = .current(),
-        focusStatusProvider: @escaping () -> Bool? = OrgDiscoveryNotifier.readFocusStatus
+        focusStatusProvider: (() -> Bool?)? = nil
     ) {
         self.center = center
-        self.focusStatusProvider = focusStatusProvider
+        self.focusStatusProvider = focusStatusProvider ?? OrgDiscoveryNotifier.readFocusStatus
         super.init()
         // Do not claim `UNUserNotificationCenter.delegate` — ``SyncFailureNotifier`` owns it
         // and forwards org-discovery responses via `onOrgDiscoveryView`.

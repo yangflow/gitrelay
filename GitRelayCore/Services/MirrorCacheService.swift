@@ -1,6 +1,6 @@
 import Foundation
 
-struct MirrorCacheCleanupResult: Equatable, Sendable {
+nonisolated struct MirrorCacheCleanupResult: Equatable, Sendable {
     let steps: [MirrorCacheEvictionStep]
     let initialUsageBytes: Int64
     let finalUsageBytes: Int64
@@ -10,7 +10,7 @@ struct MirrorCacheCleanupResult: Equatable, Sendable {
     }
 }
 
-enum MirrorCacheService {
+nonisolated enum MirrorCacheService {
     static func currentUsageBytes(
         repos: [RepoConfig],
         mirrorsDirectory: URL = Constants.mirrorsDirectory,

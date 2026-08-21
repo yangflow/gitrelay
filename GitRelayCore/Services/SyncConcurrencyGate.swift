@@ -64,6 +64,7 @@ final class SyncConcurrencyGate {
     }
 
     /// Updates the cap and returns newly admitted repo IDs (FIFO) that should start now.
+    @discardableResult
     func updateMaxConcurrent(_ value: Int) -> [UUID] {
         maxConcurrent = Self.clamped(value)
         var admitted: [UUID] = []

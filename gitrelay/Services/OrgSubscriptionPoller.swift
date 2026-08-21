@@ -21,7 +21,7 @@ struct OrgSubscriptionCheckResult: Equatable, Sendable {
 }
 
 /// Fetches paginated remote repo listings (injectable for unit tests).
-struct OrgRemoteRepoFetcher: Sendable {
+nonisolated struct OrgRemoteRepoFetcher: Sendable {
     var fetchPage: @Sendable (
         _ provider: GitProvider,
         _ token: String,
@@ -53,10 +53,10 @@ final class OrgSubscriptionPoller {
 
     init(
         store: OrgSubscriptionStore,
-        fetcher: OrgRemoteRepoFetcher = .live
+        fetcher: OrgRemoteRepoFetcher? = nil
     ) {
         self.store = store
-        self.fetcher = fetcher
+        self.fetcher = fetcher ?? .live
     }
 
     func checkAllSubscriptions(localRepos: [RepoConfig]) async -> [OrgSubscriptionCheckResult] {

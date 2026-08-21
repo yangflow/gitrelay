@@ -5,6 +5,10 @@ struct GitHubAPIClient: ProviderAPIClient {
     nonisolated let token: String
     private nonisolated let session: URLSession = .shared
 
+    nonisolated init(token: String) {
+        self.token = token
+    }
+
     nonisolated func fetchTokenScopes() async throws -> Set<String> {
         let (_, response) = try await rawRequest(path: "/user", query: [])
         guard let http = response as? HTTPURLResponse else {

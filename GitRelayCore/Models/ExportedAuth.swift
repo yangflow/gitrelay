@@ -1,7 +1,7 @@
 import Foundation
 
 /// Auth metadata safe to write into a portable config export (no secrets).
-struct ExportedAuth: Codable, Equatable, Hashable, Sendable {
+nonisolated struct ExportedAuth: Codable, Equatable, Hashable, Sendable {
     enum Kind: String, Codable, Sendable {
         case sshAgent
         case sshKey

@@ -2,7 +2,7 @@ import Foundation
 
 /// Extracts safe object/byte progress from git (and git-lfs) stderr progress lines.
 /// Never returns the raw line — credentials in URLs must not reach the UI.
-enum GitProgressParser {
+nonisolated enum GitProgressParser {
     /// Returns a short progress caption, or `nil` when the line is not a recognized progress update.
     static func detail(from line: String) -> String? {
         let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)

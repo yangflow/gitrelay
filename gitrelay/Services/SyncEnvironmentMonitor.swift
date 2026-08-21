@@ -49,10 +49,11 @@ final class SyncEnvironmentMonitor {
         }
 
         pathMonitor.pathUpdateHandler = { [weak self] path in
-            Task { @MainActor in
+            let isExpensive = path.isExpensive
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 let previous = self.isExpensiveNetwork
-                self.isExpensiveNetwork = path.isExpensive
+                self.isExpensiveNetwork = isExpensive
                 if previous != self.isExpensiveNetwork {
                     self.onEnvironmentChange?()
                 }

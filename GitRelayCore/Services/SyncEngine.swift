@@ -1,6 +1,6 @@
 import Foundation
 
-enum SyncEvent {
+nonisolated enum SyncEvent: Sendable {
     case started
     case phase(SyncPhase)
     case log(String)
@@ -496,12 +496,12 @@ private final class SyncPhaseProgressBridge: @unchecked Sendable {
     private weak var engine: SyncEngine?
     private let phase: SyncPhase
 
-    init(engine: SyncEngine, phase: SyncPhase) {
+    nonisolated init(engine: SyncEngine, phase: SyncPhase) {
         self.engine = engine
         self.phase = phase
     }
 
-    func handleLine(_ line: String) {
+    nonisolated func handleLine(_ line: String) {
         let safe = SyncEngine.redactCredentials(line)
         guard let detail = GitProgressParser.detail(from: safe) else { return }
         let updated = phase.withProgress(detail)
@@ -515,18 +515,18 @@ private final class SyncPhaseProgressBridge: @unchecked Sendable {
 private final class SyncTargetLogBridge: @unchecked Sendable {
     private let onLine: @MainActor (String) -> Void
 
-    init(onLine: @escaping @MainActor (String) -> Void) {
+    nonisolated init(onLine: @escaping @MainActor (String) -> Void) {
         self.onLine = onLine
     }
 
-    func handleLine(_ line: String) {
+    nonisolated func handleLine(_ line: String) {
         Task { @MainActor in
             onLine(line)
         }
     }
 }
 
-enum SyncEngineError: LocalizedError {
+nonisolated enum SyncEngineError: LocalizedError {
     case noEnabledTargets
 
     var errorDescription: String? {
@@ -540,15 +540,15 @@ enum SyncEngineError: LocalizedError {
 /// Thread-safe cancel flag shared with the retry executor (which is not MainActor-isolated).
 final class SyncCancellationFlag: @unchecked Sendable {
     private let lock = NSLock()
-    private var cancelled = false
+    private nonisolated(unsafe) var cancelled = false
 
-    var isCancelled: Bool {
+    nonisolated var isCancelled: Bool {
         lock.lock()
         defer { lock.unlock() }
         return cancelled
     }
 
-    func cancel() {
+    nonisolated func cancel() {
         lock.lock()
         cancelled = true
         lock.unlock()

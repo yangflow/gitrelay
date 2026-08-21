@@ -1,7 +1,7 @@
 import Foundation
 
 /// Classification of a git (or LFS-via-git) failure for in-run retry.
-enum GitErrorRetryability: Equatable, Sendable {
+nonisolated enum GitErrorRetryability: Equatable, Sendable {
     /// Transient network / remote blip — safe to retry within the same sync.
     case retryable(reason: String)
     /// Auth, permission, policy, corruption, or other permanent failure — do not retry.
@@ -13,7 +13,7 @@ enum GitErrorRetryability: Equatable, Sendable {
 /// Pure classifier for transient git errors. Matches the small set of network patterns
 /// already used by `SyncEngine.classifyError`, plus explicit cousins from issue #44
 /// (connection reset, HTTP 5xx). Does not invent a large matcher.
-enum GitTransientErrorClassifier {
+nonisolated enum GitTransientErrorClassifier {
     static func classify(_ error: Error) -> GitErrorRetryability {
         if error is CancellationError {
             return .cancelled
@@ -129,7 +129,7 @@ enum GitTransientErrorClassifier {
 
 /// Configurable in-run retry budget. Delays are 2s / 8s / 32s (then ×4), clamped so
 /// total sleep never exceeds three minutes.
-struct GitRetryPolicy: Equatable, Sendable {
+nonisolated struct GitRetryPolicy: Equatable, Sendable {
     static let defaultMaxAttempts = 3
     static let maxTotalWaitSeconds: TimeInterval = 180
     static let baseDelaySeconds: [TimeInterval] = [2, 8, 32]
@@ -266,7 +266,7 @@ enum GitRetryExecutor {
     }
 }
 
-enum GitRetryLog {
+nonisolated enum GitRetryLog {
     /// User-visible / sync-log line. `reason` must already be redacted if it may contain URLs.
     static func line(attempt: Int, maxAttempts: Int, reason: String) -> String {
         let safeReason = SyncEngine.redactCredentials(reason)

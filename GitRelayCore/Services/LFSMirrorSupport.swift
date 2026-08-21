@@ -1,7 +1,7 @@
 import Foundation
 
 /// Pure helpers for Git LFS detection and sync planning (unit-testable without spawning git).
-enum LFSAttributesDetector {
+nonisolated enum LFSAttributesDetector {
     /// Returns true when `.gitattributes` content declares the LFS filter.
     static func containsLFSFilter(_ content: String) -> Bool {
         for rawLine in content.split(separator: "\n", omittingEmptySubsequences: false) {
@@ -29,13 +29,13 @@ enum LFSAttributesDetector {
     }
 }
 
-enum LFSMirrorStep: Equatable, Sendable {
+nonisolated enum LFSMirrorStep: Equatable, Sendable {
     case skip
     case warnMissingTool
     case fetchThenPush
 }
 
-enum LFSMirrorPlanner {
+nonisolated enum LFSMirrorPlanner {
     /// Decide whether to run LFS fetch/push, warn, or skip.
     static func decide(
         mode: LFSMirrorMode,
@@ -52,7 +52,7 @@ enum LFSMirrorPlanner {
     }
 }
 
-enum LFSMirrorMessages {
+nonisolated enum LFSMirrorMessages {
     static var missingGitLFSWarning: String {
         String(localized: "Warning: This repository uses Git LFS, but git-lfs was not found. Install it (for example: brew install git-lfs), then sync again. Git objects were still mirrored successfully.")
     }
@@ -100,7 +100,7 @@ enum LFSMirrorMessages {
 }
 
 /// Candidate locations for the `git-lfs` binary (GUI apps often lack Homebrew on PATH).
-enum GitLFSTool {
+nonisolated enum GitLFSTool {
     static func candidatePaths(
         homeDirectory: String = NSHomeDirectory()
     ) -> [String] {
@@ -130,7 +130,7 @@ enum GitLFSTool {
 }
 
 /// Arguments for `git lfs` subcommands (invoked as `git lfs …` via GitRunner).
-enum GitLFSArguments {
+nonisolated enum GitLFSArguments {
     static let versionArgs = ["lfs", "version"]
     static let lsFilesArgs = ["lfs", "ls-files"]
     static let fetchAllArgs = ["lfs", "fetch", "--all"]
@@ -141,7 +141,7 @@ enum GitLFSArguments {
 }
 
 /// Orchestrates LFS fetch (once) and push (per destination) for a sync run.
-protocol LFSCommandRunning: Sendable {
+nonisolated protocol LFSCommandRunning: Sendable {
     func isGitLFSAvailable() async throws -> Bool
     func repositoryUsesLFS(mirrorPath: String) async throws -> Bool
     func lfsFetchAll(
@@ -157,7 +157,7 @@ protocol LFSCommandRunning: Sendable {
     ) async throws
 }
 
-struct LFSMirrorService: Sendable {
+nonisolated struct LFSMirrorService: Sendable {
     enum PrepareResult: Equatable, Sendable {
         case skipped
         case warnedMissingTool

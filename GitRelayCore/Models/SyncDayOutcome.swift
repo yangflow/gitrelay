@@ -1,6 +1,6 @@
 import Foundation
 
-struct SyncDayOutcome: Codable, Equatable {
+nonisolated struct SyncDayOutcome: Codable, Equatable, Sendable {
     var successes: Int
     var failures: Int
 

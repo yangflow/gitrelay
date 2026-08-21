@@ -1,6 +1,6 @@
 import Foundation
 
-struct ArchiveCommandPlan: Equatable {
+nonisolated struct ArchiveCommandPlan: Equatable, Sendable {
     enum Tool: String, Equatable {
         case tar
         case zip
@@ -23,7 +23,7 @@ struct ArchiveCommandPlan: Equatable {
     }
 }
 
-enum ArchiveCommandBuilder {
+nonisolated enum ArchiveCommandBuilder {
     static func plan(
         format: ArchiveFormat,
         mirrorPath: String,

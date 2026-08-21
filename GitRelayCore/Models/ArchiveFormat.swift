@@ -1,6 +1,6 @@
 import Foundation
 
-enum ArchiveFormat: String, Codable, CaseIterable, Identifiable {
+nonisolated enum ArchiveFormat: String, Codable, CaseIterable, Identifiable {
     case tarGz
     case zip
     case gitBundle

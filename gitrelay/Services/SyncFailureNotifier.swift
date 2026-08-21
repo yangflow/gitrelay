@@ -75,10 +75,10 @@ final class SyncFailureNotifier: NSObject {
 
     init(
         center: UNUserNotificationCenter = .current(),
-        focusStatusProvider: @escaping () -> Bool? = SyncFailureNotifier.readFocusStatus
+        focusStatusProvider: (() -> Bool?)? = nil
     ) {
         self.center = center
-        self.focusStatusProvider = focusStatusProvider
+        self.focusStatusProvider = focusStatusProvider ?? SyncFailureNotifier.readFocusStatus
         super.init()
         center.delegate = self
         registerCategories()
@@ -278,12 +278,28 @@ extension SyncFailureNotifier: UNUserNotificationCenterDelegate {
         let action = response.actionIdentifier
         let category = response.notification.request.content.categoryIdentifier
         let userInfo = response.notification.request.content.userInfo
+        let repoID = (userInfo[SyncFailureNotifier.repoIDKey] as? String)
+            .flatMap(UUID.init(uuidString:))
+        let subscriptionID = (userInfo[OrgDiscoveryNotifier.subscriptionIDKey] as? String)
+            .flatMap(UUID.init(uuidString:))
 
         Task { @MainActor in
             if category == OrgDiscoveryNotifier.categoryIdentifier {
-                handleOrgDiscoveryAction(identifier: action, userInfo: userInfo)
+                if let subscriptionID,
+                   action == OrgDiscoveryNotifier.viewActionIdentifier
+                    || action == UNNotificationDefaultActionIdentifier {
+                    onOrgDiscoveryView?(subscriptionID)
+                }
             } else if category == SyncFailureNotifier.categoryIdentifier {
-                handleAction(identifier: action, userInfo: userInfo)
+                if let repoID,
+                   let routed = SyncFailureNotificationRouting.action(for: action) {
+                    switch routed {
+                    case .syncAgain:
+                        onSyncAgain?(repoID)
+                    case .open:
+                        onOpen?(repoID)
+                    }
+                }
             }
             completionHandler()
         }

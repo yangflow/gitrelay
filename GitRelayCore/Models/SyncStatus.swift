@@ -1,6 +1,6 @@
 import Foundation
 
-enum SyncStatus: Equatable {
+nonisolated enum SyncStatus: Equatable, Sendable {
     case unknown
     case idle
     case ahead(Int)

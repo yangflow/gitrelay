@@ -1,7 +1,7 @@
 import Foundation
 
 /// Injectable checks so export/import and scheduling tests need no Keychain or filesystem.
-struct CredentialProbe: Sendable {
+nonisolated struct CredentialProbe: Sendable {
     var hasHTTPSToken: @Sendable (String) -> Bool
     var isSSHKeyReadable: @Sendable (String) -> Bool
 
@@ -31,7 +31,7 @@ struct CredentialProbe: Sendable {
     )
 }
 
-enum RepoCredentialGate {
+nonisolated enum RepoCredentialGate {
     static var missingCredentialsMessage: String {
         String(localized: "This repository needs credentials before it can sync. Edit the repository to add a token or SSH key.")
     }

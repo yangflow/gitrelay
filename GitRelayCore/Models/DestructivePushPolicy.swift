@@ -1,6 +1,6 @@
 import Foundation
 
-enum DestructivePushPolicy: String, Codable, CaseIterable, Identifiable {
+nonisolated enum DestructivePushPolicy: String, Codable, CaseIterable, Identifiable {
     case strict
     case auto
 

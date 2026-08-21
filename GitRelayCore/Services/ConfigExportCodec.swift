@@ -1,6 +1,6 @@
 import Foundation
 
-enum ConfigImportMode: String, Codable, CaseIterable, Identifiable, Sendable {
+nonisolated enum ConfigImportMode: String, Codable, CaseIterable, Identifiable, Sendable {
     case merge
     case replace
 
@@ -14,7 +14,7 @@ enum ConfigImportMode: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 }
 
-enum ConfigExportError: LocalizedError, Equatable {
+nonisolated enum ConfigExportError: LocalizedError, Equatable {
     case corruptJSON
     case unsupportedSchemaVersion(found: Int, supported: Int)
     case partialDecode(String)
@@ -33,7 +33,7 @@ enum ConfigExportError: LocalizedError, Equatable {
     }
 }
 
-struct ConfigImportPlan: Equatable, Sendable {
+nonisolated struct ConfigImportPlan: Equatable, Sendable {
     var repos: [RepoConfig]
     var providerAccounts: [ExportedProviderAccount]
     var orgSubscriptions: [OrgSubscription]
@@ -42,15 +42,15 @@ struct ConfigImportPlan: Equatable, Sendable {
     var skippedRepoCount: Int
 }
 
-enum ConfigExportCodec {
-    private static let encoder: JSONEncoder = {
+nonisolated enum ConfigExportCodec {
+    nonisolated(unsafe) private static let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         return encoder
     }()
 
-    private static let decoder: JSONDecoder = {
+    nonisolated(unsafe) private static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return decoder

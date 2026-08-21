@@ -64,7 +64,7 @@ final class ReleaseMirrorService {
         }
 
         log("Mirroring \(plans.count) release(s) with pending assets…")
-        var lastError: String?
+        let lastError: String? = nil
 
         for plan in plans {
             updateTagStatus(

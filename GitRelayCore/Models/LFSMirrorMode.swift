@@ -1,7 +1,7 @@
 import Foundation
 
 /// Per-repo switch for mirroring Git LFS objects after a successful git sync.
-enum LFSMirrorMode: String, Codable, CaseIterable, Identifiable {
+nonisolated enum LFSMirrorMode: String, Codable, CaseIterable, Identifiable {
     case auto
     case off
 

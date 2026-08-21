@@ -1,6 +1,6 @@
 import Foundation
 
-enum ArchiveError: LocalizedError {
+nonisolated enum ArchiveError: LocalizedError {
     case toolNotFound(String)
     case invalidOutputDirectory(String)
     case processError(Int32, String)
