@@ -1897,6 +1897,166 @@ struct AddEditRepoValidationTests {
     }
 }
 
+// MARK: - Add repo two-step + drop prefill (#59)
+
+@MainActor
+struct AddEditRepoTwoStepTests {
+    private func setPrimaryTargetURL(_ vm: AddEditRepoViewModel, _ url: String) {
+        vm.targets[0].url = url
+    }
+
+    @Test func newRepoStartsOnBasicsStepWithSSHAgentDefault() {
+        let suite = "AddEditRepoTwoStep.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let vm = AddEditRepoViewModel(defaults: defaults)
+        #expect(!vm.showsMoreOptions)
+        #expect(vm.srcAuthMode == .sshAgent)
+        #expect(vm.targets[0].authMode == .sshAgent)
+    }
+
+    @Test func defaultAuthReusesLastUsedMode() {
+        let suite = "AddEditRepoTwoStep.lastAuth.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        LastUsedAuthMode.save(.httpsToken, to: defaults)
+        let vm = AddEditRepoViewModel(defaults: defaults)
+        #expect(vm.srcAuthMode == .httpsToken)
+        #expect(vm.targets[0].authMode == .httpsToken)
+    }
+
+    @Test func requiredFieldsAloneValidateAndBuildConfigForSync() {
+        let vm = AddEditRepoViewModel()
+        #expect(!vm.showsMoreOptions)
+        vm.name = "quick-add"
+        vm.srcURL = "git@github.com:acme/source.git"
+        setPrimaryTargetURL(vm, "git@github.com:acme/mirror.git")
+        vm.frequency = .hour1
+
+        #expect(vm.validate())
+        #expect(!vm.showsMoreOptions)
+
+        let repo = vm.buildRepoConfig()
+        #expect(repo.name == "quick-add")
+        #expect(repo.srcURL == "git@github.com:acme/source.git")
+        #expect(repo.targets.count == 1)
+        #expect(repo.targets[0].url == "git@github.com:acme/mirror.git")
+        #expect(repo.frequency == .hour1)
+        #expect(repo.lfsMirrorMode == .auto)
+        #expect(!repo.webhookEnabled)
+        #expect(repo.tags.isEmpty)
+        #expect(repo.depth == nil)
+    }
+
+    @Test func openMoreOptionsStaysOnStepOneWhenInvalid() {
+        let vm = AddEditRepoViewModel()
+        #expect(!vm.openMoreOptions())
+        #expect(!vm.showsMoreOptions)
+        #expect(vm.nameError != nil)
+
+        vm.name = "ready"
+        vm.srcURL = "git@github.com:acme/source.git"
+        setPrimaryTargetURL(vm, "git@github.com:acme/mirror.git")
+        #expect(vm.openMoreOptions())
+        #expect(vm.showsMoreOptions)
+    }
+
+    @Test func droppedURLPrefillsSourceAndInferredName() {
+        let prefill = RepoSourceDropParser.parse("https://github.com/acme/widget.git")
+        #expect(prefill?.srcURL == "https://github.com/acme/widget.git")
+        #expect(prefill?.inferredName == "widget")
+
+        let vm = AddEditRepoViewModel(prefill: prefill)
+        #expect(vm.srcURL == "https://github.com/acme/widget.git")
+        #expect(vm.name == "widget")
+    }
+
+    @Test func shorthandHostPathPrefillsHTTPSRemote() {
+        let prefill = RepoSourceDropParser.parse("github.com/org/repo")
+        #expect(prefill?.srcURL == "https://github.com/org/repo.git")
+        #expect(prefill?.inferredName == "repo")
+
+        let vm = AddEditRepoViewModel(prefill: prefill)
+        #expect(vm.validateBasics() == false) // still needs a target
+        vm.targets[0].url = "git@github.com:org/mirror.git"
+        #expect(vm.validateBasics())
+        #expect(vm.srcURL == "https://github.com/org/repo.git")
+    }
+
+    @Test func localGitDirectoryPrefillsSourcePath() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-drop-\(UUID().uuidString)", isDirectory: true)
+        let repoDir = root.appendingPathComponent("my-local-repo", isDirectory: true)
+        let gitDir = repoDir.appendingPathComponent(".git", isDirectory: true)
+        try FileManager.default.createDirectory(at: gitDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let fromWorkingTree = RepoSourceDropParser.parse(fileURL: repoDir)
+        #expect(fromWorkingTree?.srcURL == repoDir.path)
+        #expect(fromWorkingTree?.inferredName == "my-local-repo")
+
+        let fromGitDir = RepoSourceDropParser.parse(fileURL: gitDir)
+        #expect(fromGitDir?.srcURL == gitDir.path)
+        #expect(fromGitDir?.inferredName == "my-local-repo")
+
+        let vm = AddEditRepoViewModel(prefill: fromWorkingTree)
+        vm.targets[0].url = "git@github.com:acme/mirror.git"
+        #expect(vm.validate())
+        #expect(vm.srcURL == repoDir.path)
+        #expect(vm.name == "my-local-repo")
+    }
+
+    @Test func editingStillLoadsLFSAndWebhookFields() {
+        let existing = RepoConfig(
+            name: "edit-me",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            lfsMirrorMode: .off,
+            webhookEnabled: true
+        )
+        let vm = AddEditRepoViewModel(editing: existing)
+        #expect(vm.showsMoreOptions)
+        #expect(vm.lfsMirrorMode == .off)
+        #expect(vm.webhookEnabled)
+
+        vm.lfsMirrorMode = .auto
+        vm.webhookEnabled = false
+        let saved = vm.buildRepoConfig()
+        #expect(saved.lfsMirrorMode == .auto)
+        #expect(!saved.webhookEnabled)
+    }
+
+    @Test func rememberLastUsedAuthModePersistsWithoutSecrets() {
+        let suite = "AddEditRepoTwoStep.remember.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let vm = AddEditRepoViewModel(defaults: defaults)
+        vm.srcAuthMode = .sshKey
+        vm.rememberLastUsedAuthMode()
+        #expect(LastUsedAuthMode.load(from: defaults) == .sshKey)
+        #expect(defaults.string(forKey: "AddEditRepo.lastUsedAuthMode") == AuthMode.sshKey.rawValue)
+    }
+}
+
+struct RepoSourceDropParserTests {
+    @Test func parsesSSHAndHTTPSRemotes() {
+        let ssh = RepoSourceDropParser.parse("git@gitlab.com:group/app.git")
+        #expect(ssh?.srcURL == "git@gitlab.com:group/app.git")
+        #expect(ssh?.inferredName == "app")
+
+        let https = RepoSourceDropParser.parse("https://github.com/acme/app.git")
+        #expect(https?.inferredName == "app")
+    }
+
+    @Test func rejectsNonGitNoise() {
+        #expect(RepoSourceDropParser.parse("hello world") == nil)
+        #expect(RepoSourceDropParser.parse("/tmp/not-a-repo-\(UUID().uuidString)") == nil)
+    }
+}
+
 // MARK: - ReposDocument migration
 
 struct ReposDocumentMigrationTests {
