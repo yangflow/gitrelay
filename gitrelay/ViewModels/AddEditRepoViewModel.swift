@@ -378,10 +378,6 @@ final class AddEditRepoViewModel {
         guard !trimmed.isEmpty else { return }
         if let parsed = RepoSourceDropParser.parse(trimmed) {
             srcURL = parsed.srcURL
-            let trimmedName = name.trimmingCharacters(in: .whitespaces)
-            if trimmedName.isEmpty, let inferred = parsed.inferredName, !inferred.isEmpty {
-                name = inferred
-            }
         }
     }
 
