@@ -5058,7 +5058,10 @@ struct WindowLayoutStoreTests {
             .appendingPathComponent("gitrelay-window-layout-delete-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         Constants.setBaseDirectoryForTesting(base)
-        defer { try? FileManager.default.removeItem(at: base) }
+        defer {
+            Constants.setBaseDirectoryForTesting(nil)
+            try? FileManager.default.removeItem(at: base)
+        }
 
         let layoutStore = WindowLayoutStore(defaults: defaults)
         let vm = AppViewModel(
@@ -5103,13 +5106,19 @@ struct WindowLayoutModelTests {
     @Test func clampedSidebarWidthRespectsMinMax() {
         #expect(
             WindowLayout.clampedSidebarWidth(0)
-                == Double(DesignTokens.Layout.sidebarMinWidth)
+                == WindowLayout.sidebarMinWidth
         )
         #expect(
             WindowLayout.clampedSidebarWidth(10_000)
-                == Double(DesignTokens.Layout.sidebarMaxWidth)
+                == WindowLayout.sidebarMaxWidth
         )
         #expect(WindowLayout.clampedSidebarWidth(240) == 240)
+    }
+
+    @Test func sidebarBoundsStayAlignedWithDesignTokens() {
+        #expect(WindowLayout.sidebarMinWidth == Double(DesignTokens.Layout.sidebarMinWidth))
+        #expect(WindowLayout.sidebarIdealWidth == Double(DesignTokens.Layout.sidebarIdealWidth))
+        #expect(WindowLayout.sidebarMaxWidth == Double(DesignTokens.Layout.sidebarMaxWidth))
     }
 }
 
