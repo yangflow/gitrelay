@@ -95,12 +95,16 @@ final class AddEditRepoViewModel {
     var webhookRegistrationMessage: String?
     var webhookScopeValidation: TokenScopeValidation?
 
+    /// Add flow only: when false, the sheet shows the required-fields step.
+    var showsMoreOptions: Bool = false
+
     var nameError: String?
     var srcError: String?
     var depthError: String?
     var targetErrors: [UUID: String] = [:]
 
     let editingID: UUID?
+
     private let createdAt: Date?
     private let lastSyncedAt: Date?
     private let lastSuccessfulSyncedAt: Date?
@@ -109,8 +113,13 @@ final class AddEditRepoViewModel {
     private let dailySyncOutcomes: [String: SyncDayOutcome]
     private let lastVerifiedAt: Date?
     private let divergedDetail: String?
+    private let defaults: UserDefaults
 
-    init(editing repo: RepoConfig? = nil) {
+    init(
+        editing repo: RepoConfig? = nil,
+        prefill: RepoSourceDropPrefill? = nil,
+        defaults: UserDefaults = .standard
+    ) {
         editingID = repo?.id
         createdAt = repo?.createdAt
         lastSyncedAt = repo?.lastSyncedAt
@@ -120,20 +129,54 @@ final class AddEditRepoViewModel {
         dailySyncOutcomes = repo?.dailySyncOutcomes ?? [:]
         lastVerifiedAt = repo?.lastVerifiedAt
         divergedDetail = repo?.divergedDetail
-        guard let repo else { return }
-        name      = repo.name
-        srcURL    = repo.srcURL
-        targets   = repo.targets.map { MirrorTargetDraft(from: $0) }
-        frequency = repo.frequency
-        destructivePushPolicy = repo.destructivePushPolicy
-        defaultBranch = repo.defaultBranch
-        tags = repo.tags
-        mirrorReleases = repo.mirrorReleases
-        lfsMirrorMode = repo.lfsMirrorMode
-        depthText = repo.depth.map(String.init) ?? ""
-        refSpecsText = repo.resolvedRefSpecs.joined(separator: "\n")
-        webhookEnabled = repo.webhookEnabled
-        populate(auth: repo.srcAuth, mode: &srcAuthMode, keyPath: &srcKeyPath, token: &srcToken)
+        self.defaults = defaults
+
+        if let repo {
+            name      = repo.name
+            srcURL    = repo.srcURL
+            targets   = repo.targets.map { MirrorTargetDraft(from: $0) }
+            frequency = repo.frequency
+            destructivePushPolicy = repo.destructivePushPolicy
+            defaultBranch = repo.defaultBranch
+            tags = repo.tags
+            mirrorReleases = repo.mirrorReleases
+            lfsMirrorMode = repo.lfsMirrorMode
+            depthText = repo.depth.map(String.init) ?? ""
+            refSpecsText = repo.resolvedRefSpecs.joined(separator: "\n")
+            webhookEnabled = repo.webhookEnabled
+            populate(auth: repo.srcAuth, mode: &srcAuthMode, keyPath: &srcKeyPath, token: &srcToken)
+            showsMoreOptions = true
+        } else {
+            let defaultAuth = LastUsedAuthMode.load(from: defaults) ?? .sshAgent
+            srcAuthMode = defaultAuth
+            targets = [MirrorTargetDraft(authMode: defaultAuth)]
+            if let prefill {
+                applyPrefill(prefill)
+            }
+        }
+    }
+
+    func applyPrefill(_ prefill: RepoSourceDropPrefill) {
+        srcURL = prefill.srcURL
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        if trimmedName.isEmpty, let inferred = prefill.inferredName, !inferred.isEmpty {
+            name = inferred
+        }
+    }
+
+    /// Opens the optional more-options step after required fields validate.
+    @discardableResult
+    func openMoreOptions() -> Bool {
+        guard validateBasics() else {
+            showsMoreOptions = false
+            return false
+        }
+        showsMoreOptions = true
+        return true
+    }
+
+    func backToBasics() {
+        showsMoreOptions = false
     }
 
     var partialSyncWarning: String? {
@@ -152,11 +195,13 @@ final class AddEditRepoViewModel {
         nameError == nil && srcError == nil && depthError == nil && targetErrors.isEmpty
     }
 
+    /// Validates name, source, and targets only. Failures keep the add flow on step 1.
     @discardableResult
-    func validate() -> Bool {
+    func validateBasics() -> Bool {
+        normalizeSourceURLIfNeeded()
+
         nameError = name.trimmingCharacters(in: .whitespaces).isEmpty ? String(localized: "Enter a name") : nil
-        srcError  = isValidGitURL(srcURL) ? nil : String(localized: "Enter a valid Git URL")
-        depthError = validateDepthText()
+        srcError = isValidSourceURL(srcURL) ? nil : String(localized: "Enter a valid Git URL")
 
         targetErrors = [:]
         guard !targets.isEmpty else {
@@ -189,7 +234,14 @@ final class AddEditRepoViewModel {
             }
         }
 
-        return isValid
+        return nameError == nil && srcError == nil && targetErrors.isEmpty
+    }
+
+    @discardableResult
+    func validate() -> Bool {
+        let basicsOK = validateBasics()
+        depthError = validateDepthText()
+        return basicsOK && depthError == nil
     }
 
     func addTarget() {
@@ -246,6 +298,10 @@ final class AddEditRepoViewModel {
         if webhookEnabled {
             try? WebhookSecretStore.ensureSecret(repoID: repoID)
         }
+    }
+
+    func rememberLastUsedAuthMode() {
+        LastUsedAuthMode.save(srcAuthMode, to: defaults)
     }
 
     // MARK: - Private
@@ -317,11 +373,26 @@ final class AddEditRepoViewModel {
         }
     }
 
+    private func normalizeSourceURLIfNeeded() {
+        let trimmed = srcURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        if let parsed = RepoSourceDropParser.parse(trimmed) {
+            srcURL = parsed.srcURL
+        }
+    }
+
+    private func isValidSourceURL(_ url: String) -> Bool {
+        if isValidGitURL(url) { return true }
+        return RepoSourceDropParser.isLocalGitPath(url)
+    }
+
     private func isValidGitURL(_ url: String) -> Bool {
         let trimmed = url.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty { return false }
         if trimmed.hasPrefix("git@") { return true }
-        if let u = URL(string: trimmed), u.scheme == "https" { return true }
+        if let u = URL(string: trimmed), let scheme = u.scheme?.lowercased() {
+            return scheme == "https" || scheme == "http" || scheme == "ssh"
+        }
         return false
     }
 

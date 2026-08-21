@@ -1,10 +1,13 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @Environment(AppViewModel.self) private var appVM
     @State private var selectedRepoID: UUID?
     @State private var sheetMode: SheetMode?
     @State private var browsePrefill: BrowseRemotePrefill?
+    @State private var addPrefill: RepoSourceDropPrefill?
+    @State private var isDropTargeted = false
 
     var body: some View {
         @Bindable var appVM = appVM
@@ -15,7 +18,8 @@ struct ContentView: View {
         } detail: {
             DetailView(
                 selectedRepoID: $selectedRepoID,
-                onAdd: { sheetMode = .add }
+                onAdd: { sheetMode = .add },
+                isDropTargeted: isDropTargeted
             )
             .gitRelayChrome(.detail)
         }
@@ -23,6 +27,12 @@ struct ContentView: View {
             minWidth: DesignTokens.Layout.windowMinWidth,
             minHeight: DesignTokens.Layout.windowMinHeight
         )
+        .onDrop(
+            of: [UTType.fileURL, UTType.url, UTType.plainText],
+            isTargeted: $isDropTargeted
+        ) { providers in
+            handleDrop(providers: providers)
+        }
         .onAppear {
             applyPendingMainWindowSelection()
             applyPendingBrowsePrefill()
@@ -36,7 +46,8 @@ struct ContentView: View {
         .sheet(item: $sheetMode) { mode in
             switch mode {
             case .add:
-                AddEditRepoSheet(repo: nil)
+                AddEditRepoSheet(repo: nil, prefill: addPrefill)
+                    .onDisappear { addPrefill = nil }
             case .edit(let repo):
                 AddEditRepoSheet(repo: repo)
             case .browse:
@@ -67,6 +78,15 @@ struct ContentView: View {
             )
             .interactiveDismissDisabled()
         }
+    }
+
+    private func handleDrop(providers: [NSItemProvider]) -> Bool {
+        Task { @MainActor in
+            guard let prefill = await RepoDropImport.prefill(from: providers) else { return }
+            addPrefill = prefill
+            sheetMode = .add
+        }
+        return true
     }
 
     private func applyPendingMainWindowSelection() {

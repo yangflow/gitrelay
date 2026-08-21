@@ -7718,6 +7718,57 @@
           }
         }
       }
+    },
+    "More Options": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More Options"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多选项"
+          }
+        }
+      }
+    },
+    "Add more targets under More Options.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add more targets under More Options."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可在「更多选项」中添加更多目标。"
+          }
+        }
+      }
+    },
+    "Drop a git URL or local .git folder to start.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop a git URL or local .git folder to start."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖入 Git URL 或本地 .git 文件夹即可开始。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
