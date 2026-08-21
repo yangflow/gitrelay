@@ -74,6 +74,14 @@ REQUIRED_KEYS = {
         "Low Power Mode",
         "Metered network",
         "Low Power Mode · Metered network",
+        # Add-sheet preflight captions and buttons (issue #101).
+        "This mirror already exists. Open it or change the target.",
+        "The destination repository does not exist. An empty one will be created on %@.",
+        "The source refused the credentials. Take a look at its token or account.",
+        "The destination refused the credentials. Take a look at its token or account.",
+        "Create and Start Sync",
+        "Open the Existing One",
+        "Add Anyway",
     ),
     # Quiet widget face (issue #89): 今日 + three counts, no glyph-leading keys.
     ROOT / "gitrelayWidget" / "Localizable.xcstrings": (

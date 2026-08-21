@@ -545,6 +545,23 @@
         }
       }
     },
+    "Add Anyway": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Anyway"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仍要添加"
+          }
+        }
+      }
+    },
     "Add Manually": {
       "extractionState": "manual",
       "localizations": {
@@ -1412,6 +1429,23 @@
         }
       }
     },
+    "Checking both URLs…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking both URLs…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在检查两个地址…"
+          }
+        }
+      }
+    },
     "Choose": {
       "extractionState": "manual",
       "localizations": {
@@ -1905,6 +1939,57 @@
         }
       }
     },
+    "Could not create the destination repository: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not create the destination repository: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建目标仓库失败：%@"
+          }
+        }
+      }
+    },
+    "Could not reach the destination just now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not reach the destination just now."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂时连不上目标仓库。"
+          }
+        }
+      }
+    },
+    "Could not reach the source just now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not reach the source just now."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂时连不上源仓库。"
+          }
+        }
+      }
+    },
     "Create a Personal Access Token (classic) with the repo and read:org scopes. https://github.com/settings/tokens": {
       "extractionState": "manual",
       "localizations": {
@@ -1973,6 +2058,23 @@
         }
       }
     },
+    "Create and Start Sync": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create and Start Sync"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建并开始同步"
+          }
+        }
+      }
+    },
     "Create as Private Repositories": {
       "extractionState": "manual",
       "localizations": {
@@ -2020,6 +2122,57 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在创建目标仓库"
+          }
+        }
+      }
+    },
+    "Creating the destination needs a %@ token. Add one in the accounts pane, or change the target.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creating the destination needs a %@ token. Add one in the accounts pane, or change the target."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建目标仓库需要 %@ 令牌，先在账号面板添加，或改个目标。"
+          }
+        }
+      }
+    },
+    "Creating the destination needs an API token. Add one in the accounts pane, or change the target.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creating the destination needs an API token. Add one in the accounts pane, or change the target."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建目标仓库需要 API 令牌，先在账号面板添加，或改个目标。"
+          }
+        }
+      }
+    },
+    "Creating the destination repository…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creating the destination repository…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在创建目标仓库…"
           }
         }
       }
@@ -3095,6 +3248,40 @@
         }
       }
     },
+    "GitHub cannot create a repository on behalf of another user.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub cannot create a repository on behalf of another user."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 无法代替其他用户创建仓库。"
+          }
+        }
+      }
+    },
+    "GitHub reported the repository name as taken, but it could not be read back.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub reported the repository name as taken, but it could not be read back."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub 说仓库名已被占用，却读不回那个仓库。"
+          }
+        }
+      }
+    },
     "GitHub Token (Requires admin:repo_hook)": {
       "extractionState": "manual",
       "localizations": {
@@ -3125,6 +3312,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "GitLab 主机"
+          }
+        }
+      }
+    },
+    "GitLab reported the project path as taken, but it could not be read back.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitLab reported the project path as taken, but it could not be read back."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitLab 说项目路径已被占用，却读不回那个项目。"
           }
         }
       }
@@ -4302,6 +4506,23 @@
         }
       }
     },
+    "No GitLab group or user namespace named %@ is visible to this token.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No GitLab group or user namespace named %@ is visible to this token."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个令牌看不到名为 %@ 的 GitLab 群组或用户命名空间。"
+          }
+        }
+      }
+    },
     "No Matching Repositories": {
       "extractionState": "manual",
       "localizations": {
@@ -4621,6 +4842,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开主窗口"
+          }
+        }
+      }
+    },
+    "Open the Existing One": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the Existing One"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开已有"
           }
         }
       }
@@ -6767,6 +7005,57 @@
         }
       }
     },
+    "The destination refused the credentials. Take a look at its token or account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The destination refused the credentials. Take a look at its token or account."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标仓库拒绝了凭据，看一下它的令牌或账号。"
+          }
+        }
+      }
+    },
+    "The destination repository does not exist. An empty one will be created before the first sync.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The destination repository does not exist. An empty one will be created before the first sync."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标仓库不存在，首次同步前会先创建空仓。"
+          }
+        }
+      }
+    },
+    "The destination repository does not exist. An empty one will be created on %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The destination repository does not exist. An empty one will be created on %@."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标仓库不存在，将在 %@ 创建空仓。"
+          }
+        }
+      }
+    },
     "The number to keep must be a positive integer": {
       "extractionState": "manual",
       "localizations": {
@@ -6780,6 +7069,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "保留份数须为正整数"
+          }
+        }
+      }
+    },
+    "The source refused the credentials. Take a look at its token or account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The source refused the credentials. Take a look at its token or account."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "源仓库拒绝了凭据，看一下它的令牌或账号。"
+          }
+        }
+      }
+    },
+    "The source repository was not found. Check the URL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The source repository was not found. Check the URL."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到源仓库，检查一下地址。"
           }
         }
       }
@@ -6848,6 +7171,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "仅影响按频率自动触发的同步；手动同步与 webhook 即时同步不受影响。"
+          }
+        }
+      }
+    },
+    "This mirror already exists. Open it or change the target.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This mirror already exists. Open it or change the target."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已有这条镜像，打开它或改个目标。"
           }
         }
       }
