@@ -97,6 +97,11 @@ enum WidgetHealthSnapshotBuilder {
                 tier: 2,
                 tiebreaker: -(snapshot.lastSyncedAt ?? now).timeIntervalSince1970
             )
+        case .queued:
+            return AttentionRank(
+                tier: 2,
+                tiebreaker: -(snapshot.lastSyncedAt ?? now).timeIntervalSince1970 - 0.5
+            )
         case .unknown:
             let reference = repo.lastSuccessfulSyncedAt ?? repo.lastSyncedAt ?? repo.createdAt
             return AttentionRank(

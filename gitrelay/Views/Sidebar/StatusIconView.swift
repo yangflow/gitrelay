@@ -38,6 +38,9 @@ struct StatusIconView: View {
                         }
                     }
                     .onDisappear { isAnimating = false }
+            case .queued:
+                Image(systemName: "clock")
+                    .foregroundStyle(DesignTokens.StatusColor.queued)
             case .diverged:
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(DesignTokens.StatusColor.diverged)

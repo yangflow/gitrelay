@@ -77,6 +77,7 @@ enum DesignTokens {
         static let idle = Color.green
         static let ahead = Color.blue
         static let syncing = Color.secondary
+        static let queued = Color.secondary
         static let diverged = Color.yellow
         static let failed = Color.orange
         static let escalatedFailure = Color.red
@@ -101,6 +102,8 @@ enum DesignTokens {
                 return ahead
             case .syncing:
                 return syncing
+            case .queued:
+                return queued
             case .diverged:
                 return diverged
             case .failed:
@@ -116,6 +119,8 @@ enum DesignTokens {
                 return escalatedFailure
             case .syncing:
                 return syncing
+            case .queued:
+                return queued
             case .diverged:
                 return diverged
             case .unknown:
@@ -130,6 +135,7 @@ enum DesignTokens {
             case .idle: return "idle"
             case .ahead: return "ahead"
             case .syncing: return "syncing"
+            case .queued: return "queued"
             case .diverged: return "diverged"
             case .failed: return "failed"
             }
@@ -140,6 +146,7 @@ enum DesignTokens {
             case .success: return "success"
             case .failure: return "failure"
             case .syncing: return "syncing"
+            case .queued: return "queued"
             case .diverged: return "diverged"
             case .unknown: return "unknown"
             }

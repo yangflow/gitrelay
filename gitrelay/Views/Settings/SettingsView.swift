@@ -79,6 +79,23 @@ struct SettingsView: View {
             }
 
             Section {
+                Stepper(
+                    value: $store.preferences.maxConcurrentSyncs,
+                    in: NotificationPreferences.maxConcurrentSyncsRange
+                ) {
+                    Text(
+                        String(
+                            localized: "Max concurrent syncs: \(store.preferences.maxConcurrentSyncs)"
+                        )
+                    )
+                }
+            } header: {
+                Text(String(localized: "Sync Concurrency"))
+            } footer: {
+                Text(String(localized: "Manual, webhook, and scheduled syncs share this limit. Extra requests wait in a queue (Queued) until a slot frees. Quitting the app discards the queue."))
+            }
+
+            Section {
                 Toggle("Pause scheduled sync in Low Power Mode", isOn: $store.preferences.pauseOnLowPowerMode)
                 Toggle("Pause scheduled sync on expensive networks or hotspots", isOn: $store.preferences.pauseOnExpensiveNetwork)
 

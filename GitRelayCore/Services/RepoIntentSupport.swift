@@ -32,6 +32,13 @@ enum RepoIntentSupport {
                     lastSyncedAt: repo.lastSyncedAt,
                     message: nil
                 )
+            case .queued:
+                return RepoSyncStatusSnapshot(
+                    repoName: repo.name,
+                    status: .queued,
+                    lastSyncedAt: repo.lastSyncedAt,
+                    message: nil
+                )
             case .failed(let message):
                 return RepoSyncStatusSnapshot(
                     repoName: repo.name,

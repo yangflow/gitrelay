@@ -16,6 +16,7 @@ final class NotificationPreferencesStore {
         static let quietHoursEnabled = "NotificationPreferences.quietHoursEnabled"
         static let quietHoursStartMinutes = "NotificationPreferences.quietHoursStartMinutes"
         static let quietHoursEndMinutes = "NotificationPreferences.quietHoursEndMinutes"
+        static let maxConcurrentSyncs = "NotificationPreferences.maxConcurrentSyncs"
     }
 
     private let defaults: UserDefaults
@@ -53,12 +54,14 @@ final class NotificationPreferencesStore {
         defaults.set(value.quietHours.isEnabled, forKey: Keys.quietHoursEnabled)
         defaults.set(value.quietHours.startMinutes, forKey: Keys.quietHoursStartMinutes)
         defaults.set(value.quietHours.endMinutes, forKey: Keys.quietHoursEndMinutes)
+        defaults.set(value.maxConcurrentSyncs, forKey: Keys.maxConcurrentSyncs)
     }
 
     private static func normalized(_ value: NotificationPreferences) -> NotificationPreferences {
         var copy = value
         copy.consecutiveFailureThreshold = max(1, copy.consecutiveFailureThreshold)
         copy.transientGitMaxAttempts = GitRetryPolicy.clampedMaxAttempts(copy.transientGitMaxAttempts)
+        copy.maxConcurrentSyncs = NotificationPreferences.clampedMaxConcurrentSyncs(copy.maxConcurrentSyncs)
         copy.quietHours = QuietHoursSettings(
             isEnabled: copy.quietHours.isEnabled,
             startMinutes: copy.quietHours.startMinutes,
@@ -117,6 +120,15 @@ final class NotificationPreferencesStore {
             )
         }
 
+        let maxConcurrent: Int
+        if defaults.object(forKey: Keys.maxConcurrentSyncs) == nil {
+            maxConcurrent = fallback.maxConcurrentSyncs
+        } else {
+            maxConcurrent = NotificationPreferences.clampedMaxConcurrentSyncs(
+                defaults.integer(forKey: Keys.maxConcurrentSyncs)
+            )
+        }
+
         return NotificationPreferences(
             notificationsEnabled: bool(forKey: Keys.notificationsEnabled, default: fallback.notificationsEnabled),
             notifyOnFirstFailure: bool(forKey: Keys.notifyOnFirstFailure, default: fallback.notifyOnFirstFailure),
@@ -125,7 +137,8 @@ final class NotificationPreferencesStore {
             interruptionLevel: level,
             pauseOnLowPowerMode: bool(forKey: Keys.pauseOnLowPowerMode, default: fallback.pauseOnLowPowerMode),
             pauseOnExpensiveNetwork: bool(forKey: Keys.pauseOnExpensiveNetwork, default: fallback.pauseOnExpensiveNetwork),
-            quietHours: quietHours
+            quietHours: quietHours,
+            maxConcurrentSyncs: maxConcurrent
         )
     }
 }

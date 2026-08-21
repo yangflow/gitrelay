@@ -14,6 +14,11 @@ enum MenuBarPopoverFilter {
     }
 
     static func canTriggerSync(for status: SyncStatus) -> Bool {
-        status != .syncing
+        switch status {
+        case .syncing, .queued:
+            return false
+        case .unknown, .idle, .ahead, .diverged, .failed:
+            return true
+        }
     }
 }

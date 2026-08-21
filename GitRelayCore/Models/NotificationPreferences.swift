@@ -30,6 +30,11 @@ struct NotificationPreferences: Equatable, Sendable {
     /// Global quiet-hours window (local timezone). Off by default.
     var quietHours: QuietHoursSettings
 
+    /// Max concurrent clone/fetch/push jobs (manual, webhook, and scheduled share this cap).
+    var maxConcurrentSyncs: Int
+
+    static let maxConcurrentSyncsRange = SyncConcurrencyGate.allowedRange
+
     static let `default` = NotificationPreferences(
         notificationsEnabled: true,
         notifyOnFirstFailure: true,
@@ -38,8 +43,13 @@ struct NotificationPreferences: Equatable, Sendable {
         interruptionLevel: .active,
         pauseOnLowPowerMode: true,
         pauseOnExpensiveNetwork: true,
-        quietHours: .default
+        quietHours: .default,
+        maxConcurrentSyncs: SyncConcurrencyGate.defaultMaxConcurrent
     )
+
+    static func clampedMaxConcurrentSyncs(_ value: Int) -> Int {
+        SyncConcurrencyGate.clamped(value)
+    }
 
     var failurePolicy: FailureNotificationPolicy {
         FailureNotificationPolicy(
