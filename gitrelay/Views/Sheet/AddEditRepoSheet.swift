@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct AddEditRepoSheet: View {
@@ -18,7 +19,9 @@ struct AddEditRepoSheet: View {
 
     private var title: String {
         if editingRepo != nil {
-            return String(localized: "Edit Repository")
+            return vm.showsMoreOptions
+                ? String(localized: "More Options")
+                : String(localized: "Edit Repository")
         }
         return vm.showsMoreOptions
             ? String(localized: "More Options")
@@ -29,9 +32,27 @@ struct AddEditRepoSheet: View {
         editingRepo == nil ? String(localized: "Add and Start Syncing") : String(localized: "Save")
     }
 
-    /// Add flow step 1: required fields only.
+    /// Basics step: quiet two stacked URL fields (source + target).
     private var showsBasicsOnly: Bool {
-        editingRepo == nil && !vm.showsMoreOptions
+        !vm.showsMoreOptions
+    }
+
+    private var primaryTargetID: UUID? {
+        vm.targets.first?.id
+    }
+
+    private var nameFieldBinding: Binding<String> {
+        Binding(
+            get: { vm.name },
+            set: { vm.updateName($0) }
+        )
+    }
+
+    private var primaryTargetLocationBinding: Binding<String> {
+        Binding(
+            get: { vm.primaryTargetLocation },
+            set: { vm.primaryTargetLocation = $0 }
+        )
     }
 
     var body: some View {
@@ -45,29 +66,24 @@ struct AddEditRepoSheet: View {
             Divider()
 
             ScrollViewReader { proxy in
-                Form {
-                    if focusAuth, editingRepo != nil {
-                        Section {
-                            Text(String(localized: "Update the token or SSH key for this repository, then save."))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        } header: {
-                            Text(String(localized: "Authentication"))
-                        }
-                    }
-
+                Group {
                     if showsBasicsOnly {
-                        basicsSections(primaryTargetOnly: true)
-                    } else if editingRepo != nil {
-                        basicsSections(primaryTargetOnly: false)
-                        moreOptionsSections(includeExtraTargets: false)
+                        ScrollView {
+                            basicsContent
+                                .padding(DesignTokens.Spacing.sheetContent)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        }
                     } else {
-                        // Add step 2: only the optional fields (including extra targets).
-                        moreOptionsSections(includeExtraTargets: true)
+                        Form {
+                            moreOptionsSections()
+                        }
+                        .formStyle(.grouped)
                     }
                 }
-                .formStyle(.grouped)
                 .onAppear {
+                    if focusAuth, editingRepo != nil {
+                        vm.openMoreOptions()
+                    }
                     scrollToAuthIfNeeded(proxy: proxy)
                 }
             }
@@ -76,27 +92,37 @@ struct AddEditRepoSheet: View {
 
             footer
         }
-        .frame(width: 520)
-        .frame(minHeight: showsBasicsOnly ? 520 : 760)
+        .frame(
+            minWidth: DesignTokens.Layout.addEditRepoSheetMinWidth,
+            minHeight: DesignTokens.Layout.addEditRepoSheetMinHeight
+        )
         .gitRelayChrome(.sheet)
+        .background(ResizableSheetWindowConfigurator(
+            minSize: NSSize(
+                width: DesignTokens.Layout.addEditRepoSheetMinWidth,
+                height: DesignTokens.Layout.addEditRepoSheetMinHeight
+            )
+        ))
     }
 
     @ViewBuilder
     private var footer: some View {
-        HStack {
-            if editingRepo == nil, vm.showsMoreOptions {
+        HStack(spacing: DesignTokens.Spacing.sm) {
+            Button(String(localized: "Cancel")) { dismiss() }
+                .keyboardShortcut(.escape)
+
+            if showsBasicsOnly {
+                Button(String(localized: "More Options")) {
+                    vm.openMoreOptions()
+                }
+            } else {
                 Button(String(localized: "Back")) {
                     vm.backToBasics()
                 }
             }
+
             Spacer()
-            Button(String(localized: "Cancel")) { dismiss() }
-                .keyboardShortcut(.escape)
-            if showsBasicsOnly {
-                Button(String(localized: "More Options")) {
-                    _ = vm.openMoreOptions()
-                }
-            }
+
             Button(primaryActionTitle, action: save)
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.return)
@@ -104,10 +130,66 @@ struct AddEditRepoSheet: View {
         .gitRelaySheetFooterPadding()
     }
 
+    /// Locked basics: two stacked fields (Source URL + Target URL), lots of air.
     @ViewBuilder
-    private func basicsSections(primaryTargetOnly: Bool) -> some View {
+    private var basicsContent: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxl) {
+            if focusAuth, editingRepo != nil {
+                Text(String(localized: "Update the token or SSH key for this repository, then save."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                Text(String(localized: "Source"))
+                    .font(.headline)
+
+                TextField("git@gitlab.com:org/repo.git", text: $vm.srcURL)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.body, design: .monospaced))
+
+                if let caption = vm.basicsInferenceCaption {
+                    Text(caption)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let err = vm.srcError {
+                    Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
+                }
+                if let err = vm.nameError {
+                    Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                Text(String(localized: "Target"))
+                    .font(.headline)
+
+                TextField(
+                    vm.primaryTargetUsesFilesystemPath
+                        ? "/Volumes/Backup/git-archives"
+                        : "git@github.com:user/repo.git",
+                    text: primaryTargetLocationBinding
+                )
+                .textFieldStyle(.roundedBorder)
+                .font(.system(.body, design: .monospaced))
+
+                if let id = primaryTargetID, let err = vm.targetErrors[id] {
+                    Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
+                }
+            }
+
+            Spacer(minLength: DesignTokens.Spacing.xxl)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, DesignTokens.Spacing.lg)
+    }
+
+    @ViewBuilder
+    private func moreOptionsSections() -> some View {
         Section {
-            TextField("For example: my-project", text: $vm.name)
+            TextField("For example: my-project", text: nameFieldBinding)
             if let err = vm.nameError {
                 Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
             }
@@ -116,87 +198,49 @@ struct AddEditRepoSheet: View {
         }
 
         Section {
-            TextField("git@gitlab.com:org/repo.git", text: $vm.srcURL)
-                .font(.system(.caption, design: .monospaced))
-            if let err = vm.srcError {
-                Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
-            }
             AuthFieldView(
                 label: String(localized: "Source"),
                 remoteURL: vm.srcURL,
                 mode: $vm.srcAuthMode,
                 keyPath: $vm.srcKeyPath,
-                token: $vm.srcToken
+                token: $vm.srcToken,
+                pickerTitle: String(localized: "Authentication Method")
             )
             .id(AddEditRepoScrollTarget.sourceAuth)
         } header: {
-            Text(String(localized: "Source Repository"))
+            Text(String(localized: "Source Authentication"))
         }
 
         Section {
             ForEach(Array(vm.targets.enumerated()), id: \.element.id) { index, _ in
-                if !primaryTargetOnly || index == 0 {
-                    MirrorTargetCardView(
-                        index: index,
-                        target: binding(for: vm.targets[index].id),
-                        error: vm.targetErrors[vm.targets[index].id],
-                        canRemove: !primaryTargetOnly && vm.targets.count > 1,
-                        onRemove: { vm.removeTarget(id: vm.targets[index].id) }
-                    )
-                }
+                MirrorTargetFieldsView(
+                    index: index,
+                    target: binding(for: vm.targets[index].id),
+                    error: vm.targetErrors[vm.targets[index].id],
+                    canRemove: vm.targets.count > 1,
+                    onRemove: { vm.removeTarget(id: vm.targets[index].id) },
+                    showsHeader: true,
+                    urlFieldTitle: String(localized: "Target URL"),
+                    authPickerTitle: String(localized: "Authentication Method")
+                )
             }
 
-            if !primaryTargetOnly {
-                Button {
-                    vm.addTarget()
-                } label: {
-                    Label(String(localized: "Add Target"), systemImage: "plus.circle")
-                }
+            Button {
+                vm.addTarget()
+            } label: {
+                Label(String(localized: "Add Target"), systemImage: "plus.circle")
             }
         } header: {
             Text(String(localized: "Targets"))
         } footer: {
-            if primaryTargetOnly {
-                Text(String(localized: "Add more targets under More Options."))
-                    .font(.caption)
-            } else {
-                Text(String(localized: "A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync."))
-                    .font(.caption)
-            }
+            Text(String(localized: "A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync."))
+                .font(.caption)
         }
 
         Section {
             FrequencyPickerView(frequency: $vm.frequency)
         } header: {
             Text(String(localized: "Sync Frequency"))
-        }
-    }
-
-    @ViewBuilder
-    private func moreOptionsSections(includeExtraTargets: Bool) -> some View {
-        if includeExtraTargets {
-            Section {
-                ForEach(Array(vm.targets.enumerated()), id: \.element.id) { index, _ in
-                    MirrorTargetCardView(
-                        index: index,
-                        target: binding(for: vm.targets[index].id),
-                        error: vm.targetErrors[vm.targets[index].id],
-                        canRemove: vm.targets.count > 1,
-                        onRemove: { vm.removeTarget(id: vm.targets[index].id) }
-                    )
-                }
-
-                Button {
-                    vm.addTarget()
-                } label: {
-                    Label(String(localized: "Add Target"), systemImage: "plus.circle")
-                }
-            } header: {
-                Text(String(localized: "Targets"))
-            } footer: {
-                Text(String(localized: "A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync."))
-                    .font(.caption)
-            }
         }
 
         Section {
@@ -381,11 +425,9 @@ struct AddEditRepoSheet: View {
 
     private func save() {
         guard vm.validate() else {
-            if editingRepo == nil {
-                // Keep the user on step 1 when required fields fail.
-                if vm.nameError != nil || vm.srcError != nil || !vm.targetErrors.isEmpty {
-                    vm.showsMoreOptions = false
-                }
+            // Keep the user on the basics step when required fields fail.
+            if vm.nameError != nil || vm.srcError != nil || !vm.targetErrors.isEmpty {
+                vm.showsMoreOptions = false
             }
             return
         }
@@ -483,4 +525,31 @@ struct AddEditRepoSheet: View {
 
 private enum AddEditRepoScrollTarget {
     static let sourceAuth = "add-edit-source-auth"
+}
+
+/// Enables traffic-light chrome resize on the hosting sheet window (macOS 14+).
+private struct ResizableSheetWindowConfigurator: NSViewRepresentable {
+    let minSize: NSSize
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            configure(window: view.window)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            configure(window: nsView.window)
+        }
+    }
+
+    private func configure(window: NSWindow?) {
+        guard let window else { return }
+        if !window.styleMask.contains(.resizable) {
+            window.styleMask.insert(.resizable)
+        }
+        window.minSize = minSize
+    }
 }

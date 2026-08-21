@@ -28,6 +28,10 @@ enum DesignTokens {
         static let aboutWidth: CGFloat = 280
         static let aboutIconSize: CGFloat = 80
 
+        /// Add / Edit repository sheet — resizable; floor matches the locked two-column mockup.
+        static let addEditRepoSheetMinWidth: CGFloat = 640
+        static let addEditRepoSheetMinHeight: CGFloat = 420
+
         /// Pair-table column sizing (源 / 目标 / 状态 / 上次).
         static let pairTablePathColumnMin: CGFloat = 140
         static let pairTablePathColumnIdeal: CGFloat = 220
