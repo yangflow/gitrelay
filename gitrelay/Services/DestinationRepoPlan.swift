@@ -110,18 +110,35 @@ enum ProviderHostToken {
         host: String,
         defaults: UserDefaults = .standard
     ) -> String? {
+        guard let label = resolveLabel(provider: provider, host: host, defaults: defaults) else {
+            return nil
+        }
+        return nonEmptyToken(provider: provider, label: label)
+    }
+
+    /// The account whose token ``resolve`` would use, by label. Nil when no
+    /// account for this provider holds a token, which is what lets the 账号 line
+    /// on repo detail stay quiet instead of naming a credential that is absent.
+    static func resolveLabel(
+        provider: GitProvider,
+        host: String,
+        defaults: UserDefaults = .standard
+    ) -> String? {
         let wanted = normalizedHost(host)
         let accounts = ProviderAccountStore.accounts(for: provider, defaults: defaults)
 
         if let pinned = accounts.first(where: { normalizedHost($0.host ?? "") == wanted }),
-           let token = nonEmptyToken(provider: provider, label: pinned.label) {
-            return token
+           nonEmptyToken(provider: provider, label: pinned.label) != nil {
+            return pinned.label
         }
         let selected = ProviderAccountStore.selectedLabel(for: provider, defaults: defaults)
-        if let token = nonEmptyToken(provider: provider, label: selected) {
-            return token
+        if nonEmptyToken(provider: provider, label: selected) != nil {
+            return selected
         }
-        return nonEmptyToken(provider: provider, label: ProviderAccount.defaultLabel)
+        guard nonEmptyToken(provider: provider, label: ProviderAccount.defaultLabel) != nil else {
+            return nil
+        }
+        return ProviderAccount.defaultLabel
     }
 
     /// Strips scheme, trailing slashes, and an API suffix so `https://gitlab.example.com/`

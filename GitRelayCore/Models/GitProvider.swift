@@ -17,6 +17,16 @@ nonisolated enum GitProvider: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// The brand name on its own, without the Gitee gloss ``displayName`` carries.
+    /// Used where the name sits inline, such as the 账号 line on repo detail.
+    var shortName: String {
+        switch self {
+        case .github: "GitHub"
+        case .gitlab: "GitLab"
+        case .gitea:  "Gitea"
+        }
+    }
+
     /// SF Symbol stand-in for the provider. GitRelay ships no third-party
     /// brand marks, so these are neutral glyphs rather than logos.
     var symbolName: String {
