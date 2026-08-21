@@ -138,20 +138,22 @@ struct MenuBarPopoverView: View {
                 Label(String(localized: "Settings"), systemImage: "gearshape")
             }
 
-            Spacer(minLength: DesignTokens.Spacing.xxs)
+            Spacer(minLength: 0)
 
-            Button(action: openAbout) {
-                Image(systemName: "info.circle")
-            }
-            .help(String(localized: "About GitRelay"))
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Button(action: openAbout) {
+                    Image(systemName: "info.circle")
+                }
+                .help(String(localized: "About GitRelay"))
 
-            Button {
-                NSApp.terminate(nil)
-            } label: {
-                Image(systemName: "power")
+                Button {
+                    NSApp.terminate(nil)
+                } label: {
+                    Image(systemName: "power")
+                }
+                .keyboardShortcut("q")
+                .help(String(localized: "Quit GitRelay"))
             }
-            .keyboardShortcut("q")
-            .help(String(localized: "Quit GitRelay"))
         }
         .buttonStyle(QuietPressButtonStyle())
         .font(.caption)
