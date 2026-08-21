@@ -75,13 +75,18 @@ REQUIRED_KEYS = {
         "Metered network",
         "Low Power Mode · Metered network",
     ),
+    # Quiet widget face (issue #89): 今日 + three counts, no glyph-leading keys.
     ROOT / "gitrelayWidget" / "Localizable.xcstrings": (
         "Queued",
-        "✓ %lld",
-        "✗ %lld",
-        "— %lld",
+        "Today",
+        "Today: %lld succeeded, %lld failed, %lld not run",
     ),
 }
+
+# The widget target builds with STRING_CATALOG_GENERATE_SYMBOLS=YES, so every
+# widget catalog key has to derive a Swift identifier. Keys such as "✓ %lld"
+# do not, and break the Xcode 26 build.
+SYMBOL_GENERATING_CATALOGS = (ROOT / "gitrelayWidget" / "Localizable.xcstrings",)
 
 
 def validate_catalog(catalog: Path) -> list[str]:
@@ -123,6 +128,14 @@ def validate_catalog(catalog: Path) -> list[str]:
             if not isinstance(value, str) or value == "":
                 errors.append(
                     f"{catalog.relative_to(ROOT)} required key {key!r}: missing {locale} value"
+                )
+
+    if catalog in SYMBOL_GENERATING_CATALOGS:
+        for key in strings:
+            if not key[:1].isascii() or not key[:1].isalpha():
+                errors.append(
+                    f"{catalog.relative_to(ROOT)} {key!r}: key must start with an ASCII "
+                    "letter so STRING_CATALOG_GENERATE_SYMBOLS can derive a Swift symbol"
                 )
     return errors
 
