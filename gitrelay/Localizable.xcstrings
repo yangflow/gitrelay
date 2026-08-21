@@ -579,23 +579,6 @@
         }
       }
     },
-    "Add Your First Repository": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add Your First Repository"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加第一个仓库"
-          }
-        }
-      }
-    },
     "Add a Repository Manually": {
       "extractionState": "manual",
       "localizations": {
@@ -3890,23 +3873,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "镜像模板"
-          }
-        }
-      }
-    },
-    "Mirror any Git repository to another repository\\nGitLab → GitHub · Gitea · Gitee": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mirror any Git repository to another repository\\nGitLab → GitHub · Gitea · Gitee"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "把任意 Git 仓库镜像同步到另一个仓库\\nGitLab → GitHub · Gitea · Gitee"
           }
         }
       }
@@ -7868,23 +7834,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "可在「更多选项」中添加更多目标。"
-          }
-        }
-      }
-    },
-    "Drop a git URL or local .git folder to start.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drop a git URL or local .git folder to start."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "拖入 Git URL 或本地 .git 文件夹即可开始。"
           }
         }
       }
