@@ -10,7 +10,7 @@ struct RepoHeaderView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
 
-            LabeledContent("Source") {
+            LabeledContent(String(localized: "Source")) {
                 Text(repo.srcURL)
                     .font(.system(.caption, design: .monospaced))
                     .textSelection(.enabled)
@@ -18,15 +18,15 @@ struct RepoHeaderView: View {
             }
 
             if repo.targets.count == 1 {
-                LabeledContent("Target") {
+                LabeledContent(String(localized: "Target")) {
                     targetLabel(repo.targets[0])
                 }
             } else {
-                LabeledContent("Targets (\(repo.targets.count))") {
+                LabeledContent(String(localized: "Targets (\(repo.targets.count))")) {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(Array(repo.targets.enumerated()), id: \.element.id) { index, target in
                             HStack(spacing: 6) {
-                                Text("\(index + 1).")
+                                Text(String(localized: "\(index + 1)."))
                                     .foregroundStyle(.secondary)
                                 targetLabel(target)
                             }
@@ -37,7 +37,7 @@ struct RepoHeaderView: View {
 
             if repo.usesSelectiveRefSync {
                 Label {
-                    Text(repo.partialSyncWarning ?? "Partial ref sync (not a complete backup)")
+                    Text(repo.partialSyncWarning ?? String(localized: "Partial ref sync (not a complete backup)"))
                         .font(.caption)
                         .foregroundStyle(DesignTokens.StatusColor.pause)
                 } icon: {
@@ -77,7 +77,7 @@ struct RepoHeaderView: View {
     private func targetLabel(_ target: MirrorTarget) -> some View {
         HStack(spacing: 6) {
             if target.kind == .filesystem {
-                Text("Archive")
+                Text(String(localized: "Archive"))
                     .font(.caption2)
                     .padding(.horizontal, 4)
                     .padding(.vertical, 1)
@@ -94,7 +94,7 @@ struct RepoHeaderView: View {
                     .foregroundStyle(.secondary)
             }
             if !target.enabled {
-                Text("Disabled")
+                Text(String(localized: "Disabled"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }

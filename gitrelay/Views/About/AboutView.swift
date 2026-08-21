@@ -27,7 +27,7 @@ struct AboutView: View {
                 .font(.title.weight(.bold))
                 .padding(.top, DesignTokens.Spacing.md)
 
-            Text("Version \(version) (\(build))")
+            Text(String(localized: "Version \(version) (\(build))"))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .padding(.top, DesignTokens.Spacing.xxs)
@@ -58,7 +58,7 @@ struct AboutView: View {
                 Button {
                     UpdaterService.shared.checkForUpdates()
                 } label: {
-                    Label("Check for Updates", systemImage: "arrow.down.circle")
+                    Label(String(localized: "Check for Updates"), systemImage: "arrow.down.circle")
                 }
             }
             .buttonStyle(.borderless)

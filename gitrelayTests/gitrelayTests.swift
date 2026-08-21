@@ -6267,3 +6267,72 @@ struct SyncConcurrencyAppViewModelTests {
         #expect(queued.count == 2)
     }
 }
+
+// MARK: - String Catalog (issue #65)
+
+struct StringCatalogLocaleTests {
+    private static var repoRoot: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+    }
+
+    @Test func recentUIKeysExistInAppCatalogWithBothLocales() throws {
+        let url = Self.repoRoot.appendingPathComponent("gitrelay/Localizable.xcstrings")
+        let data = try Data(contentsOf: url)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let strings = try #require(json?["strings"] as? [String: Any])
+
+        let required = [
+            "Queued",
+            "Sync Concurrency",
+            "Max concurrent syncs: %lld",
+            "Open at Login",
+            "Keep in Menu Bar when closing main window",
+            "Startup & Menu Bar",
+            "Security",
+            "Notifications",
+            "Schedule",
+            "Webhook",
+            "Cache",
+            "Configuration",
+            "More Options",
+            "Add and Start Syncing",
+            "Re-enter credentials",
+            "Open Log",
+            "Personal Access Token",
+            "Provider",
+            "Gitea Host",
+            "Gitea API Token",
+        ]
+
+        for key in required {
+            let entry = try #require(strings[key] as? [String: Any], "missing key \(key)")
+            let locs = try #require(entry["localizations"] as? [String: Any])
+            for locale in ["en", "zh-Hans"] {
+                let unit = try #require(
+                    (locs[locale] as? [String: Any])?["stringUnit"] as? [String: Any],
+                    "\(key) missing \(locale)"
+                )
+                let value = try #require(unit["value"] as? String)
+                #expect(!value.isEmpty, "\(key) \(locale) empty")
+            }
+        }
+    }
+
+    @Test func queuedExistsInWidgetCatalogWithBothLocales() throws {
+        let url = Self.repoRoot.appendingPathComponent("gitrelayWidget/Localizable.xcstrings")
+        let data = try Data(contentsOf: url)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let strings = try #require(json?["strings"] as? [String: Any])
+        let entry = try #require(strings["Queued"] as? [String: Any])
+        let locs = try #require(entry["localizations"] as? [String: Any])
+        for locale in ["en", "zh-Hans"] {
+            let unit = try #require(
+                (locs[locale] as? [String: Any])?["stringUnit"] as? [String: Any]
+            )
+            let value = try #require(unit["value"] as? String)
+            #expect(!value.isEmpty)
+        }
+    }
+}
