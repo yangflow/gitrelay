@@ -9,11 +9,15 @@ enum GitSyncArguments {
         depth: Int?,
         refSpecs: [String],
         remote: String = "origin",
-        prune: Bool = true
+        prune: Bool = true,
+        progress: Bool = false
     ) -> [String] {
         var args = ["fetch"]
         if prune {
             args.append("--prune")
+        }
+        if progress {
+            args.append("--progress")
         }
         if let depth, depth > 0 {
             args.append(contentsOf: ["--depth", String(depth)])
@@ -24,7 +28,7 @@ enum GitSyncArguments {
     }
 
     static func cloneMirrorArgs(srcURL: String, mirrorPath: String) -> [String] {
-        ["clone", "--mirror", srcURL, mirrorPath]
+        ["clone", "--mirror", "--progress", srcURL, mirrorPath]
     }
 
     static func pushRefSpecs(from fetchRefSpecs: [String]) -> [String] {
@@ -46,7 +50,7 @@ enum GitSyncArguments {
     }
 
     static func pushMirrorArgs(dstURL: String) -> [String] {
-        ["push", "--mirror", dstURL]
+        ["push", "--mirror", "--progress", dstURL]
     }
 
     static func pushMirrorDryRunArgs(dstURL: String) -> [String] {
@@ -57,6 +61,8 @@ enum GitSyncArguments {
         var args = ["push"]
         if dryRun {
             args.append("--dry-run")
+        } else {
+            args.append("--progress")
         }
         args.append(dstURL)
         args.append(contentsOf: refSpecs)

@@ -3,6 +3,7 @@ import SwiftUI
 struct RepoRowView: View {
     let repo: RepoConfig
     let status: SyncStatus
+    var syncPhase: SyncPhase? = nil
     var recentRecords: [SyncRecord] = []
     let onSyncNow: () -> Void
     let onCancelSync: () -> Void
@@ -14,7 +15,7 @@ struct RepoRowView: View {
     let onDelete: () -> Void
 
     private var presentation: RepoRowHealthPresentation.Caption {
-        RepoRowHealthPresentation.caption(for: repo, status: status)
+        RepoRowHealthPresentation.caption(for: repo, status: status, syncPhase: syncPhase)
     }
 
     private var nextStep: RepoFailureNextStep {
@@ -87,7 +88,7 @@ struct RepoRowView: View {
         case .ahead(let count):
             statusText = String(localized: "src is \(count) commits ahead")
         case .syncing:
-            statusText = String(localized: "Syncing...")
+            statusText = syncPhase?.displayCaption ?? String(localized: "Syncing...")
         case .queued:
             statusText = String(localized: "Queued")
         case .diverged:

@@ -83,6 +83,7 @@ struct MenuBarPopoverView: View {
                                 MenuBarRepoRowView(
                                     repo: repo,
                                     status: appVM.statuses[repo.id] ?? .unknown,
+                                    syncPhase: appVM.syncPhases[repo.id],
                                     recentRecords: appVM.records[repo.id] ?? [],
                                     onOpen: { openMainWindow(focusing: repo.id) },
                                     onSync: { appVM.triggerSync(repoID: repo.id) },

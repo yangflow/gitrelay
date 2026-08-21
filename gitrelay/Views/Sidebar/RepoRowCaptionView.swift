@@ -21,6 +21,10 @@ struct RepoRowCaptionView: View {
         case .lastSync(let date):
             let relative = date.formatted(.relative(presentation: .named))
             return String(localized: "Last synced \(relative)")
+        case .queued:
+            return String(localized: "Queued")
+        case .syncing(let text):
+            return text
         }
     }
 }

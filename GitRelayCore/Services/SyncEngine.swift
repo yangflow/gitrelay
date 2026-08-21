@@ -47,22 +47,26 @@ final class SyncEngine {
         let lfsService = LFSMirrorService(runner: runner)
 
         do {
-            emit(.phase(.fetchingSource))
             // 1. Clone or fetch from src once
             if repo.usesSelectiveRefSync {
                 log(GitSyncArguments.partialSyncLogLine)
                 if MirrorStore.mirrorExists(for: repo.id) {
+                    let phase = SyncPhase(.fetchingSource)
+                    emit(.phase(phase))
                     log("Fetching selected refs from source...")
                     try await withTransientRetry(log: { self.log($0) }) {
                         try await self.runner.fetchSource(
                             mirrorPath: mirrorPath,
                             depth: self.repo.depth,
                             refSpecs: self.repo.resolvedRefSpecs,
-                            env: srcEnv
+                            env: srcEnv,
+                            onProgressLine: progressCallback(for: phase)
                         )
                     }
                     log("Fetch complete.")
                 } else {
+                    let phase = SyncPhase(.cloningSource)
+                    emit(.phase(phase))
                     log("Initializing partial mirror (first time)...")
                     let repoID = repo.id
                     do {
@@ -81,7 +85,8 @@ final class SyncEngine {
                                 mirrorPath: mirrorPath,
                                 depth: self.repo.depth,
                                 refSpecs: self.repo.resolvedRefSpecs,
-                                env: srcEnv
+                                env: srcEnv,
+                                onProgressLine: progressCallback(for: phase)
                             )
                         }
                     } catch {
@@ -91,12 +96,20 @@ final class SyncEngine {
                     log("Partial clone complete.")
                 }
             } else if MirrorStore.mirrorExists(for: repo.id) {
+                let phase = SyncPhase(.fetchingSource)
+                emit(.phase(phase))
                 log("Fetching from source...")
                 try await withTransientRetry(log: { self.log($0) }) {
-                    try await self.runner.fetchPrune(mirrorPath: mirrorPath, env: srcEnv)
+                    try await self.runner.fetchPrune(
+                        mirrorPath: mirrorPath,
+                        env: srcEnv,
+                        onProgressLine: progressCallback(for: phase)
+                    )
                 }
                 log("Fetch complete.")
             } else {
+                let phase = SyncPhase(.cloningSource)
+                emit(.phase(phase))
                 log("Cloning source (first time)...")
                 let repoID = repo.id
                 do {
@@ -107,7 +120,8 @@ final class SyncEngine {
                         try await self.runner.cloneMirror(
                             srcURL: srcURL,
                             mirrorPath: mirrorPath,
-                            env: srcEnv
+                            env: srcEnv,
+                            onProgressLine: progressCallback(for: phase)
                         )
                     }
                 } catch {
@@ -119,14 +133,20 @@ final class SyncEngine {
 
             // 1b. Optional Git LFS fetch into the local bare mirror (src → local only).
             // LFS goes through GitRunner; transient failures use the same retry classifier.
+            let lfsPhase = SyncPhase(.fetchingLFS)
             let lfsPrepare = try await withTransientRetry(log: { self.log($0) }) {
                 try await lfsService.prepareAfterSourceFetch(
                     mode: self.repo.lfsMirrorMode,
                     mirrorPath: mirrorPath,
                     env: srcEnv,
                     log: { [weak self] line in
+                        // Emit LFS phase when the service starts fetching.
+                        if line == LFSMirrorMessages.fetching {
+                            self?.emit(.phase(lfsPhase))
+                        }
                         self?.log(SyncEngine.redactCredentials(line))
-                    }
+                    },
+                    onProgressLine: progressCallback(for: lfsPhase)
                 )
             }
             lfsReadyToPush = (lfsPrepare == .readyToPush)
@@ -210,7 +230,7 @@ final class SyncEngine {
             emit(.log("[\(label)] \(line)"))
         }
 
-        emit(.phase(.archivingTarget(label)))
+        emit(.phase(SyncPhase(.archivingTarget(label))))
         targetLog("Target: \(label) (filesystem archive)")
 
         do {
@@ -247,7 +267,8 @@ final class SyncEngine {
             emit(.log("[\(rawDstURL)] \(safe)"))
         }
 
-        emit(.phase(.syncingTarget(rawDstURL)))
+        let pushPhase = SyncPhase(.pushingTarget(rawDstURL))
+        emit(.phase(pushPhase))
         targetLog("Target: \(rawDstURL)")
 
         do {
@@ -310,13 +331,15 @@ final class SyncEngine {
             }
 
             targetLog("Pushing to destination...")
+            emit(.phase(pushPhase))
             if repo.usesSelectiveRefSync {
                 try await withTransientRetry(log: targetLog) {
                     try await self.runner.pushSelectiveRefs(
                         mirrorPath: mirrorPath,
                         dstURL: dstURL,
                         refSpecs: pushRefSpecs,
-                        env: dstEnv
+                        env: dstEnv,
+                        onProgressLine: progressCallback(for: pushPhase)
                     )
                 }
             } else {
@@ -324,20 +347,24 @@ final class SyncEngine {
                     try await self.runner.pushMirror(
                         mirrorPath: mirrorPath,
                         dstURL: dstURL,
-                        env: dstEnv
+                        env: dstEnv,
+                        onProgressLine: progressCallback(for: pushPhase)
                     )
                 }
             }
             targetLog("Push complete. ✓")
 
             if lfsReadyToPush {
+                let lfsPushPhase = SyncPhase(.pushingLFS(rawDstURL))
+                emit(.phase(lfsPushPhase))
                 do {
                     try await withTransientRetry(log: targetLog) {
                         try await lfsService.pushToDestination(
                             mirrorPath: mirrorPath,
                             remoteURL: dstURL,
                             env: dstEnv,
-                            log: targetLog
+                            log: targetLog,
+                            onProgressLine: progressCallback(for: lfsPushPhase)
                         )
                     }
                 } catch {
@@ -381,6 +408,18 @@ final class SyncEngine {
 
     private func emit(_ event: SyncEvent) {
         onEvent?(event)
+    }
+
+    /// Builds a thread-safe progress callback that never surfaces raw git stderr to the UI.
+    private func progressCallback(for phase: SyncPhase) -> @Sendable (String) -> Void {
+        let bridge = SyncPhaseProgressBridge(engine: self, phase: phase)
+        return { line in
+            bridge.handleLine(line)
+        }
+    }
+
+    fileprivate func applyParsedProgress(_ phase: SyncPhase) {
+        emit(.phase(phase))
     }
 
     /// Retries transient network git failures within this sync run. Cancel stops before the next sleep.
@@ -438,6 +477,26 @@ final class SyncEngine {
             return ["GIT_SSH_COMMAND": "ssh -i \(path) -o StrictHostKeyChecking=accept-new -o BatchMode=yes"]
         case .httpsToken:
             return ["GIT_TERMINAL_PROMPT": "0"]
+        }
+    }
+}
+
+/// Forwards parsed git progress onto the main-actor SyncEngine without capturing it in a Sendable closure.
+private final class SyncPhaseProgressBridge: @unchecked Sendable {
+    private weak var engine: SyncEngine?
+    private let phase: SyncPhase
+
+    init(engine: SyncEngine, phase: SyncPhase) {
+        self.engine = engine
+        self.phase = phase
+    }
+
+    func handleLine(_ line: String) {
+        let safe = SyncEngine.redactCredentials(line)
+        guard let detail = GitProgressParser.detail(from: safe) else { return }
+        let updated = phase.withProgress(detail)
+        Task { @MainActor [weak engine] in
+            engine?.applyParsedProgress(updated)
         }
     }
 }

@@ -275,6 +275,7 @@ struct SidebarView: View {
         return RepoRowView(
             repo: repo,
             status: status,
+            syncPhase: appVM.syncPhases[repo.id],
             recentRecords: appVM.records[repo.id] ?? [],
             onSyncNow: { appVM.triggerSync(repoID: repo.id) },
             onCancelSync: { appVM.cancelSync(repoID: repo.id) },
