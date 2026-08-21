@@ -1581,7 +1581,13 @@ struct DesignTokensTests {
 
     @Test func sharedLayoutTokensStayStable() {
         #expect(DesignTokens.Layout.popoverWidth == 280)
-        #expect(DesignTokens.Layout.settingsMinWidth == 420)
+        #expect(DesignTokens.Layout.settingsMinWidth == 560)
+        #expect(DesignTokens.Layout.settingsSidebarMinWidth == 140)
+        #expect(DesignTokens.Layout.settingsSidebarIdealWidth == 160)
+        #expect(DesignTokens.Layout.settingsSidebarMaxWidth == 200)
+        #expect(DesignTokens.Layout.settingsDetailMinWidth == 380)
+        #expect(DesignTokens.Layout.settingsSidebarMinWidth < DesignTokens.Layout.settingsSidebarIdealWidth)
+        #expect(DesignTokens.Layout.settingsSidebarIdealWidth < DesignTokens.Layout.settingsSidebarMaxWidth)
         #expect(DesignTokens.Spacing.sheetFooter == 16)
         #expect(DesignTokens.Size.statusDot == 8)
         #expect(DesignTokens.Size.menuBarIconPointSize == 16)
@@ -4523,6 +4529,144 @@ struct SecurityPreferencesStoreTests {
         store.preferences.requireBiometricForSensitive = false
         store.resetToDefaults()
         #expect(store.preferences.requireBiometricForSensitive == true)
+    }
+}
+
+// MARK: - AppBehaviorPreferencesStore / AppLifecyclePolicy
+
+struct AppLifecyclePolicyTests {
+    @Test func keepInMenuBarUsesAccessoryAndDoesNotQuit() {
+        #expect(AppLifecyclePolicy.shouldSwitchToAccessoryAfterLastWindowCloses(keepInMenuBar: true))
+        #expect(!AppLifecyclePolicy.shouldTerminateAfterLastWindowClosed(keepInMenuBar: true))
+    }
+
+    @Test func disableKeepInMenuBarQuitsAfterLastWindow() {
+        #expect(!AppLifecyclePolicy.shouldSwitchToAccessoryAfterLastWindowCloses(keepInMenuBar: false))
+        #expect(AppLifecyclePolicy.shouldTerminateAfterLastWindowClosed(keepInMenuBar: false))
+    }
+
+    @Test func visibleTitledWindowBlocksAccessoryDecision() {
+        #expect(
+            AppLifecyclePolicy.hasVisibleTitledWindow([
+                (isTitled: true, isVisible: true),
+                (isTitled: false, isVisible: true),
+            ])
+        )
+        #expect(
+            !AppLifecyclePolicy.hasVisibleTitledWindow([
+                (isTitled: true, isVisible: false),
+                (isTitled: false, isVisible: true),
+            ])
+        )
+    }
+
+    @Test func settingsSidebarPanesCoverAllGroups() {
+        #expect(SettingsPane.allCases.map(\.rawValue) == [
+            "security",
+            "notifications",
+            "schedule",
+            "webhook",
+            "cache",
+            "configuration",
+        ])
+    }
+}
+
+@MainActor
+struct AppBehaviorPreferencesStoreTests {
+    @Test func loadsDefaultKeepInMenuBarWhenKeyMissing() {
+        let suite = "gitrelay.tests.app-behavior.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = AppBehaviorPreferencesStore(defaults: defaults)
+        #expect(store.preferences.keepInMenuBarWhenMainWindowCloses == true)
+    }
+
+    @Test func persistsAndReloadsKeepInMenuBarToggle() {
+        let suite = "gitrelay.tests.app-behavior.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = AppBehaviorPreferencesStore(defaults: defaults)
+        store.preferences.keepInMenuBarWhenMainWindowCloses = false
+
+        let reloaded = AppBehaviorPreferencesStore(defaults: defaults)
+        #expect(reloaded.preferences.keepInMenuBarWhenMainWindowCloses == false)
+    }
+
+    @Test func resetToDefaultsRestoresKeepInMenuBarOn() {
+        let suite = "gitrelay.tests.app-behavior.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = AppBehaviorPreferencesStore(defaults: defaults)
+        store.preferences.keepInMenuBarWhenMainWindowCloses = false
+        store.resetToDefaults()
+        #expect(store.preferences.keepInMenuBarWhenMainWindowCloses == true)
+    }
+}
+
+@MainActor
+struct LoginItemControllerTests {
+    @Test func enableFailureLeavesToggleOffAndSurfacesError() {
+        let stub = StubLoginItemService(isEnabled: false, requiresApproval: false)
+        stub.nextError = LoginItemServiceError.requiresApproval
+        let controller = LoginItemController(service: stub)
+
+        controller.setEnabled(true)
+
+        #expect(controller.isEnabled == false)
+        #expect(controller.lastErrorMessage != nil)
+    }
+
+    @Test func successfulEnableReflectsServiceState() {
+        let stub = StubLoginItemService(isEnabled: false, requiresApproval: false)
+        let controller = LoginItemController(service: stub)
+
+        controller.setEnabled(true)
+
+        #expect(controller.isEnabled == true)
+        #expect(controller.lastErrorMessage == nil)
+    }
+
+    @Test func requiresApprovalAfterRegisterDoesNotLie() {
+        let stub = StubLoginItemService(isEnabled: false, requiresApproval: false)
+        stub.enableLeavesRequiresApproval = true
+        let controller = LoginItemController(service: stub)
+
+        controller.setEnabled(true)
+
+        #expect(controller.isEnabled == false)
+        #expect(controller.requiresApproval == true)
+        #expect(controller.lastErrorMessage != nil)
+    }
+}
+
+@MainActor
+final class StubLoginItemService: LoginItemManaging {
+    var isEnabled: Bool
+    var requiresApproval: Bool
+    var nextError: Error?
+    var enableLeavesRequiresApproval = false
+
+    init(isEnabled: Bool, requiresApproval: Bool) {
+        self.isEnabled = isEnabled
+        self.requiresApproval = requiresApproval
+    }
+
+    func setEnabled(_ enabled: Bool) throws {
+        if let nextError {
+            self.nextError = nil
+            throw nextError
+        }
+        if enabled && enableLeavesRequiresApproval {
+            isEnabled = false
+            requiresApproval = true
+            return
+        }
+        isEnabled = enabled
+        requiresApproval = false
     }
 }
 

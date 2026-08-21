@@ -35,6 +35,15 @@ extension View {
         )
     }
 
+    /// Pins the Settings sidebar to the narrow DesignTokens width range.
+    func gitRelaySettingsSidebarColumnWidth() -> some View {
+        navigationSplitViewColumnWidth(
+            min: DesignTokens.Layout.settingsSidebarMinWidth,
+            ideal: DesignTokens.Layout.settingsSidebarIdealWidth,
+            max: DesignTokens.Layout.settingsSidebarMaxWidth
+        )
+    }
+
     func gitRelayChrome(_ role: DesignTokens.ChromeRole) -> some View {
         background {
             GitRelayChromeBackground(role: role)

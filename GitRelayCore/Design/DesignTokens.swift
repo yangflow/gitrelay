@@ -16,8 +16,13 @@ enum DesignTokens {
 
         static let popoverWidth: CGFloat = 280
         static let popoverListMaxHeight: CGFloat = 280
-        static let settingsMinWidth: CGFloat = 420
+        /// Overall Settings window (narrow sidebar + detail form).
+        static let settingsMinWidth: CGFloat = 560
         static let settingsMinHeight: CGFloat = 420
+        static let settingsSidebarMinWidth: CGFloat = 140
+        static let settingsSidebarIdealWidth: CGFloat = 160
+        static let settingsSidebarMaxWidth: CGFloat = 200
+        static let settingsDetailMinWidth: CGFloat = 380
         static let verificationSettingsMinHeight: CGFloat = 240
         static let orgSubscriptionSettingsMinHeight: CGFloat = 320
         static let aboutWidth: CGFloat = 280

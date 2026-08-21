@@ -3,6 +3,7 @@ import AppKit
 
 @main
 struct gitrelayApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var appVM = AppViewModel()
 
     var body: some Scene {
@@ -11,18 +12,14 @@ struct gitrelayApp: App {
                 .environment(appVM)
                 .environment(appVM.notificationPreferences)
                 .environment(appVM.securityPreferences)
+                .environment(appVM.appBehaviorPreferences)
                 .environment(appVM.environmentMonitor)
                 .onOpenURL(perform: handleIncomingURL)
+                .onAppear {
+                    appDelegate.behaviorStore = appVM.appBehaviorPreferences
+                }
                 .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { _ in
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(50))
-                        let hasVisibleWindow = NSApp.windows.contains {
-                            $0.styleMask.contains(.titled) && $0.isVisible
-                        }
-                        if !hasVisibleWindow {
-                            NSApp.setActivationPolicy(.accessory)
-                        }
-                    }
+                    handleWindowWillClose()
                 }
         }
         .windowResizability(.contentMinSize)
@@ -45,8 +42,12 @@ struct gitrelayApp: App {
             .environment(appVM.notificationPreferences)
             .environment(appVM.securityPreferences)
             .environment(appVM.cachePreferences)
+            .environment(appVM.appBehaviorPreferences)
             .environment(appVM.environmentMonitor)
             .environment(appVM)
+            .onAppear {
+                appDelegate.behaviorStore = appVM.appBehaviorPreferences
+            }
         }
 
         MenuBarExtra {
@@ -54,6 +55,7 @@ struct gitrelayApp: App {
                 .environment(appVM)
                 .environment(appVM.notificationPreferences)
                 .environment(appVM.securityPreferences)
+                .environment(appVM.appBehaviorPreferences)
                 .environment(appVM.environmentMonitor)
         } label: {
             MenuBarIconLabel(appVM: appVM)
@@ -68,5 +70,19 @@ struct gitrelayApp: App {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         NotificationCenter.default.post(name: .gitrelayOpenMainWindow, object: nil)
+    }
+
+    private func handleWindowWillClose() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(50))
+            let windowStates = NSApp.windows.map {
+                (isTitled: $0.styleMask.contains(.titled), isVisible: $0.isVisible)
+            }
+            guard !AppLifecyclePolicy.hasVisibleTitledWindow(windowStates) else { return }
+            let keepInMenuBar = appVM.appBehaviorPreferences.preferences.keepInMenuBarWhenMainWindowCloses
+            if AppLifecyclePolicy.shouldSwitchToAccessoryAfterLastWindowCloses(keepInMenuBar: keepInMenuBar) {
+                NSApp.setActivationPolicy(.accessory)
+            }
+        }
     }
 }
