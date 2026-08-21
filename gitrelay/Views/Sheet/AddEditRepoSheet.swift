@@ -9,12 +9,14 @@ struct AddEditRepoSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var vm: AddEditRepoViewModel
+    @State private var preflight: AddRepoPreflightViewModel
     @State private var didScrollToAuth = false
 
     init(repo: RepoConfig?, prefill: RepoSourceDropPrefill? = nil, focusAuth: Bool = false) {
         editingRepo = repo
         self.focusAuth = focusAuth
         _vm = State(initialValue: AddEditRepoViewModel(editing: repo, prefill: prefill))
+        _preflight = State(initialValue: AddRepoPreflightViewModel())
     }
 
     private var title: String {
@@ -29,7 +31,46 @@ struct AddEditRepoSheet: View {
     }
 
     private var primaryActionTitle: String {
-        editingRepo == nil ? String(localized: "Add and Start Syncing") : String(localized: "Save")
+        guard editingRepo == nil else { return String(localized: "Save") }
+        if preflight.primaryAction == .createDestination {
+            return AddPreflightCopy.createAndStartSyncTitle
+        }
+        return String(localized: "Add and Start Syncing")
+    }
+
+    /// Preflight only runs while adding: an existing pair has already been probed
+    /// by the sync engine itself.
+    private var runsPreflight: Bool {
+        editingRepo == nil
+    }
+
+    /// A pair GitRelay already mirrors replaces 更多选项 with open / add anyway.
+    /// Only on the basics step: the more-options step must keep its way back.
+    private var showsDuplicatePairChoice: Bool {
+        runsPreflight && showsBasicsOnly && preflight.offersOpenExistingPair
+    }
+
+    private var preflightInput: AddPreflightInput {
+        AddPreflightInput(
+            sourceURL: vm.srcURL,
+            sourceCredentials: RemoteProbeCredentials(
+                mode: vm.srcAuthMode,
+                sshKeyPath: vm.srcKeyPath,
+                token: vm.srcToken
+            ),
+            destinationURL: vm.primaryTargetLocation,
+            destinationCredentials: primaryTargetCredentials,
+            destinationIsFilesystem: vm.primaryTargetUsesFilesystemPath
+        )
+    }
+
+    private var primaryTargetCredentials: RemoteProbeCredentials {
+        guard let target = vm.targets.first else { return RemoteProbeCredentials() }
+        return RemoteProbeCredentials(
+            mode: target.authMode,
+            sshKeyPath: target.keyPath,
+            token: target.token
+        )
     }
 
     /// Basics step: quiet two stacked URL fields (source + target).
@@ -92,6 +133,10 @@ struct AddEditRepoSheet: View {
 
             footer
         }
+        .onAppear { refreshPreflight() }
+        .onChange(of: preflightInput) { _, _ in refreshPreflight() }
+        .onChange(of: appVM.repos.map(\.id)) { _, _ in refreshPreflight() }
+        .onDisappear { preflight.cancel() }
         .frame(
             minWidth: DesignTokens.Layout.addEditRepoSheetMinWidth,
             minHeight: DesignTokens.Layout.addEditRepoSheetMinHeight
@@ -111,21 +156,32 @@ struct AddEditRepoSheet: View {
             Button(String(localized: "Cancel")) { dismiss() }
                 .keyboardShortcut(.escape)
 
-            if showsBasicsOnly {
-                Button(String(localized: "More Options")) {
-                    vm.openMoreOptions()
-                }
+            if showsDuplicatePairChoice {
+                Spacer()
+
+                Button(AddPreflightCopy.openExistingTitle) { openExistingPair() }
+
+                Button(AddPreflightCopy.addAnywayTitle, action: save)
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.return)
             } else {
-                Button(String(localized: "Back")) {
-                    vm.backToBasics()
+                if showsBasicsOnly {
+                    Button(String(localized: "More Options")) {
+                        vm.openMoreOptions()
+                    }
+                } else {
+                    Button(String(localized: "Back")) {
+                        vm.backToBasics()
+                    }
                 }
+
+                Spacer()
+
+                Button(primaryActionTitle, action: save)
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.return)
+                    .disabled(preflight.isCreatingDestination)
             }
-
-            Spacer()
-
-            Button(primaryActionTitle, action: save)
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.return)
         }
         .gitRelaySheetFooterPadding()
     }
@@ -177,6 +233,13 @@ struct AddEditRepoSheet: View {
 
                 if let id = primaryTargetID, let err = vm.targetErrors[id] {
                     Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
+                }
+
+                if runsPreflight, let caption = preflight.caption {
+                    Text(caption)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
@@ -444,10 +507,32 @@ struct AddEditRepoSheet: View {
                 guard await appVM.authorizeSensitiveAction(action) else { return }
             }
         }
+        if runsPreflight {
+            // Creates the empty destination first when that is what the button
+            // promised; a failure stays on the caption line and keeps the sheet.
+            guard await preflight.prepareDestinationForSave() else { return }
+        }
         performSave()
     }
 
+    private func refreshPreflight() {
+        guard runsPreflight else { return }
+        preflight.update(
+            preflightInput,
+            existingRepos: appVM.repos,
+            excluding: vm.editingID
+        )
+    }
+
+    /// Selects the pair GitRelay already mirrors and closes the sheet.
+    private func openExistingPair() {
+        guard let repoID = preflight.existingPairID else { return }
+        appVM.pendingMainWindowRepoID = repoID
+        dismiss()
+    }
+
     private func performSave() {
+        preflight.finish()
         let config = vm.buildRepoConfig()
         vm.saveTokensToKeychain(repoID: config.id)
         vm.rememberLastUsedAuthMode()
