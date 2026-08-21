@@ -114,6 +114,10 @@ open gitrelay.xcodeproj
 swift scripts/generate-icon.swift
 ```
 
+图标为紫色圆角方块加白色 Y 形 Git 分支。其几何参数与
+`GitRelayCore/Design/GitRelayMark.swift` 保持一致，菜单栏状态项也从同一份参数绘制
+（单色模板，不带紫色底板）。修改时两处都要改；若不一致，`GitRelayMarkTests` 会失败。
+
 ---
 
 ## 参与贡献

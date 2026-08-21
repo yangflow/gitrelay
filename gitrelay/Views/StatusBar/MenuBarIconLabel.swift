@@ -23,24 +23,15 @@ struct MenuBarIconLabel: View {
         }
     }
 
-    private static let normalIcon: NSImage = makeIcon(appearance: .normal)
-    private static let failedIcon: NSImage = makeIcon(appearance: .failed)
-
-    /// Same mark in both states. Failure tints it red rather than swapping in a
-    /// second glyph, so a red template image drops out of template rendering.
-    private static func makeIcon(appearance: MenuBarIconAppearance) -> NSImage {
-        var config = NSImage.SymbolConfiguration(
-            pointSize: DesignTokens.Size.menuBarIconPointSize,
-            weight: .semibold
-        )
-        if !appearance.isTemplate {
-            config = config.applying(NSImage.SymbolConfiguration(paletteColors: [.systemRed]))
-        }
-        let image = NSImage(
-            systemSymbolName: MenuBarIconAppearance.symbolName,
-            accessibilityDescription: "GitRelay"
-        )?.withSymbolConfiguration(config) ?? NSImage()
-        image.isTemplate = appearance.isTemplate
-        return image
-    }
+    /// Same Y-branch in both states. Failure tints it red rather than swapping in
+    /// a second glyph, and a tinted mark has to drop template rendering to keep
+    /// the color.
+    private static let normalIcon = MenuBarBranchMark.image(
+        pointSize: DesignTokens.Size.menuBarIconPointSize,
+        color: nil
+    )
+    private static let failedIcon = MenuBarBranchMark.image(
+        pointSize: DesignTokens.Size.menuBarIconPointSize,
+        color: .systemRed
+    )
 }

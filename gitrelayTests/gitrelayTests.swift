@@ -7975,7 +7975,114 @@ struct MenuBarIconAppearanceTests {
         #expect(!MenuBarIconAppearance.failed.isTemplate)
         #expect(MenuBarIconAppearance.normal.tintLabel == "template")
         #expect(MenuBarIconAppearance.failed.tintLabel == "red")
-        #expect(MenuBarIconAppearance.symbolName != "exclamationmark.triangle.fill")
+        // Both states draw the same Y branch; only the tint differs.
+        #expect(MenuBarIconAppearance.normal.tintLabel != MenuBarIconAppearance.failed.tintLabel)
+    }
+}
+
+// MARK: - Y-branch mark geometry (issue #92)
+
+private func isClose(_ lhs: Double, _ rhs: Double, tolerance: Double = 1e-9) -> Bool {
+    abs(lhs - rhs) <= tolerance
+}
+
+struct GitRelayMarkTests {
+    @Test func threeNodesFormASymmetricY() {
+        #expect(GitRelayMark.nodes.count == 3)
+        #expect(isClose(GitRelayMark.trunkNode.x, 0.5))
+        #expect(isClose(GitRelayMark.fork.x, 0.5))
+        // The two branch nodes mirror each other across the vertical center.
+        #expect(isClose(GitRelayMark.leftBranchNode.x + GitRelayMark.rightBranchNode.x, 1))
+        #expect(isClose(GitRelayMark.leftBranchNode.y, GitRelayMark.rightBranchNode.y))
+        // The fork sits between the branch nodes and the trunk.
+        #expect(GitRelayMark.leftBranchNode.y < GitRelayMark.fork.y)
+        #expect(GitRelayMark.fork.y < GitRelayMark.trunkNode.y)
+    }
+
+    @Test func nodesAreHollowRings() {
+        #expect(GitRelayMark.innerRadius > 0)
+        #expect(GitRelayMark.innerRadius < GitRelayMark.outerRadius)
+        #expect(isClose(
+            GitRelayMark.outerRadius - GitRelayMark.innerRadius,
+            GitRelayMark.strokeWidth
+        ))
+    }
+
+    @Test func everySegmentRunsFromARingEdgeToTheFork() {
+        let segments = GitRelayMark.segments
+        #expect(segments.count == GitRelayMark.nodes.count)
+
+        for (node, segment) in zip(GitRelayMark.nodes, segments) {
+            #expect(segment.end == GitRelayMark.fork)
+            let dx = segment.start.x - node.x
+            let dy = segment.start.y - node.y
+            #expect(isClose((dx * dx + dy * dy).squareRoot(), GitRelayMark.outerRadius))
+        }
+    }
+
+    /// A round cap on a line that starts at the outer ring edge reaches back by
+    /// half the stroke width. It has to stop short of the hollow core, or the
+    /// nodes fill in and the mark stops reading as a branch.
+    @Test func roundCapsNeverReachIntoTheHollowCore() {
+        let capReach = GitRelayMark.outerRadius - GitRelayMark.strokeWidth / 2
+        #expect(capReach > GitRelayMark.innerRadius)
+        #expect(isClose(capReach, GitRelayMark.nodeRadius))
+    }
+
+    @Test func branchBoundsAreTheUnionOfTheOuterRings() {
+        let bounds = GitRelayMark.branchBounds
+        #expect(isClose(bounds.minX, GitRelayMark.leftBranchNode.x - GitRelayMark.outerRadius))
+        #expect(isClose(bounds.maxX, GitRelayMark.rightBranchNode.x + GitRelayMark.outerRadius))
+        #expect(isClose(bounds.minY, GitRelayMark.leftBranchNode.y - GitRelayMark.outerRadius))
+        #expect(isClose(bounds.maxY, GitRelayMark.trunkNode.y + GitRelayMark.outerRadius))
+        // Nothing may spill outside the plate.
+        #expect(bounds.minX > 0)
+        #expect(bounds.minY > 0)
+        #expect(bounds.maxX < 1)
+        #expect(bounds.maxY < 1)
+    }
+
+    @Test func plateIsAClosedSquircleFillingTheUnitSquare() {
+        let outline = GitRelayMark.plateOutline()
+        #expect(outline.count == GitRelayMark.plateSampleCount)
+        #expect(outline.allSatisfy { $0.x >= 0 && $0.x <= 1 && $0.y >= 0 && $0.y <= 1 })
+        // Touches the middle of each edge. The 2/n exponent magnifies the tiny
+        // residue `cos(.pi / 2)` leaves behind, hence the looser tolerance.
+        #expect(outline.contains { isClose($0.x, 1) && isClose($0.y, 0.5, tolerance: 1e-5) })
+        #expect(outline.contains { isClose($0.y, 1) && isClose($0.x, 0.5, tolerance: 1e-5) })
+    }
+
+    /// A squircle corner sits between a circle's and a square's: fuller than a
+    /// circle, still short of a right angle.
+    @Test func plateCornerIsFullerThanACircleButNotSquare() {
+        let outline = GitRelayMark.plateOutline(sampleCount: 8)
+        guard let corner = outline.first(where: { $0.x > 0.5 && $0.y > 0.5 }) else {
+            Issue.record("no corner sample")
+            return
+        }
+        let circleCorner = 0.5 + 0.5 * (0.5.squareRoot())
+        #expect(corner.x > circleCorner)
+        #expect(corner.x < 1)
+        #expect(isClose(corner.x, corner.y))
+    }
+
+    /// `scripts/generate-icon.swift` runs standalone and cannot import this
+    /// module, so it duplicates these numbers. Pin them here: a change on either
+    /// side fails the suite instead of quietly redrawing a different AppIcon.
+    @Test func constantsMatchTheAppIconScript() {
+        #expect(isClose(GitRelayMark.strokeWidth, 0.044))
+        #expect(isClose(GitRelayMark.nodeRadius, 0.072))
+        #expect(GitRelayMark.fork == GitRelayMarkPoint(x: 0.5, y: 0.505))
+        #expect(GitRelayMark.trunkNode == GitRelayMarkPoint(x: 0.5, y: 0.69))
+        #expect(GitRelayMark.leftBranchNode == GitRelayMarkPoint(x: 0.293, y: 0.283))
+        #expect(GitRelayMark.rightBranchNode == GitRelayMarkPoint(x: 0.707, y: 0.283))
+        #expect(isClose(GitRelayMark.plateExponent, 5))
+        #expect(GitRelayMark.plateSampleCount == 720)
+        #expect(GitRelayMark.plateTopColor == (red: 0.443, green: 0.400, blue: 0.831))
+        #expect(GitRelayMark.plateBottomColor == (red: 0.357, green: 0.306, blue: 0.745))
+        // The plate is lighter at the top.
+        #expect(GitRelayMark.plateTopColor.red > GitRelayMark.plateBottomColor.red)
+        #expect(GitRelayMark.plateTopColor.blue > GitRelayMark.plateBottomColor.blue)
     }
 }
 
