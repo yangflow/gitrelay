@@ -13,6 +13,7 @@ struct gitrelayApp: App {
                 .environment(appVM.notificationPreferences)
                 .environment(appVM.securityPreferences)
                 .environment(appVM.appBehaviorPreferences)
+                .environment(appVM.windowLayout)
                 .environment(appVM.environmentMonitor)
                 .onOpenURL(perform: handleIncomingURL)
                 .onAppear {

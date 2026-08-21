@@ -1,19 +1,14 @@
 import SwiftUI
 
-private enum RepoDetailTab: String, CaseIterable, Identifiable {
-    case overview = "Overview"
-    case releases = "Releases"
-
-    var id: String { rawValue }
-}
-
 struct RepoDetailView: View {
     let repo: RepoConfig
     @Environment(AppViewModel.self) private var appVM
+    @Environment(WindowLayoutStore.self) private var windowLayout
 
     @State private var detailVM = RepoDetailViewModel()
     @State private var selectedTab: RepoDetailTab = .overview
     @State private var scrollToSyncLogToken: UUID?
+    @State private var didRestoreDetailTab = false
 
     private var status: SyncStatus { appVM.statuses[repo.id] ?? .unknown }
     private var records: [SyncRecord] { appVM.records[repo.id] ?? [] }
@@ -24,7 +19,7 @@ struct RepoDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             Picker("Detail Page", selection: $selectedTab) {
                 ForEach(RepoDetailTab.allCases) { tab in
-                    Text(LocalizedStringKey(tab.rawValue)).tag(tab)
+                    Text(tab.localizedTitle).tag(tab)
                 }
             }
             .pickerStyle(.segmented)
@@ -53,6 +48,13 @@ struct RepoDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onAppear {
+            restoreDetailTabIfNeeded()
+        }
+        .onChange(of: selectedTab) { _, newValue in
+            guard didRestoreDetailTab else { return }
+            windowLayout.detailTab = newValue
+        }
         .task(id: repo.id) {
             await detailVM.loadBranches(for: repo.id)
             await detailVM.loadReleaseStatus(for: repo)
@@ -131,6 +133,12 @@ struct RepoDetailView: View {
         Divider()
     }
 
+    private func restoreDetailTabIfNeeded() {
+        guard !didRestoreDetailTab else { return }
+        selectedTab = windowLayout.detailTab
+        didRestoreDetailTab = true
+    }
+
     private func scrollToSyncLog() {
         selectedTab = .overview
         scrollToSyncLogToken = UUID()
@@ -145,4 +153,15 @@ struct RepoDetailView: View {
 
 private enum RepoDetailScrollTarget {
     static let syncLog = "repo-detail-sync-log"
+}
+
+private extension RepoDetailTab {
+    var localizedTitle: String {
+        switch self {
+        case .overview:
+            String(localized: "Overview")
+        case .releases:
+            String(localized: "Releases")
+        }
+    }
 }

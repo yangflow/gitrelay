@@ -104,6 +104,7 @@ final class AppViewModel {
     let securityPreferences: SecurityPreferencesStore
     let cachePreferences: CachePreferencesStore
     let appBehaviorPreferences: AppBehaviorPreferencesStore
+    let windowLayout: WindowLayoutStore
     let environmentMonitor = SyncEnvironmentMonitor()
     let quietHoursMonitor = QuietHoursMonitor()
     let failureNotifier = SyncFailureNotifier()
@@ -147,6 +148,7 @@ final class AppViewModel {
         cachePreferencesStore: CachePreferencesStore? = nil,
         notificationPreferencesStore: NotificationPreferencesStore? = nil,
         appBehaviorPreferencesStore: AppBehaviorPreferencesStore? = nil,
+        windowLayoutStore: WindowLayoutStore? = nil,
         biometricAuthenticator: BiometricAuthenticating? = nil
     ) {
         let store = verificationPreferencesStore ?? VerificationPreferencesStore()
@@ -163,6 +165,7 @@ final class AppViewModel {
         self.cachePreferences = cachePreferencesStore ?? CachePreferencesStore()
         self.notificationPreferences = notificationPreferencesStore ?? NotificationPreferencesStore()
         self.appBehaviorPreferences = appBehaviorPreferencesStore ?? AppBehaviorPreferencesStore()
+        self.windowLayout = windowLayoutStore ?? WindowLayoutStore()
         self.biometricAuthenticator = biometricAuthenticator ?? LocalAuthenticationClient()
         syncConcurrencyGate.updateMaxConcurrent(
             notificationPreferences.preferences.maxConcurrentSyncs
@@ -174,6 +177,8 @@ final class AppViewModel {
         } catch {
             errorMessage = String(localized: "Failed to load repository configuration: \(error.localizedDescription)")
         }
+
+        self.windowLayout.reconcileSelection(withExistingIDs: Set(repos.map(\.id)))
 
         failureNotifier.onSyncAgain = { [weak self] id in
             self?.triggerSync(repoID: id)
@@ -339,6 +344,7 @@ final class AppViewModel {
             .appendingPathComponent("verify-scratch")
             .appendingPathComponent(id.uuidString)
         try? FileManager.default.removeItem(at: scratch)
+        windowLayout.reconcileSelection(withExistingIDs: Set(repos.map(\.id)))
         saveRepos()
         refreshWebhookListener()
         refreshMirrorCacheUsage()

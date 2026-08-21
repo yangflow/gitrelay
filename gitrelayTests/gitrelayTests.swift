@@ -4933,6 +4933,186 @@ struct AppBehaviorPreferencesStoreTests {
     }
 }
 
+// MARK: - WindowLayoutStore
+
+@MainActor
+struct WindowLayoutStoreTests {
+    @Test func loadsDefaultsWhenKeysMissing() {
+        let suite = "gitrelay.tests.window-layout.defaults.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = WindowLayoutStore(defaults: defaults)
+        #expect(store.selectedRepoID == nil)
+        #expect(store.detailTab == .overview)
+        #expect(store.sidebarWidth == DesignTokens.Layout.sidebarIdealWidth)
+    }
+
+    @Test func persistsAndReloadsSelectionTabAndSidebarWidth() {
+        let suite = "gitrelay.tests.window-layout.roundtrip.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let repoID = UUID()
+        let store = WindowLayoutStore(defaults: defaults)
+        store.selectedRepoID = repoID
+        store.detailTab = .releases
+        store.sidebarWidth = 280
+
+        let reloaded = WindowLayoutStore(defaults: defaults)
+        #expect(reloaded.selectedRepoID == repoID)
+        #expect(reloaded.detailTab == .releases)
+        #expect(reloaded.sidebarWidth == 280)
+    }
+
+    @Test func reconcileSelectionClearsMissingRepoID() {
+        let suite = "gitrelay.tests.window-layout.ghost.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let gone = UUID()
+        let kept = UUID()
+        let store = WindowLayoutStore(defaults: defaults)
+        store.selectedRepoID = gone
+
+        store.reconcileSelection(withExistingIDs: [kept])
+        #expect(store.selectedRepoID == nil)
+
+        let reloaded = WindowLayoutStore(defaults: defaults)
+        #expect(reloaded.selectedRepoID == nil)
+    }
+
+    @Test func reconcileSelectionKeepsExistingRepoID() {
+        let suite = "gitrelay.tests.window-layout.keep.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let repoID = UUID()
+        let store = WindowLayoutStore(defaults: defaults)
+        store.selectedRepoID = repoID
+
+        store.reconcileSelection(withExistingIDs: [repoID])
+        #expect(store.selectedRepoID == repoID)
+    }
+
+    @Test func invalidStoredTabFallsBackToOverview() {
+        let suite = "gitrelay.tests.window-layout.bad-tab.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        defaults.set("not-a-tab", forKey: "WindowLayout.detailTab")
+        let store = WindowLayoutStore(defaults: defaults)
+        #expect(store.detailTab == .overview)
+    }
+
+    @Test func invalidStoredRepoIDStringClearsSelection() {
+        let suite = "gitrelay.tests.window-layout.bad-id.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        defaults.set("not-a-uuid", forKey: "WindowLayout.selectedRepoID")
+        let store = WindowLayoutStore(defaults: defaults)
+        #expect(store.selectedRepoID == nil)
+    }
+
+    @Test func sidebarWidthClampsToDesignTokenRange() {
+        let suite = "gitrelay.tests.window-layout.clamp.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = WindowLayoutStore(defaults: defaults)
+        store.layout = WindowLayout(
+            selectedRepoID: nil,
+            detailTab: .overview,
+            sidebarWidth: 10
+        )
+        #expect(store.sidebarWidth == DesignTokens.Layout.sidebarMinWidth)
+
+        store.layout = WindowLayout(
+            selectedRepoID: nil,
+            detailTab: .overview,
+            sidebarWidth: 999
+        )
+        #expect(store.sidebarWidth == DesignTokens.Layout.sidebarMaxWidth)
+    }
+
+    @Test func sidebarWidthSetterIgnoresOutOfRangeProbes() {
+        let suite = "gitrelay.tests.window-layout.ignore-probe.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = WindowLayoutStore(defaults: defaults)
+        store.sidebarWidth = 260
+        store.sidebarWidth = 0
+        #expect(store.sidebarWidth == 260)
+        store.sidebarWidth = 9_999
+        #expect(store.sidebarWidth == 260)
+    }
+
+    @Test func deleteRepoClearsPersistedSelectionForRemovedID() {
+        let suite = "gitrelay.tests.window-layout.delete.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-window-layout-delete-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        Constants.setBaseDirectoryForTesting(base)
+        defer { try? FileManager.default.removeItem(at: base) }
+
+        let layoutStore = WindowLayoutStore(defaults: defaults)
+        let vm = AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
+            windowLayoutStore: layoutStore
+        )
+        let repoID = UUID()
+        vm.addRepo(
+            RepoConfig(
+                id: repoID,
+                name: "doomed",
+                srcURL: "git@github.com:user/doomed.git",
+                dstURL: "git@github.com:user/doomed-mirror.git",
+                frequency: .manual
+            )
+        )
+        layoutStore.selectedRepoID = repoID
+
+        vm.deleteRepo(id: repoID)
+
+        #expect(layoutStore.selectedRepoID == nil)
+        let reloaded = WindowLayoutStore(defaults: defaults)
+        #expect(reloaded.selectedRepoID == nil)
+    }
+}
+
+struct WindowLayoutModelTests {
+    @Test func reconciledClearsGhostSelection() {
+        let ghost = UUID()
+        let layout = WindowLayout(
+            selectedRepoID: ghost,
+            detailTab: .releases,
+            sidebarWidth: 260
+        )
+        let reconciled = layout.reconciled(withExistingIDs: [UUID()])
+        #expect(reconciled.selectedRepoID == nil)
+        #expect(reconciled.detailTab == .releases)
+        #expect(reconciled.sidebarWidth == 260)
+    }
+
+    @Test func clampedSidebarWidthRespectsMinMax() {
+        #expect(
+            WindowLayout.clampedSidebarWidth(0)
+                == Double(DesignTokens.Layout.sidebarMinWidth)
+        )
+        #expect(
+            WindowLayout.clampedSidebarWidth(10_000)
+                == Double(DesignTokens.Layout.sidebarMaxWidth)
+        )
+        #expect(WindowLayout.clampedSidebarWidth(240) == 240)
+    }
+}
+
 @MainActor
 struct LoginItemControllerTests {
     @Test func enableFailureLeavesToggleOffAndSurfacesError() {
