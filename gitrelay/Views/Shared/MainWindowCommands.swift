@@ -15,7 +15,9 @@ struct MainWindowCommands: Commands {
             )
         }
 
-        CommandGroup(replacing: .textFinding) {
+        // `.textFinding` is unavailable on the macOS 14/15 SDK used by CI; place
+        // Find after the standard text-editing group so ⌘F still appears in Edit.
+        CommandGroup(after: .textEditing) {
             Button(MainWindowShortcutBinding.focusSearch.menuTitle) {
                 appVM.requestFocusSidebarSearch()
             }
