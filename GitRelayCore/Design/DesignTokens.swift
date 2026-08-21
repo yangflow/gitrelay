@@ -27,6 +27,16 @@ enum DesignTokens {
         static let orgSubscriptionSettingsMinHeight: CGFloat = 320
         static let aboutWidth: CGFloat = 280
         static let aboutIconSize: CGFloat = 80
+
+        /// Pair-table column sizing (源 / 目标 / 状态 / 上次).
+        static let pairTablePathColumnMin: CGFloat = 140
+        static let pairTablePathColumnIdeal: CGFloat = 220
+        static let pairTableStatusColumnMin: CGFloat = 80
+        static let pairTableStatusColumnIdeal: CGFloat = 96
+        static let pairTableLastColumnMin: CGFloat = 80
+        static let pairTableLastColumnIdeal: CGFloat = 104
+        /// Determinate-free progress bar in the queue pane.
+        static let queueProgressWidth: CGFloat = 170
     }
 
     enum Spacing {
@@ -58,6 +68,11 @@ enum DesignTokens {
         static let popoverChromeVertical: CGFloat = 10
         static let settingsForm: CGFloat = 16
         static let aboutSection: CGFloat = 6
+
+        static let paneHeaderHorizontal: CGFloat = 20
+        static let paneHeaderTop: CGFloat = 18
+        static let paneHeaderBottom: CGFloat = 12
+        static let paneTabGap: CGFloat = 18
     }
 
     enum CornerRadius {
@@ -74,6 +89,8 @@ enum DesignTokens {
         static let searchFieldMinHeight: CGFloat = 28
         static let menuBarIconPointSize: CGFloat = 16
         static let aboutIcon: CGFloat = 80
+        static let runIndicatorDot: CGFloat = 7
+        static let paneTabUnderline: CGFloat = 2
     }
 
     /// Semantic status colors shared by sidebar dots, detail labels, menu bar, and widgets.
