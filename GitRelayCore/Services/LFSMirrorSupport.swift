@@ -84,6 +84,19 @@ enum LFSMirrorMessages {
     static func isMissingGitLFSWarning(_ line: String) -> Bool {
         line == missingGitLFSWarning
     }
+
+    /// True when any recent sync log (or per-target log) recorded the missing-git-lfs warning.
+    static func recentRecordsContainMissingToolWarning(_ records: [SyncRecord]) -> Bool {
+        for record in records.reversed() {
+            if record.logLines.contains(where: isMissingGitLFSWarning) {
+                return true
+            }
+            for target in record.targetResults where target.logLines.contains(where: isMissingGitLFSWarning) {
+                return true
+            }
+        }
+        return false
+    }
 }
 
 /// Candidate locations for the `git-lfs` binary (GUI apps often lack Homebrew on PATH).

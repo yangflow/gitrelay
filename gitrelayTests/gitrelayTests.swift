@@ -981,6 +981,105 @@ struct WidgetHealthSnapshotTests {
     }
 }
 
+// MARK: - BackupCompleteness
+
+struct BackupCompletenessTests {
+    @Test func shallowRepoShowsIncompleteMark() {
+        let repo = RepoConfig(
+            name: "shallow",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            depth: 50
+        )
+
+        let completeness = BackupCompleteness.evaluate(repo: repo)
+
+        #expect(completeness.showsIncompleteMark)
+        #expect(completeness.reasons == [.shallowClone])
+        #expect(completeness.helpText?.contains("shallow clone") == true)
+    }
+
+    @Test func fullRepoDoesNotShowIncompleteMark() {
+        let repo = RepoConfig(
+            name: "full",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git"
+        )
+
+        let completeness = BackupCompleteness.evaluate(repo: repo)
+
+        #expect(!completeness.showsIncompleteMark)
+        #expect(completeness.reasons.isEmpty)
+        #expect(completeness.helpText == nil)
+    }
+
+    @Test func customRefFiltersShowIncompleteMark() {
+        let repo = RepoConfig(
+            name: "filtered",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            refSpecs: ["+refs/heads/main:refs/heads/main"]
+        )
+
+        let completeness = BackupCompleteness.evaluate(repo: repo)
+
+        #expect(completeness.showsIncompleteMark)
+        #expect(completeness.reasons == [.customRefFilters])
+        #expect(completeness.helpText?.contains("custom ref filters") == true)
+    }
+
+    @Test func needsCredentialsAloneDoesNotShowIncompleteMark() {
+        let repo = RepoConfig(
+            name: "imported",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            needsCredentials: true
+        )
+
+        let completeness = BackupCompleteness.evaluate(repo: repo)
+
+        #expect(!completeness.showsIncompleteMark)
+        #expect(completeness.reasons.isEmpty)
+    }
+
+    @Test func missingGitLFSFromRecentSyncShowsIncompleteMark() {
+        let repo = RepoConfig(
+            name: "lfs",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git"
+        )
+        var record = SyncRecord(repoID: repo.id)
+        record.succeeded = true
+        record.finishedAt = Date()
+        record.logLines = [LFSMirrorMessages.missingGitLFSWarning]
+
+        let completeness = BackupCompleteness.evaluate(repo: repo, recentRecords: [record])
+
+        #expect(completeness.showsIncompleteMark)
+        #expect(completeness.reasons == [.missingGitLFSTool])
+        #expect(completeness.helpText?.contains("git-lfs") == true)
+    }
+
+    @Test func shallowPlusMissingLFSListsBothReasons() {
+        let repo = RepoConfig(
+            name: "both",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            depth: 10
+        )
+        var record = SyncRecord(repoID: repo.id)
+        record.succeeded = true
+        record.logLines = [LFSMirrorMessages.missingGitLFSWarning]
+
+        let completeness = BackupCompleteness.evaluate(repo: repo, recentRecords: [record])
+
+        #expect(completeness.showsIncompleteMark)
+        #expect(completeness.reasons == [.shallowClone, .missingGitLFSTool])
+        #expect(completeness.helpText?.contains("shallow clone") == true)
+        #expect(completeness.helpText?.contains("git-lfs") == true)
+    }
+}
+
 // MARK: - RepoRowHealthPresentation
 
 struct RepoRowHealthPresentationTests {

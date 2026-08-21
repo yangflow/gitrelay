@@ -22,18 +22,27 @@ struct RepoRowView: View {
         RepoFailureNextStep.make(repo: repo, status: status, recentRecords: recentRecords)
     }
 
+    private var backupCompleteness: BackupCompleteness {
+        BackupCompleteness.evaluate(repo: repo, recentRecords: recentRecords)
+    }
+
     var body: some View {
         HStack(spacing: DesignTokens.Spacing.statusDotGap) {
             StatusDotView(status: status)
 
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
-                Text(repo.name)
-                    .foregroundStyle(
-                        isEscalatedFailure
-                            ? DesignTokens.StatusColor.escalatedFailure
-                            : .primary
-                    )
-                    .lineLimit(1)
+                HStack(spacing: DesignTokens.Spacing.xxs) {
+                    Text(repo.name)
+                        .foregroundStyle(
+                            isEscalatedFailure
+                                ? DesignTokens.StatusColor.escalatedFailure
+                                : .primary
+                        )
+                        .lineLimit(1)
+                    if backupCompleteness.showsIncompleteMark, let help = backupCompleteness.helpText {
+                        IncompleteBackupMarkView(helpText: help)
+                    }
+                }
 
                 RepoRowCaptionView(caption: presentation)
 
@@ -95,6 +104,9 @@ struct RepoRowView: View {
             statusText = String(localized: "Content divergence")
         case .failed:
             statusText = String(localized: "Last Sync Failed")
+        }
+        if let help = backupCompleteness.helpText {
+            return "\(repo.name), \(statusText), \(help)"
         }
         return "\(repo.name), \(statusText)"
     }

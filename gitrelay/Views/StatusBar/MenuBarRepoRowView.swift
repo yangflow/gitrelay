@@ -20,6 +20,10 @@ struct MenuBarRepoRowView: View {
         RepoFailureNextStep.make(repo: repo, status: status, recentRecords: recentRecords)
     }
 
+    private var backupCompleteness: BackupCompleteness {
+        BackupCompleteness.evaluate(repo: repo, recentRecords: recentRecords)
+    }
+
     private var canSync: Bool {
         MenuBarPopoverFilter.canTriggerSync(for: status)
     }
@@ -29,13 +33,18 @@ struct MenuBarRepoRowView: View {
             StatusDotView(status: status)
 
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
-                Text(repo.name)
-                    .foregroundStyle(
-                        isEscalatedFailure
-                            ? DesignTokens.StatusColor.escalatedFailure
-                            : .primary
-                    )
-                    .lineLimit(1)
+                HStack(spacing: DesignTokens.Spacing.xxs) {
+                    Text(repo.name)
+                        .foregroundStyle(
+                            isEscalatedFailure
+                                ? DesignTokens.StatusColor.escalatedFailure
+                                : .primary
+                        )
+                        .lineLimit(1)
+                    if backupCompleteness.showsIncompleteMark, let help = backupCompleteness.helpText {
+                        IncompleteBackupMarkView(helpText: help)
+                    }
+                }
                 RepoRowCaptionView(caption: presentation)
                 RepoFailureNextStepActionsView(
                     nextStep: nextStep,
