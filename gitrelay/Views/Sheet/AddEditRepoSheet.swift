@@ -95,7 +95,7 @@ struct AddEditRepoSheet: View {
 
             if showsBasicsOnly {
                 Button(String(localized: "More Options")) {
-                    _ = vm.openMoreOptions()
+                    vm.openMoreOptions()
                 }
             } else {
                 Button(String(localized: "Back")) {

@@ -169,15 +169,9 @@ final class AddEditRepoViewModel {
         }
     }
 
-    /// Opens the optional more-options step after required fields validate.
-    @discardableResult
-    func openMoreOptions() -> Bool {
-        guard validateBasics() else {
-            showsMoreOptions = false
-            return false
-        }
+    /// Opens the optional more-options step. Does not validate — Save / Add and Start Syncing own validation.
+    func openMoreOptions() {
         showsMoreOptions = true
-        return true
     }
 
     func backToBasics() {

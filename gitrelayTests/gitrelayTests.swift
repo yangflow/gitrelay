@@ -2396,17 +2396,30 @@ struct AddEditRepoTwoStepTests {
         #expect(repo.depth == nil)
     }
 
-    @Test func openMoreOptionsStaysOnStepOneWhenInvalid() {
+    @Test func openMoreOptionsWorksWithoutFilledBasics() {
         let vm = AddEditRepoViewModel()
-        #expect(!vm.openMoreOptions())
         #expect(!vm.showsMoreOptions)
+
+        vm.openMoreOptions()
+        #expect(vm.showsMoreOptions)
+        // Validation is deferred to Save / Add and Start Syncing.
+        #expect(vm.nameError == nil)
+
+        vm.backToBasics()
+        #expect(!vm.showsMoreOptions)
+    }
+
+    @Test func saveStillRequiresBasicsEvenAfterVisitingMoreOptions() {
+        let vm = AddEditRepoViewModel()
+        vm.openMoreOptions()
+        #expect(!vm.validate())
         #expect(vm.nameError != nil)
+        #expect(vm.srcError != nil)
 
         vm.name = "ready"
         vm.srcURL = "git@github.com:acme/source.git"
         setPrimaryTargetURL(vm, "git@github.com:acme/mirror.git")
-        #expect(vm.openMoreOptions())
-        #expect(vm.showsMoreOptions)
+        #expect(vm.validate())
     }
 
     @Test func droppedURLPrefillsSourceAndInferredName() {
@@ -2470,8 +2483,6 @@ struct AddEditRepoTwoStepTests {
 
         #expect(vm.openMoreOptions())
         #expect(vm.showsMoreOptions)
-
-        vm.lfsMirrorMode = .auto
         vm.webhookEnabled = false
         let saved = vm.buildRepoConfig()
         #expect(saved.lfsMirrorMode == .auto)
