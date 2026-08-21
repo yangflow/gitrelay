@@ -5,12 +5,7 @@ struct SyncHistorySparklineView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            HStack {
-                Text("Syncs in the Last 30 Days")
-                    .font(.headline)
-                Spacer()
-                legend
-            }
+            legend
 
             GeometryReader { geometry in
                 HStack(alignment: .bottom, spacing: DesignTokens.Spacing.xxxs) {
@@ -26,18 +21,22 @@ struct SyncHistorySparklineView: View {
     }
 
     private var legend: some View {
-        HStack(spacing: DesignTokens.Spacing.popoverChromeVertical) {
-            legendItem(title: "Succeeded", color: DesignTokens.StatusColor.success)
-            legendItem(title: "Failed", color: DesignTokens.StatusColor.escalatedFailure)
+        HStack(spacing: DesignTokens.Spacing.sm) {
+            legendItem(title: String(localized: "Succeeded"), color: DesignTokens.StatusColor.success)
+            legendItem(title: String(localized: "Failed"), color: DesignTokens.StatusColor.escalatedFailure)
+            Spacer(minLength: 0)
         }
         .font(.caption2)
         .foregroundStyle(.secondary)
     }
 
     private func legendItem(title: String, color: Color) -> some View {
-        Label(title, systemImage: "square.fill")
-            .labelStyle(.titleAndIcon)
-            .foregroundStyle(color)
+        HStack(spacing: DesignTokens.Spacing.xxxs) {
+            Circle()
+                .fill(color)
+                .frame(width: DesignTokens.Size.statusDot, height: DesignTokens.Size.statusDot)
+            Text(title)
+        }
     }
 
     private func dayColumn(_ day: SyncHistorySparkline.Day, maxHeight: CGFloat) -> some View {

@@ -7,7 +7,7 @@ struct RepoHeaderView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             Text(repo.name)
-                .font(.title2)
+                .font(.title3)
                 .fontWeight(.semibold)
 
             LabeledContent(String(localized: "Source")) {
@@ -23,9 +23,9 @@ struct RepoHeaderView: View {
                 }
             } else {
                 LabeledContent(String(localized: "Targets (\(repo.targets.count))")) {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
                         ForEach(Array(repo.targets.enumerated()), id: \.element.id) { index, target in
-                            HStack(spacing: 6) {
+                            HStack(spacing: DesignTokens.Spacing.xs) {
                                 Text(String(localized: "\(index + 1)."))
                                     .foregroundStyle(.secondary)
                                 targetLabel(target)
@@ -75,14 +75,11 @@ struct RepoHeaderView: View {
 
     @ViewBuilder
     private func targetLabel(_ target: MirrorTarget) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: DesignTokens.Spacing.xs) {
             if target.kind == .filesystem {
                 Text(String(localized: "Archive"))
                     .font(.caption2)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
-                    .background(Color.secondary.opacity(0.15))
-                    .clipShape(.rect(cornerRadius: 3))
+                    .foregroundStyle(.secondary)
             }
             Text(target.displayLabel)
                 .font(.system(.caption, design: .monospaced))

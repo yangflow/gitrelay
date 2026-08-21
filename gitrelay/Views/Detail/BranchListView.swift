@@ -5,19 +5,15 @@ struct BranchListView: View {
     let isLoading: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
-            Text(String(localized: "Branches"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
+        Group {
             if isLoading {
                 ProgressView()
-                    .scaleEffect(0.7)
+                    .controlSize(.small)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else if branches.isEmpty {
                 Text(String(localized: "No Branches Detected (Visible After Sync)"))
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
             } else {
                 VStack(spacing: 0) {
                     ForEach(branches) { branch in
@@ -34,14 +30,12 @@ struct BranchListView: View {
                                 .font(.system(.caption, design: .monospaced))
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.vertical, 3)
-                        .padding(.horizontal, DesignTokens.Spacing.sm)
+                        .padding(.vertical, DesignTokens.Spacing.xxxs)
                         if branch.id != branches.last?.id {
                             Divider()
                         }
                     }
                 }
-                .gitRelayPanelSurface()
             }
         }
     }

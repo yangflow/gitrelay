@@ -172,8 +172,6 @@ enum DesignTokens {
         static let bannerWarningFill = StatusColor.warning.opacity(0.12)
         static let destructiveFill = StatusColor.error.opacity(0.08)
         static let forceUpdateFill = StatusColor.warning.opacity(0.08)
-        static let statusCalloutFill = StatusColor.diverged.opacity(0.08)
-        static let statusCalloutStroke = StatusColor.diverged.opacity(0.3)
     }
 
     /// AppKit visual-effect materials for window chrome.

@@ -10,31 +10,31 @@ struct RepoIdleRowView: View {
     let onVerifyNow: () -> Void
 
     var body: some View {
-        HStack {
+        HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
                 RepoStatusLabel(status: status)
                 if let lastSyncedAt {
-                    Text("Last synced: \(lastSyncedAt.formatted(.dateTime.year().month().day().hour().minute()))")
+                    Text(String(localized: "Last synced: \(lastSyncedAt.formatted(.dateTime.year().month().day().hour().minute()))"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 if let lastVerifiedAt {
-                    Text("Last verified: \(lastVerifiedAt.formatted(.relative(presentation: .named)))")
+                    Text(String(localized: "Last verified: \(lastVerifiedAt.formatted(.relative(presentation: .named)))"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 if let nextFireDate {
-                    Text("Next sync: \(nextFireDate.formatted(.relative(presentation: .named))) (the app must remain running)")
+                    Text(String(localized: "Next sync: \(nextFireDate.formatted(.relative(presentation: .named))) (the app must remain running)"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-            Spacer()
+            Spacer(minLength: DesignTokens.Spacing.md)
             VStack(spacing: DesignTokens.Spacing.xs) {
-                Button("Verify Now", action: onVerifyNow)
+                Button(String(localized: "Verify Now"), action: onVerifyNow)
                     .buttonStyle(.bordered)
                     .disabled(isVerifying || status == .syncing)
-                Button("Sync Now", action: onSyncNow)
+                Button(String(localized: "Sync Now"), action: onSyncNow)
                     .buttonStyle(.borderedProminent)
                     .disabled(isVerifying || status == .syncing)
             }
