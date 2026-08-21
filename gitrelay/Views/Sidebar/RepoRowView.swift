@@ -5,6 +5,7 @@ struct RepoRowView: View {
     let status: SyncStatus
     var recentRecords: [SyncRecord] = []
     let onSyncNow: () -> Void
+    let onCancelSync: () -> Void
     let onVerifyNow: () -> Void
     let onEdit: () -> Void
     let onReenterCredentials: () -> Void
@@ -51,12 +52,15 @@ struct RepoRowView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
         .contextMenu {
-            Button("Sync Now", action: onSyncNow)
-                .disabled(status == .syncing)
+            if status == .queued || status == .syncing {
+                Button(String(localized: "Cancel"), action: onCancelSync)
+            } else {
+                Button("Sync Now", action: onSyncNow)
+            }
             Button("Verify Now", action: onVerifyNow)
-                .disabled(status == .syncing)
+                .disabled(status == .syncing || status == .queued)
             Button(String(localized: "Free Space"), action: onFreeSpace)
-                .disabled(status == .syncing)
+                .disabled(status == .syncing || status == .queued)
             if nextStep.showsReenterCredentials {
                 Button(String(localized: "Re-enter credentials"), action: onReenterCredentials)
             }
@@ -84,6 +88,8 @@ struct RepoRowView: View {
             statusText = String(localized: "src is \(count) commits ahead")
         case .syncing:
             statusText = String(localized: "Syncing...")
+        case .queued:
+            statusText = String(localized: "Queued")
         case .diverged:
             statusText = String(localized: "Content divergence")
         case .failed:

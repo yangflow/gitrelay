@@ -26,6 +26,9 @@ struct RepoStatusLabel: View {
         case .syncing:
             Text("Syncing...")
                 .foregroundStyle(DesignTokens.StatusColor.syncing)
+        case .queued:
+            Text(String(localized: "Queued"))
+                .foregroundStyle(DesignTokens.StatusColor.queued)
         case .failed:
             Text("Last Sync Failed")
                 .foregroundStyle(DesignTokens.StatusColor.failed)

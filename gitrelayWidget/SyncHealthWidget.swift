@@ -209,6 +209,8 @@ private struct SyncHealthAttentionRow: View {
             return repo.message
         case .syncing:
             return String(localized: "Syncing")
+        case .queued:
+            return String(localized: "Queued")
         case .unknown:
             return String(localized: "Not Synced")
         case .success:

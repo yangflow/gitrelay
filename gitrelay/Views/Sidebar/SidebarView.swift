@@ -277,6 +277,7 @@ struct SidebarView: View {
             status: status,
             recentRecords: appVM.records[repo.id] ?? [],
             onSyncNow: { appVM.triggerSync(repoID: repo.id) },
+            onCancelSync: { appVM.cancelSync(repoID: repo.id) },
             onVerifyNow: { appVM.triggerVerify(repoID: repo.id) },
             onEdit: { sheetMode = .edit(repo, focusAuth: false) },
             onReenterCredentials: { appVM.requestReenterCredentials(repoID: repo.id) },

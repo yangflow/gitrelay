@@ -89,7 +89,7 @@ final class AppViewModel {
         )
     }
 
-    let notificationPreferences = NotificationPreferencesStore()
+    let notificationPreferences: NotificationPreferencesStore
     let orgSubscriptionStore: OrgSubscriptionStore
     let securityPreferences: SecurityPreferencesStore
     let cachePreferences: CachePreferencesStore
@@ -101,6 +101,7 @@ final class AppViewModel {
 
     private let biometricAuthenticator: BiometricAuthenticating
     private let scheduler = SyncScheduler()
+    private let syncConcurrencyGate = SyncConcurrencyGate()
     private let verificationScheduler = VerificationScheduler()
     private let orgSubscriptionScheduler = OrgSubscriptionScheduler()
     private let orgSubscriptionPoller: OrgSubscriptionPoller
@@ -114,6 +115,9 @@ final class AppViewModel {
     private var quietHoursCatchUp = QuietHoursCatchUpTracker()
     private var lastScheduledSkipLogAt: Date?
     private var wasScheduledSyncPaused = false
+
+    /// Test seam: admitted syncs stay in-progress without launching SyncEngine / git.
+    var suspendSyncEngineForTesting = false
 
     /// Bound loopback port when the webhook listener is running.
     var webhookListenPort: UInt16? { webhookListener.port }
@@ -130,6 +134,7 @@ final class AppViewModel {
         webhookPreferencesStore: WebhookPreferencesStore? = nil,
         securityPreferencesStore: SecurityPreferencesStore? = nil,
         cachePreferencesStore: CachePreferencesStore? = nil,
+        notificationPreferencesStore: NotificationPreferencesStore? = nil,
         biometricAuthenticator: BiometricAuthenticating? = nil
     ) {
         let store = verificationPreferencesStore ?? VerificationPreferencesStore()
@@ -144,7 +149,11 @@ final class AppViewModel {
         self.webhookPreferences = webhookStore
         self.securityPreferences = securityPreferencesStore ?? SecurityPreferencesStore()
         self.cachePreferences = cachePreferencesStore ?? CachePreferencesStore()
+        self.notificationPreferences = notificationPreferencesStore ?? NotificationPreferencesStore()
         self.biometricAuthenticator = biometricAuthenticator ?? LocalAuthenticationClient()
+        syncConcurrencyGate.updateMaxConcurrent(
+            notificationPreferences.preferences.maxConcurrentSyncs
+        )
 
         do {
             try MirrorStore.ensureBaseDirectoryExists()
@@ -190,6 +199,7 @@ final class AppViewModel {
         notificationPreferences.onPreferencesChange = { [weak self] prefs in
             self?.quietHoursMonitor.update(settings: prefs.quietHours)
             self?.handleScheduledPauseTransition()
+            self?.applySyncConcurrencyCap(prefs.maxConcurrentSyncs)
         }
 
         webhookListener.onRequest = { [weak self] request in
@@ -317,6 +327,7 @@ final class AppViewModel {
 
     func triggerSync(repoID: UUID) {
         guard !inProgressSyncIDs.contains(repoID),
+              !syncConcurrencyGate.isQueued(repoID),
               !inProgressVerifyIDs.contains(repoID),
               let repo = repos.first(where: { $0.id == repoID }) else { return }
 
@@ -333,16 +344,39 @@ final class AppViewModel {
             return
         }
 
-        let engine = SyncEngine(
-            repo: repo,
-            retryPolicy: notificationPreferences.preferences.gitRetryPolicy
-        )
-        activeSyncEngines[repoID] = engine
+        switch syncConcurrencyGate.request(repoID) {
+        case .alreadyTracked:
+            return
+        case .enqueued:
+            statuses[repoID] = .queued
+            refreshWidgetSnapshot()
+        case .beginImmediately:
+            startAdmittedSync(repo: repo)
+        }
+    }
+
+    func triggerSyncAll() {
+        repos.forEach { triggerSync(repoID: $0.id) }
+    }
+
+    /// Starts git for a repo that already holds an active concurrency slot.
+    private func startAdmittedSync(repo: RepoConfig) {
+        let repoID = repo.id
         inProgressSyncIDs.insert(repoID)
         statuses[repoID] = .syncing
         refreshWidgetSnapshot()
         syncPhases[repoID] = .fetchingSource
         liveSyncLogLines.removeValue(forKey: repoID)
+
+        if suspendSyncEngineForTesting {
+            return
+        }
+
+        let engine = SyncEngine(
+            repo: repo,
+            retryPolicy: notificationPreferences.preferences.gitRetryPolicy
+        )
+        activeSyncEngines[repoID] = engine
 
         engine.confirmDestructivePush = { [weak self] plan, target in
             guard let self else { return false }
@@ -389,8 +423,22 @@ final class AppViewModel {
         Task { await engine.run() }
     }
 
-    func triggerSyncAll() {
-        repos.forEach { triggerSync(repoID: $0.id) }
+    private func applySyncConcurrencyCap(_ value: Int) {
+        let admitted = syncConcurrencyGate.updateMaxConcurrent(value)
+        for id in admitted {
+            promoteQueuedSync(repoID: id)
+        }
+    }
+
+    private func promoteQueuedSync(repoID: UUID) {
+        guard let repo = repos.first(where: { $0.id == repoID }) else {
+            // Slot was reserved; release and try the following entry.
+            if let next = syncConcurrencyGate.finishActive(repoID) {
+                promoteQueuedSync(repoID: next)
+            }
+            return
+        }
+        startAdmittedSync(repo: repo)
     }
 
     // MARK: - Mirror cache
@@ -588,6 +636,7 @@ final class AppViewModel {
             cancelVerify(repoID: id)
             failureNotifier.clearPending(for: id)
         }
+        syncConcurrencyGate.reset()
         repos = imported
         statuses = [:]
         records = [:]
@@ -599,7 +648,27 @@ final class AppViewModel {
     }
 
     func cancelSync(repoID: UUID) {
+        if syncConcurrencyGate.cancelQueued(repoID) {
+            if let repo = repos.first(where: { $0.id == repoID }) {
+                statuses[repoID] = initialStatus(for: repo)
+            } else {
+                statuses.removeValue(forKey: repoID)
+            }
+            refreshWidgetSnapshot()
+            return
+        }
+
         denyPendingDestructiveConfirmation(for: repoID)
+
+        if suspendSyncEngineForTesting, inProgressSyncIDs.contains(repoID) {
+            finishSync(repoID: repoID)
+            if let repo = repos.first(where: { $0.id == repoID }) {
+                statuses[repoID] = initialStatus(for: repo)
+            }
+            refreshWidgetSnapshot()
+            return
+        }
+
         activeSyncEngines[repoID]?.cancel()
     }
 
@@ -700,6 +769,7 @@ final class AppViewModel {
 
     func triggerVerify(repoID: UUID) {
         guard !inProgressSyncIDs.contains(repoID),
+              !syncConcurrencyGate.isQueued(repoID),
               !inProgressVerifyIDs.contains(repoID),
               let repo = repos.first(where: { $0.id == repoID }) else { return }
         startVerify(repo: repo)
@@ -890,6 +960,9 @@ final class AppViewModel {
         activeSyncEngines.removeValue(forKey: repoID)
         syncPhases.removeValue(forKey: repoID)
         liveSyncLogLines.removeValue(forKey: repoID)
+        if let next = syncConcurrencyGate.finishActive(repoID) {
+            promoteQueuedSync(repoID: next)
+        }
     }
 
     private func finishVerify(repoID: UUID) {

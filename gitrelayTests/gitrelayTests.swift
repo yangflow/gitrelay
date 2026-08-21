@@ -1322,12 +1322,13 @@ struct MenuBarPopoverFilterTests {
         #expect(MenuBarPopoverFilter.filteredRepos(repos, searchText: "prod") == [tagged])
     }
 
-    @Test func canTriggerSyncAllowsAllStatusesExceptSyncing() {
+    @Test func canTriggerSyncAllowsAllStatusesExceptSyncingAndQueued() {
         #expect(MenuBarPopoverFilter.canTriggerSync(for: .idle))
         #expect(MenuBarPopoverFilter.canTriggerSync(for: .unknown))
         #expect(MenuBarPopoverFilter.canTriggerSync(for: .failed("network")))
         #expect(MenuBarPopoverFilter.canTriggerSync(for: .diverged("detail")))
         #expect(!MenuBarPopoverFilter.canTriggerSync(for: .syncing))
+        #expect(!MenuBarPopoverFilter.canTriggerSync(for: .queued))
     }
 }
 
@@ -1548,6 +1549,7 @@ struct DesignTokensTests {
         #expect(DesignTokens.StatusColor.label(for: .idle) == "idle")
         #expect(DesignTokens.StatusColor.label(for: .ahead(3)) == "ahead")
         #expect(DesignTokens.StatusColor.label(for: .syncing) == "syncing")
+        #expect(DesignTokens.StatusColor.label(for: .queued) == "queued")
         #expect(DesignTokens.StatusColor.label(for: .diverged("diff")) == "diverged")
         #expect(DesignTokens.StatusColor.label(for: .failed("boom")) == "failed")
         #expect(DesignTokens.StatusColor.label(for: .unknown) == "unknown")
@@ -1557,6 +1559,7 @@ struct DesignTokensTests {
         #expect(DesignTokens.StatusColor.label(forWidgetStatus: .success) == "success")
         #expect(DesignTokens.StatusColor.label(forWidgetStatus: .failure) == "failure")
         #expect(DesignTokens.StatusColor.label(forWidgetStatus: .syncing) == "syncing")
+        #expect(DesignTokens.StatusColor.label(forWidgetStatus: .queued) == "queued")
         #expect(DesignTokens.StatusColor.label(forWidgetStatus: .diverged) == "diverged")
         #expect(DesignTokens.StatusColor.label(forWidgetStatus: .unknown) == "unknown")
     }
@@ -2740,6 +2743,7 @@ struct NotificationPreferencesStoreTests {
         prefs.pauseOnLowPowerMode = false
         prefs.pauseOnExpensiveNetwork = false
         prefs.quietHours = QuietHoursSettings(isEnabled: true, startMinutes: 22 * 60, endMinutes: 6 * 60)
+        prefs.maxConcurrentSyncs = 3
         store.preferences = prefs
 
         let reloaded = NotificationPreferencesStore(defaults: defaults)
@@ -2753,6 +2757,7 @@ struct NotificationPreferencesStoreTests {
         #expect(reloaded.preferences.quietHours.isEnabled == true)
         #expect(reloaded.preferences.quietHours.startMinutes == 22 * 60)
         #expect(reloaded.preferences.quietHours.endMinutes == 6 * 60)
+        #expect(reloaded.preferences.maxConcurrentSyncs == 3)
     }
 
     @Test func resetToDefaultsRestoresFactoryValues() {
@@ -2793,6 +2798,23 @@ struct NotificationPreferencesStoreTests {
         store.preferences = prefs
         #expect(store.preferences.transientGitMaxAttempts == GitRetryPolicy.clampedMaxAttempts(999))
         #expect(store.preferences.gitRetryPolicy.maxAttempts == store.preferences.transientGitMaxAttempts)
+    }
+
+    @Test func clampsMaxConcurrentSyncsToOneThroughFour() {
+        let suite = "gitrelay.tests.notification-prefs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = NotificationPreferencesStore(defaults: defaults)
+        var prefs = store.preferences
+        prefs.maxConcurrentSyncs = 0
+        store.preferences = prefs
+        #expect(store.preferences.maxConcurrentSyncs == 1)
+
+        prefs = store.preferences
+        prefs.maxConcurrentSyncs = 99
+        store.preferences = prefs
+        #expect(store.preferences.maxConcurrentSyncs == 4)
     }
 }
 
@@ -3045,6 +3067,16 @@ struct RepoIntentSupportTests {
 
         #expect(snapshot.status == .syncing)
         #expect(snapshot.repoName == "docs")
+    }
+
+    @Test func snapshotMapsQueuedDistinctFromSyncing() {
+        let repo = makeRepo(name: "waiting")
+        let snapshot = RepoIntentSupport.makeSnapshot(
+            repo: repo,
+            runtimeStatus: .queued,
+            isSyncInProgress: false
+        )
+        #expect(snapshot.status == .queued)
     }
 
     @Test func snapshotMapsRuntimeFailureAndPersistedSuccess() {
@@ -5869,5 +5901,225 @@ struct ConfigExportImportTests {
         } else {
             Issue.record("expected failed status for missing credentials")
         }
+    }
+}
+
+// MARK: - SyncConcurrencyGate
+
+@MainActor
+struct SyncConcurrencyGateTests {
+    @Test func defaultCapIsTwoAndClampsRange() {
+        #expect(SyncConcurrencyGate.defaultMaxConcurrent == 2)
+        #expect(SyncConcurrencyGate.clamped(0) == 1)
+        #expect(SyncConcurrencyGate.clamped(1) == 1)
+        #expect(SyncConcurrencyGate.clamped(4) == 4)
+        #expect(SyncConcurrencyGate.clamped(99) == 4)
+    }
+
+    @Test func thirdRequestIsQueuedUnderDefaultCap() {
+        let gate = SyncConcurrencyGate()
+        let a = UUID()
+        let b = UUID()
+        let c = UUID()
+
+        #expect(gate.request(a) == .beginImmediately)
+        #expect(gate.request(b) == .beginImmediately)
+        #expect(gate.request(c) == .enqueued)
+        #expect(gate.queuedRepoIDs == [c])
+        #expect(gate.activeCount == 2)
+    }
+
+    @Test func capOneNeverRunsTwoConcurrently() {
+        let gate = SyncConcurrencyGate(maxConcurrent: 1)
+        let a = UUID()
+        let b = UUID()
+
+        #expect(gate.request(a) == .beginImmediately)
+        #expect(gate.request(b) == .enqueued)
+        #expect(gate.activeCount == 1)
+        #expect(gate.finishActive(a) == b)
+        #expect(gate.activeCount == 1)
+        #expect(gate.queuedCount == 0)
+    }
+
+    @Test func cancelQueuedDoesNotAdmitOrActivate() {
+        let gate = SyncConcurrencyGate(maxConcurrent: 1)
+        let a = UUID()
+        let b = UUID()
+
+        #expect(gate.request(a) == .beginImmediately)
+        #expect(gate.request(b) == .enqueued)
+        #expect(gate.cancelQueued(b))
+        #expect(gate.queuedCount == 0)
+        #expect(gate.finishActive(a) == nil)
+        #expect(gate.activeCount == 0)
+    }
+
+    @Test func raisingCapAdmitsQueuedFIFO() {
+        let gate = SyncConcurrencyGate(maxConcurrent: 1)
+        let a = UUID()
+        let b = UUID()
+        let c = UUID()
+        #expect(gate.request(a) == .beginImmediately)
+        #expect(gate.request(b) == .enqueued)
+        #expect(gate.request(c) == .enqueued)
+
+        let admitted = gate.updateMaxConcurrent(3)
+        #expect(admitted == [b, c])
+        #expect(gate.queuedCount == 0)
+        #expect(gate.activeCount == 3)
+    }
+
+    @Test func resetDropsQueueWithoutDraining() {
+        let gate = SyncConcurrencyGate(maxConcurrent: 1)
+        let a = UUID()
+        let b = UUID()
+        #expect(gate.request(a) == .beginImmediately)
+        #expect(gate.request(b) == .enqueued)
+        gate.reset()
+        #expect(gate.activeCount == 0)
+        #expect(gate.queuedCount == 0)
+    }
+}
+
+// MARK: - Sync concurrency (AppViewModel)
+
+@MainActor
+struct SyncConcurrencyAppViewModelTests {
+    private func makeViewModel(defaults: UserDefaults) -> AppViewModel {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-sync-concurrency-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        Constants.setBaseDirectoryForTesting(base)
+        let vm = AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
+            notificationPreferencesStore: NotificationPreferencesStore(defaults: defaults)
+        )
+        vm.suspendSyncEngineForTesting = true
+        return vm
+    }
+
+    private func addSSHRepo(to vm: AppViewModel, name: String) -> UUID {
+        let id = UUID()
+        vm.addRepo(
+            RepoConfig(
+                id: id,
+                name: name,
+                srcURL: "git@github.com:user/\(name).git",
+                dstURL: "git@github.com:user/\(name)-mirror.git",
+                frequency: .manual
+            )
+        )
+        return id
+    }
+
+    @Test func thirdTriggerWaitsUnderDefaultCapOfTwo() {
+        let suite = "gitrelay.tests.sync-concurrency.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        let first = addSSHRepo(to: vm, name: "one")
+        let second = addSSHRepo(to: vm, name: "two")
+        let third = addSSHRepo(to: vm, name: "three")
+
+        vm.triggerSync(repoID: first)
+        vm.triggerSync(repoID: second)
+        vm.triggerSync(repoID: third)
+
+        #expect(vm.inProgressSyncIDs == Set([first, second]))
+        #expect(vm.statuses[third] == .queued)
+        #expect(!vm.inProgressSyncIDs.contains(third))
+    }
+
+    @Test func capOneIsNotConcurrent() {
+        let suite = "gitrelay.tests.sync-concurrency.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        var prefs = vm.notificationPreferences.preferences
+        prefs.maxConcurrentSyncs = 1
+        vm.notificationPreferences.preferences = prefs
+
+        let first = addSSHRepo(to: vm, name: "alpha")
+        let second = addSSHRepo(to: vm, name: "beta")
+
+        vm.triggerSync(repoID: first)
+        vm.triggerSync(repoID: second)
+
+        #expect(vm.inProgressSyncIDs == Set([first]))
+        #expect(vm.statuses[first] == .syncing)
+        #expect(vm.statuses[second] == .queued)
+        #expect(!vm.inProgressSyncIDs.contains(second))
+    }
+
+    @Test func cancelQueuedDoesNotStartGit() {
+        let suite = "gitrelay.tests.sync-concurrency.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        var prefs = vm.notificationPreferences.preferences
+        prefs.maxConcurrentSyncs = 1
+        vm.notificationPreferences.preferences = prefs
+
+        let first = addSSHRepo(to: vm, name: "running")
+        let second = addSSHRepo(to: vm, name: "waiting")
+
+        vm.triggerSync(repoID: first)
+        vm.triggerSync(repoID: second)
+        #expect(vm.statuses[second] == .queued)
+
+        vm.cancelSync(repoID: second)
+        #expect(vm.statuses[second] != .queued)
+        #expect(!vm.inProgressSyncIDs.contains(second))
+
+        // Finishing the active sync must not promote the cancelled repo.
+        vm.cancelSync(repoID: first)
+        #expect(!vm.inProgressSyncIDs.contains(second))
+        #expect(vm.statuses[second] != .syncing)
+        #expect(vm.statuses[second] != .queued)
+    }
+
+    @Test func finishingActivePromotesQueued() {
+        let suite = "gitrelay.tests.sync-concurrency.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        var prefs = vm.notificationPreferences.preferences
+        prefs.maxConcurrentSyncs = 1
+        vm.notificationPreferences.preferences = prefs
+
+        let first = addSSHRepo(to: vm, name: "first")
+        let second = addSSHRepo(to: vm, name: "second")
+
+        vm.triggerSync(repoID: first)
+        vm.triggerSync(repoID: second)
+        #expect(vm.statuses[second] == .queued)
+
+        vm.cancelSync(repoID: first)
+        #expect(vm.inProgressSyncIDs == Set([second]))
+        #expect(vm.statuses[second] == .syncing)
+    }
+
+    @Test func syncAllSharesTheSameCap() {
+        let suite = "gitrelay.tests.sync-concurrency.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        var prefs = vm.notificationPreferences.preferences
+        prefs.maxConcurrentSyncs = 2
+        vm.notificationPreferences.preferences = prefs
+
+        let ids = (1...4).map { addSSHRepo(to: vm, name: "batch-\($0)") }
+        vm.triggerSyncAll()
+
+        #expect(vm.inProgressSyncIDs.count == 2)
+        let queued = ids.filter { vm.statuses[$0] == .queued }
+        #expect(queued.count == 2)
     }
 }

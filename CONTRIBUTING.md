@@ -73,7 +73,7 @@ Type prefixes: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`.
 - **`GitRunner`** — all git subprocess calls. If you add a new command, make sure it handles the cancelled signal path (`GitError.cancelled`) and cleans up any partially-written state.
 - **`KeychainService`** — tokens must stay in the Keychain. Never store a token in `RepoConfig` or `repos.json`.
 - **`SyncScheduler`** — `Timer` fires on the main run loop. All callbacks must be `MainActor`-safe. Use `MainActor.assumeIsolated` in the timer closure if needed.
-- **Concurrency** — `AppViewModel.inProgressSyncIDs` is the guard against double-syncing. Do not bypass it.
+- **Concurrency** — `AppViewModel.inProgressSyncIDs` guards against double-syncing a single repo. Global throughput is capped by `SyncConcurrencyGate` (default 2); overflow stays `.queued` until a slot frees. Do not bypass either.
 
 ## Security
 

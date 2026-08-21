@@ -100,6 +100,13 @@ struct StatusDotView: View {
                         }
                     }
                     .onDisappear { isPulsing = false }
+            case .queued:
+                Circle()
+                    .strokeBorder(DesignTokens.StatusColor.queued, style: StrokeStyle(lineWidth: 1.5, dash: [2, 2]))
+                    .frame(
+                        width: DesignTokens.Size.statusDot,
+                        height: DesignTokens.Size.statusDot
+                    )
             case .ahead(let count) where showsAheadCount:
                 HStack(spacing: DesignTokens.Spacing.xxxs) {
                     Text("\(count)")

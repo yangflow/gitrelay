@@ -27,6 +27,8 @@ struct RepoStatusSectionView: View {
                     latestLogLine: liveSyncLogLine ?? records.last?.logLines.last,
                     onCancel: onCancel
                 )
+            } else if case .queued = status {
+                RepoQueuedRowView(onCancel: onCancel)
             } else if case .failed(let message) = status {
                 RepoFailureRowView(
                     message: message,

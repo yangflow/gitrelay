@@ -36,6 +36,7 @@ enum RepoSyncStatusKindEntity: String, AppEnum {
     case success
     case failure
     case syncing
+    case queued
     case diverged
     case unknown
 
@@ -45,6 +46,7 @@ enum RepoSyncStatusKindEntity: String, AppEnum {
         .success: "Success",
         .failure: "Failure",
         .syncing: "Syncing",
+        .queued: "Queued",
         .diverged: "Diverged",
         .unknown: "Unknown",
     ]
@@ -54,6 +56,7 @@ enum RepoSyncStatusKindEntity: String, AppEnum {
         case .success: self = .success
         case .failure: self = .failure
         case .syncing: self = .syncing
+        case .queued: self = .queued
         case .diverged: self = .diverged
         case .unknown: self = .unknown
         }
