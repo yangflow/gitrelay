@@ -1,6 +1,6 @@
 import Foundation
 
-/// Prefill payload for opening the browse-remote sheet after org discovery.
+/// Prefill payload for opening the browse-remote pane after org discovery.
 struct BrowseRemotePrefill: Equatable, Identifiable, Sendable {
     var id: UUID { subscriptionID }
     let subscriptionID: UUID

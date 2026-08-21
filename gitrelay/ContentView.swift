@@ -11,11 +11,11 @@ private struct SidebarColumnWidthKey: PreferenceKey {
 struct ContentView: View {
     @Environment(AppViewModel.self) private var appVM
     @State private var sidebarSelection: MainSidebarItem = .default
-    /// Last non-transient row, so picking 浏览远程 can hand selection back.
-    @State private var lastPaneSelection: MainSidebarItem = .default
     @State private var selectedRepoID: UUID?
     @State private var sheetMode: SheetMode?
-    @State private var browsePrefill: BrowseRemotePrefill?
+    /// The browse-remote wizard outlives its pane so leaving 浏览远程 mid-flow
+    /// does not throw away a loaded repository list.
+    @State private var browseVM = BrowseRemoteRepoViewModel()
     @State private var addPrefill: RepoSourceDropPrefill?
     @State private var isDropTargeted = false
     @State private var didRestoreWindowLayout = false
@@ -60,9 +60,6 @@ struct ContentView: View {
             applyPendingOpenAddRepository()
             applyPendingFocusSearch()
         }
-        .onChange(of: sidebarSelection) { previous, current in
-            handleSidebarSelectionChange(from: previous, to: current)
-        }
         .onChange(of: selectedRepoID) { _, newValue in
             appVM.mainWindowSelectedRepoID = newValue
             guard didRestoreWindowLayout else { return }
@@ -98,8 +95,6 @@ struct ContentView: View {
                     .onDisappear { addPrefill = nil }
             case .edit(let repo, let focusAuth):
                 AddEditRepoSheet(repo: repo, focusAuth: focusAuth)
-            case .browse:
-                BrowseRemoteRepoSheet(prefill: browsePrefill)
             }
         }
         .alert(
@@ -133,14 +128,16 @@ struct ContentView: View {
     @ViewBuilder
     private var detailPane: some View {
         switch sidebarSelection {
-        case .repositories, .browseRemote:
+        case .repositories:
             repositoriesPane
         case .queue:
             SyncQueueView(onOpen: { select(repoID: $0) })
+        case .browseRemote:
+            BrowseRemotePane(vm: browseVM) { select(repoID: nil) }
         case .githubAccounts, .gitlabAccounts:
             ProviderAccountsView(
                 provider: sidebarSelection.provider ?? .github,
-                onBrowse: { sheetMode = .browse }
+                onBrowse: { openBrowse(provider: sidebarSelection.provider ?? .github) }
             )
         case .settings:
             SettingsView()
@@ -164,18 +161,12 @@ struct ContentView: View {
 
     // MARK: - Navigation
 
-    /// 浏览远程 runs the browse sheet instead of owning a pane, so selection
-    /// returns to whichever row the user was on.
-    private func handleSidebarSelectionChange(
-        from previous: MainSidebarItem,
-        to current: MainSidebarItem
-    ) {
-        guard current.isTransientAction else {
-            lastPaneSelection = current
-            return
-        }
-        sheetMode = .browse
-        sidebarSelection = previous.isTransientAction ? lastPaneSelection : previous
+    /// Brings the 浏览远程 pane forward already pointed at a provider (账号
+    /// panes) without disturbing a flow that is already underway.
+    private func openBrowse(provider: GitProvider) {
+        browseVM.restoreContextIfNeeded()
+        browseVM.selectProvider(provider)
+        sidebarSelection = .browseRemote
     }
 
     private func select(repoID: UUID?) {
@@ -212,8 +203,9 @@ struct ContentView: View {
 
     private func applyPendingBrowsePrefill() {
         guard let prefill = appVM.consumePendingBrowsePrefill() else { return }
-        browsePrefill = prefill
-        sheetMode = .browse
+        browseVM.restoreContextIfNeeded()
+        browseVM.applyPrefill(prefill)
+        sidebarSelection = .browseRemote
     }
 
     private func applyPendingEditFocusAuth() {

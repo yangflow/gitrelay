@@ -7345,11 +7345,6 @@ struct MainSidebarItemTests {
         #expect(MainSidebarItem.settings.provider == nil)
     }
 
-    @Test func onlyBrowseRemoteIsATransientAction() {
-        let transient = MainSidebarItem.allCases.filter(\.isTransientAction)
-        #expect(transient == [.browseRemote])
-    }
-
     @Test func everyRowHasATitleAndSymbol() {
         for item in MainSidebarItem.allCases {
             #expect(!item.title.isEmpty)

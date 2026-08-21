@@ -96,8 +96,4 @@ nonisolated enum MainSidebarItem: String, CaseIterable, Identifiable, Hashable, 
             nil
         }
     }
-
-    /// True when picking the row runs an action (opens a sheet) instead of
-    /// replacing the right pane. Selection bounces back to the previous row.
-    var isTransientAction: Bool { self == .browseRemote }
 }
