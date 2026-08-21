@@ -36,6 +36,7 @@ struct ContentView: View {
         .onAppear {
             applyPendingMainWindowSelection()
             applyPendingBrowsePrefill()
+            applyPendingEditFocusAuth()
         }
         .onChange(of: appVM.pendingMainWindowRepoID) { _, _ in
             applyPendingMainWindowSelection()
@@ -43,13 +44,16 @@ struct ContentView: View {
         .onChange(of: appVM.pendingBrowsePrefill?.id) { _, _ in
             applyPendingBrowsePrefill()
         }
+        .onChange(of: appVM.pendingEditFocusAuthRepoID) { _, _ in
+            applyPendingEditFocusAuth()
+        }
         .sheet(item: $sheetMode) { mode in
             switch mode {
             case .add:
                 AddEditRepoSheet(repo: nil, prefill: addPrefill)
                     .onDisappear { addPrefill = nil }
-            case .edit(let repo):
-                AddEditRepoSheet(repo: repo)
+            case .edit(let repo, let focusAuth):
+                AddEditRepoSheet(repo: repo, focusAuth: focusAuth)
             case .browse:
                 BrowseRemoteRepoSheet(prefill: browsePrefill)
             }
@@ -99,5 +103,12 @@ struct ContentView: View {
         guard let prefill = appVM.consumePendingBrowsePrefill() else { return }
         browsePrefill = prefill
         sheetMode = .browse
+    }
+
+    private func applyPendingEditFocusAuth() {
+        guard let repoID = appVM.consumePendingEditFocusAuthRepoID() else { return }
+        selectedRepoID = repoID
+        guard let repo = appVM.repos.first(where: { $0.id == repoID }) else { return }
+        sheetMode = .edit(repo, focusAuth: true)
     }
 }

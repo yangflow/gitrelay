@@ -22,6 +22,12 @@ final class AppViewModel {
     /// When opening the main window from the menu bar, select this repo in the sidebar.
     var pendingMainWindowRepoID: UUID?
 
+    /// After selecting a repo, open the edit sheet focused on authentication fields.
+    var pendingEditFocusAuthRepoID: UUID?
+
+    /// After selecting a repo, scroll the detail pane to the Sync Log section.
+    var pendingScrollToSyncLogRepoID: UUID?
+
     /// Opens the browse-remote sheet prefilled from an org subscription discovery notification.
     var pendingBrowsePrefill: BrowseRemotePrefill?
 
@@ -654,6 +660,32 @@ final class AppViewModel {
     func consumePendingBrowsePrefill() -> BrowseRemotePrefill? {
         defer { pendingBrowsePrefill = nil }
         return pendingBrowsePrefill
+    }
+
+    /// Opens the edit sheet for a repo with the authentication fields focused.
+    /// Does not mutate repository configuration.
+    func requestReenterCredentials(repoID: UUID) {
+        guard repos.contains(where: { $0.id == repoID }) else { return }
+        pendingEditFocusAuthRepoID = repoID
+        pendingMainWindowRepoID = repoID
+    }
+
+    /// Selects the repo and scrolls the detail pane to Sync Log.
+    /// Does not mutate repository configuration.
+    func requestOpenSyncLog(repoID: UUID) {
+        guard repos.contains(where: { $0.id == repoID }) else { return }
+        pendingScrollToSyncLogRepoID = repoID
+        pendingMainWindowRepoID = repoID
+    }
+
+    func consumePendingEditFocusAuthRepoID() -> UUID? {
+        defer { pendingEditFocusAuthRepoID = nil }
+        return pendingEditFocusAuthRepoID
+    }
+
+    func consumePendingScrollToSyncLogRepoID() -> UUID? {
+        defer { pendingScrollToSyncLogRepoID = nil }
+        return pendingScrollToSyncLogRepoID
     }
 
     // MARK: - Integrity verification

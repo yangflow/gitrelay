@@ -2,14 +2,17 @@ import Foundation
 
 enum SheetMode: Identifiable {
     case add
-    case edit(RepoConfig)
+    case edit(RepoConfig, focusAuth: Bool)
     case browse
 
     var id: String {
         switch self {
-        case .add:         "add"
-        case .edit(let r): "edit-\(r.id)"
-        case .browse:      "browse"
+        case .add:
+            return "add"
+        case .edit(let repo, let focusAuth):
+            return "edit-\(repo.id)-auth:\(focusAuth)"
+        case .browse:
+            return "browse"
         }
     }
 }

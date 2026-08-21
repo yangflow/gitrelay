@@ -1072,6 +1072,216 @@ struct RepoRowHealthPresentationTests {
     }
 }
 
+// MARK: - RepoFailureNextStep
+
+struct RepoFailureNextStepTests {
+    @Test func authFailureOffersReenterCredentialsAndOpenLog() {
+        guard let message = SyncFailureClassifier.displayMessage(for: .authentication) else {
+            Issue.record("expected authentication display message")
+            return
+        }
+        let repo = makeRepo(lastSyncError: message)
+        let step = RepoFailureNextStep.make(
+            repo: repo,
+            status: .failed(message)
+        )
+
+        #expect(step.primaryAction == .reenterCredentials)
+        #expect(step.showsOpenLog)
+        #expect(step.missingRepositorySide == nil)
+        #expect(step.missingGitLFSInstallHint == nil)
+    }
+
+    @Test func needsCredentialsOffersReenterCredentials() {
+        var repo = makeRepo()
+        repo.needsCredentials = true
+        let step = RepoFailureNextStep.make(
+            repo: repo,
+            status: .failed(RepoCredentialGate.missingCredentialsMessage)
+        )
+
+        #expect(step.primaryAction == .reenterCredentials)
+        #expect(step.showsOpenLog)
+    }
+
+    @Test func missingGitLFSShowsInstallHintWithoutAuthAction() {
+        let repo = makeRepo()
+        var record = SyncRecord(repoID: repo.id)
+        record.succeeded = true
+        record.finishedAt = Date()
+        record.logLines = [
+            LFSMirrorMessages.missingGitLFSWarning,
+            LFSMirrorMessages.installHint,
+        ]
+
+        let step = RepoFailureNextStep.make(
+            repo: repo,
+            status: .idle,
+            recentRecords: [record]
+        )
+
+        #expect(step.primaryAction == nil)
+        #expect(step.showsReenterCredentials == false)
+        #expect(step.missingGitLFSInstallHint == LFSMirrorMessages.installHint)
+        #expect(step.showsOpenLog)
+    }
+
+    @Test func repositoryNotFoundOnSourceIsLabeledSource() {
+        guard let message = SyncFailureClassifier.displayMessage(for: .repositoryNotFound) else {
+            Issue.record("expected repository-not-found display message")
+            return
+        }
+        let repo = makeRepo(lastSyncError: message)
+        var record = SyncRecord(repoID: repo.id)
+        record.succeeded = false
+        record.finishedAt = Date()
+        record.targetResults = []
+
+        let step = RepoFailureNextStep.make(
+            repo: repo,
+            status: .failed(message),
+            recentRecords: [record]
+        )
+
+        #expect(step.primaryAction == nil)
+        #expect(step.missingRepositorySide == .source)
+        #expect(step.missingRepositoryCaption != nil)
+        #expect(step.showsOpenLog)
+    }
+
+    @Test func repositoryNotFoundOnDestinationIsLabeledDestination() {
+        guard let message = SyncFailureClassifier.displayMessage(for: .repositoryNotFound) else {
+            Issue.record("expected repository-not-found display message")
+            return
+        }
+        let repo = makeRepo(lastSyncError: message)
+        let targetID = UUID()
+        var record = SyncRecord(repoID: repo.id)
+        record.succeeded = false
+        record.finishedAt = Date()
+        record.targetResults = [
+            TargetSyncResult(
+                targetID: targetID,
+                targetURL: "git@github.com:user/mirror.git",
+                succeeded: false,
+                error: message
+            ),
+        ]
+        guard let aggregate = SyncRecord.aggregateErrorMessage(from: record.targetResults) else {
+            Issue.record("expected aggregate destination error message")
+            return
+        }
+
+        let step = RepoFailureNextStep.make(
+            repo: repo,
+            status: .failed(aggregate),
+            recentRecords: [record]
+        )
+
+        #expect(step.missingRepositorySide == .destination)
+        #expect(step.primaryAction == nil)
+        #expect(step.showsOpenLog)
+    }
+
+    @Test func requestingReenterCredentialsDoesNotMutateRepoConfig() {
+        let suite = "gitrelay.tests.next-step.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-next-step-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        Constants.setBaseDirectoryForTesting(base)
+        let vm = AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
+            biometricAuthenticator: PermissiveBiometricAuthenticator()
+        )
+        let repo = makeRepo(
+            lastSyncError: SyncFailureClassifier.displayMessage(for: .authentication)
+        )
+        vm.addRepo(repo)
+        let before = vm.repos[0]
+
+        vm.requestReenterCredentials(repoID: before.id)
+        let afterReenter = vm.repos[0]
+        vm.requestOpenSyncLog(repoID: before.id)
+        let afterOpenLog = vm.repos[0]
+
+        #expect(afterReenter == before)
+        #expect(afterOpenLog == before)
+        #expect(vm.pendingEditFocusAuthRepoID == before.id)
+        #expect(vm.pendingScrollToSyncLogRepoID == before.id)
+        #expect(vm.pendingMainWindowRepoID == before.id)
+    }
+
+    @Test func editViewModelPreservesConfigWhenOpeningForReenterCredentials() {
+        let lastSyncedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        let existing = RepoConfig(
+            name: "keep-me",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            frequency: .hour1,
+            defaultBranch: "develop",
+            lastSyncedAt: lastSyncedAt,
+            lastSuccessfulSyncedAt: lastSyncedAt,
+            lastSyncError: SyncFailureClassifier.displayMessage(for: .authentication),
+            consecutiveFailureCount: 2,
+            tags: ["prod"],
+            lfsMirrorMode: .auto,
+            needsCredentials: false
+        )
+
+        let vm = AddEditRepoViewModel(editing: existing)
+        let rebuilt = vm.buildRepoConfig()
+
+        #expect(rebuilt.id == existing.id)
+        #expect(rebuilt.name == "keep-me")
+        #expect(rebuilt.srcURL == existing.srcURL)
+        #expect(rebuilt.targets.map(\.url) == existing.targets.map(\.url))
+        #expect(rebuilt.frequency == .hour1)
+        #expect(rebuilt.defaultBranch == "develop")
+        #expect(rebuilt.lastSyncedAt == lastSyncedAt)
+        #expect(rebuilt.lastSyncError == existing.lastSyncError)
+        #expect(rebuilt.consecutiveFailureCount == 2)
+        #expect(rebuilt.tags == ["prod"])
+    }
+
+    private func makeRepo(lastSyncError: String? = nil) -> RepoConfig {
+        RepoConfig(
+            name: "repo",
+            srcURL: "git@github.com:user/repo.git",
+            dstURL: "git@github.com:user/mirror.git",
+            lastSyncError: lastSyncError
+        )
+    }
+}
+
+struct SyncFailureClassifierTests {
+    @Test func classifiesAuthAndNotFoundWithStableDisplayMessages() {
+        let auth = SyncFailureClassifier.classifyError(
+            GitError.processError(128, "Authentication failed for 'https://github.com/x/y.git/'")
+        )
+        #expect(auth == SyncFailureClassifier.displayMessage(for: .authentication))
+        #expect(SyncFailureClassifier.kind(fromStoredMessage: auth) == .authentication)
+
+        let missing = SyncFailureClassifier.classifyError(
+            GitError.processError(128, "fatal: repository 'https://github.com/x/missing.git' not found")
+        )
+        #expect(missing == SyncFailureClassifier.displayMessage(for: .repositoryNotFound))
+        #expect(SyncFailureClassifier.kind(fromStoredMessage: missing) == .repositoryNotFound)
+    }
+
+    @Test func redactsCredentialsInUnclassifiedMessages() {
+        let message = SyncFailureClassifier.classifyError(
+            GitError.processError(
+                128,
+                "fatal: unable to access 'https://secret-token@example.com/x/y.git/': weird local error"
+            )
+        )
+        #expect(!message.contains("secret-token"))
+        #expect(message.contains("https://****@"))
+    }
+}
+
 // MARK: - MenuBarPopoverFilter
 
 struct MenuBarPopoverFilterTests {

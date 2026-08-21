@@ -3,13 +3,20 @@ import SwiftUI
 struct MenuBarRepoRowView: View {
     let repo: RepoConfig
     let status: SyncStatus
+    var recentRecords: [SyncRecord] = []
     let onOpen: () -> Void
     let onSync: () -> Void
+    let onReenterCredentials: () -> Void
+    let onOpenLog: () -> Void
 
     @State private var isHovered = false
 
     private var presentation: RepoRowHealthPresentation.Caption {
         RepoRowHealthPresentation.caption(for: repo, status: status)
+    }
+
+    private var nextStep: RepoFailureNextStep {
+        RepoFailureNextStep.make(repo: repo, status: status, recentRecords: recentRecords)
     }
 
     private var canSync: Bool {
@@ -29,6 +36,12 @@ struct MenuBarRepoRowView: View {
                     )
                     .lineLimit(1)
                 RepoRowCaptionView(caption: presentation)
+                RepoFailureNextStepActionsView(
+                    nextStep: nextStep,
+                    compact: true,
+                    onReenterCredentials: onReenterCredentials,
+                    onOpenLog: onOpenLog
+                )
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if isEscalatedFailure, let count = RepoRowHealthPresentation.failureBadgeCount(for: repo) {

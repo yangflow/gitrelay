@@ -2,14 +2,17 @@ import SwiftUI
 
 struct AddEditRepoSheet: View {
     let editingRepo: RepoConfig?
+    let focusAuth: Bool
 
     @Environment(AppViewModel.self) private var appVM
     @Environment(\.dismiss) private var dismiss
 
     @State private var vm: AddEditRepoViewModel
+    @State private var didScrollToAuth = false
 
-    init(repo: RepoConfig?, prefill: RepoSourceDropPrefill? = nil) {
+    init(repo: RepoConfig?, prefill: RepoSourceDropPrefill? = nil, focusAuth: Bool = false) {
         editingRepo = repo
+        self.focusAuth = focusAuth
         _vm = State(initialValue: AddEditRepoViewModel(editing: repo, prefill: prefill))
     }
 
@@ -41,18 +44,33 @@ struct AddEditRepoSheet: View {
 
             Divider()
 
-            Form {
-                if showsBasicsOnly {
-                    basicsSections(primaryTargetOnly: true)
-                } else if editingRepo != nil {
-                    basicsSections(primaryTargetOnly: false)
-                    moreOptionsSections(includeExtraTargets: false)
-                } else {
-                    // Add step 2: only the optional fields (including extra targets).
-                    moreOptionsSections(includeExtraTargets: true)
+            ScrollViewReader { proxy in
+                Form {
+                    if focusAuth, editingRepo != nil {
+                        Section {
+                            Text(String(localized: "Update the token or SSH key for this repository, then save."))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } header: {
+                            Text(String(localized: "Authentication"))
+                        }
+                    }
+
+                    if showsBasicsOnly {
+                        basicsSections(primaryTargetOnly: true)
+                    } else if editingRepo != nil {
+                        basicsSections(primaryTargetOnly: false)
+                        moreOptionsSections(includeExtraTargets: false)
+                    } else {
+                        // Add step 2: only the optional fields (including extra targets).
+                        moreOptionsSections(includeExtraTargets: true)
+                    }
+                }
+                .formStyle(.grouped)
+                .onAppear {
+                    scrollToAuthIfNeeded(proxy: proxy)
                 }
             }
-            .formStyle(.grouped)
 
             Divider()
 
@@ -110,6 +128,7 @@ struct AddEditRepoSheet: View {
                 keyPath: $vm.srcKeyPath,
                 token: $vm.srcToken
             )
+            .id(AddEditRepoScrollTarget.sourceAuth)
         } header: {
             Text("Source Repository")
         }
@@ -450,4 +469,18 @@ struct AddEditRepoSheet: View {
             return String(localized: "Automatic webhook registration failed: \(error.localizedDescription)")
         }
     }
+
+    private func scrollToAuthIfNeeded(proxy: ScrollViewProxy) {
+        guard focusAuth, editingRepo != nil, !didScrollToAuth else { return }
+        didScrollToAuth = true
+        DispatchQueue.main.async {
+            withAnimation {
+                proxy.scrollTo(AddEditRepoScrollTarget.sourceAuth, anchor: .top)
+            }
+        }
+    }
+}
+
+private enum AddEditRepoScrollTarget {
+    static let sourceAuth = "add-edit-source-auth"
 }
