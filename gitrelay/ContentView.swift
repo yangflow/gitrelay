@@ -1,6 +1,13 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+private struct SidebarColumnWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct ContentView: View {
     @Environment(AppViewModel.self) private var appVM
     @State private var selectedRepoID: UUID?
@@ -8,12 +15,23 @@ struct ContentView: View {
     @State private var browsePrefill: BrowseRemotePrefill?
     @State private var addPrefill: RepoSourceDropPrefill?
     @State private var isDropTargeted = false
+    @State private var didRestoreWindowLayout = false
 
     var body: some View {
         @Bindable var appVM = appVM
         NavigationSplitView {
             SidebarView(selectedRepoID: $selectedRepoID, sheetMode: $sheetMode)
-                .gitRelaySidebarColumnWidth()
+                .gitRelaySidebarColumnWidth(ideal: appVM.windowLayout.sidebarWidth)
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear
+                            .preference(key: SidebarColumnWidthKey.self, value: proxy.size.width)
+                    }
+                }
+                .onPreferenceChange(SidebarColumnWidthKey.self) { width in
+                    guard didRestoreWindowLayout else { return }
+                    appVM.windowLayout.sidebarWidth = width
+                }
                 .gitRelayChrome(.sidebar)
         } detail: {
             DetailView(
@@ -34,6 +52,7 @@ struct ContentView: View {
             handleDrop(providers: providers)
         }
         .onAppear {
+            restoreWindowLayoutIfNeeded()
             appVM.mainWindowSelectedRepoID = selectedRepoID
             applyPendingMainWindowSelection()
             applyPendingBrowsePrefill()
@@ -42,6 +61,14 @@ struct ContentView: View {
         }
         .onChange(of: selectedRepoID) { _, newValue in
             appVM.mainWindowSelectedRepoID = newValue
+            guard didRestoreWindowLayout else { return }
+            appVM.windowLayout.selectedRepoID = newValue
+        }
+        .onChange(of: appVM.repos.map(\.id)) { _, ids in
+            appVM.windowLayout.reconcileSelection(withExistingIDs: Set(ids))
+            if let selectedRepoID, !ids.contains(selectedRepoID) {
+                self.selectedRepoID = nil
+            }
         }
         .onChange(of: appVM.pendingMainWindowRepoID) { _, _ in
             applyPendingMainWindowSelection()
@@ -91,6 +118,13 @@ struct ContentView: View {
             )
             .interactiveDismissDisabled()
         }
+    }
+
+    private func restoreWindowLayoutIfNeeded() {
+        guard !didRestoreWindowLayout else { return }
+        appVM.windowLayout.reconcileSelection(withExistingIDs: Set(appVM.repos.map(\.id)))
+        selectedRepoID = appVM.windowLayout.selectedRepoID
+        didRestoreWindowLayout = true
     }
 
     private func handleDrop(providers: [NSItemProvider]) -> Bool {

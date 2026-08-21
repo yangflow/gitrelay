@@ -27,10 +27,13 @@ struct GitRelayChromeBackground: View {
 
 extension View {
     /// Pins the main-window sidebar to the narrow DesignTokens width range.
-    func gitRelaySidebarColumnWidth() -> some View {
+    /// - Parameter ideal: Restored or current column width (clamped by min/max).
+    func gitRelaySidebarColumnWidth(
+        ideal: CGFloat = DesignTokens.Layout.sidebarIdealWidth
+    ) -> some View {
         navigationSplitViewColumnWidth(
             min: DesignTokens.Layout.sidebarMinWidth,
-            ideal: DesignTokens.Layout.sidebarIdealWidth,
+            ideal: ideal,
             max: DesignTokens.Layout.sidebarMaxWidth
         )
     }
