@@ -27,7 +27,8 @@ final class OrgDiscoveryNotifier: NSObject {
         self.center = center
         self.focusStatusProvider = focusStatusProvider
         super.init()
-        center.delegate = self
+        // Do not claim `UNUserNotificationCenter.delegate` — ``SyncFailureNotifier`` owns it
+        // and forwards org-discovery responses via `onOrgDiscoveryView`.
         registerCategories()
     }
 
@@ -72,23 +73,6 @@ final class OrgDiscoveryNotifier: NSObject {
     }
 
     private func registerCategories() {
-        let retry = UNNotificationAction(
-            identifier: SyncFailureNotifier.retryActionIdentifier,
-            title: String(localized: "Retry"),
-            options: [.foreground]
-        )
-        let failure = UNNotificationCategory(
-            identifier: SyncFailureNotifier.categoryIdentifier,
-            actions: [retry],
-            intentIdentifiers: [],
-            options: []
-        )
-        let summary = UNNotificationCategory(
-            identifier: SyncFailureNotifier.aggregatedCategoryIdentifier,
-            actions: [],
-            intentIdentifiers: [],
-            options: []
-        )
         let view = UNNotificationAction(
             identifier: Self.viewActionIdentifier,
             title: String(localized: "View"),
@@ -100,7 +84,10 @@ final class OrgDiscoveryNotifier: NSObject {
             intentIdentifiers: [],
             options: []
         )
-        center.setNotificationCategories([failure, summary, discovery])
+        // Preserve failure categories when re-registering so Sync again / Open stay available.
+        var categories = SyncFailureNotifier.makeFailureCategories()
+        categories.insert(discovery)
+        center.setNotificationCategories(categories)
     }
 
     private func postDiscovery(
@@ -142,36 +129,5 @@ final class OrgDiscoveryNotifier: NSObject {
         case .timeSensitive:
             content.interruptionLevel = .timeSensitive
         }
-    }
-}
-
-extension OrgDiscoveryNotifier: UNUserNotificationCenterDelegate {
-    nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse,
-        withCompletionHandler completionHandler: @escaping () -> Void
-    ) {
-        let action = response.actionIdentifier
-        let subscriptionIDString = response.notification.request.content.userInfo[
-            OrgDiscoveryNotifier.subscriptionIDKey
-        ] as? String
-        let subscriptionID = subscriptionIDString.flatMap(UUID.init(uuidString:))
-
-        Task { @MainActor in
-            if action == OrgDiscoveryNotifier.viewActionIdentifier
-                || action == UNNotificationDefaultActionIdentifier,
-               let subscriptionID {
-                onView?(subscriptionID)
-            }
-            completionHandler()
-        }
-    }
-
-    nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification,
-        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
-    ) {
-        completionHandler([.banner, .sound, .list])
     }
 }
