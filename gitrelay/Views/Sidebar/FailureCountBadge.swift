@@ -10,9 +10,9 @@ struct FailureCountBadge: View {
             .lineLimit(1)
             .minimumScaleFactor(0.8)
             .foregroundStyle(.white)
-            .padding(.horizontal, 6)
+            .padding(.horizontal, DesignTokens.Spacing.xs)
             .frame(minWidth: 28, minHeight: 18)
-            .background(.red, in: .capsule)
+            .background(DesignTokens.Surface.badgeFill, in: .capsule)
             .help("\(count) consecutive failures")
             .accessibilityLabel("\(count) consecutive failures")
     }

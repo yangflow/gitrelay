@@ -14,7 +14,7 @@ struct RepoStatusSectionView: View {
     let onCancel: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
             if isSyncing {
                 RepoSyncingRowView(
                     statusTitle: syncPhase?.statusTitle ?? "Syncing...",

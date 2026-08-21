@@ -34,49 +34,10 @@ struct SidebarView: View {
     var body: some View {
         @Bindable var appVM = appVM
         VStack(spacing: 0) {
-            VStack(spacing: 8) {
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
-                    TextField("Search Repositories", text: $appVM.sidebarSearchText)
-                        .textFieldStyle(.plain)
-                        .font(.caption)
-                    if !appVM.sidebarSearchText.isEmpty {
-                        Button {
-                            appVM.sidebarSearchText = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
-                                .font(.caption)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Clear Search")
-                    }
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .background(Color(nsColor: .controlBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-
-                Picker("Status Filter", selection: $appVM.sidebarStatusFilter) {
-                    ForEach(SidebarRepoFilter.StatusFilter.allCases) { filter in
-                        Text(LocalizedStringKey(filter.rawValue)).tag(filter)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .controlSize(.small)
-
-                Picker("Display", selection: $displayMode) {
-                    ForEach(SidebarDisplayMode.allCases) { mode in
-                        Text(LocalizedStringKey(mode.rawValue)).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            sidebarFilterChrome(
+                searchText: $appVM.sidebarSearchText,
+                statusFilter: $appVM.sidebarStatusFilter
+            )
 
             List(selection: $selectedRepoID) {
                 switch displayMode {
@@ -87,22 +48,29 @@ struct SidebarView: View {
                 }
             }
             .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
 
             if let pauseReason = appVM.scheduledSyncPauseReason {
                 Divider()
                 Label(pauseReason.displayMessage, systemImage: "pause.circle.fill")
                     .font(.caption)
-                    .foregroundStyle(.orange)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .foregroundStyle(DesignTokens.StatusColor.pause)
+                    .padding(.horizontal, DesignTokens.Spacing.sidebarChromeHorizontal)
+                    .padding(.vertical, DesignTokens.Spacing.sm)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .background {
+                        Rectangle().fill(DesignTokens.Material.footer.swiftUIMaterial)
+                    }
             }
 
             if !appVM.repos.isEmpty {
                 Divider()
                 SyncHealthSummaryView(summary: appVM.healthSummary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, DesignTokens.Spacing.sidebarChromeHorizontal)
+                    .padding(.vertical, DesignTokens.Spacing.sm)
+                    .background {
+                        Rectangle().fill(DesignTokens.Material.footer.swiftUIMaterial)
+                    }
             }
         }
         .toolbar {
@@ -143,6 +111,61 @@ struct SidebarView: View {
         }
     }
 
+    private func sidebarFilterChrome(
+        searchText: Binding<String>,
+        statusFilter: Binding<SidebarRepoFilter.StatusFilter>
+    ) -> some View {
+        VStack(spacing: DesignTokens.Spacing.sm) {
+            HStack(spacing: DesignTokens.Spacing.xs) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+                TextField("Search Repositories", text: searchText)
+                    .textFieldStyle(.plain)
+                    .font(.caption)
+                if !searchText.wrappedValue.isEmpty {
+                    Button {
+                        searchText.wrappedValue = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Clear Search")
+                }
+            }
+            .padding(.horizontal, DesignTokens.Spacing.sm)
+            .padding(.vertical, DesignTokens.Spacing.xs)
+            .frame(minHeight: DesignTokens.Size.searchFieldMinHeight)
+            .background(DesignTokens.Surface.searchFieldFill)
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: DesignTokens.CornerRadius.control,
+                    style: .continuous
+                )
+            )
+
+            Picker("Status Filter", selection: statusFilter) {
+                ForEach(SidebarRepoFilter.StatusFilter.allCases) { filter in
+                    Text(LocalizedStringKey(filter.rawValue)).tag(filter)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .controlSize(.small)
+
+            Picker("Display", selection: $displayMode) {
+                ForEach(SidebarDisplayMode.allCases) { mode in
+                    Text(LocalizedStringKey(mode.rawValue)).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+        .padding(.horizontal, DesignTokens.Spacing.sidebarChromeHorizontal)
+        .padding(.vertical, DesignTokens.Spacing.sidebarChromeVertical)
+    }
+
     @ViewBuilder
     private var allReposList: some View {
         if filteredRepos.isEmpty {
@@ -180,14 +203,14 @@ struct SidebarView: View {
             Text("No Matching Repositories")
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
+                .padding(.vertical, DesignTokens.Spacing.xl)
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
         }
     }
 
     private func tagSectionHeader(_ section: RepoTagGrouping.Section) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: DesignTokens.Spacing.xs) {
             if section.tag != nil {
                 Image(systemName: "tag.fill")
                     .font(.caption2)

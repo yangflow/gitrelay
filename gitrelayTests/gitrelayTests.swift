@@ -1321,6 +1321,34 @@ struct SidebarRepoFilterTests {
     }
 }
 
+// MARK: - DesignTokens
+
+struct DesignTokensTests {
+    @Test func sidebarWidthStaysNarrowIceLikeRange() {
+        #expect(DesignTokens.Layout.sidebarMinWidth == 200)
+        #expect(DesignTokens.Layout.sidebarIdealWidth == 240)
+        #expect(DesignTokens.Layout.sidebarMaxWidth == 300)
+        #expect(DesignTokens.Layout.sidebarMinWidth < DesignTokens.Layout.sidebarIdealWidth)
+        #expect(DesignTokens.Layout.sidebarIdealWidth < DesignTokens.Layout.sidebarMaxWidth)
+    }
+
+    @Test func statusColorsMapEachSyncStatus() {
+        #expect(DesignTokens.StatusColor.forStatus(.idle) == DesignTokens.StatusColor.idle)
+        #expect(DesignTokens.StatusColor.forStatus(.ahead(3)) == DesignTokens.StatusColor.ahead)
+        #expect(DesignTokens.StatusColor.forStatus(.syncing) == DesignTokens.StatusColor.syncing)
+        #expect(DesignTokens.StatusColor.forStatus(.diverged("diff")) == DesignTokens.StatusColor.diverged)
+        #expect(DesignTokens.StatusColor.forStatus(.failed("boom")) == DesignTokens.StatusColor.failed)
+        #expect(DesignTokens.StatusColor.forStatus(.unknown) == DesignTokens.StatusColor.unknown)
+    }
+
+    @Test func chromeMaterialsAreDistinctRoles() {
+        #expect(DesignTokens.ChromeRole.sidebar.material == .sidebar)
+        #expect(DesignTokens.ChromeRole.detail.material == .detail)
+        #expect(DesignTokens.Material.sidebar != DesignTokens.Material.detail)
+        #expect(DesignTokens.Material.footer != DesignTokens.Material.sidebar)
+    }
+}
+
 // MARK: - SyncHistorySparkline
 
 struct SyncHistorySparklineTests {

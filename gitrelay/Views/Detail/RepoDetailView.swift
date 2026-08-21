@@ -27,9 +27,9 @@ struct RepoDetailView: View {
                 }
             }
             .pickerStyle(.segmented)
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 12)
+            .padding(.horizontal, DesignTokens.Spacing.detailContent)
+            .padding(.top, DesignTokens.Spacing.lg)
+            .padding(.bottom, DesignTokens.Spacing.md)
 
             ScrollView {
                 switch selectedTab {
@@ -59,10 +59,10 @@ struct RepoDetailView: View {
     }
 
     private var overviewContent: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.detailSection) {
             RepoHeaderView(repo: repo, recentSyncRecords: records)
 
-            Divider()
+            detailDivider
 
             RepoStatusSectionView(
                 repo: repo,
@@ -78,25 +78,25 @@ struct RepoDetailView: View {
                 onCancel: { appVM.cancelSync(repoID: repo.id) }
             )
 
-            Divider()
+            detailDivider
 
             SyncHistorySparklineView(
                 sparkline: SyncHistorySparkline.make(from: repo.dailySyncOutcomes)
             )
 
-            Divider()
+            detailDivider
 
             BranchListView(branches: detailVM.branches, isLoading: detailVM.isLoadingBranches)
 
-            Divider()
+            detailDivider
 
             SyncLogView(records: records)
         }
-        .padding(20)
+        .padding(DesignTokens.Spacing.detailContent)
     }
 
     private var releasesContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
             RepoHeaderView(repo: repo, recentSyncRecords: records)
 
             ReleaseMirrorStatusView(
@@ -105,6 +105,10 @@ struct RepoDetailView: View {
                 isSyncing: isSyncing
             )
         }
-        .padding(20)
+        .padding(DesignTokens.Spacing.detailContent)
+    }
+
+    private var detailDivider: some View {
+        Divider()
     }
 }

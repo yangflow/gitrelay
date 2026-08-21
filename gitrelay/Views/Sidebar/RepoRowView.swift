@@ -14,21 +14,28 @@ struct RepoRowView: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: DesignTokens.Spacing.statusDotGap) {
+            StatusDotView(status: status)
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                 Text(repo.name)
-                    .foregroundStyle(isEscalatedFailure ? .red : .primary)
+                    .foregroundStyle(
+                        isEscalatedFailure
+                            ? DesignTokens.StatusColor.escalatedFailure
+                            : .primary
+                    )
                     .lineLimit(1)
 
                 RepoRowCaptionView(caption: presentation)
             }
-            Spacer()
+            Spacer(minLength: DesignTokens.Spacing.xxs)
             if isEscalatedFailure, let count = RepoRowHealthPresentation.failureBadgeCount(for: repo) {
                 FailureCountBadge(count: count)
             }
-            StatusIconView(status: status)
         }
-        .padding(.vertical, 3)
+        .padding(.vertical, DesignTokens.Spacing.rowVertical)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel)
         .contextMenu {
             Button("Sync Now", action: onSyncNow)
                 .disabled(status == .syncing)
@@ -44,5 +51,24 @@ struct RepoRowView: View {
 
     private var isEscalatedFailure: Bool {
         RepoRowHealthPresentation.showsFailureBadge(for: repo)
+    }
+
+    private var accessibilityLabel: String {
+        let statusText: String
+        switch status {
+        case .unknown:
+            statusText = String(localized: "Unknown Status")
+        case .idle:
+            statusText = String(localized: "Synced")
+        case .ahead(let count):
+            statusText = String(localized: "src is \(count) commits ahead")
+        case .syncing:
+            statusText = String(localized: "Syncing...")
+        case .diverged:
+            statusText = String(localized: "Content divergence")
+        case .failed:
+            statusText = String(localized: "Last Sync Failed")
+        }
+        return "\(repo.name), \(statusText)"
     }
 }

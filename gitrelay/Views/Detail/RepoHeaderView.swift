@@ -5,7 +5,7 @@ struct RepoHeaderView: View {
     var recentSyncRecords: [SyncRecord] = []
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             Text(repo.name)
                 .font(.title2)
                 .fontWeight(.semibold)
@@ -39,26 +39,26 @@ struct RepoHeaderView: View {
                 Label {
                     Text(repo.partialSyncWarning ?? "Partial ref sync (not a complete backup)")
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DesignTokens.StatusColor.pause)
                 } icon: {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DesignTokens.StatusColor.pause)
                 }
             }
 
             if let lfsWarning = missingGitLFSWarningFromRecentSync {
                 Label {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                         Text(lfsWarning)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(DesignTokens.StatusColor.pause)
                         Text(LFSMirrorMessages.installHint)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 } icon: {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DesignTokens.StatusColor.pause)
                 }
             }
         }

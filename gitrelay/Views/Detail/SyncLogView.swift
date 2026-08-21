@@ -4,11 +4,11 @@ struct SyncLogView: View {
     let records: [SyncRecord]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
             Text("Sync Log")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .padding(.bottom, 2)
+                .padding(.bottom, DesignTokens.Spacing.xxxs)
 
             if records.isEmpty {
                 Text("No Records")
@@ -17,7 +17,7 @@ struct SyncLogView: View {
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 2) {
+                        LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                             ForEach(records) { record in
                                 SyncLogRecordView(record: record)
                             }
@@ -33,12 +33,7 @@ struct SyncLogView: View {
                     }
                 }
                 .frame(maxHeight: 220)
-                .background(Color(nsColor: .textBackgroundColor))
-                .clipShape(.rect(cornerRadius: 6))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-                }
+                .gitRelayPanelSurface(fill: DesignTokens.Surface.logFill)
             }
         }
     }
