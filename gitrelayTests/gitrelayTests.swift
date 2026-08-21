@@ -1321,6 +1321,38 @@ struct SidebarRepoFilterTests {
     }
 }
 
+// MARK: - DesignTokens
+
+struct DesignTokensTests {
+    @Test func sidebarWidthStaysNarrowIceLikeRange() {
+        #expect(DesignTokens.Layout.sidebarMinWidth == 200)
+        #expect(DesignTokens.Layout.sidebarIdealWidth == 240)
+        #expect(DesignTokens.Layout.sidebarMaxWidth == 300)
+        #expect(DesignTokens.Layout.sidebarMinWidth < DesignTokens.Layout.sidebarIdealWidth)
+        #expect(DesignTokens.Layout.sidebarIdealWidth < DesignTokens.Layout.sidebarMaxWidth)
+    }
+
+    @Test func statusColorMappingCoversEverySyncStatus() {
+        // Color equality needs SwiftUI in the test target; assert via a pure label instead.
+        #expect(DesignTokens.StatusColor.label(for: .idle) == "idle")
+        #expect(DesignTokens.StatusColor.label(for: .ahead(3)) == "ahead")
+        #expect(DesignTokens.StatusColor.label(for: .syncing) == "syncing")
+        #expect(DesignTokens.StatusColor.label(for: .diverged("diff")) == "diverged")
+        #expect(DesignTokens.StatusColor.label(for: .failed("boom")) == "failed")
+        #expect(DesignTokens.StatusColor.label(for: .unknown) == "unknown")
+    }
+
+    @Test func chromeMaterialsAreDistinctRoles() {
+        #expect(DesignTokens.ChromeRole.sidebar.material == .sidebar)
+        #expect(DesignTokens.ChromeRole.detail.material == .detail)
+        #expect(DesignTokens.Material.sidebar != DesignTokens.Material.detail)
+        #expect(DesignTokens.Material.footer != DesignTokens.Material.sidebar)
+        #expect(DesignTokens.Material.sidebar.tokenName == "sidebar")
+        #expect(DesignTokens.Material.detail.tokenName == "detail")
+        #expect(DesignTokens.Material.footer.tokenName == "footer")
+    }
+}
+
 // MARK: - SyncHistorySparkline
 
 struct SyncHistorySparklineTests {

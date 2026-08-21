@@ -5,13 +5,13 @@ struct SyncHealthSummaryView: View {
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 10) {
+            HStack(spacing: DesignTokens.Spacing.md) {
                 title
-                Spacer(minLength: 4)
+                Spacer(minLength: DesignTokens.Spacing.xxs)
                 metrics
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                 title
                 metrics
             }
@@ -27,18 +27,20 @@ struct SyncHealthSummaryView: View {
     }
 
     private var metrics: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: DesignTokens.Spacing.sm) {
             HealthMetricView(
                 title: "Succeeded",
                 count: summary.succeededToday,
                 systemImage: "checkmark.circle.fill",
-                tint: .green
+                tint: DesignTokens.StatusColor.idle
             )
             HealthMetricView(
                 title: "Failed",
                 count: summary.failedToday,
                 systemImage: "xmark.octagon.fill",
-                tint: summary.hasFailures ? .red : .secondary
+                tint: summary.hasFailures
+                    ? DesignTokens.StatusColor.escalatedFailure
+                    : .secondary
             )
             HealthMetricView(
                 title: "Not Run",

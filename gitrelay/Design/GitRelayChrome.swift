@@ -1,0 +1,117 @@
+import SwiftUI
+
+/// Applies main-window chrome materials from ``DesignTokens``.
+/// On macOS 26+, adds a light translucent wash (no LiquidGlassKit / design-system packages).
+/// On 14/15 the same chrome uses ordinary visual-effect materials only.
+struct GitRelayChromeBackground: View {
+    let role: DesignTokens.ChromeRole
+
+    var body: some View {
+        ZStack {
+            GitRelayVisualEffectView(
+                material: role.material.nsMaterial,
+                blendingMode: role.material.blendingMode
+            )
+
+            if #available(macOS 26, *) {
+                // Tahoe / Liquid Glass era: keep fallback materials underneath and
+                // add a subtle system tint wash. Never depend on third-party glass kits.
+                Rectangle()
+                    .fill(.quinary.opacity(0.35))
+                    .allowsHitTesting(false)
+            }
+        }
+        .ignoresSafeArea()
+    }
+}
+
+extension View {
+    /// Pins the main-window sidebar to the narrow DesignTokens width range.
+    func gitRelaySidebarColumnWidth() -> some View {
+        navigationSplitViewColumnWidth(
+            min: DesignTokens.Layout.sidebarMinWidth,
+            ideal: DesignTokens.Layout.sidebarIdealWidth,
+            max: DesignTokens.Layout.sidebarMaxWidth
+        )
+    }
+
+    func gitRelayChrome(_ role: DesignTokens.ChromeRole) -> some View {
+        background {
+            GitRelayChromeBackground(role: role)
+        }
+    }
+
+    /// Soft panel surface used inside the detail scroll (branch list, logs, etc.).
+    func gitRelayPanelSurface(
+        fill: Color = DesignTokens.Surface.panelFill,
+        cornerRadius: CGFloat = DesignTokens.CornerRadius.control
+    ) -> some View {
+        background(fill)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(DesignTokens.Surface.separator, lineWidth: 1)
+            }
+    }
+}
+
+/// Compact status color dot for sidebar rows (Ice / Luminare atmosphere).
+struct StatusDotView: View {
+    let status: SyncStatus
+    /// When false, ahead state is a plain blue dot (detail labels already show the count).
+    var showsAheadCount: Bool = true
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isPulsing = false
+
+    var body: some View {
+        Group {
+            switch status {
+            case .syncing:
+                Circle()
+                    .strokeBorder(DesignTokens.StatusColor.syncing, lineWidth: 1.5)
+                    .overlay {
+                        Circle()
+                            .fill(DesignTokens.StatusColor.syncing.opacity(0.35))
+                            .scaleEffect(reduceMotion ? 1 : (isPulsing ? 0.55 : 0.85))
+                    }
+                    .frame(
+                        width: DesignTokens.Size.statusDot,
+                        height: DesignTokens.Size.statusDot
+                    )
+                    .task {
+                        guard !reduceMotion else {
+                            isPulsing = true
+                            return
+                        }
+                        withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                            isPulsing = true
+                        }
+                    }
+                    .onDisappear { isPulsing = false }
+            case .ahead(let count) where showsAheadCount:
+                HStack(spacing: DesignTokens.Spacing.xxxs) {
+                    Text("\(count)")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(DesignTokens.StatusColor.ahead)
+                    Circle()
+                        .fill(DesignTokens.StatusColor.ahead)
+                        .frame(
+                            width: DesignTokens.Size.statusDot,
+                            height: DesignTokens.Size.statusDot
+                        )
+                }
+            default:
+                Circle()
+                    .fill(DesignTokens.StatusColor.forStatus(status))
+                    .frame(
+                        width: DesignTokens.Size.statusDot,
+                        height: DesignTokens.Size.statusDot
+                    )
+            }
+        }
+        .frame(minWidth: DesignTokens.Size.statusDot, minHeight: DesignTokens.Size.statusDot)
+        .frame(width: showsAheadCount ? 18 : DesignTokens.Size.statusDot, alignment: .trailing)
+        .accessibilityHidden(true)
+    }
+}

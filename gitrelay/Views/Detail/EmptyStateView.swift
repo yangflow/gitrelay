@@ -14,5 +14,6 @@ struct EmptyStateView: View {
                 .controlSize(.large)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(DesignTokens.Spacing.xxl)
     }
 }

@@ -5,7 +5,7 @@ struct BranchListView: View {
     let isLoading: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
             Text("Branches")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -35,18 +35,13 @@ struct BranchListView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 3)
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, DesignTokens.Spacing.sm)
                         if branch.id != branches.last?.id {
                             Divider()
                         }
                     }
                 }
-                .background(Color(nsColor: .controlBackgroundColor))
-                .clipShape(.rect(cornerRadius: 6))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-                }
+                .gitRelayPanelSurface()
             }
         }
     }

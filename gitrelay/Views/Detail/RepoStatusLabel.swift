@@ -4,23 +4,34 @@ struct RepoStatusLabel: View {
     let status: SyncStatus
 
     var body: some View {
+        HStack(spacing: DesignTokens.Spacing.xs) {
+            StatusDotView(status: status, showsAheadCount: false)
+            statusText
+                .font(.callout)
+        }
+    }
+
+    @ViewBuilder
+    private var statusText: some View {
         switch status {
         case .ahead(let n):
-            Label("src is \(n) commits ahead", systemImage: "arrow.up.circle.fill")
-                .foregroundStyle(.blue)
-                .font(.callout)
+            Text("src is \(n) commits ahead")
+                .foregroundStyle(DesignTokens.StatusColor.ahead)
         case .idle:
-            Label("Synced", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-                .font(.callout)
+            Text("Synced")
+                .foregroundStyle(DesignTokens.StatusColor.idle)
         case .diverged:
-            Label("Content divergence", systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.yellow)
-                .font(.callout)
-        default:
-            Label("Unknown Status", systemImage: "questionmark.circle")
-                .foregroundStyle(.secondary)
-                .font(.callout)
+            Text("Content divergence")
+                .foregroundStyle(DesignTokens.StatusColor.diverged)
+        case .syncing:
+            Text("Syncing...")
+                .foregroundStyle(DesignTokens.StatusColor.syncing)
+        case .failed:
+            Text("Last Sync Failed")
+                .foregroundStyle(DesignTokens.StatusColor.failed)
+        case .unknown:
+            Text("Unknown Status")
+                .foregroundStyle(DesignTokens.StatusColor.unknown)
         }
     }
 }

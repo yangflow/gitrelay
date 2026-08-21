@@ -10,13 +10,19 @@ struct ContentView: View {
         @Bindable var appVM = appVM
         NavigationSplitView {
             SidebarView(selectedRepoID: $selectedRepoID, sheetMode: $sheetMode)
+                .gitRelaySidebarColumnWidth()
+                .gitRelayChrome(.sidebar)
         } detail: {
             DetailView(
                 selectedRepoID: $selectedRepoID,
                 onAdd: { sheetMode = .add }
             )
+            .gitRelayChrome(.detail)
         }
-        .frame(minWidth: 720, minHeight: 500)
+        .frame(
+            minWidth: DesignTokens.Layout.windowMinWidth,
+            minHeight: DesignTokens.Layout.windowMinHeight
+        )
         .onAppear {
             applyPendingMainWindowSelection()
             applyPendingBrowsePrefill()
