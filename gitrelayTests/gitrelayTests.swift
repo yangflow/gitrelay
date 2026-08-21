@@ -7911,3 +7911,379 @@ struct ProviderAccountSummaryTests {
         #expect(summaries.map(\.hasToken) == [false, true])
     }
 }
+
+// MARK: - Menu-bar status line (issues #87 / #107)
+
+struct MenuBarStatusLineTests {
+    @Test func noLineWhenRunningAndNothingWasMissed() {
+        #expect(MenuBarStatusLine.make(pauseReason: nil, missedRuns: 0) == nil)
+        #expect(MenuBarStatusLine.make(pauseReason: nil, missedRuns: -1) == nil)
+    }
+
+    @Test func pauseOutranksCatchUpBecauseAPausedScheduleCatchesNothingUp() {
+        #expect(
+            MenuBarStatusLine.make(pauseReason: .lowPowerMode, missedRuns: 4)
+                == .paused(.lowPowerMode)
+        )
+        #expect(
+            MenuBarStatusLine.make(pauseReason: nil, missedRuns: 4)
+                == .catchingUp(missedRuns: 4)
+        )
+    }
+
+    @Test func pauseLineNamesTheReasonAndStaysOnOneLine() {
+        for reason: SyncPauseReason in [
+            .manual, .quietHours, .lowPowerMode, .expensiveNetwork, .lowPowerAndExpensiveNetwork,
+        ] {
+            let line = MenuBarStatusLine.paused(reason)
+            #expect(line.message.contains(reason.shortLabel))
+            #expect(line.message == String(localized: "Schedule paused · \(reason.shortLabel)"))
+            #expect(!line.message.contains("\n"))
+            #expect(line.tone == .pause)
+        }
+    }
+
+    @Test func shortLabelIsShorterThanTheSidebarSentence() {
+        for reason: SyncPauseReason in [
+            .manual, .lowPowerMode, .expensiveNetwork, .lowPowerAndExpensiveNetwork,
+        ] {
+            #expect(!reason.shortLabel.isEmpty)
+            #expect(reason.shortLabel.count < reason.displayMessage.count)
+        }
+    }
+
+    @Test func catchUpLineCarriesTheMissedCount() {
+        let line = MenuBarStatusLine.catchingUp(missedRuns: 3)
+        #expect(line.message == String(localized: "Missed runs: \(3) · catching up"))
+        #expect(line.message.contains("3"))
+        #expect(line.tone == .info)
+    }
+}
+
+// MARK: - Menu-bar status item icon (issue #92)
+
+struct MenuBarIconAppearanceTests {
+    @Test func failureAndDivergenceBothTintTheSameMark() {
+        #expect(MenuBarIconAppearance.make(hasFailure: false, hasDivergence: false) == .normal)
+        #expect(MenuBarIconAppearance.make(hasFailure: true, hasDivergence: false) == .failed)
+        #expect(MenuBarIconAppearance.make(hasFailure: false, hasDivergence: true) == .failed)
+        #expect(MenuBarIconAppearance.make(hasFailure: true, hasDivergence: true) == .failed)
+    }
+
+    @Test func failStateKeepsOneGlyphAndDropsTemplateRendering() {
+        #expect(MenuBarIconAppearance.normal.isTemplate)
+        #expect(!MenuBarIconAppearance.failed.isTemplate)
+        #expect(MenuBarIconAppearance.normal.tintLabel == "template")
+        #expect(MenuBarIconAppearance.failed.tintLabel == "red")
+        #expect(MenuBarIconAppearance.symbolName != "exclamationmark.triangle.fill")
+    }
+}
+
+// MARK: - Missed scheduled runs (issue #107)
+
+struct MissedScheduledRunsTests {
+    private let interval: TimeInterval = 900
+
+    private func expectation(
+        repoID: UUID = UUID(),
+        overdueBy overdue: TimeInterval,
+        now: Date,
+        interval: TimeInterval? = nil
+    ) -> ScheduledRunExpectation {
+        ScheduledRunExpectation(
+            repoID: repoID,
+            interval: interval ?? self.interval,
+            expectedFireDate: now.addingTimeInterval(-overdue)
+        )
+    }
+
+    @Test func nothingIsMissedWhileTheNextFireIsStillAhead() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let outcome = MissedScheduledRuns.evaluate(
+            expectations: [expectation(overdueBy: -60, now: now)],
+            now: now
+        )
+        #expect(!outcome.hasMissedRuns)
+        #expect(outcome.dueRepoIDs.isEmpty)
+    }
+
+    @Test func aFireOnlyAFewSecondsLateIsNotMissed() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let outcome = MissedScheduledRuns.evaluate(
+            expectations: [expectation(overdueBy: MissedScheduledRuns.graceInterval - 1, now: now)],
+            now: now
+        )
+        #expect(!outcome.hasMissedRuns)
+    }
+
+    @Test func theDueFireCountsAsOneAndEveryWholeIntervalSinceAddsAnother() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let justDue = MissedScheduledRuns.evaluate(
+            expectations: [expectation(overdueBy: MissedScheduledRuns.graceInterval, now: now)],
+            now: now
+        )
+        #expect(justDue.missedRunCount == 1)
+
+        let overnight = MissedScheduledRuns.evaluate(
+            expectations: [expectation(overdueBy: 3 * interval, now: now)],
+            now: now
+        )
+        #expect(overnight.missedRunCount == 4)
+    }
+
+    @Test func countsAcrossReposAndKeepsTheGivenOrder() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let first = UUID()
+        let second = UUID()
+        let ahead = UUID()
+
+        let outcome = MissedScheduledRuns.evaluate(
+            expectations: [
+                expectation(repoID: first, overdueBy: interval, now: now),
+                expectation(repoID: ahead, overdueBy: -interval, now: now),
+                expectation(repoID: second, overdueBy: MissedScheduledRuns.graceInterval, now: now),
+            ],
+            now: now
+        )
+        #expect(outcome.dueRepoIDs == [first, second])
+        #expect(outcome.missedRunCount == 3)
+    }
+
+    @Test func aWeekAsleepStaysAReadableNumber() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let outcome = MissedScheduledRuns.evaluate(
+            expectations: [expectation(overdueBy: 7 * 86400, now: now)],
+            now: now
+        )
+        #expect(outcome.missedRunCount == MissedScheduledRuns.maxMissedRunsPerRepo)
+    }
+
+    @Test func manualReposWithoutAnIntervalAreSkipped() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let outcome = MissedScheduledRuns.evaluate(
+            expectations: [expectation(overdueBy: interval, now: now, interval: 0)],
+            now: now
+        )
+        #expect(!outcome.hasMissedRuns)
+    }
+}
+
+struct MissedRunCatchUpProgressTests {
+    @Test func startsEmpty() {
+        let progress = MissedRunCatchUpProgress()
+        #expect(!progress.isCatchingUp)
+        #expect(progress.missedRunCount == 0)
+    }
+
+    @Test func showsTheLineUntilTheLastRepoSettles() {
+        let first = UUID()
+        let second = UUID()
+        var progress = MissedRunCatchUpProgress()
+        progress.begin(missedRunCount: 5, repoIDs: [first, second])
+        #expect(progress.isCatchingUp)
+        #expect(progress.missedRunCount == 5)
+
+        progress.noteFinished(repoID: first)
+        #expect(progress.isCatchingUp)
+
+        progress.noteFinished(repoID: second)
+        #expect(!progress.isCatchingUp)
+        #expect(progress.missedRunCount == 0)
+    }
+
+    @Test func nothingAdmittedMeansNoLine() {
+        var progress = MissedRunCatchUpProgress()
+        progress.begin(missedRunCount: 3, repoIDs: [])
+        #expect(!progress.isCatchingUp)
+
+        progress.begin(missedRunCount: 0, repoIDs: [UUID()])
+        #expect(!progress.isCatchingUp)
+    }
+
+    @Test func unknownRepoDoesNotClearTheLine() {
+        var progress = MissedRunCatchUpProgress()
+        progress.begin(missedRunCount: 2, repoIDs: [UUID()])
+        progress.noteFinished(repoID: UUID())
+        #expect(progress.isCatchingUp)
+    }
+}
+
+@MainActor
+struct SyncSchedulerRunExpectationTests {
+    private func repo(frequency: SyncFrequency, needsCredentials: Bool = false) -> RepoConfig {
+        RepoConfig(
+            name: "mirror",
+            srcURL: "git@github.com:user/mirror.git",
+            dstURL: "git@gitlab.com:user/mirror.git",
+            frequency: frequency,
+            needsCredentials: needsCredentials
+        )
+    }
+
+    @Test func armingRecordsTheNextFireFromTheInjectedClock() {
+        let scheduler = SyncScheduler()
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        scheduler.now = { start }
+        defer { scheduler.invalidateAll() }
+
+        let scheduled = repo(frequency: .min15)
+        scheduler.schedule(repo: scheduled)
+
+        let expectation = scheduler.runExpectation(for: scheduled.id)
+        #expect(expectation?.interval == 900)
+        #expect(expectation?.expectedFireDate == start.addingTimeInterval(900))
+    }
+
+    @Test func manualAndCredentialGatedReposOweNothing() {
+        let scheduler = SyncScheduler()
+        defer { scheduler.invalidateAll() }
+
+        let manual = repo(frequency: .manual)
+        let gated = repo(frequency: .min15, needsCredentials: true)
+        scheduler.schedule(repo: manual)
+        scheduler.schedule(repo: gated)
+
+        #expect(scheduler.runExpectation(for: manual.id) == nil)
+        #expect(scheduler.runExpectation(for: gated.id) == nil)
+    }
+
+    @Test func reschedulingArmsAFreshExpectationSoCatchUpCannotStack() {
+        let scheduler = SyncScheduler()
+        var clock = Date(timeIntervalSince1970: 1_800_000_000)
+        scheduler.now = { clock }
+        defer { scheduler.invalidateAll() }
+
+        let scheduled = repo(frequency: .min15)
+        scheduler.schedule(repo: scheduled)
+
+        clock = clock.addingTimeInterval(3600)
+        scheduler.reschedule(repo: scheduled)
+
+        #expect(
+            scheduler.runExpectation(for: scheduled.id)?.expectedFireDate
+                == clock.addingTimeInterval(900)
+        )
+    }
+
+    @Test func deschedulingDropsTheExpectation() {
+        let scheduler = SyncScheduler()
+        defer { scheduler.invalidateAll() }
+
+        let scheduled = repo(frequency: .hour1)
+        scheduler.schedule(repo: scheduled)
+        #expect(scheduler.runExpectation(for: scheduled.id) != nil)
+
+        scheduler.deschedule(repoID: scheduled.id)
+        #expect(scheduler.runExpectation(for: scheduled.id) == nil)
+        #expect(scheduler.nextFireDate(for: scheduled.id) == nil)
+    }
+}
+
+@MainActor
+struct MissedRunCatchUpAppViewModelTests {
+    private func makeViewModel(defaults: UserDefaults) -> AppViewModel {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-missed-runs-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        Constants.setBaseDirectoryForTesting(base)
+        let vm = AppViewModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
+            notificationPreferencesStore: NotificationPreferencesStore(defaults: defaults)
+        )
+        vm.suspendSyncEngineForTesting = true
+        // The test machine's power and network state must not decide whether a
+        // catch-up runs.
+        var prefs = vm.notificationPreferences.preferences
+        prefs.pauseOnLowPowerMode = false
+        prefs.pauseOnExpensiveNetwork = false
+        vm.notificationPreferences.preferences = prefs
+        return vm
+    }
+
+    private func addScheduledRepo(to vm: AppViewModel, name: String) -> UUID {
+        let id = UUID()
+        vm.addRepo(
+            RepoConfig(
+                id: id,
+                name: name,
+                srcURL: "git@github.com:user/\(name).git",
+                dstURL: "git@gitlab.com:user/\(name)-mirror.git",
+                frequency: .min15
+            )
+        )
+        return id
+    }
+
+    /// 15-minute schedule, woken 45 minutes late: the due tick plus two whole
+    /// intervals since.
+    private var wakeDelay: TimeInterval { 2700 + 30 }
+
+    @Test func wakingUpLateEnqueuesTheDueReposAndShowsTheLine() {
+        let suite = "gitrelay.tests.missed-runs.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        let mirror = addScheduledRepo(to: vm, name: "mirror")
+        #expect(vm.menuBarStatusLine == nil)
+
+        vm.catchUpMissedScheduledRuns(now: Date().addingTimeInterval(wakeDelay))
+
+        #expect(vm.inProgressSyncIDs.contains(mirror))
+        #expect(vm.menuBarStatusLine == .catchingUp(missedRuns: 3))
+    }
+
+    @Test func theLineGoesAwayOnceTheCatchUpDrains() {
+        let suite = "gitrelay.tests.missed-runs-drain.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        let mirror = addScheduledRepo(to: vm, name: "mirror")
+        vm.catchUpMissedScheduledRuns(now: Date().addingTimeInterval(wakeDelay))
+        #expect(vm.menuBarStatusLine != nil)
+
+        vm.cancelSync(repoID: mirror)
+        #expect(!vm.inProgressSyncIDs.contains(mirror))
+        #expect(vm.menuBarStatusLine == nil)
+    }
+
+    @Test func aWakeOnTimeChangesNothing() {
+        let suite = "gitrelay.tests.missed-runs-on-time.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        let mirror = addScheduledRepo(to: vm, name: "mirror")
+        vm.catchUpMissedScheduledRuns(now: Date())
+
+        #expect(!vm.inProgressSyncIDs.contains(mirror))
+        #expect(vm.menuBarStatusLine == nil)
+    }
+
+    @Test func aPausedScheduleShowsThePauseReasonAndEnqueuesNothing() {
+        let suite = "gitrelay.tests.missed-runs-paused.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        let mirror = addScheduledRepo(to: vm, name: "mirror")
+        vm.setScheduledSyncManuallyPaused(true)
+
+        vm.catchUpMissedScheduledRuns(now: Date().addingTimeInterval(wakeDelay))
+
+        #expect(!vm.inProgressSyncIDs.contains(mirror))
+        #expect(vm.menuBarStatusLine == .paused(.manual))
+    }
+
+    @Test func anEmptyLibraryNeverShowsALine() {
+        let suite = "gitrelay.tests.missed-runs-empty.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let vm = makeViewModel(defaults: defaults)
+
+        vm.catchUpMissedScheduledRuns(now: Date().addingTimeInterval(wakeDelay))
+        #expect(vm.menuBarStatusLine == nil)
+    }
+}
