@@ -8789,6 +8789,40 @@
           }
         }
       }
+    },
+    "Select a repository, or drop a git URL to add one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a repository, or drop a git URL to add one."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择一个仓库，或拖入 git URL 以添加。"
+          }
+        }
+      }
+    },
+    "Filter and Display": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter and Display"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "筛选与显示"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

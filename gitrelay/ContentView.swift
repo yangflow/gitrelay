@@ -16,10 +16,12 @@ struct ContentView: View {
     @State private var addPrefill: RepoSourceDropPrefill?
     @State private var isDropTargeted = false
     @State private var didRestoreWindowLayout = false
+    /// Daily action: no collapse animation (reads as lag when reparenting chrome).
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
         @Bindable var appVM = appVM
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             SidebarView(selectedRepoID: $selectedRepoID, sheetMode: $sheetMode)
                 .gitRelaySidebarColumnWidth(ideal: appVM.windowLayout.sidebarWidth)
                 .background {
@@ -37,11 +39,13 @@ struct ContentView: View {
             DetailView(
                 selectedRepoID: $selectedRepoID,
                 onAdd: { openAddSheet(prefill: nil) },
+                onBrowse: { sheetMode = .browse },
                 onExamplePrefill: { openAddSheet(prefill: $0) },
                 isDropTargeted: isDropTargeted
             )
             .gitRelayChrome(.detail)
         }
+        .animation(nil, value: columnVisibility)
         .frame(
             minWidth: DesignTokens.Layout.windowMinWidth,
             minHeight: DesignTokens.Layout.windowMinHeight
