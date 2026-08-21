@@ -20,6 +20,10 @@ nonisolated enum MissedScheduledRuns {
     /// left closed for a week still reports a number a human can read.
     static let maxMissedRunsPerRepo = 99
 
+    /// A fire only counts as missed once it is this late, so a timer nudged by a
+    /// busy run loop or App Nap does not read as a slept-through run.
+    static let graceInterval: TimeInterval = 60
+
     struct Outcome: Equatable, Sendable {
         /// Repos whose next fire is already in the past, in the order given.
         var dueRepoIDs: [UUID] = []
@@ -37,7 +41,7 @@ nonisolated enum MissedScheduledRuns {
         for expectation in expectations {
             guard expectation.interval > 0 else { continue }
             let overdue = now.timeIntervalSince(expectation.expectedFireDate)
-            guard overdue >= 0 else { continue }
+            guard overdue >= graceInterval else { continue }
             outcome.dueRepoIDs.append(expectation.repoID)
             outcome.missedRunCount += missedRuns(overdue: overdue, interval: expectation.interval)
         }

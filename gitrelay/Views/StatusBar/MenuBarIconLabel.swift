@@ -6,6 +6,7 @@ struct MenuBarIconLabel: View {
 
     var body: some View {
         Image(nsImage: icon)
+            .renderingMode(appearance.isTemplate ? .template : .original)
     }
 
     private var appearance: MenuBarIconAppearance {
