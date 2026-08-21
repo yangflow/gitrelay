@@ -10,6 +10,9 @@ private struct SidebarColumnWidthKey: PreferenceKey {
 
 struct ContentView: View {
     @Environment(AppViewModel.self) private var appVM
+    @State private var sidebarSelection: MainSidebarItem = .default
+    /// Last non-transient row, so picking 浏览远程 can hand selection back.
+    @State private var lastPaneSelection: MainSidebarItem = .default
     @State private var selectedRepoID: UUID?
     @State private var sheetMode: SheetMode?
     @State private var browsePrefill: BrowseRemotePrefill?
@@ -20,7 +23,7 @@ struct ContentView: View {
     var body: some View {
         @Bindable var appVM = appVM
         NavigationSplitView {
-            SidebarView(selectedRepoID: $selectedRepoID, sheetMode: $sheetMode)
+            MainSidebarView(selection: $sidebarSelection)
                 .gitRelaySidebarColumnWidth(ideal: appVM.windowLayout.sidebarWidth)
                 .background {
                     GeometryReader { proxy in
@@ -34,14 +37,9 @@ struct ContentView: View {
                 }
                 .gitRelayChrome(.sidebar)
         } detail: {
-            DetailView(
-                selectedRepoID: $selectedRepoID,
-                onAdd: { openAddSheet(prefill: nil) },
-                onBrowse: { sheetMode = .browse },
-                onExamplePrefill: { openAddSheet(prefill: $0) },
-                isDropTargeted: isDropTargeted
-            )
-            .gitRelayChrome(.detail)
+            detailPane
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .gitRelayChrome(.detail)
         }
         .frame(
             minWidth: DesignTokens.Layout.windowMinWidth,
@@ -60,6 +58,10 @@ struct ContentView: View {
             applyPendingBrowsePrefill()
             applyPendingEditFocusAuth()
             applyPendingOpenAddRepository()
+            applyPendingFocusSearch()
+        }
+        .onChange(of: sidebarSelection) { previous, current in
+            handleSidebarSelectionChange(from: previous, to: current)
         }
         .onChange(of: selectedRepoID) { _, newValue in
             appVM.mainWindowSelectedRepoID = newValue
@@ -84,6 +86,10 @@ struct ContentView: View {
         .onChange(of: appVM.pendingOpenAddRepository) { _, isPending in
             guard isPending else { return }
             applyPendingOpenAddRepository()
+        }
+        .onChange(of: appVM.pendingFocusSidebarSearch) { _, isPending in
+            guard isPending else { return }
+            applyPendingFocusSearch()
         }
         .sheet(item: $sheetMode) { mode in
             switch mode {
@@ -122,6 +128,61 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Right pane
+
+    @ViewBuilder
+    private var detailPane: some View {
+        switch sidebarSelection {
+        case .repositories, .browseRemote:
+            repositoriesPane
+        case .queue:
+            SyncQueueView(onOpen: { select(repoID: $0) })
+        case .githubAccounts, .gitlabAccounts:
+            ProviderAccountsView(
+                provider: sidebarSelection.provider ?? .github,
+                onBrowse: { sheetMode = .browse }
+            )
+        case .settings:
+            SettingsView()
+        }
+    }
+
+    @ViewBuilder
+    private var repositoriesPane: some View {
+        if let selectedRepoID, let repo = appVM.repos.first(where: { $0.id == selectedRepoID }) {
+            RepoDetailPane(repo: repo) { select(repoID: nil) }
+        } else {
+            RepoPairTableView(
+                onOpen: { select(repoID: $0) },
+                onAdd: { openAddSheet(prefill: nil) },
+                onEdit: { sheetMode = .edit($0, focusAuth: false) },
+                onExamplePrefill: { openAddSheet(prefill: $0) },
+                isDropTargeted: isDropTargeted
+            )
+        }
+    }
+
+    // MARK: - Navigation
+
+    /// 浏览远程 runs the browse sheet instead of owning a pane, so selection
+    /// returns to whichever row the user was on.
+    private func handleSidebarSelectionChange(
+        from previous: MainSidebarItem,
+        to current: MainSidebarItem
+    ) {
+        guard current.isTransientAction else {
+            lastPaneSelection = current
+            return
+        }
+        sheetMode = .browse
+        sidebarSelection = previous.isTransientAction ? lastPaneSelection : previous
+    }
+
+    private func select(repoID: UUID?) {
+        sidebarSelection = .repositories
+        selectedRepoID = repoID
+    }
+
     private func restoreWindowLayoutIfNeeded() {
         guard !didRestoreWindowLayout else { return }
         appVM.windowLayout.reconcileSelection(withExistingIDs: Set(appVM.repos.map(\.id)))
@@ -144,7 +205,7 @@ struct ContentView: View {
 
     private func applyPendingMainWindowSelection() {
         guard let repoID = appVM.pendingMainWindowRepoID else { return }
-        selectedRepoID = repoID
+        select(repoID: repoID)
         appVM.mainWindowSelectedRepoID = repoID
         appVM.pendingMainWindowRepoID = nil
     }
@@ -157,7 +218,7 @@ struct ContentView: View {
 
     private func applyPendingEditFocusAuth() {
         guard let repoID = appVM.consumePendingEditFocusAuthRepoID() else { return }
-        selectedRepoID = repoID
+        select(repoID: repoID)
         guard let repo = appVM.repos.first(where: { $0.id == repoID }) else { return }
         sheetMode = .edit(repo, focusAuth: true)
     }
@@ -165,5 +226,13 @@ struct ContentView: View {
     private func applyPendingOpenAddRepository() {
         guard appVM.consumePendingOpenAddRepository() else { return }
         openAddSheet(prefill: nil)
+    }
+
+    /// ⌘F focuses the pair-table search field, which only exists on the 仓库
+    /// pane. Bring that pane forward and let it consume the pending flag.
+    private func applyPendingFocusSearch() {
+        guard appVM.pendingFocusSidebarSearch else { return }
+        sidebarSelection = .repositories
+        selectedRepoID = nil
     }
 }

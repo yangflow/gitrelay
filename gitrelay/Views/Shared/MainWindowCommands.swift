@@ -35,6 +35,11 @@ struct MainWindowCommands: Commands {
                 MainWindowShortcutBinding.syncSelected.keyEquivalent,
                 modifiers: MainWindowShortcutBinding.syncSelected.modifiers
             )
+
+            // The pair table keeps only search and add, so Sync All lives here.
+            Button(String(localized: "Sync All")) {
+                appVM.triggerSyncAll()
+            }
         }
     }
 }
