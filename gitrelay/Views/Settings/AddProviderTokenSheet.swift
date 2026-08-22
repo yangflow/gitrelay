@@ -101,6 +101,7 @@ struct AddProviderTokenSheet: View {
     private func save() {
         let cleanToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanToken.isEmpty else { return }
+        errorMessage = nil
 
         do {
             let record = try ProviderAccountStore.ensureAccount(label: label, for: provider)

@@ -133,10 +133,13 @@ struct SettingsView: View {
             selectedPane = .security
         }
         .sheet(isPresented: $isPresentingAddToken) {
-            AddProviderTokenSheet(initialProvider: accountProviderFilter) { provider, label in
-                reloadAccounts()
-                testToken(provider: provider, accountLabel: label)
-            }
+            AddProviderTokenSheet(
+                initialProvider: accountProviderFilter,
+                onSaved: { provider, label in
+                    reloadAccounts()
+                    testToken(provider: provider, accountLabel: label)
+                }
+            )
         }
         .alert(
             String(localized: "Import Configuration"),
