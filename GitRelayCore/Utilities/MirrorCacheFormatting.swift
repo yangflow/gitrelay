@@ -1,8 +1,18 @@
 import Foundation
 
 enum MirrorCacheFormatting {
+    private static let byteCountFormatter: ByteCountFormatter = {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        formatter.allowedUnits = [.useBytes, .useKB, .useMB, .useGB, .useTB]
+        formatter.includesUnit = true
+        formatter.isAdaptive = true
+        formatter.zeroPadsFractionDigits = false
+        return formatter
+    }()
+
     static func byteCount(_ bytes: Int64) -> String {
-        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+        byteCountFormatter.string(fromByteCount: bytes)
     }
 
     static func usageSummary(usageBytes: Int64, quotaGB: Int?) -> String {

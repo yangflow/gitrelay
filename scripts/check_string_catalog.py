@@ -112,6 +112,11 @@ REQUIRED_KEYS = {
         "Show accounts from every provider",
         "Ask %@ whether the saved token still works",
         "Require Touch ID or password for sensitive actions",
+        # Cache per-repo size + evict (issue #105).
+        "Local Mirrors",
+        "Clean",
+        "Clean All",
+        "No local mirrors.",
     ),
     # Quiet widget face (issue #89): 今日 + three counts, no glyph-leading keys.
     ROOT / "gitrelayWidget" / "Localizable.xcstrings": (

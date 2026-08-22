@@ -18,6 +18,7 @@ final class AppViewModel {
     var orgSubscriptionPreferences: OrgSubscriptionPreferences
     var orgSubscriptions: [OrgSubscription] = []
     var mirrorCacheUsageBytes: Int64 = 0
+    var mirrorCacheRepoUsages: [MirrorCacheRepoUsage] = []
     var isCleaningMirrorCache = false
 
     /// When opening the main window from the menu bar, select this repo in the sidebar.
@@ -543,8 +544,10 @@ final class AppViewModel {
 
     func refreshMirrorCacheUsage() {
         mirrorCacheUsageBytes = MirrorCacheService.currentUsageBytes(repos: repos)
+        mirrorCacheRepoUsages = MirrorCacheService.repoUsages(repos: repos)
     }
 
+    /// Evicts every local mirror (Settings → Cache → Clean All). In-progress syncs are skipped.
     func cleanMirrorCacheNow() async {
         guard !isCleaningMirrorCache else { return }
         isCleaningMirrorCache = true
@@ -553,11 +556,22 @@ final class AppViewModel {
             refreshMirrorCacheUsage()
         }
 
-        _ = await MirrorCacheService.performCleanup(
+        _ = await MirrorCacheService.evictAllMirrors(
             repos: repos,
-            quotaGB: cachePreferences.preferences.cacheQuotaGB,
             excluding: inProgressSyncIDs
         )
+    }
+
+    /// Evicts one pair's local bare clone. Rebuilds on the next sync.
+    func cleanMirrorCache(for repoID: UUID) async {
+        guard !isCleaningMirrorCache else { return }
+        guard !inProgressSyncIDs.contains(repoID) else { return }
+        isCleaningMirrorCache = true
+        defer {
+            isCleaningMirrorCache = false
+            refreshMirrorCacheUsage()
+        }
+        _ = await MirrorCacheService.freeMirrorSpace(for: repoID)
     }
 
     func enforceMirrorCacheQuotaIfNeeded(excluding repoIDs: Set<UUID> = []) async {
@@ -576,9 +590,7 @@ final class AppViewModel {
     }
 
     func freeMirrorSpace(for repoID: UUID) async {
-        guard !inProgressSyncIDs.contains(repoID) else { return }
-        _ = await MirrorCacheService.freeMirrorSpace(for: repoID)
-        refreshMirrorCacheUsage()
+        await cleanMirrorCache(for: repoID)
     }
 
     /// Handles an inbound webhook request and may queue an immediate sync (bypasses frequency / pause).

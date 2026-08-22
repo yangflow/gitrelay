@@ -39,6 +39,20 @@ nonisolated enum MirrorCacheService {
         )
     }
 
+    static func repoUsages(
+        repos: [RepoConfig],
+        mirrorsDirectory: URL = Constants.mirrorsDirectory,
+        fileManager: FileManager = .default,
+        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider
+    ) -> [MirrorCacheRepoUsage] {
+        MirrorDirectorySizer.repoUsages(
+            repos: repos,
+            mirrorsDirectory: mirrorsDirectory,
+            fileManager: fileManager,
+            sizeOf: sizeOf
+        )
+    }
+
     @MainActor
     static func performCleanup(
         repos: [RepoConfig],
@@ -122,6 +136,80 @@ nonisolated enum MirrorCacheService {
         try? await runGarbageCollection(repoID)
         try? deleteMirror(repoID)
         return before
+    }
+
+    /// Deletes every local mirror folder (configured pairs and orphan UUID dirs).
+    /// Skips `excluding` IDs (typically in-progress syncs). Rebuilds on the next sync.
+    @MainActor
+    static func evictAllMirrors(
+        repos: [RepoConfig],
+        excluding repoIDs: Set<UUID> = [],
+        mirrorsDirectory: URL = Constants.mirrorsDirectory,
+        fileManager: FileManager = .default,
+        sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider,
+        runGarbageCollection: (UUID) async throws -> Void = defaultGarbageCollection,
+        deleteMirror: (UUID) throws -> Void = MirrorStore.deleteMirror(for:)
+    ) async -> MirrorCacheCleanupResult {
+        let initialUsage = currentUsageBytes(
+            repos: repos,
+            mirrorsDirectory: mirrorsDirectory,
+            fileManager: fileManager,
+            sizeOf: sizeOf
+        )
+
+        var steps: [MirrorCacheEvictionStep] = []
+        var usage = initialUsage
+        var seen = Set<UUID>()
+
+        for repo in repos where !repoIDs.contains(repo.id) {
+            seen.insert(repo.id)
+            let freed = await freeMirrorSpace(
+                for: repo.id,
+                mirrorsDirectory: mirrorsDirectory,
+                fileManager: fileManager,
+                sizeOf: sizeOf,
+                runGarbageCollection: runGarbageCollection,
+                deleteMirror: deleteMirror
+            )
+            guard freed > 0 else { continue }
+            steps.append(.garbageCollect(repoID: repo.id))
+            steps.append(.deleteMirror(repoID: repo.id))
+            usage -= freed
+        }
+
+        guard let entries = try? fileManager.contentsOfDirectory(
+            at: mirrorsDirectory,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else {
+            return MirrorCacheCleanupResult(
+                steps: steps,
+                initialUsageBytes: initialUsage,
+                finalUsageBytes: max(0, usage)
+            )
+        }
+
+        for entry in entries {
+            guard let repoID = UUID(uuidString: entry.lastPathComponent),
+                  !seen.contains(repoID),
+                  !repoIDs.contains(repoID) else { continue }
+            let before = sizeOf(entry)
+            guard before > 0 else { continue }
+            steps.append(.garbageCollect(repoID: repoID))
+            try? await runGarbageCollection(repoID)
+            steps.append(.deleteMirror(repoID: repoID))
+            try? deleteMirror(repoID)
+            if fileManager.fileExists(atPath: entry.path) {
+                try? fileManager.removeItem(at: entry)
+            }
+            usage -= before
+        }
+
+        return MirrorCacheCleanupResult(
+            steps: steps,
+            initialUsageBytes: initialUsage,
+            finalUsageBytes: max(0, usage)
+        )
     }
 
     @MainActor
