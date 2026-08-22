@@ -13,11 +13,11 @@ struct MirrorTargetFieldsView: View {
     var authPickerTitle: String? = nil
 
     private var resolvedURLTitle: String {
-        urlFieldTitle ?? String(localized: "Target URL")
+        urlFieldTitle ?? String.loc("Target URL")
     }
 
     private var resolvedAuthTitle: String {
-        authPickerTitle ?? String(localized: "Authentication Method")
+        authPickerTitle ?? String.loc("Authentication Method")
     }
 
     var body: some View {
@@ -27,7 +27,7 @@ struct MirrorTargetFieldsView: View {
                     Text("Target \(index + 1)")
                         .font(.subheadline.weight(.medium))
                     if !target.enabled {
-                        Text(String(localized: "Disabled"))
+                        Text(String.loc("Disabled"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -43,10 +43,10 @@ struct MirrorTargetFieldsView: View {
             }
 
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-                Text(String(localized: "Type"))
+                Text(String.loc("Type"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Picker(String(localized: "Type"), selection: $target.kind) {
+                Picker(String.loc("Type"), selection: $target.kind) {
                     ForEach(MirrorTargetKind.allCases) { kind in
                         Text(kind.displayName).tag(kind)
                     }
@@ -62,7 +62,7 @@ struct MirrorTargetFieldsView: View {
                 filesystemFields
             }
 
-            Toggle(String(localized: "Enabled"), isOn: $target.enabled)
+            Toggle(String.loc("Enabled"), isOn: $target.enabled)
         }
     }
 
@@ -93,7 +93,7 @@ struct MirrorTargetFieldsView: View {
     @ViewBuilder
     private var filesystemFields: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-            Text(String(localized: "Archive Directory"))
+            Text(String.loc("Archive Directory"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             HStack {
@@ -110,10 +110,10 @@ struct MirrorTargetFieldsView: View {
         }
 
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-            Text(String(localized: "Archive Format"))
+            Text(String.loc("Archive Format"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Picker(String(localized: "Archive Format"), selection: $target.archiveFormat) {
+            Picker(String.loc("Archive Format"), selection: $target.archiveFormat) {
                 ForEach(ArchiveFormat.allCases) { format in
                     Text(format.displayName).tag(format)
                 }
@@ -142,8 +142,8 @@ struct MirrorTargetFieldsView: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.prompt = String(localized: "Choose")
-        panel.message = String(localized: "Choose an archive output directory")
+        panel.prompt = String.loc("Choose")
+        panel.message = String.loc("Choose an archive output directory")
         if panel.runModal() == .OK, let url = panel.url {
             target.filesystemPath = url.path
         }

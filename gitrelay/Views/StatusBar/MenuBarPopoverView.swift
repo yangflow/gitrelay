@@ -38,12 +38,12 @@ struct MenuBarPopoverView: View {
                         .foregroundStyle(.primary)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "Open Main Window"))
+                .help(String.loc("Open Main Window"))
 
                 Spacer(minLength: DesignTokens.Spacing.xs)
 
                 if !appVM.repos.isEmpty {
-                    Button(String(localized: "Sync All")) { appVM.triggerSyncAll() }
+                    Button(String.loc("Sync All")) { appVM.triggerSyncAll() }
                         .buttonStyle(QuietPressButtonStyle())
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -53,8 +53,8 @@ struct MenuBarPopoverView: View {
                     Image(systemName: "gearshape")
                 }
                 .buttonStyle(.borderless)
-                .help(String(localized: "Settings"))
-                .accessibilityLabel(String(localized: "Settings"))
+                .help(String.loc("Settings"))
+                .accessibilityLabel(String.loc("Settings"))
             }
 
             searchField
@@ -91,7 +91,7 @@ struct MenuBarPopoverView: View {
     @ViewBuilder
     private var content: some View {
         if appVM.repos.isEmpty {
-            quietLine(String(localized: "No Repositories"))
+            quietLine(String.loc("No Repositories"))
         } else {
             SyncHealthSummaryView(summary: appVM.healthSummary)
                 .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
@@ -100,7 +100,7 @@ struct MenuBarPopoverView: View {
             Divider()
 
             if filteredRepos.isEmpty {
-                quietLine(String(localized: "No Matching Repositories"))
+                quietLine(String.loc("No Matching Repositories"))
             } else {
                 repoList
             }
@@ -142,8 +142,8 @@ struct MenuBarPopoverView: View {
             Button(action: openAbout) {
                 Image(systemName: "info.circle")
             }
-            .help(String(localized: "About GitRelay"))
-            .accessibilityLabel(String(localized: "About GitRelay"))
+            .help(String.loc("About GitRelay"))
+            .accessibilityLabel(String.loc("About GitRelay"))
 
             Spacer(minLength: 0)
 
@@ -153,8 +153,8 @@ struct MenuBarPopoverView: View {
                 Image(systemName: "power")
             }
             .keyboardShortcut("q")
-            .help(String(localized: "Quit GitRelay"))
-            .accessibilityLabel(String(localized: "Quit GitRelay"))
+            .help(String.loc("Quit GitRelay"))
+            .accessibilityLabel(String.loc("Quit GitRelay"))
         }
         .buttonStyle(QuietPressButtonStyle())
         .font(.caption)

@@ -17,6 +17,7 @@ struct gitrelayApp: App {
                 .environment(appVM)
                 .environment(languageStore)
                 .environment(\.locale, languageStore.locale)
+                .id(languageStore.preference)
                 .environment(appVM.notificationPreferences)
                 .environment(appVM.securityPreferences)
                 .environment(appVM.cachePreferences)
@@ -41,6 +42,7 @@ struct gitrelayApp: App {
             AboutView()
                 .environment(languageStore)
                 .environment(\.locale, languageStore.locale)
+                .id(languageStore.preference)
         }
         .windowResizability(.contentSize)
 
@@ -49,7 +51,7 @@ struct gitrelayApp: App {
         Settings {
             TabView {
                 OrgSubscriptionSettingsView()
-                    .tabItem { Label(String(localized: "Subscribe"), systemImage: "building.2") }
+                    .tabItem { Label(String.loc("Subscribe"), systemImage: "building.2") }
                 VerificationSettingsView()
                     .tabItem { Label("Verify", systemImage: "checkmark.shield") }
             }
@@ -61,6 +63,7 @@ struct gitrelayApp: App {
             .environment(appVM)
             .environment(languageStore)
             .environment(\.locale, languageStore.locale)
+            .id(languageStore.preference)
             .onAppear {
                 appDelegate.behaviorStore = appVM.appBehaviorPreferences
             }
@@ -71,6 +74,7 @@ struct gitrelayApp: App {
                 .environment(appVM)
                 .environment(languageStore)
                 .environment(\.locale, languageStore.locale)
+                .id(languageStore.preference)
                 .environment(appVM.notificationPreferences)
                 .environment(appVM.securityPreferences)
                 .environment(appVM.appBehaviorPreferences)

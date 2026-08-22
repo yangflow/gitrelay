@@ -48,7 +48,7 @@ nonisolated struct RepoScheduleState: Equatable, Sendable {
     }
 
     var toggleTitle: String {
-        isPaused ? String(localized: "Resume") : String(localized: "Pause")
+        isPaused ? String.loc("Resume") : String.loc("Pause")
     }
 
     var toggleSymbolName: String {
@@ -57,8 +57,8 @@ nonisolated struct RepoScheduleState: Equatable, Sendable {
 
     var toggleHelp: String {
         isPaused
-            ? String(localized: "Resume scheduled sync for this pair")
-            : String(localized: "Pause scheduled sync for this pair; manual sync still works")
+            ? String.loc("Resume scheduled sync for this pair")
+            : String.loc("Pause scheduled sync for this pair; manual sync still works")
     }
 }
 
@@ -75,13 +75,13 @@ nonisolated enum RepoNextRun: Equatable, Sendable {
     func text(now: Date = Date(), calendar: Calendar = .current) -> String {
         switch self {
         case .paused:
-            return String(localized: "Paused")
+            return String.loc("Paused")
         case .manualOnly:
-            return String(localized: "Manual sync only")
+            return String.loc("Manual sync only")
         case .unscheduled:
-            return String(localized: "Not scheduled")
+            return String.loc("Not scheduled")
         case .due(let date):
-            return String(localized: "Next at \(Self.timeText(for: date, now: now, calendar: calendar))")
+            return String.loc("Next at \(Self.timeText(for: date, now: now, calendar: calendar))")
         }
     }
 

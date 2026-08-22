@@ -27,7 +27,7 @@ struct RepoStatusSectionView: View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
             if isSyncing {
                 RepoSyncingRowView(
-                    statusTitle: syncPhase?.statusTitle ?? String(localized: "Syncing..."),
+                    statusTitle: syncPhase?.statusTitle ?? String.loc("Syncing..."),
                     latestLogLine: syncPhase?.progressDetail,
                     onCancel: onCancel
                 )
@@ -79,6 +79,6 @@ struct RepoStatusSectionView: View {
         }
         .font(.caption)
         .foregroundStyle(state.isPaused ? DesignTokens.StatusColor.pause : Color.secondary)
-        .help(String(localized: "Scheduled sync runs only while GitRelay stays open. Manual sync is unaffected."))
+        .help(String.loc("Scheduled sync runs only while GitRelay stays open. Manual sync is unaffected."))
     }
 }

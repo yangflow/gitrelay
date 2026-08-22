@@ -12,7 +12,7 @@ struct RepoDivergedRowView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(DesignTokens.StatusColor.diverged)
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
-                Text(String(localized: "Backup content may have diverged from the source repository"))
+                Text(String.loc("Backup content may have diverged from the source repository"))
                     .font(.callout)
                     .fontWeight(.medium)
                 Text(detail)
@@ -20,18 +20,18 @@ struct RepoDivergedRowView: View {
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                 if let lastVerifiedAt {
-                    Text(String(localized: "Last verified: \(lastVerifiedAt.formatted(.relative(presentation: .named)))"))
+                    Text(String.loc("Last verified: \(lastVerifiedAt.formatted(.relative(presentation: .named)))"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
             Spacer(minLength: DesignTokens.Spacing.md)
             VStack(spacing: DesignTokens.Spacing.xs) {
-                Button(String(localized: "Verify Now"), action: onVerifyNow)
+                Button(String.loc("Verify Now"), action: onVerifyNow)
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(isVerifying)
-                Button(String(localized: "Sync Now"), action: onSyncNow)
+                Button(String.loc("Sync Now"), action: onSyncNow)
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
             }

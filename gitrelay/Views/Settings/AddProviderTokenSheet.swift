@@ -40,7 +40,7 @@ struct AddProviderTokenSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(String(localized: "Add Token"))
+                Text(String.loc("Add Token"))
                     .font(.headline)
                 Spacer()
             }
@@ -51,23 +51,23 @@ struct AddProviderTokenSheet: View {
             Form {
                 Section {
                     if !locksProviderSelection {
-                        Picker(String(localized: "Provider"), selection: $provider) {
+                        Picker(String.loc("Provider"), selection: $provider) {
                             ForEach(GitProvider.allCases) { candidate in
                                 Text(candidate.shortName).tag(candidate)
                             }
                         }
                     }
 
-                    TextField(String(localized: "Account Name"), text: $label)
+                    TextField(String.loc("Account Name"), text: $label)
 
                     if acceptsHost {
-                        TextField(String(localized: "Host"), text: $host)
+                        TextField(String.loc("Host"), text: $host)
                             .font(.system(.body, design: .monospaced))
                     }
                 } header: {
-                    Text(String(localized: "Account"))
+                    Text(String.loc("Account"))
                 } footer: {
-                    Text(String(localized: "Reusing an existing account name replaces that account's token."))
+                    Text(String.loc("Reusing an existing account name replaces that account's token."))
                 }
 
                 Section {
@@ -83,9 +83,9 @@ struct AddProviderTokenSheet: View {
                             .foregroundStyle(DesignTokens.StatusColor.error)
                     }
                 } header: {
-                    Text(String(localized: "Personal Access Token"))
+                    Text(String.loc("Personal Access Token"))
                 } footer: {
-                    Text(String(localized: "The token is stored in the Keychain. It is never written to a log or to exported configuration."))
+                    Text(String.loc("The token is stored in the Keychain. It is never written to a log or to exported configuration."))
                 }
             }
             .formStyle(.grouped)
@@ -94,9 +94,9 @@ struct AddProviderTokenSheet: View {
 
             HStack {
                 Spacer()
-                Button(String(localized: "Cancel")) { dismiss() }
+                Button(String.loc("Cancel")) { dismiss() }
                     .keyboardShortcut(.escape)
-                Button(String(localized: "Save")) { save() }
+                Button(String.loc("Save")) { save() }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.return)
                     .disabled(!canSave)

@@ -8,8 +8,8 @@ nonisolated enum ConfigImportMode: String, Codable, CaseIterable, Identifiable, 
 
     var displayName: String {
         switch self {
-        case .merge: String(localized: "Merge (skip existing IDs)")
-        case .replace: String(localized: "Replace all")
+        case .merge: String.loc("Merge (skip existing IDs)")
+        case .replace: String.loc("Replace all")
         }
     }
 }
@@ -22,13 +22,13 @@ nonisolated enum ConfigExportError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .corruptJSON:
-            return String(localized: "The configuration file is damaged or is not valid JSON.")
+            return String.loc("The configuration file is damaged or is not valid JSON.")
         case .unsupportedSchemaVersion(let found, let supported):
             return String(
                 localized: "Unsupported configuration schema version \(found). This app supports version \(supported)."
             )
         case .partialDecode(let detail):
-            return String(localized: "The configuration file could not be fully read: \(detail)")
+            return String.loc("The configuration file could not be fully read: \(detail)")
         }
     }
 }

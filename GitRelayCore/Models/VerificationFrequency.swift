@@ -11,10 +11,10 @@ enum VerificationFrequency: String, Codable, CaseIterable, Identifiable {
     /// Localized label for UI. Raw values stay Chinese for Codable compatibility.
     var displayName: String {
         switch self {
-        case .manual: String(localized: "Manual")
-        case .day1:   String(localized: "Daily")
-        case .week1:  String(localized: "Weekly")
-        case .month1: String(localized: "Monthly")
+        case .manual: String.loc("Manual")
+        case .day1:   String.loc("Daily")
+        case .week1:  String.loc("Weekly")
+        case .month1: String.loc("Monthly")
         }
     }
 

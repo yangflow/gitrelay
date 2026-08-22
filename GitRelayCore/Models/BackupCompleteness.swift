@@ -26,7 +26,7 @@ struct BackupCompleteness: Equatable, Sendable {
     var helpText: String? {
         guard !reasons.isEmpty else { return nil }
         let detail = reasons.map(\.missingDetail).joined(separator: "; ")
-        return String(localized: "Incomplete backup: \(detail)")
+        return String.loc("Incomplete backup: \(detail)")
     }
 
     static func evaluate(
@@ -54,11 +54,11 @@ extension BackupCompleteness.Reason {
     var missingDetail: String {
         switch self {
         case .shallowClone:
-            return String(localized: "shallow clone (history truncated)")
+            return String.loc("shallow clone (history truncated)")
         case .customRefFilters:
-            return String(localized: "custom ref filters (only selected refs sync)")
+            return String.loc("custom ref filters (only selected refs sync)")
         case .missingGitLFSTool:
-            return String(localized: "git-lfs missing while the source uses Git LFS")
+            return String.loc("git-lfs missing while the source uses Git LFS")
         }
     }
 }

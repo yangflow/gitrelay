@@ -13,16 +13,16 @@ struct RepoRowCaptionView: View {
     private var captionText: String {
         switch caption.kind {
         case .needsCredentials:
-            return String(localized: "Needs credentials")
+            return String.loc("Needs credentials")
         case .diverged:
-            return String(localized: "Content divergence")
+            return String.loc("Content divergence")
         case .neverSynced:
-            return String(localized: "Not Synced")
+            return String.loc("Not Synced")
         case .lastSync(let date):
             let relative = date.formatted(.relative(presentation: .named))
-            return String(localized: "Last synced \(relative)")
+            return String.loc("Last synced \(relative)")
         case .queued:
-            return String(localized: "Queued")
+            return String.loc("Queued")
         case .syncing(let text):
             return text
         }

@@ -12,11 +12,11 @@ nonisolated enum SyncFrequency: String, Codable, CaseIterable, Identifiable {
     /// Localized label for UI. Raw values stay Chinese for Codable compatibility.
     var displayName: String {
         switch self {
-        case .manual: String(localized: "Manual")
-        case .min15:  String(localized: "Every 15 Minutes")
-        case .min30:  String(localized: "Every 30 Minutes")
-        case .hour1:  String(localized: "Hourly")
-        case .day1:   String(localized: "Daily")
+        case .manual: String.loc("Manual")
+        case .min15:  String.loc("Every 15 Minutes")
+        case .min30:  String.loc("Every 30 Minutes")
+        case .hour1:  String.loc("Hourly")
+        case .day1:   String.loc("Daily")
         }
     }
 

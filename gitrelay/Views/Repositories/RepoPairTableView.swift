@@ -23,7 +23,7 @@ struct RepoPairTableView: View {
         VStack(spacing: 0) {
             PaneHeaderView(
                 title: MainSidebarItem.repositories.title,
-                subtitle: String(localized: "\(appVM.repos.count) repos")
+                subtitle: String.loc("\(appVM.repos.count) repos")
             ) {
                 HStack(spacing: DesignTokens.Spacing.sm) {
                     searchField(text: $appVM.sidebarSearchText)
@@ -45,17 +45,17 @@ struct RepoPairTableView: View {
             onOpen(id)
         }
         .alert(
-            String(localized: "Delete Repository"),
+            String.loc("Delete Repository"),
             isPresented: $showDeleteAlert,
             presenting: pendingDeleteID
         ) { id in
-            Button(String(localized: "Delete"), role: .destructive) {
+            Button(String.loc("Delete"), role: .destructive) {
                 Task { await confirmDelete(id: id) }
             }
-            Button(String(localized: "Cancel"), role: .cancel) { }
+            Button(String.loc("Cancel"), role: .cancel) { }
         } message: { id in
             let name = appVM.repos.first(where: { $0.id == id })?.name ?? ""
-            Text(String(localized: "Delete “\(name)”? The local mirror cache will also be deleted. This action cannot be undone."))
+            Text(String.loc("Delete “\(name)”? The local mirror cache will also be deleted. This action cannot be undone."))
         }
     }
 
@@ -66,7 +66,7 @@ struct RepoPairTableView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
                 .font(.caption)
-            TextField(String(localized: "Search Repositories"), text: text)
+            TextField(String.loc("Search Repositories"), text: text)
                 .textFieldStyle(.plain)
                 .focused($isSearchFieldFocused)
             if !text.wrappedValue.isEmpty {
@@ -78,7 +78,7 @@ struct RepoPairTableView: View {
                         .font(.caption)
                 }
                 .buttonStyle(.plain)
-                .help(String(localized: "Clear Search"))
+                .help(String.loc("Clear Search"))
             }
         }
         .padding(.horizontal, DesignTokens.Spacing.sm)
@@ -102,8 +102,8 @@ struct RepoPairTableView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.borderedProminent)
-        .help(String(localized: "Add a Repository Manually"))
-        .accessibilityLabel(String(localized: "Add Repository"))
+        .help(String.loc("Add a Repository Manually"))
+        .accessibilityLabel(String.loc("Add Repository"))
     }
 
     // MARK: - Content
@@ -118,7 +118,7 @@ struct RepoPairTableView: View {
         } else if rows.isEmpty {
             PaneEmptyStateView(
                 systemImage: "magnifyingglass",
-                message: String(localized: "No Matching Repositories")
+                message: String.loc("No Matching Repositories")
             )
         } else {
             table
@@ -127,7 +127,7 @@ struct RepoPairTableView: View {
 
     private var table: some View {
         Table(rows, selection: $tableSelection) {
-            TableColumn(String(localized: "Source")) { row in
+            TableColumn(String.loc("Source")) { row in
                 RepoPairPathCell(
                     label: row.sourceLabel,
                     provider: row.sourceProvider,
@@ -139,7 +139,7 @@ struct RepoPairTableView: View {
                 ideal: DesignTokens.Layout.pairTablePathColumnIdeal
             )
 
-            TableColumn(String(localized: "Target")) { row in
+            TableColumn(String.loc("Target")) { row in
                 RepoPairPathCell(
                     label: row.targetLabel,
                     provider: row.targetProvider,
@@ -152,7 +152,7 @@ struct RepoPairTableView: View {
                 ideal: DesignTokens.Layout.pairTablePathColumnIdeal
             )
 
-            TableColumn(String(localized: "Status")) { row in
+            TableColumn(String.loc("Status")) { row in
                 RepoPairStatusCell(status: row.status, detail: row.statusDetail)
             }
             .width(
@@ -160,7 +160,7 @@ struct RepoPairTableView: View {
                 ideal: DesignTokens.Layout.pairTableStatusColumnIdeal
             )
 
-            TableColumn(String(localized: "Last")) { row in
+            TableColumn(String.loc("Last")) { row in
                 Text(row.lastSyncedText ?? "—")
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -187,35 +187,35 @@ struct RepoPairTableView: View {
             let isBusy = status == .syncing || status == .queued
 
             if isBusy {
-                Button(String(localized: "Cancel")) {
+                Button(String.loc("Cancel")) {
                     appVM.cancelSync(repoID: id)
                 }
             } else {
-                Button(String(localized: "Sync Now")) {
+                Button(String.loc("Sync Now")) {
                     appVM.triggerSync(repoID: id)
                 }
             }
 
-            Button(String(localized: "Verify Now")) {
+            Button(String.loc("Verify Now")) {
                 appVM.triggerVerify(repoID: id)
             }
             .disabled(isBusy)
 
-            Button(String(localized: "Free Space")) {
+            Button(String.loc("Free Space")) {
                 Task { await appVM.freeMirrorSpace(for: id) }
             }
             .disabled(isBusy)
 
-            Button(String(localized: "Open Log")) {
+            Button(String.loc("Open Log")) {
                 appVM.requestOpenSyncLog(repoID: id)
             }
 
             Divider()
 
-            Button(String(localized: "Edit")) {
+            Button(String.loc("Edit")) {
                 onEdit(repo)
             }
-            Button(String(localized: "Delete"), role: .destructive) {
+            Button(String.loc("Delete"), role: .destructive) {
                 pendingDeleteID = id
                 showDeleteAlert = true
             }
@@ -266,7 +266,7 @@ private struct RepoPairPathCell: View {
                             style: .continuous
                         )
                     )
-                    .help(String(localized: "\(additionalCount) more targets"))
+                    .help(String.loc("\(additionalCount) more targets"))
             }
         }
         .help(fullURL)

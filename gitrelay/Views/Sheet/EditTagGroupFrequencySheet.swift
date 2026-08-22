@@ -10,13 +10,13 @@ struct EditTagGroupFrequencySheet: View {
     @State private var frequency: SyncFrequency = .manual
 
     private var groupTitle: String {
-        tag ?? String(localized: "Untagged")
+        tag ?? String.loc("Untagged")
     }
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(String(localized: "Edit Group Sync Frequency"))
+                Text(String.loc("Edit Group Sync Frequency"))
                     .font(.headline)
                 Spacer()
             }
@@ -26,12 +26,12 @@ struct EditTagGroupFrequencySheet: View {
 
             Form {
                 Section {
-                    Text(String(localized: "Set the sync frequency for all \(repoCount) repositories in “\(groupTitle)” to:"))
+                    Text(String.loc("Set the sync frequency for all \(repoCount) repositories in “\(groupTitle)” to:"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     FrequencyPickerView(frequency: $frequency)
                 } header: {
-                    Text(String(localized: "Sync Frequency"))
+                    Text(String.loc("Sync Frequency"))
                 }
             }
             .formStyle(.grouped)
@@ -40,9 +40,9 @@ struct EditTagGroupFrequencySheet: View {
 
             HStack {
                 Spacer()
-                Button(String(localized: "Cancel")) { dismiss() }
+                Button(String.loc("Cancel")) { dismiss() }
                     .keyboardShortcut(.escape)
-                Button(String(localized: "Save")) {
+                Button(String.loc("Save")) {
                     appVM.updateFrequency(matchingTag: tag, frequency: frequency)
                     dismiss()
                 }

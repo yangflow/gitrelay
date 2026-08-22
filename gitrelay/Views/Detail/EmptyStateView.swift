@@ -15,7 +15,7 @@ struct EmptyStateView: View {
                 .foregroundStyle(.tertiary)
                 .accessibilityHidden(true)
 
-            Text(String(localized: "Add a repository, or drop a git URL to create a pair."))
+            Text(String.loc("Add a repository, or drop a git URL to create a pair."))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -24,13 +24,13 @@ struct EmptyStateView: View {
                 Button {
                     onExamplePrefill(example)
                 } label: {
-                    Text(String(localized: "Try an example pair"))
+                    Text(String.loc("Try an example pair"))
                         .font(.callout)
                 }
                 .buttonStyle(QuietPressButtonStyle())
                 .foregroundStyle(.secondary)
                 .help(examplePairCaption)
-                .accessibilityHint(String(localized: "Opens the add sheet with example URLs. Nothing is saved until you confirm."))
+                .accessibilityHint(String.loc("Opens the add sheet with example URLs. Nothing is saved until you confirm."))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

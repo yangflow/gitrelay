@@ -28,7 +28,7 @@ enum RepoRowHealthPresentation {
             return Caption(kind: .queued, isStale: false)
         }
         if case .syncing = status {
-            let text = syncPhase?.displayCaption ?? String(localized: "Syncing...")
+            let text = syncPhase?.displayCaption ?? String.loc("Syncing...")
             return Caption(kind: .syncing(text), isStale: false)
         }
 

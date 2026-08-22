@@ -81,7 +81,7 @@ struct GitLabTargetAPIClient: TargetProviderAPIClient {
         )
         guard let match = namespaces.first(where: { $0.full_path.lowercased() == owner.lowercased() }) else {
             throw TargetProviderAPIError.validation(
-                String(localized: "No GitLab group or user namespace named \(owner) is visible to this token.")
+                String.loc("No GitLab group or user namespace named \(owner) is visible to this token.")
             )
         }
         return match.id
@@ -105,7 +105,7 @@ struct GitLabTargetAPIClient: TargetProviderAPIClient {
             return .alreadyExists(httpsCloneURL: https, sshCloneURL: ssh)
         case .missing:
             throw TargetProviderAPIError.validation(
-                String(localized: "GitLab reported the project path as taken, but it could not be read back.")
+                String.loc("GitLab reported the project path as taken, but it could not be read back.")
             )
         }
     }

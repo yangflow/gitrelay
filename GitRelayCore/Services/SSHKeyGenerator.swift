@@ -10,17 +10,17 @@ enum SSHKeyGeneratorError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .sshKeygenNotFound:
-            String(localized: "ssh-keygen was not found. Make sure the macOS Command Line Tools are installed.")
+            String.loc("ssh-keygen was not found. Make sure the macOS Command Line Tools are installed.")
         case .emptyKeyPath:
-            String(localized: "Specify a path for the private key.")
+            String.loc("Specify a path for the private key.")
         case .keyAlreadyExists(let path):
-            String(localized: "A key file already exists at: \(path)")
+            String.loc("A key file already exists at: \(path)")
         case .processFailed(_, let message):
             message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                ? String(localized: "ssh-keygen failed.")
+                ? String.loc("ssh-keygen failed.")
                 : message.trimmingCharacters(in: .whitespacesAndNewlines)
         case .publicKeyMissing(let path):
-            String(localized: "Public key file not found: \(path)")
+            String.loc("Public key file not found: \(path)")
         }
     }
 }

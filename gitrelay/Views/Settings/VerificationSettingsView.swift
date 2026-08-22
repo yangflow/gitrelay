@@ -6,30 +6,30 @@ struct VerificationSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Picker(String(localized: "Verification Frequency"), selection: frequencyBinding) {
+                Picker(String.loc("Verification Frequency"), selection: frequencyBinding) {
                     ForEach(VerificationFrequency.allCases) { frequency in
                         Text(frequency.displayName).tag(frequency)
                     }
                 }
 
                 Stepper(value: sampleSizeBinding, in: VerificationPreferences.sampleSizeRange) {
-                    Text(String(localized: "Sample \(appVM.verificationPreferences.sampleSize) repositories each time"))
+                    Text(String.loc("Sample \(appVM.verificationPreferences.sampleSize) repositories each time"))
                 }
 
                 if let next = appVM.nextVerificationFireDate() {
-                    LabeledContent(String(localized: "Next Sample")) {
+                    LabeledContent(String.loc("Next Sample")) {
                         Text(next, format: .relative(presentation: .named))
                             .foregroundStyle(.secondary)
                     }
                 }
             } header: {
-                Text(String(localized: "Backup Integrity Verification"))
+                Text(String.loc("Backup Integrity Verification"))
             } footer: {
-                Text(String(localized: "Periodically compare the src/dst tip SHA and tree hash for a random sample of repositories. Mismatches are marked as content divergence."))
+                Text(String.loc("Periodically compare the src/dst tip SHA and tree hash for a random sample of repositories. Mismatches are marked as content divergence."))
             }
 
             Section {
-                Button(String(localized: "Verify a Sample Now")) {
+                Button(String.loc("Verify a Sample Now")) {
                     appVM.triggerVerifySampleNow()
                 }
                 .disabled(appVM.repos.isEmpty)

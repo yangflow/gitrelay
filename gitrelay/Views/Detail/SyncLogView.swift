@@ -6,7 +6,7 @@ struct SyncLogView: View {
     var body: some View {
         Group {
             if records.isEmpty {
-                Text(String(localized: "No Records"))
+                Text(String.loc("No Records"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {

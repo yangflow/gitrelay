@@ -16,11 +16,11 @@ struct RepoFailureRowView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(DesignTokens.StatusColor.failed)
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
-                Text(String(localized: "Last Sync Failed"))
+                Text(String.loc("Last Sync Failed"))
                     .font(.callout)
                     .fontWeight(.medium)
                 if consecutiveFailureCount > 0 {
-                    Text(String(localized: "\(consecutiveFailureCount) consecutive failures"))
+                    Text(String.loc("\(consecutiveFailureCount) consecutive failures"))
                         .font(.caption)
                         .foregroundStyle(
                             consecutiveFailureCount >= 3
@@ -33,7 +33,7 @@ struct RepoFailureRowView: View {
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                 if let lastSuccessfulSyncedAt {
-                    Text(String(localized: "Last success: \(lastSuccessfulSyncedAt.formatted(.relative(presentation: .named)))"))
+                    Text(String.loc("Last success: \(lastSuccessfulSyncedAt.formatted(.relative(presentation: .named)))"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -51,7 +51,7 @@ struct RepoFailureRowView: View {
                 )
             }
             Spacer(minLength: DesignTokens.Spacing.md)
-            Button(String(localized: "Retry"), action: onRetry)
+            Button(String.loc("Retry"), action: onRetry)
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
         }

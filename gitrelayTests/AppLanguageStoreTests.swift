@@ -42,6 +42,25 @@ struct AppLanguageStoreTests {
         #expect(afterChange)
     }
 
+    @Test func switchingBackToTheLaunchLanguageClearsTheNote() {
+        let (defaults, _) = freshDefaults()
+        defaults.set(
+            AppLanguagePreference.simplifiedChinese.rawValue,
+            forKey: AppLanguageStore.preferenceKey
+        )
+        let store = AppLanguageStore(defaults: defaults)
+        let launchPreference = store.launchPreference
+
+        store.preference = .english
+        let afterChange = store.showsLaunchCatalogNote
+        store.preference = .simplifiedChinese
+        let afterSwitchingBack = store.showsLaunchCatalogNote
+
+        #expect(launchPreference == .simplifiedChinese)
+        #expect(afterChange)
+        #expect(!afterSwitchingBack)
+    }
+
     @Test func persistingSimplifiedChineseWritesAppleLanguages() {
         let (defaults, _) = freshDefaults()
         let store = AppLanguageStore(defaults: defaults)
@@ -74,6 +93,23 @@ struct AppLanguageStoreTests {
 
         #expect(defaults.array(forKey: "AppleLanguages") as? [String] == ["zh-Hans"])
     }
+
+    @Test func bootstrapSystemRemovesOverride() {
+        let (defaults, suiteName) = freshDefaults()
+        defaults.set(["zh-Hans"], forKey: "AppleLanguages")
+
+        AppLanguageStore.bootstrapAppleLanguages(defaults: defaults)
+
+        #expect(defaults.persistentDomain(forName: suiteName)?["AppleLanguages"] == nil)
+    }
+
+    @Test func storedPreferenceSurvivesAnUnknownRawValue() {
+        let (defaults, _) = freshDefaults()
+        defaults.set("klingon", forKey: AppLanguageStore.preferenceKey)
+
+        let stored = AppLanguageStore.storedPreference(defaults: defaults)
+        #expect(stored == .system)
+    }
 }
 
 @Suite("AppLocalization")
@@ -82,5 +118,21 @@ struct AppLocalizationTests {
         let available = ["en", "zh-Hans", "Base"]
         #expect(AppLocalization.localizationName(for: "zh-Hans", available: available) == "zh-Hans")
         #expect(AppLocalization.localizationName(for: "en", available: available) == "en")
+    }
+
+    @Test @MainActor func stringFollowsPreferenceChanges() {
+        let suiteName = "gitrelay.tests.localization.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defaults.set(AppLanguagePreference.english.rawValue, forKey: AppLanguageStore.preferenceKey)
+        AppLanguageStore.bootstrapAppleLanguages(defaults: defaults)
+        let store = AppLanguageStore(defaults: defaults)
+
+        let english = String.loc("Settings")
+        store.preference = .simplifiedChinese
+        let chinese = String.loc("Settings")
+
+        #expect(english == "Settings")
+        #expect(chinese == "设置")
     }
 }

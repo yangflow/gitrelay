@@ -25,9 +25,9 @@ nonisolated enum ProviderAccountLastUsed: Equatable, Sendable {
     var text: String {
         switch self {
         case .never:
-            return String(localized: "Never used")
+            return String.loc("Never used")
         case .justNow:
-            return String(localized: "Just now")
+            return String.loc("Just now")
         case .at(let date):
             return date.formatted(.relative(presentation: .named))
         }

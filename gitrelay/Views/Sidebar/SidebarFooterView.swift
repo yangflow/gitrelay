@@ -60,7 +60,7 @@ struct SidebarFooterView: View {
 
     private var pauseHelp: String {
         summary.isPaused
-            ? String(localized: "Resume Scheduled Sync")
-            : String(localized: "Pause Scheduled Sync")
+            ? String.loc("Resume Scheduled Sync")
+            : String.loc("Pause Scheduled Sync")
     }
 }

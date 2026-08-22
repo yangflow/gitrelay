@@ -13,25 +13,25 @@ nonisolated enum SyncFailureCopy {
         logLines: [String] = [],
         failedAt: Date? = nil
     ) -> String {
-        var lines: [String] = [String(localized: "GitRelay sync failure")]
-        lines.append(String(localized: "Repository: \(redacted(repo.name))"))
-        lines.append(String(localized: "Source: \(redacted(repo.srcURL))"))
+        var lines: [String] = [String.loc("GitRelay sync failure")]
+        lines.append(String.loc("Repository: \(redacted(repo.name))"))
+        lines.append(String.loc("Source: \(redacted(repo.srcURL))"))
         for target in repo.targets {
-            lines.append(String(localized: "Target: \(redacted(target.displayLabel))"))
+            lines.append(String.loc("Target: \(redacted(target.displayLabel))"))
         }
         if let failedAt {
-            lines.append(String(localized: "Failed at: \(timestamp(failedAt))"))
+            lines.append(String.loc("Failed at: \(timestamp(failedAt))"))
         }
         let safeMessage = redacted(message)
         if !safeMessage.isEmpty {
-            lines.append(String(localized: "Error: \(safeMessage)"))
+            lines.append(String.loc("Error: \(safeMessage)"))
         }
 
         let safeLog = redactedLog(logLines)
         if !safeLog.isEmpty {
-            lines.append(String(localized: "Log:"))
+            lines.append(String.loc("Log:"))
             if logLines.count > maxLogLines {
-                lines.append(String(localized: "Showing the last \(maxLogLines) log lines"))
+                lines.append(String.loc("Showing the last \(maxLogLines) log lines"))
             }
             lines.append(contentsOf: safeLog)
         }

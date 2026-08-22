@@ -3,36 +3,36 @@ import Foundation
 /// User-facing copy for the org-discovery quiet sheet (#108).
 enum OrgDiscoverySheetCopy {
   static var title: String {
-    String(localized: "New Repository Found")
+    String.loc("New Repository Found")
   }
 
   static var sourceLabel: String {
-    String(localized: "Source")
+    String.loc("Source")
   }
 
   static var targetLabel: String {
-    String(localized: "Target")
+    String.loc("Target")
   }
 
   static var targetFromTemplatePlaceholder: String {
-    String(localized: "Will be filled from the template")
+    String.loc("Will be filled from the template")
   }
 
   static var ignoreTitle: String {
-    String(localized: "Ignore")
+    String.loc("Ignore")
   }
 
   static var laterTitle: String {
-    String(localized: "Later")
+    String.loc("Later")
   }
 
   static var joinAndSyncTitle: String {
-    String(localized: "Join and Sync")
+    String.loc("Join and Sync")
   }
 
   static func discoverySentence(organizationName: String, repoName: String) -> String {
     String(
-      format: String(localized: "%1$@ has %2$@, not yet mirrored."),
+      format: String.loc("%1$@ has %2$@, not yet mirrored."),
       organizationName,
       repoName
     )

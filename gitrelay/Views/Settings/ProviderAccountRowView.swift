@@ -33,9 +33,9 @@ struct ProviderAccountRowView: View {
                     .controlSize(.small)
             }
 
-            Button(String(localized: "Test"), action: onTest)
+            Button(String.loc("Test"), action: onTest)
                 .disabled(isTesting || !summary.hasToken)
-                .help(String(localized: "Ask \(summary.provider.shortName) whether the saved token still works"))
+                .help(String.loc("Ask \(summary.provider.shortName) whether the saved token still works"))
         }
     }
 

@@ -10,12 +10,12 @@ struct ReleaseMirrorStatusView: View {
             if !repo.mirrorReleases {
                 quietEmpty(
                     symbol: "shippingbox",
-                    message: String(localized: "Release mirroring is off. Enable it when editing this repository.")
+                    message: String.loc("Release mirroring is off. Enable it when editing this repository.")
                 )
             } else if statuses.isEmpty {
                 quietEmpty(
                     symbol: "clock",
-                    message: String(localized: "No release syncs yet. They appear here after a sync.")
+                    message: String.loc("No release syncs yet. They appear here after a sync.")
                 )
             } else {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
@@ -56,7 +56,7 @@ struct ReleaseMirrorStatusView: View {
                     ProgressView()
                         .controlSize(.small)
                 } else if let lastSyncedAt = status.lastSyncedAt {
-                    Text(String(localized: "Last \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))"))
+                    Text(String.loc("Last \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -69,7 +69,7 @@ struct ReleaseMirrorStatusView: View {
             }
 
             if status.tags.isEmpty {
-                Text(String(localized: "Waiting for the first release sync…"))
+                Text(String.loc("Waiting for the first release sync…"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
@@ -95,11 +95,11 @@ struct ReleaseMirrorStatusView: View {
                 Text(tag.tagName)
                     .font(.system(.body, design: .monospaced))
                 if tag.totalAssets > 0 {
-                    Text(String(localized: "\(tag.completedCount)/\(tag.totalAssets) assets"))
+                    Text(String.loc("\(tag.completedCount)/\(tag.totalAssets) assets"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text(String(localized: "No Attachments"))
+                    Text(String.loc("No Attachments"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -138,11 +138,11 @@ struct ReleaseMirrorStatusView: View {
 
     private func label(for state: ReleaseTagSyncState) -> String {
         switch state {
-        case .pending:  String(localized: "Pending")
-        case .syncing:  String(localized: "Syncing")
-        case .synced:   String(localized: "Synced")
-        case .partial:  String(localized: "Partially Completed")
-        case .failed:   String(localized: "Failed")
+        case .pending:  String.loc("Pending")
+        case .syncing:  String.loc("Syncing")
+        case .synced:   String.loc("Synced")
+        case .partial:  String.loc("Partially Completed")
+        case .failed:   String.loc("Failed")
         }
     }
 }

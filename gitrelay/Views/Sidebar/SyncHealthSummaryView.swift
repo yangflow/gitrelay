@@ -22,20 +22,20 @@ struct SyncHealthSummaryView: View {
     }
 
     private var title: some View {
-        Label(String(localized: "Today"), systemImage: "calendar")
+        Label(String.loc("Today"), systemImage: "calendar")
             .foregroundStyle(.secondary)
     }
 
     private var metrics: some View {
         HStack(spacing: DesignTokens.Spacing.sm) {
             HealthMetricView(
-                title: String(localized: "Succeeded"),
+                title: String.loc("Succeeded"),
                 count: summary.succeededToday,
                 systemImage: "checkmark.circle.fill",
                 tint: DesignTokens.StatusColor.idle
             )
             HealthMetricView(
-                title: String(localized: "Failed"),
+                title: String.loc("Failed"),
                 count: summary.failedToday,
                 systemImage: "xmark.octagon.fill",
                 tint: summary.hasFailures
@@ -43,7 +43,7 @@ struct SyncHealthSummaryView: View {
                     : .secondary
             )
             HealthMetricView(
-                title: String(localized: "Not Run"),
+                title: String.loc("Not Run"),
                 count: summary.notRunToday,
                 systemImage: "clock",
                 tint: .secondary

@@ -15,25 +15,25 @@ struct RepoStatusLabel: View {
     private var statusText: some View {
         switch status {
         case .ahead(let n):
-            Text(String(localized: "src is \(n) commits ahead"))
+            Text(String.loc("src is \(n) commits ahead"))
                 .foregroundStyle(DesignTokens.StatusColor.ahead)
         case .idle:
-            Text(String(localized: "Synced"))
+            Text(String.loc("Synced"))
                 .foregroundStyle(DesignTokens.StatusColor.idle)
         case .diverged:
-            Text(String(localized: "Content divergence"))
+            Text(String.loc("Content divergence"))
                 .foregroundStyle(DesignTokens.StatusColor.diverged)
         case .syncing:
-            Text(String(localized: "Syncing..."))
+            Text(String.loc("Syncing..."))
                 .foregroundStyle(DesignTokens.StatusColor.syncing)
         case .queued:
-            Text(String(localized: "Queued"))
+            Text(String.loc("Queued"))
                 .foregroundStyle(DesignTokens.StatusColor.queued)
         case .failed:
-            Text(String(localized: "Last Sync Failed"))
+            Text(String.loc("Last Sync Failed"))
                 .foregroundStyle(DesignTokens.StatusColor.failed)
         case .unknown:
-            Text(String(localized: "Unknown Status"))
+            Text(String.loc("Unknown Status"))
                 .foregroundStyle(DesignTokens.StatusColor.unknown)
         }
     }

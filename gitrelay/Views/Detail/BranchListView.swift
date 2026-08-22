@@ -11,7 +11,7 @@ struct BranchListView: View {
                     .controlSize(.small)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else if branches.isEmpty {
-                Text(String(localized: "No Branches Detected (Visible After Sync)"))
+                Text(String.loc("No Branches Detected (Visible After Sync)"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {

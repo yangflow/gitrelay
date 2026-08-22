@@ -11,7 +11,7 @@ struct SSHPublicKeyPreviewSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-                Text(String(localized: "Public Key Preview"))
+                Text(String.loc("Public Key Preview"))
                     .font(.headline)
                 Text(publicKeyPath)
                     .font(.system(.caption, design: .monospaced))
@@ -19,7 +19,7 @@ struct SSHPublicKeyPreviewSheet: View {
                     .lineLimit(2)
                 if didCopy {
                     Label(
-                        String(localized: "Copied to Clipboard"),
+                        String.loc("Copied to Clipboard"),
                         systemImage: "checkmark.circle.fill"
                     )
                     .font(.caption)
@@ -43,12 +43,12 @@ struct SSHPublicKeyPreviewSheet: View {
             Divider()
 
             HStack {
-                Button(String(localized: "Copy Public Key")) {
+                Button(String.loc("Copy Public Key")) {
                     ClipboardService.copy(publicKey)
                     didCopy = true
                 }
                 Spacer()
-                Button(String(localized: "Close")) { dismiss() }
+                Button(String.loc("Close")) { dismiss() }
                     .keyboardShortcut(.escape)
             }
             .gitRelaySheetFooterPadding()

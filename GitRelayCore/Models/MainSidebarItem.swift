@@ -11,11 +11,11 @@ nonisolated enum MainSidebarSection: String, CaseIterable, Identifiable, Sendabl
     var title: String {
         switch self {
         case .overview:
-            String(localized: "Overview")
+            String.loc("Overview")
         case .accounts:
-            String(localized: "Accounts")
+            String.loc("Accounts")
         case .settings:
-            String(localized: "Settings")
+            String.loc("Settings")
         }
     }
 
@@ -55,11 +55,11 @@ nonisolated enum MainSidebarItem: String, CaseIterable, Identifiable, Hashable, 
     var title: String {
         switch self {
         case .repositories:
-            String(localized: "Repositories")
+            String.loc("Repositories")
         case .queue:
-            String(localized: "Queue")
+            String.loc("Queue")
         case .browseRemote:
-            String(localized: "Browse Remote")
+            String.loc("Browse Remote")
         case .githubAccounts:
             GitProvider.github.displayName
         case .gitlabAccounts:
@@ -67,7 +67,7 @@ nonisolated enum MainSidebarItem: String, CaseIterable, Identifiable, Hashable, 
         case .giteaAccounts:
             GitProvider.gitea.displayName
         case .settings:
-            String(localized: "Settings")
+            String.loc("Settings")
         }
     }
 

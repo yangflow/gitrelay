@@ -75,7 +75,7 @@ final class OrgDiscoveryNotifier: NSObject {
     private func registerCategories() {
         let view = UNNotificationAction(
             identifier: Self.viewActionIdentifier,
-            title: String(localized: "View"),
+            title: String.loc("View"),
             options: [.foreground]
         )
         let discovery = UNNotificationCategory(

@@ -13,22 +13,22 @@ struct RepoIdleRowView: View {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
                 RepoStatusLabel(status: status)
                 if let lastSyncedAt {
-                    Text(String(localized: "Last synced: \(lastSyncedAt.formatted(.dateTime.year().month().day().hour().minute()))"))
+                    Text(String.loc("Last synced: \(lastSyncedAt.formatted(.dateTime.year().month().day().hour().minute()))"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 if let lastVerifiedAt {
-                    Text(String(localized: "Last verified: \(lastVerifiedAt.formatted(.relative(presentation: .named)))"))
+                    Text(String.loc("Last verified: \(lastVerifiedAt.formatted(.relative(presentation: .named)))"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
             Spacer(minLength: DesignTokens.Spacing.md)
             VStack(spacing: DesignTokens.Spacing.xs) {
-                Button(String(localized: "Verify Now"), action: onVerifyNow)
+                Button(String.loc("Verify Now"), action: onVerifyNow)
                     .buttonStyle(.bordered)
                     .disabled(isVerifying || status == .syncing)
-                Button(String(localized: "Sync Now"), action: onSyncNow)
+                Button(String.loc("Sync Now"), action: onSyncNow)
                     .buttonStyle(.borderedProminent)
                     .disabled(isVerifying || status == .syncing)
             }

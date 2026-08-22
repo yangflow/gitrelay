@@ -17,7 +17,7 @@ struct SyncQueueView: View {
             if entries.isEmpty {
                 PaneEmptyStateView(
                     systemImage: "checklist",
-                    message: String(localized: "Nothing is syncing or queued.")
+                    message: String.loc("Nothing is syncing or queued.")
                 )
             } else {
                 ScrollView {
@@ -70,8 +70,8 @@ private struct SyncQueueRowView: View {
                     .font(.caption)
             }
             .buttonStyle(.borderless)
-            .help(String(localized: "Cancel Sync"))
-            .accessibilityLabel(String(localized: "Cancel Sync"))
+            .help(String.loc("Cancel Sync"))
+            .accessibilityLabel(String.loc("Cancel Sync"))
         }
         .padding(.horizontal, DesignTokens.Spacing.md)
         .padding(.vertical, DesignTokens.Spacing.md)

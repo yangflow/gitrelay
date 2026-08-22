@@ -8,32 +8,32 @@ struct OrgSubscriptionSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Picker(String(localized: "Poll Frequency"), selection: pollFrequencyBinding) {
+                Picker(String.loc("Poll Frequency"), selection: pollFrequencyBinding) {
                     ForEach(OrgSubscriptionPollFrequency.allCases) { frequency in
                         Text(frequency.displayName).tag(frequency)
                     }
                 }
 
                 Toggle(
-                    String(localized: "Notify when new repositories are discovered"),
+                    String.loc("Notify when new repositories are discovered"),
                     isOn: notificationsEnabledBinding
                 )
 
                 if let next = appVM.nextOrgSubscriptionFireDate() {
-                    LabeledContent(String(localized: "Next Poll")) {
+                    LabeledContent(String.loc("Next Poll")) {
                         Text(next, format: .relative(presentation: .named))
                             .foregroundStyle(.secondary)
                     }
                 }
             } header: {
-                Text(String(localized: "Org / Group Discovery"))
+                Text(String.loc("Org / Group Discovery"))
             } footer: {
-                Text(String(localized: "Periodically compare subscribed GitHub organizations or GitLab groups against locally mirrored repositories. When new repos appear, GitRelay can notify you or auto-add them using a preset template."))
+                Text(String.loc("Periodically compare subscribed GitHub organizations or GitLab groups against locally mirrored repositories. When new repos appear, GitRelay can notify you or auto-add them using a preset template."))
             }
 
             Section {
                 if appVM.orgSubscriptions.isEmpty {
-                    Text(String(localized: "No org or group subscriptions yet."))
+                    Text(String.loc("No org or group subscriptions yet."))
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(appVM.orgSubscriptions) { subscription in
@@ -43,25 +43,25 @@ struct OrgSubscriptionSettingsView: View {
                                 editingSubscription = subscription
                             }
                             .contextMenu {
-                                Button(String(localized: "Edit")) {
+                                Button(String.loc("Edit")) {
                                     editingSubscription = subscription
                                 }
-                                Button(String(localized: "Remove"), role: .destructive) {
+                                Button(String.loc("Remove"), role: .destructive) {
                                     appVM.removeOrgSubscription(id: subscription.id)
                                 }
                             }
                     }
                 }
 
-                Button(String(localized: "Subscribe to Org / Group")) {
+                Button(String.loc("Subscribe to Org / Group")) {
                     isAddingSubscription = true
                 }
             } header: {
-                Text(String(localized: "Subscriptions"))
+                Text(String.loc("Subscriptions"))
             }
 
             Section {
-                Button(String(localized: "Poll Subscriptions Now")) {
+                Button(String.loc("Poll Subscriptions Now")) {
                     Task { await appVM.triggerOrgSubscriptionPollNow() }
                 }
                 .disabled(appVM.orgSubscriptions.isEmpty)
@@ -114,7 +114,7 @@ private struct OrgSubscriptionRow: View {
                 Text(subscription.accountLabel)
                 if subscription.autoAddEnabled {
                     Text("·")
-                    Text(String(localized: "Auto-add"))
+                    Text(String.loc("Auto-add"))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -122,7 +122,7 @@ private struct OrgSubscriptionRow: View {
             .foregroundStyle(.secondary)
             if let checked = subscription.lastCheckedAt {
                 HStack(spacing: DesignTokens.Spacing.xxs) {
-                    Text(String(localized: "Last checked"))
+                    Text(String.loc("Last checked"))
                     Text(checked, format: .relative(presentation: .named))
                 }
                 .font(.caption2)
@@ -161,8 +161,8 @@ struct OrgSubscriptionEditorSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             Text(existingID == nil
-                 ? String(localized: "Subscribe to Org / Group")
-                 : String(localized: "Edit Subscription"))
+                 ? String.loc("Subscribe to Org / Group")
+                 : String.loc("Edit Subscription"))
                 .font(.headline)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(DesignTokens.Spacing.settingsForm)
@@ -171,7 +171,7 @@ struct OrgSubscriptionEditorSheet: View {
 
             Form {
                 Section {
-                    Picker(String(localized: "Provider"), selection: $provider) {
+                    Picker(String.loc("Provider"), selection: $provider) {
                         ForEach(GitProvider.listingCases) { p in
                             Text(p.displayName).tag(p)
                         }
@@ -179,7 +179,7 @@ struct OrgSubscriptionEditorSheet: View {
                     .pickerStyle(.segmented)
                     .onChange(of: provider) { _, _ in refreshAccounts() }
 
-                    Picker(String(localized: "Account"), selection: $accountLabel) {
+                    Picker(String.loc("Account"), selection: $accountLabel) {
                         ForEach(accountLabels, id: \.self) { label in
                             Text(label).tag(label)
                         }
@@ -187,53 +187,53 @@ struct OrgSubscriptionEditorSheet: View {
 
                     TextField(
                         provider == .github
-                            ? String(localized: "Organization name (for example, anthropic)")
-                            : String(localized: "Group path (for example, gitlab-org/charts)"),
+                            ? String.loc("Organization name (for example, anthropic)")
+                            : String.loc("Group path (for example, gitlab-org/charts)"),
                         text: $organizationName
                     )
                     .textFieldStyle(.roundedBorder)
                 } header: {
-                    Text(String(localized: "Source"))
+                    Text(String.loc("Source"))
                 }
 
                 Section {
-                    Toggle(String(localized: "Auto-add using template"), isOn: $autoAddEnabled)
+                    Toggle(String.loc("Auto-add using template"), isOn: $autoAddEnabled)
 
                     if autoAddEnabled {
-                        Text(String(localized: "New repositories are mirrored immediately using the template below. Notifications are skipped when auto-add succeeds."))
+                        Text(String.loc("New repositories are mirrored immediately using the template below. Notifications are skipped when auto-add succeeds."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
-                        Text(String(localized: "Mirror Template"))
+                        Text(String.loc("Mirror Template"))
                             .font(.headline)
                             .padding(.top, DesignTokens.Spacing.xxs)
 
-                        Picker(String(localized: "Source Auth"), selection: $template.sourceAuthMode) {
+                        Picker(String.loc("Source Auth"), selection: $template.sourceAuthMode) {
                             ForEach(AuthMode.allCases) { mode in
                                 Text(mode.rawValue).tag(mode)
                             }
                         }
 
-                        Picker(String(localized: "Target Auth"), selection: $template.targetAuthMode) {
+                        Picker(String.loc("Target Auth"), selection: $template.targetAuthMode) {
                             ForEach(AuthMode.allCases) { mode in
                                 Text(mode.rawValue).tag(mode)
                             }
                         }
 
-                        TextField(String(localized: "Target URL template (must include {name})"), text: $template.targetURLTemplate)
+                        TextField(String.loc("Target URL template (must include {name})"), text: $template.targetURLTemplate)
                             .textFieldStyle(.roundedBorder)
                             .font(.system(.caption, design: .monospaced))
                             .disabled(template.targetAutoCreate)
 
-                        Toggle(String(localized: "Auto-create target on Gitea"), isOn: $template.targetAutoCreate)
+                        Toggle(String.loc("Auto-create target on Gitea"), isOn: $template.targetAutoCreate)
 
-                        Picker(String(localized: "Sync Frequency"), selection: $template.frequency) {
+                        Picker(String.loc("Sync Frequency"), selection: $template.frequency) {
                             ForEach(SyncFrequency.allCases) { f in
                                 Text(f.displayName).tag(f)
                             }
                         }
 
-                        TextField(String(localized: "Name prefix (optional)"), text: $template.namePrefix)
+                        TextField(String.loc("Name prefix (optional)"), text: $template.namePrefix)
                             .textFieldStyle(.roundedBorder)
 
                         if template.targetAuthMode == .httpsToken || template.sourceAuthMode == .httpsToken {
@@ -243,12 +243,12 @@ struct OrgSubscriptionEditorSheet: View {
                             )
                         }
                     } else {
-                        Text(String(localized: "GitRelay notifies you and opens Browse Remote prefilled so you can review before mirroring."))
+                        Text(String.loc("GitRelay notifies you and opens Browse Remote prefilled so you can review before mirroring."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 } header: {
-                    Text(String(localized: "When New Repos Appear"))
+                    Text(String.loc("When New Repos Appear"))
                 }
             }
             .formStyle(.grouped)
@@ -256,9 +256,9 @@ struct OrgSubscriptionEditorSheet: View {
             Divider()
 
             HStack {
-                Button(String(localized: "Cancel")) { dismiss() }
+                Button(String.loc("Cancel")) { dismiss() }
                 Spacer()
-                Button(existingID == nil ? String(localized: "Subscribe") : String(localized: "Save")) {
+                Button(existingID == nil ? String.loc("Subscribe") : String.loc("Save")) {
                     save()
                 }
                 .keyboardShortcut(.defaultAction)

@@ -101,36 +101,36 @@ enum LFSMirrorPlanner {
 }
 
 nonisolated func lfsLineIsMissingGitLFSWarning(_ line: String) -> Bool {
-    line == String(localized: "Warning: This repository uses Git LFS, but git-lfs was not found. Install it (for example: brew install git-lfs), then sync again. Git objects were still mirrored successfully.")
+    line == String.loc("Warning: This repository uses Git LFS, but git-lfs was not found. Install it (for example: brew install git-lfs), then sync again. Git objects were still mirrored successfully.")
 }
 
 enum LFSMirrorMessages {
     static var missingGitLFSWarning: String {
-        String(localized: "Warning: This repository uses Git LFS, but git-lfs was not found. Install it (for example: brew install git-lfs), then sync again. Git objects were still mirrored successfully.")
+        String.loc("Warning: This repository uses Git LFS, but git-lfs was not found. Install it (for example: brew install git-lfs), then sync again. Git objects were still mirrored successfully.")
     }
 
     static var skippedNoLFS: String {
-        String(localized: "No Git LFS usage detected; skipping LFS sync.")
+        String.loc("No Git LFS usage detected; skipping LFS sync.")
     }
 
     static var fetching: String {
-        String(localized: "Fetching Git LFS objects...")
+        String.loc("Fetching Git LFS objects...")
     }
 
     static var fetchComplete: String {
-        String(localized: "LFS fetch complete.")
+        String.loc("LFS fetch complete.")
     }
 
     static var pushing: String {
-        String(localized: "Pushing Git LFS objects...")
+        String.loc("Pushing Git LFS objects...")
     }
 
     static var pushComplete: String {
-        String(localized: "LFS push complete. ✓")
+        String.loc("LFS push complete. ✓")
     }
 
     static var installHint: String {
-        String(localized: "Install path tip: brew install git-lfs (or download from git-lfs.com), then sync again.")
+        String.loc("Install path tip: brew install git-lfs (or download from git-lfs.com), then sync again.")
     }
 
     static func isMissingGitLFSWarning(_ line: String) -> Bool {

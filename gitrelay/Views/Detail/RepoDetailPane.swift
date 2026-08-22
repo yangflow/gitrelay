@@ -32,7 +32,7 @@ struct RepoDetailPane: View {
                 }
                 .buttonStyle(QuietPressButtonStyle())
                 .foregroundStyle(.secondary)
-                .help(String(localized: "Back to Repositories"))
+                .help(String.loc("Back to Repositories"))
 
                 HStack(alignment: .firstTextBaseline, spacing: DesignTokens.Spacing.md) {
                     Text(repo.name)
@@ -58,10 +58,10 @@ struct RepoDetailPane: View {
             Button {
                 appVM.triggerSync(repoID: repo.id)
             } label: {
-                Label(String(localized: "Sync"), systemImage: "arrow.triangle.2.circlepath")
+                Label(String.loc("Sync"), systemImage: "arrow.triangle.2.circlepath")
             }
             .disabled(isBusy)
-            .help(String(localized: "Sync Now"))
+            .help(String.loc("Sync Now"))
 
             if scheduleState.showsPauseToggle {
                 Button {

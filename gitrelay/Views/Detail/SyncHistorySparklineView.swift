@@ -22,8 +22,8 @@ struct SyncHistorySparklineView: View {
 
     private var legend: some View {
         HStack(spacing: DesignTokens.Spacing.sm) {
-            legendItem(title: String(localized: "Succeeded"), color: DesignTokens.StatusColor.success)
-            legendItem(title: String(localized: "Failed"), color: DesignTokens.StatusColor.escalatedFailure)
+            legendItem(title: String.loc("Succeeded"), color: DesignTokens.StatusColor.success)
+            legendItem(title: String.loc("Failed"), color: DesignTokens.StatusColor.escalatedFailure)
             Spacer(minLength: 0)
         }
         .font(.caption2)
@@ -73,14 +73,14 @@ struct SyncHistorySparklineView: View {
     private func dayHelp(for day: SyncHistorySparkline.Day) -> String {
         let dateText = day.date.formatted(.dateTime.month(.abbreviated).day())
         if day.total == 0 {
-            return String(localized: "\(dateText): No Syncs")
+            return String.loc("\(dateText): No Syncs")
         }
-        return String(localized: "\(dateText): \(day.successes) succeeded, \(day.failures) failed")
+        return String.loc("\(dateText): \(day.successes) succeeded, \(day.failures) failed")
     }
 
     private var accessibilitySummary: String {
         let successes = sparkline.days.reduce(0) { $0 + $1.successes }
         let failures = sparkline.days.reduce(0) { $0 + $1.failures }
-        return String(localized: "Over the last 30 days, \(successes) succeeded and \(failures) failed")
+        return String.loc("Over the last 30 days, \(successes) succeeded and \(failures) failed")
     }
 }

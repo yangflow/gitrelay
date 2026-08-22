@@ -46,8 +46,8 @@ nonisolated struct ProviderAccountSummary: Identifiable, Equatable, Sendable {
 
     var credentialText: String {
         hasToken
-            ? String(localized: "Token saved in Keychain")
-            : String(localized: "No token saved")
+            ? String.loc("Token saved in Keychain")
+            : String.loc("No token saved")
     }
 
     func lastUsed(now: Date = Date()) -> ProviderAccountLastUsed {

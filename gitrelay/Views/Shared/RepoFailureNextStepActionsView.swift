@@ -32,12 +32,12 @@ struct RepoFailureNextStepActionsView: View {
 
                 HStack(spacing: DesignTokens.Spacing.sm) {
                     if nextStep.showsReenterCredentials {
-                        Button(String(localized: "Re-enter credentials"), action: onReenterCredentials)
+                        Button(String.loc("Re-enter credentials"), action: onReenterCredentials)
                             .buttonStyle(.borderless)
                             .controlSize(compact ? .mini : .small)
                     }
                     if nextStep.showsOpenLog {
-                        Button(String(localized: "Open Log"), action: onOpenLog)
+                        Button(String.loc("Open Log"), action: onOpenLog)
                             .buttonStyle(.borderless)
                             .controlSize(compact ? .mini : .small)
                     }
@@ -48,7 +48,7 @@ struct RepoFailureNextStepActionsView: View {
                         }
                         .buttonStyle(.borderless)
                         .controlSize(compact ? .mini : .small)
-                        .help(String(localized: "Copies the failed run's log with credentials redacted"))
+                        .help(String.loc("Copies the failed run's log with credentials redacted"))
                     }
                 }
             }
@@ -61,6 +61,6 @@ struct RepoFailureNextStepActionsView: View {
     }
 
     private var copyTitle: String {
-        didCopy ? String(localized: "Copied") : String(localized: "Copy this failure")
+        didCopy ? String.loc("Copied") : String.loc("Copy this failure")
     }
 }

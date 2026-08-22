@@ -10,9 +10,9 @@ enum OrgSubscriptionPollFrequency: String, Codable, CaseIterable, Identifiable, 
 
     var displayName: String {
         switch self {
-        case .manual: String(localized: "Manual")
-        case .day1:   String(localized: "Daily")
-        case .week1:  String(localized: "Weekly")
+        case .manual: String.loc("Manual")
+        case .day1:   String.loc("Daily")
+        case .week1:  String.loc("Weekly")
         }
     }
 

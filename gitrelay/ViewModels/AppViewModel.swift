@@ -271,7 +271,7 @@ final class AppViewModel {
             try MirrorStore.ensureBaseDirectoryExists()
             repos = try RepoStore.load()
         } catch {
-            errorMessage = String(localized: "Failed to load repository configuration: \(error.localizedDescription)")
+            errorMessage = String.loc("Failed to load repository configuration: \(error.localizedDescription)")
         }
 
         self.windowLayout.reconcileSelection(withExistingIDs: Set(repos.map(\.id)))
@@ -411,7 +411,7 @@ final class AppViewModel {
         stored.needsCredentials = RepoCredentialGate.refreshedNeedsCredentials(for: stored)
         repos[index] = stored
         if stored.isDiverged {
-            statuses[stored.id] = .diverged(stored.divergedDetail ?? String(localized: "Content divergence"))
+            statuses[stored.id] = .diverged(stored.divergedDetail ?? String.loc("Content divergence"))
         } else if case .diverged = statuses[stored.id] {
             statuses[stored.id] = stored.lastSyncError.map(SyncStatus.failed) ?? .unknown
         } else if stored.needsCredentials {
@@ -679,7 +679,7 @@ final class AppViewModel {
 
         let normalizedID = pathID.lowercased()
         let repoName = repos.first(where: { $0.webhookPathID.lowercased() == normalizedID })?.name
-            ?? String(localized: "Unknown repository")
+            ?? String.loc("Unknown repository")
 
         webhookLastEvent = WebhookLastEvent(
             receivedAt: Date(),
@@ -709,7 +709,7 @@ final class AppViewModel {
             }
             try webhookListener.start()
         } catch {
-            errorMessage = String(localized: "Failed to start the webhook listener: \(error.localizedDescription)")
+            errorMessage = String.loc("Failed to start the webhook listener: \(error.localizedDescription)")
             webhookListener.stop()
         }
     }
@@ -1261,7 +1261,7 @@ final class AppViewModel {
             subscription: subscription,
             store: orgSubscriptionStore
         ) else {
-            errorMessage = String(localized: "Could not add the repository from the subscription template.")
+            errorMessage = String.loc("Could not add the repository from the subscription template.")
             return
         }
         addRepos([config], triggerSync: true)
@@ -1423,7 +1423,7 @@ final class AppViewModel {
             try RepoStore.save(repos)
             refreshWidgetSnapshot()
         } catch {
-            errorMessage = String(localized: "Failed to save repository configuration: \(error.localizedDescription)")
+            errorMessage = String.loc("Failed to save repository configuration: \(error.localizedDescription)")
         }
     }
 

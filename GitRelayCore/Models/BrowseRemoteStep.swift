@@ -21,27 +21,27 @@ nonisolated enum BrowseRemoteStep: Int, CaseIterable, Identifiable, Hashable, Se
     var title: String {
         switch self {
         case .connect:
-            String(localized: "Choose a Host")
+            String.loc("Choose a Host")
         case .select:
-            String(localized: "Pick Repositories")
+            String.loc("Pick Repositories")
         case .configure:
-            String(localized: "Configure the Target")
+            String.loc("Configure the Target")
         }
     }
 
     var subtitle: String {
         switch self {
         case .connect:
-            String(localized: "Choose the Git host and account to browse.")
+            String.loc("Choose the Git host and account to browse.")
         case .select:
-            String(localized: "Select the repositories you want to mirror.")
+            String.loc("Select the repositories you want to mirror.")
         case .configure:
-            String(localized: "Choose where the mirrors live and how they authenticate.")
+            String.loc("Choose where the mirrors live and how they authenticate.")
         }
     }
 
     var progressLabel: String {
-        String(localized: "Step \(number) of \(BrowseRemoteStep.total)")
+        String.loc("Step \(number) of \(BrowseRemoteStep.total)")
     }
 }
 

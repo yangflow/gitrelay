@@ -15,17 +15,17 @@ enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
     var title: String {
         switch self {
         case .security:
-            String(localized: "Security")
+            String.loc("Security")
         case .notifications:
-            String(localized: "Notifications")
+            String.loc("Notifications")
         case .schedule:
-            String(localized: "Schedule")
+            String.loc("Schedule")
         case .webhook:
-            String(localized: "Webhook")
+            String.loc("Webhook")
         case .cache:
-            String(localized: "Cache")
+            String.loc("Cache")
         case .configuration:
-            String(localized: "Configuration")
+            String.loc("Configuration")
         }
     }
 
@@ -130,29 +130,29 @@ struct SettingsView: View {
             )
         }
         .alert(
-            String(localized: "Import Configuration"),
+            String.loc("Import Configuration"),
             isPresented: $showImportModePicker
         ) {
-            Button(String(localized: "Merge (skip existing IDs)")) {
+            Button(String.loc("Merge (skip existing IDs)")) {
                 runImport(mode: .merge)
             }
-            Button(String(localized: "Replace all"), role: .destructive) {
+            Button(String.loc("Replace all"), role: .destructive) {
                 runImport(mode: .replace)
             }
-            Button(String(localized: "Cancel"), role: .cancel) {
+            Button(String.loc("Cancel"), role: .cancel) {
                 pendingImportURL = nil
             }
         } message: {
-            Text(String(localized: "Merge keeps current repositories and skips matching IDs. Replace discards the current repository list and loads the file."))
+            Text(String.loc("Merge keeps current repositories and skips matching IDs. Replace discards the current repository list and loads the file."))
         }
         .alert(
-            String(localized: "Configuration"),
+            String.loc("Configuration"),
             isPresented: Binding(
                 get: { configMessage != nil },
                 set: { if !$0 { configMessage = nil } }
             )
         ) {
-            Button(String(localized: "OK"), role: .cancel) {}
+            Button(String.loc("OK"), role: .cancel) {}
         } message: {
             Text(configMessage ?? "")
         }
@@ -185,7 +185,7 @@ struct SettingsView: View {
 
         Section {
             Toggle(
-                String(localized: "Open at Login"),
+                String.loc("Open at Login"),
                 isOn: Binding(
                     get: { loginItem.isEnabled },
                     set: { loginItem.setEnabled($0) }
@@ -207,11 +207,11 @@ struct SettingsView: View {
             }
 
             Toggle(
-                String(localized: "Keep in Menu Bar when closing main window"),
+                String.loc("Keep in Menu Bar when closing main window"),
                 isOn: $behavior.preferences.keepInMenuBarWhenMainWindowCloses
             )
         } header: {
-            Text(String(localized: "Startup & Menu Bar"))
+            Text(String.loc("Startup & Menu Bar"))
         } footer: {
             Text(
                 String(
@@ -222,13 +222,13 @@ struct SettingsView: View {
 
         Section {
             Toggle(
-                String(localized: "Require Touch ID or password for sensitive actions"),
+                String.loc("Require Touch ID or password for sensitive actions"),
                 isOn: $security.preferences.requireBiometricForSensitive
             )
         } header: {
-            Text(String(localized: "Security"))
+            Text(String.loc("Security"))
         } footer: {
-            Text(String(localized: "When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action."))
+            Text(String.loc("When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action."))
         }
     }
 
@@ -242,7 +242,7 @@ struct SettingsView: View {
     private func accountsSection() -> some View {
         Section {
             if visibleAccounts.isEmpty {
-                Text(String(localized: "No account is connected yet."))
+                Text(String.loc("No account is connected yet."))
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(visibleAccounts) { summary in
@@ -260,12 +260,12 @@ struct SettingsView: View {
             Button {
                 isPresentingAddToken = true
             } label: {
-                Label(String(localized: "Add Token"), systemImage: "plus")
+                Label(String.loc("Add Token"), systemImage: "plus")
             }
         } header: {
-            Text(String(localized: "Accounts"))
+            Text(String.loc("Accounts"))
         } footer: {
-            Text(String(localized: "Tokens are stored in the Keychain and are never written to a log or to exported configuration. Test asks the provider whether a saved token still works."))
+            Text(String.loc("Tokens are stored in the Keychain and are never written to a log or to exported configuration. Test asks the provider whether a saved token still works."))
         }
     }
 
@@ -310,20 +310,20 @@ struct SettingsView: View {
         @Bindable var store = preferencesStore
 
         Section {
-            Toggle(String(localized: "Enable sync failure notifications"), isOn: $store.preferences.notificationsEnabled)
+            Toggle(String.loc("Enable sync failure notifications"), isOn: $store.preferences.notificationsEnabled)
 
-            Toggle(String(localized: "Notify on the first failure"), isOn: $store.preferences.notifyOnFirstFailure)
+            Toggle(String.loc("Notify on the first failure"), isOn: $store.preferences.notifyOnFirstFailure)
                 .disabled(!store.preferences.notificationsEnabled)
 
             Stepper(
                 value: $store.preferences.consecutiveFailureThreshold,
                 in: 1...20
             ) {
-                Text(String(localized: "Consecutive failure threshold: \(store.preferences.consecutiveFailureThreshold)"))
+                Text(String.loc("Consecutive failure threshold: \(store.preferences.consecutiveFailureThreshold)"))
             }
             .disabled(!store.preferences.notificationsEnabled)
 
-            Picker(String(localized: "Notification Level"), selection: $store.preferences.interruptionLevel) {
+            Picker(String.loc("Notification Level"), selection: $store.preferences.interruptionLevel) {
                 ForEach(NotificationInterruptionPreference.allCases) { level in
                     Text(level.displayName).tag(level)
                 }
@@ -334,9 +334,9 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } header: {
-            Text(String(localized: "Failure Notifications"))
+            Text(String.loc("Failure Notifications"))
         } footer: {
-            Text(String(localized: "Notify only on the first failure (optional), or when consecutive failures reach the threshold and its multiples, to avoid alerts from brief network interruptions. Notifications are deferred while Focus is on and combined into a summary afterward."))
+            Text(String.loc("Notify only on the first failure (optional), or when consecutive failures reach the threshold and its multiples, to avoid alerts from brief network interruptions. Notifications are deferred while Focus is on and combined into a summary afterward."))
         }
     }
 
@@ -356,9 +356,9 @@ struct SettingsView: View {
                 )
             }
         } header: {
-            Text(String(localized: "Sync Retries"))
+            Text(String.loc("Sync Retries"))
         } footer: {
-            Text(String(localized: "Within a single sync, retry fetch/clone/push (and LFS) on brief network errors using 2s / 8s / 32s backoff. Total wait is capped at 3 minutes. Auth failures and local corruption are not retried."))
+            Text(String.loc("Within a single sync, retry fetch/clone/push (and LFS) on brief network errors using 2s / 8s / 32s backoff. Total wait is capped at 3 minutes. Auth failures and local corruption are not retried."))
         }
 
         Section {
@@ -373,31 +373,31 @@ struct SettingsView: View {
                 )
             }
         } header: {
-            Text(String(localized: "Sync Concurrency"))
+            Text(String.loc("Sync Concurrency"))
         } footer: {
-            Text(String(localized: "Manual, webhook, and scheduled syncs share this limit. Extra requests wait in a queue (Queued) until a slot frees. Quitting the app discards the queue."))
+            Text(String.loc("Manual, webhook, and scheduled syncs share this limit. Extra requests wait in a queue (Queued) until a slot frees. Quitting the app discards the queue."))
         }
 
         Section {
-            Toggle(String(localized: "Pause Scheduled Sync"), isOn: $store.preferences.scheduledSyncManuallyPaused)
+            Toggle(String.loc("Pause Scheduled Sync"), isOn: $store.preferences.scheduledSyncManuallyPaused)
 
-            Toggle(String(localized: "Pause scheduled sync in Low Power Mode"), isOn: $store.preferences.pauseOnLowPowerMode)
-            Toggle(String(localized: "Pause scheduled sync on expensive networks or hotspots"), isOn: $store.preferences.pauseOnExpensiveNetwork)
+            Toggle(String.loc("Pause scheduled sync in Low Power Mode"), isOn: $store.preferences.pauseOnLowPowerMode)
+            Toggle(String.loc("Pause scheduled sync on expensive networks or hotspots"), isOn: $store.preferences.pauseOnExpensiveNetwork)
 
-            Toggle(String(localized: "Enable quiet hours"), isOn: quietHoursEnabledBinding)
+            Toggle(String.loc("Enable quiet hours"), isOn: quietHoursEnabledBinding)
 
             if store.preferences.quietHours.isEnabled {
                 DatePicker(
-                    String(localized: "Quiet hours start"),
+                    String.loc("Quiet hours start"),
                     selection: quietHoursStartBinding,
                     displayedComponents: .hourAndMinute
                 )
                 DatePicker(
-                    String(localized: "Quiet hours end"),
+                    String.loc("Quiet hours end"),
                     selection: quietHoursEndBinding,
                     displayedComponents: .hourAndMinute
                 )
-                Text(String(localized: "Uses this Mac's local timezone. A window such as 23:00–07:00 wraps midnight."))
+                Text(String.loc("Uses this Mac's local timezone. A window such as 23:00–07:00 wraps midnight."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -408,9 +408,9 @@ struct SettingsView: View {
                     .font(.callout)
             }
         } header: {
-            Text(String(localized: "Scheduled Sync Pausing"))
+            Text(String.loc("Scheduled Sync Pausing"))
         } footer: {
-            Text(String(localized: "This affects only syncs triggered automatically by frequency. Manual sync and instant webhook sync are unaffected."))
+            Text(String.loc("This affects only syncs triggered automatically by frequency. Manual sync and instant webhook sync are unaffected."))
         }
     }
 
@@ -419,21 +419,21 @@ struct SettingsView: View {
         @Bindable var webhookStore = appVM.webhookPreferences
 
         Section {
-            Toggle(String(localized: "Enable local webhook listener"), isOn: $webhookStore.preferences.listenerEnabled)
+            Toggle(String.loc("Enable local webhook listener"), isOn: $webhookStore.preferences.listenerEnabled)
 
             if webhookStore.preferences.listenerEnabled {
                 if let port = appVM.webhookListenPort {
-                    LabeledContent(String(localized: "Listening Address")) {
-                        Text(String(localized: "127.0.0.1:\(port)"))
+                    LabeledContent(String.loc("Listening Address")) {
+                        Text(String.loc("127.0.0.1:\(port)"))
                             .font(.system(.body, design: .monospaced))
                             .textSelection(.enabled)
                     }
                 } else {
-                    Text(appVM.isWebhookListenerRunning ? String(localized: "Binding port…") : String(localized: "Listener Not Running"))
+                    Text(appVM.isWebhookListenerRunning ? String.loc("Binding port…") : String.loc("Listener Not Running"))
                         .foregroundStyle(.secondary)
                 }
 
-                Picker(String(localized: "External Access"), selection: $webhookStore.preferences.exposureMode) {
+                Picker(String.loc("External Access"), selection: $webhookStore.preferences.exposureMode) {
                     ForEach(WebhookExposureMode.allCases) { mode in
                         Text(mode.displayName).tag(mode)
                     }
@@ -462,7 +462,7 @@ struct SettingsView: View {
                                 command: WebhookURLTemplate.tailscaleFunnelCommand(port: port)
                             )
                         case .relaySketch:
-                            Text(String(localized: "Relay mode is a configuration example only. A Worker or GitHub App can forward to the local listener using long polling; this version does not deploy a hosted service."))
+                            Text(String.loc("Relay mode is a configuration example only. A Worker or GitHub App can forward to the local listener using long polling; this version does not deploy a hosted service."))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         case .off:
@@ -472,9 +472,9 @@ struct SettingsView: View {
                 }
             }
         } header: {
-            Text(String(localized: "Instant Webhook Sync"))
+            Text(String.loc("Instant Webhook Sync"))
         } footer: {
-            Text(String(localized: "Off by default. When enabled, a random port on 127.0.0.1 accepts POST /hook/<id>. The HMAC secret is stored only in Keychain. Cloudflare and Tailscale are optional runtime dependencies that must be installed locally."))
+            Text(String.loc("Off by default. When enabled, a random port on 127.0.0.1 accepts POST /hook/<id>. The HMAC secret is stored only in Keychain. Cloudflare and Tailscale are optional runtime dependencies that must be installed locally."))
         }
 
         if webhookStore.preferences.listenerEnabled {
@@ -494,16 +494,16 @@ struct SettingsView: View {
                         .font(.system(.body, design: .monospaced))
                         .textSelection(.enabled)
                     Spacer(minLength: DesignTokens.Spacing.sm)
-                    Button(String(localized: "Copy")) {
+                    Button(String.loc("Copy")) {
                         ClipboardService.copy(path)
                     }
                 }
             } else {
-                Text(String(localized: "Enable instant webhook sync on a repository to get a hook path."))
+                Text(String.loc("Enable instant webhook sync on a repository to get a hook path."))
                     .foregroundStyle(.secondary)
             }
         } header: {
-            Text(String(localized: "Repository Hook URL"))
+            Text(String.loc("Repository Hook URL"))
         }
     }
 
@@ -513,7 +513,7 @@ struct SettingsView: View {
             Text(WebhookLastEventFormatting.displayOrEmpty(appVM.webhookLastEvent))
                 .foregroundStyle(appVM.webhookLastEvent == nil ? .secondary : .primary)
         } header: {
-            Text(String(localized: "Last Event"))
+            Text(String.loc("Last Event"))
         }
     }
 
@@ -522,7 +522,7 @@ struct SettingsView: View {
         Section {
             HStack {
                 Spacer(minLength: 0)
-                Button(String(localized: "Send Test")) {
+                Button(String.loc("Send Test")) {
                     Task { await appVM.sendWebhookTest() }
                 }
                 .disabled(!appVM.canSendWebhookTest)
@@ -535,7 +535,7 @@ struct SettingsView: View {
         @Bindable var cache = cacheStore
 
         Section {
-            Toggle(String(localized: "Limit local mirror cache size"), isOn: $limitMirrorCache)
+            Toggle(String.loc("Limit local mirror cache size"), isOn: $limitMirrorCache)
                 .onChange(of: limitMirrorCache) { _, enabled in
                     cache.preferences.cacheQuotaGB = enabled ? mirrorCacheQuotaGB : nil
                     appVM.refreshMirrorCacheUsage()
@@ -543,7 +543,7 @@ struct SettingsView: View {
 
             if limitMirrorCache {
                 Stepper(value: $mirrorCacheQuotaGB, in: 1...1000) {
-                    Text(String(format: String(localized: "Cache quota: %lld GB"), mirrorCacheQuotaGB))
+                    Text(String(format: String.loc("Cache quota: %lld GB"), mirrorCacheQuotaGB))
                 }
                 .onChange(of: mirrorCacheQuotaGB) { _, value in
                     if limitMirrorCache {
@@ -552,19 +552,19 @@ struct SettingsView: View {
                 }
             }
         } header: {
-            Text(String(localized: "Mirror Cache"))
+            Text(String.loc("Mirror Cache"))
         } footer: {
-            Text(String(localized: "Bare clones are stored under ~/.local/share/gitrelay/mirrors/. When over quota, GitRelay runs git gc on least-recently synced mirrors first, then deletes entire clones if needed. The next sync rebuilds deleted mirrors."))
+            Text(String.loc("Bare clones are stored under ~/.local/share/gitrelay/mirrors/. When over quota, GitRelay runs git gc on least-recently synced mirrors first, then deletes entire clones if needed. The next sync rebuilds deleted mirrors."))
         }
 
         Section {
-            LabeledContent(String(localized: "Local Mirrors")) {
+            LabeledContent(String.loc("Local Mirrors")) {
                 Text(MirrorCacheFormatting.byteCount(appVM.mirrorCacheUsageBytes))
                     .foregroundStyle(.secondary)
             }
 
             if appVM.mirrorCacheRepoUsages.isEmpty {
-                Text(String(localized: "No local mirrors."))
+                Text(String.loc("No local mirrors."))
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(appVM.mirrorCacheRepoUsages) { usage in
@@ -580,7 +580,7 @@ struct SettingsView: View {
                         Text(MirrorCacheFormatting.byteCount(usage.sizeBytes))
                             .foregroundStyle(.secondary)
 
-                        Button(String(localized: "Clean")) {
+                        Button(String.loc("Clean")) {
                             Task { await appVM.cleanMirrorCache(for: usage.repoID) }
                         }
                         .disabled(
@@ -591,7 +591,7 @@ struct SettingsView: View {
                 }
             }
 
-            Button(String(localized: "Clean All")) {
+            Button(String.loc("Clean All")) {
                 Task { await appVM.cleanMirrorCacheNow() }
             }
             .disabled(appVM.isCleaningMirrorCache || appVM.mirrorCacheRepoUsages.isEmpty)
@@ -603,36 +603,36 @@ struct SettingsView: View {
         @Bindable var languageStore = languageStore
 
         Section {
-            Picker(String(localized: "Language"), selection: $languageStore.preference) {
+            Picker(String.loc("Language"), selection: $languageStore.preference) {
                 ForEach(AppLanguagePreference.allCases) { choice in
                     Text(choice.pickerLabel).tag(choice)
                 }
             }
 
             if languageStore.showsLaunchCatalogNote {
-                Text(String(localized: "Some text updates the next time you open GitRelay."))
+                Text(String.loc("Some text updates the next time you open GitRelay."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         } header: {
-            Text(String(localized: "Language"))
+            Text(String.loc("Language"))
         }
 
         Section {
-            Button(String(localized: "Export Configuration…")) {
+            Button(String.loc("Export Configuration…")) {
                 exportConfiguration()
             }
-            Button(String(localized: "Import Configuration…")) {
+            Button(String.loc("Import Configuration…")) {
                 presentImportPanel()
             }
         } header: {
-            Text(String(localized: "Configuration"))
+            Text(String.loc("Configuration"))
         } footer: {
-            Text(String(localized: "Export repository pairs, targets, tags, frequency, shallow/ref filters, LFS, org subscriptions, and account labels. Tokens and private keys are never written to the file. After import, repositories missing credentials are marked and stay unscheduled until you fill them in."))
+            Text(String.loc("Export repository pairs, targets, tags, frequency, shallow/ref filters, LFS, org subscriptions, and account labels. Tokens and private keys are never written to the file. After import, repositories missing credentials are marked and stay unscheduled until you fill them in."))
         }
 
         Section {
-            Button(String(localized: "Restore Defaults")) {
+            Button(String.loc("Restore Defaults")) {
                 preferencesStore.resetToDefaults()
                 securityStore.resetToDefaults()
                 cacheStore.resetToDefaults()
@@ -711,10 +711,10 @@ struct SettingsView: View {
             panel.allowedContentTypes = [.json]
             panel.nameFieldStringValue = "gitrelay-config.json"
             panel.canCreateDirectories = true
-            panel.title = String(localized: "Export Configuration")
+            panel.title = String.loc("Export Configuration")
             guard panel.runModal() == .OK, let url = panel.url else { return }
             try data.write(to: url, options: .atomic)
-            configMessage = String(localized: "Configuration exported. Tokens and private keys were not included.")
+            configMessage = String.loc("Configuration exported. Tokens and private keys were not included.")
         } catch {
             configMessage = error.localizedDescription
         }
@@ -725,8 +725,8 @@ struct SettingsView: View {
         panel.allowedContentTypes = [.json]
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
-        panel.title = String(localized: "Import Configuration")
-        panel.prompt = String(localized: "Import")
+        panel.title = String.loc("Import Configuration")
+        panel.prompt = String.loc("Import")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         pendingImportURL = url
         showImportModePicker = true
@@ -756,7 +756,7 @@ struct SettingsView: View {
     private func tunnelHint(available: Bool, tool: String, command: String) -> some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
             Label(
-                available ? String(localized: "\(tool) detected") : String(localized: "\(tool) not detected (you can install it manually)"),
+                available ? String.loc("\(tool) detected") : String.loc("\(tool) not detected (you can install it manually)"),
                 systemImage: available ? "checkmark.circle" : "questionmark.circle"
             )
             .font(.caption)
@@ -767,7 +767,7 @@ struct SettingsView: View {
                     .font(.system(.caption, design: .monospaced))
                     .textSelection(.enabled)
                 Spacer(minLength: DesignTokens.Spacing.sm)
-                Button(String(localized: "Copy")) {
+                Button(String.loc("Copy")) {
                     ClipboardService.copy(command)
                 }
                 .font(.caption)

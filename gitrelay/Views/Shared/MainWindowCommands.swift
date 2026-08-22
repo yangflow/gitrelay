@@ -27,7 +27,7 @@ struct MainWindowCommands: Commands {
             )
         }
 
-        CommandMenu(String(localized: "Repository")) {
+        CommandMenu(String.loc("Repository")) {
             Button(MainWindowShortcutBinding.syncSelected.menuTitle) {
                 appVM.syncMainWindowSelectedRepository()
             }
@@ -37,7 +37,7 @@ struct MainWindowCommands: Commands {
             )
 
             // The pair table keeps only search and add, so Sync All lives here.
-            Button(String(localized: "Sync All")) {
+            Button(String.loc("Sync All")) {
                 appVM.triggerSyncAll()
             }
         }

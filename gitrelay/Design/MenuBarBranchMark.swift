@@ -30,7 +30,7 @@ nonisolated enum MenuBarBranchMark {
             return true
         }
         image.isTemplate = color == nil
-        image.accessibilityDescription = String(localized: "GitRelay")
+        image.accessibilityDescription = String.loc("GitRelay")
         return image
     }
 
