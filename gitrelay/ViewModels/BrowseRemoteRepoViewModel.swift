@@ -513,6 +513,13 @@ final class BrowseRemoteRepoViewModel {
             hasMore = page.hasMore
             nextPage = page.nextPage
             phase = .selecting
+            // The account's token just listed repositories, which is what the
+            // 安全 tab reports as 最后使用.
+            ProviderAccountStore.markUsed(
+                for: provider,
+                label: sourceAccountLabel,
+                defaults: accountDefaults
+            )
         } catch {
             connectError = (error as? ProviderAPIError)?.errorDescription ?? error.localizedDescription
         }
@@ -673,6 +680,11 @@ final class BrowseRemoteRepoViewModel {
             }()
             let config = makeConfig(repo: repo, dstURL: dstURL)
             batchResults.append(.success(repo: repo, config: config, alreadyExists: existed))
+            ProviderAccountStore.markUsed(
+                for: .gitea,
+                label: targetGiteaAccountLabel,
+                defaults: accountDefaults
+            )
         } catch {
             let msg = (error as? TargetProviderAPIError)?.errorDescription ?? error.localizedDescription
             batchResults.append(.failed(repo: repo, message: msg))

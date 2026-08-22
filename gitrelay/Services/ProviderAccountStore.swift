@@ -1,10 +1,5 @@
 import Foundation
 
-struct ProviderAccountRecord: Codable, Hashable, Sendable {
-    var label: String
-    var host: String?
-}
-
 enum ProviderAccountStore {
     private enum Keys {
         static let registry = "ProviderAccounts.registry"
@@ -35,6 +30,45 @@ enum ProviderAccountStore {
 
     static func accountLabels(for provider: GitProvider, defaults: UserDefaults = .standard) -> [String] {
         accounts(for: provider, defaults: defaults).map(\.label)
+    }
+
+    /// Every provider's records in one call, for the 安全 tab's account list.
+    static func allAccounts(defaults: UserDefaults = .standard) -> [GitProvider: [ProviderAccountRecord]] {
+        migrateIfNeeded(defaults: defaults)
+        var result: [GitProvider: [ProviderAccountRecord]] = [:]
+        for provider in GitProvider.allCases {
+            result[provider] = accounts(for: provider, defaults: defaults)
+        }
+        return result
+    }
+
+    static func lastUsedAt(
+        for provider: GitProvider,
+        label: String,
+        defaults: UserDefaults = .standard
+    ) -> Date? {
+        accounts(for: provider, defaults: defaults)
+            .first(where: { $0.label == label })?
+            .lastUsedAt
+    }
+
+    /// Records that this account's token reached its provider. Called after a
+    /// live check answers and after browse-remote lists with the account; never
+    /// on merely saving a token, so an untried account still reads 从未使用.
+    static func markUsed(
+        for provider: GitProvider,
+        label: String,
+        at date: Date = Date(),
+        defaults: UserDefaults = .standard
+    ) {
+        migrateIfNeeded(defaults: defaults)
+        var registry = loadRegistry(defaults: defaults)
+        var records = registry[provider.rawValue] ?? [ProviderAccountRecord(label: ProviderAccount.defaultLabel, host: nil)]
+        guard let index = records.firstIndex(where: { $0.label == label }) else { return }
+
+        records[index].lastUsedAt = date
+        registry[provider.rawValue] = records
+        saveRegistry(registry, defaults: defaults)
     }
 
     static func selectedLabel(for provider: GitProvider, defaults: UserDefaults = .standard) -> String {
@@ -85,6 +119,25 @@ enum ProviderAccountStore {
         registry[provider.rawValue] = records
         saveRegistry(registry, defaults: defaults)
         return record
+    }
+
+    /// Adds the account when its name is new and returns the existing one when
+    /// it is not. 添加令牌 uses this so re-entering a name replaces that
+    /// account's token instead of failing on a duplicate.
+    @discardableResult
+    static func ensureAccount(
+        label: String,
+        for provider: GitProvider,
+        defaults: UserDefaults = .standard
+    ) throws -> ProviderAccountRecord {
+        guard let normalized = ProviderAccount.normalizeLabel(label) else {
+            throw ProviderAccountStoreError.invalidLabel
+        }
+        if let existing = accounts(for: provider, defaults: defaults)
+            .first(where: { $0.label == normalized }) {
+            return existing
+        }
+        return try addAccount(label: normalized, for: provider, defaults: defaults)
     }
 
     static func removeAccount(
