@@ -1,10 +1,10 @@
 import AppKit
 
-/// Draws the shared Y-branch mark for the menu-bar status item.
+/// Draws the shared merge-arrow mark for the menu-bar status item.
 ///
 /// The AppIcon is full-color raster artwork; a filled 16 pt square sitting
 /// between system menu extras reads as a badge, so the menu bar gets the
-/// monochrome Y-branch on its own (#92). The geometry comes from
+/// monochrome merge-arrow on its own (#92). The geometry comes from
 /// ``GitRelayMark`` — not from the AppIcon PNG.
 ///
 /// Nonisolated on purpose: AppKit re-runs the drawing handler whenever the
@@ -12,7 +12,7 @@ import AppKit
 /// do that on the main actor.
 nonisolated enum MenuBarBranchMark {
     /// - Parameters:
-    ///   - pointSize: Fitted extent of the branch, in points.
+    ///   - pointSize: Fitted extent of the mark, in points.
     ///   - color: `nil` draws a template image that follows the menu-bar
     ///     appearance. Any other color draws the same shape opaquely, which is
     ///     how the failure and divergence state tints the mark red.
@@ -35,7 +35,7 @@ nonisolated enum MenuBarBranchMark {
     }
 
     private static func draw(in rect: NSRect, color: NSColor, strokeScale: CGFloat) {
-        let bounds = GitRelayMark.branchBounds
+        let bounds = GitRelayMark.markBounds
         guard bounds.width > 0, bounds.height > 0 else { return }
 
         let scale = min(rect.width / CGFloat(bounds.width), rect.height / CGFloat(bounds.height))
@@ -52,35 +52,66 @@ nonisolated enum MenuBarBranchMark {
             )
         }
 
-        color.setStroke()
-        let lines = NSBezierPath()
-        lines.lineWidth = CGFloat(GitRelayMark.strokeWidth) * scale * strokeScale
-        lines.lineCapStyle = .round
-        lines.lineJoinStyle = .round
-        for segment in GitRelayMark.segments {
-            lines.move(to: canvasPoint(segment.start))
-            lines.line(to: canvasPoint(segment.end))
-        }
-        lines.stroke()
+        let lineWidth = CGFloat(GitRelayMark.strokeWidth) * scale * strokeScale
 
-        // One even-odd path so every hollow core stays punched out.
+        color.setStroke()
+        let paths = NSBezierPath()
+        paths.lineWidth = lineWidth
+        paths.lineCapStyle = .round
+        paths.lineJoinStyle = .round
+
+        for curve in GitRelayMark.mergeCurves {
+            paths.move(to: canvasPoint(curve.start))
+            paths.curve(
+                to: canvasPoint(curve.end),
+                controlPoint1: canvasPoint(curve.control1),
+                controlPoint2: canvasPoint(curve.control2)
+            )
+        }
+
+        let shaft = GitRelayMark.shaft
+        paths.move(to: canvasPoint(shaft.start))
+        paths.line(to: canvasPoint(shaft.end))
+        paths.stroke()
+
         color.setFill()
-        let rings = NSBezierPath()
-        rings.windingRule = .evenOdd
+
         for node in GitRelayMark.nodes {
             let center = canvasPoint(node)
-            let outer = GitRelayMark.outerRadius * Double(strokeScale)
-            let inner = GitRelayMark.innerRadius * Double(strokeScale)
-            for radius in [outer, inner] {
-                let scaled = CGFloat(radius) * scale
-                rings.appendOval(in: NSRect(
-                    x: center.x - scaled,
-                    y: center.y - scaled,
-                    width: scaled * 2,
-                    height: scaled * 2
-                ))
-            }
+            let radius = CGFloat(GitRelayMark.nodeRadius) * scale * strokeScale
+            NSBezierPath(ovalIn: NSRect(
+                x: center.x - radius,
+                y: center.y - radius,
+                width: radius * 2,
+                height: radius * 2
+            )).fill()
         }
-        rings.fill()
+
+        let arrow = NSBezierPath()
+        let head = GitRelayMark.arrowHead
+        arrow.move(to: canvasPoint(head[0]))
+        arrow.line(to: canvasPoint(head[1]))
+        arrow.line(to: canvasPoint(head[2]))
+        arrow.close()
+        arrow.fill()
+
+        let notch = GitRelayMark.notchPoints
+        let disc = NSBezierPath()
+        disc.windingRule = .evenOdd
+        let center = canvasPoint(GitRelayMark.discCenter)
+        let discRadius = CGFloat(GitRelayMark.discRadius) * scale * strokeScale
+        disc.appendOval(in: NSRect(
+            x: center.x - discRadius,
+            y: center.y - discRadius,
+            width: discRadius * 2,
+            height: discRadius * 2
+        ))
+        let cutout = NSBezierPath()
+        cutout.move(to: canvasPoint(notch.tip))
+        cutout.line(to: canvasPoint(notch.top))
+        cutout.line(to: canvasPoint(notch.bottom))
+        cutout.close()
+        disc.append(cutout)
+        disc.fill()
     }
 }

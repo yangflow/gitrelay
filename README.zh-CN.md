@@ -119,9 +119,9 @@ swift scripts/generate-icon.swift
 python3 scripts/generate-icon.py
 ```
 
-AppIcon 为炭灰圆角方块上的 3D 合并箭头。菜单栏状态项单独绘制：通过
-`MenuBarBranchMark` 从 `GitRelayCore/Design/GitRelayMark.swift` 读取单色 Y 形
-模板（无彩色底板，失败时红色着色）。`GitRelayMarkTests` 固定该几何参数。
+AppIcon 为铺满画布的炭灰底 3D 合并箭头（macOS 自行裁切圆角）。菜单栏状态项
+用 `MenuBarBranchMark` 从 `GitRelayCore/Design/GitRelayMark.swift` 绘制同款
+几何的单色模板（无彩色底板，失败时红色着色）。`GitRelayMarkTests` 固定该几何参数。
 
 ---
 

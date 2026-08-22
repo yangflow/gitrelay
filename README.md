@@ -116,10 +116,11 @@ swift scripts/generate-icon.swift
 python3 scripts/generate-icon.py
 ```
 
-The AppIcon is a 3D merge-arrow mark on a charcoal squircle. The menu-bar status
-item is separate: a monochrome Y-branch template drawn from
-`GitRelayCore/Design/GitRelayMark.swift` via `MenuBarBranchMark` — no color
-plate, red-tint on failure. `GitRelayMarkTests` pins that geometry.
+The AppIcon is a full-bleed 3D merge-arrow mark on opaque charcoal — macOS
+applies the squircle mask. The menu-bar status item draws the same geometry as a
+monochrome template from `GitRelayCore/Design/GitRelayMark.swift` via
+`MenuBarBranchMark` — no color plate, red-tint on failure.
+`GitRelayMarkTests` pins that geometry.
 
 ---
 

@@ -8,8 +8,8 @@
 // Writes 10 PNG files into gitrelay/Assets.xcassets/AppIcon.appiconset/
 // at exact pixel dimensions (no Retina-doubling).
 //
-// The AppIcon is a raster 3D merge-arrow mark. The menu-bar status item still
-// draws the monochrome Y-branch template from GitRelayMark — not this artwork.
+// The AppIcon is a full-bleed raster 3D merge-arrow mark. The menu-bar status
+// item draws the same geometry as a monochrome template from GitRelayMark.
 
 import AppKit
 import Foundation

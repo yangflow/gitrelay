@@ -8373,115 +8373,85 @@ struct MenuBarIconAppearanceTests {
     }
 }
 
-// MARK: - Y-branch mark geometry (issue #92)
+// MARK: - Merge-arrow mark geometry (issue #92)
 
 private func isClose(_ lhs: Double, _ rhs: Double, tolerance: Double = 1e-9) -> Bool {
     abs(lhs - rhs) <= tolerance
 }
 
 struct GitRelayMarkTests {
-    @Test func threeNodesFormASymmetricY() {
-        #expect(GitRelayMark.nodes.count == 3)
-        #expect(isClose(GitRelayMark.trunkNode.x, 0.5))
-        #expect(isClose(GitRelayMark.fork.x, 0.5))
-        // The two branch nodes mirror each other across the vertical center.
-        #expect(isClose(GitRelayMark.leftBranchNode.x + GitRelayMark.rightBranchNode.x, 1))
-        #expect(isClose(GitRelayMark.leftBranchNode.y, GitRelayMark.rightBranchNode.y))
-        // The fork sits between the branch nodes and the trunk.
-        #expect(GitRelayMark.leftBranchNode.y < GitRelayMark.fork.y)
-        #expect(GitRelayMark.fork.y < GitRelayMark.trunkNode.y)
+    @Test func twoSourceNodesStackOnTheLeft() {
+        #expect(GitRelayMark.nodes.count == 2)
+        #expect(GitRelayMark.topNode.x < GitRelayMark.mergePoint.x)
+        #expect(GitRelayMark.bottomNode.x < GitRelayMark.mergePoint.x)
+        #expect(isClose(GitRelayMark.topNode.x, GitRelayMark.bottomNode.x))
+        #expect(GitRelayMark.topNode.y < GitRelayMark.mergePoint.y)
+        #expect(GitRelayMark.bottomNode.y > GitRelayMark.mergePoint.y)
     }
 
-    @Test func nodesAreHollowRings() {
-        #expect(GitRelayMark.innerRadius > 0)
-        #expect(GitRelayMark.innerRadius < GitRelayMark.outerRadius)
-        #expect(isClose(
-            GitRelayMark.outerRadius - GitRelayMark.innerRadius,
-            GitRelayMark.strokeWidth
-        ))
-    }
+    @Test func mergeCurvesRunFromEachNodeIntoTheMergePoint() {
+        let curves = GitRelayMark.mergeCurves
+        #expect(curves.count == GitRelayMark.nodes.count)
 
-    @Test func everySegmentRunsFromARingEdgeToTheFork() {
-        let segments = GitRelayMark.segments
-        #expect(segments.count == GitRelayMark.nodes.count)
-
-        for (node, segment) in zip(GitRelayMark.nodes, segments) {
-            #expect(segment.end == GitRelayMark.fork)
-            let dx = segment.start.x - node.x
-            let dy = segment.start.y - node.y
+        for (node, curve) in zip(GitRelayMark.nodes, curves) {
+            #expect(curve.end == GitRelayMark.mergePoint)
+            let dx = curve.start.x - node.x
+            let dy = curve.start.y - node.y
             #expect(isClose((dx * dx + dy * dy).squareRoot(), GitRelayMark.outerRadius))
         }
     }
 
-    /// A round cap on a line that starts at the outer ring edge reaches back by
-    /// half the stroke width. It has to stop short of the hollow core, or the
-    /// nodes fill in and the mark stops reading as a branch.
-    @Test func roundCapsNeverReachIntoTheHollowCore() {
-        let capReach = GitRelayMark.outerRadius - GitRelayMark.strokeWidth / 2
-        #expect(capReach > GitRelayMark.innerRadius)
-        #expect(isClose(capReach, GitRelayMark.nodeRadius))
+    @Test func shaftAndArrowPointIntoTheDiscNotch() {
+        #expect(GitRelayMark.shaft.start == GitRelayMark.mergePoint)
+        #expect(GitRelayMark.shaft.end == GitRelayMark.shaftEnd)
+        #expect(GitRelayMark.arrowTip.x > GitRelayMark.shaftEnd.x)
+        #expect(isClose(GitRelayMark.arrowTip.y, GitRelayMark.mergePoint.y))
+        #expect(GitRelayMark.arrowTip.x < GitRelayMark.discCenter.x)
     }
 
-    @Test func branchBoundsAreTheUnionOfTheOuterRings() {
-        let bounds = GitRelayMark.branchBounds
-        #expect(isClose(bounds.minX, GitRelayMark.leftBranchNode.x - GitRelayMark.outerRadius))
-        #expect(isClose(bounds.maxX, GitRelayMark.rightBranchNode.x + GitRelayMark.outerRadius))
-        #expect(isClose(bounds.minY, GitRelayMark.leftBranchNode.y - GitRelayMark.outerRadius))
-        #expect(isClose(bounds.maxY, GitRelayMark.trunkNode.y + GitRelayMark.outerRadius))
-        // Nothing may spill outside the plate.
+    @Test func arrowheadIsATriangleAimedRight() {
+        let head = GitRelayMark.arrowHead
+        #expect(head.count == 3)
+        #expect(head[0] == GitRelayMark.arrowTip)
+        #expect(head[1].x == GitRelayMark.shaftEnd.x)
+        #expect(head[2].x == GitRelayMark.shaftEnd.x)
+        #expect(head[1].y < GitRelayMark.arrowTip.y)
+        #expect(head[2].y > GitRelayMark.arrowTip.y)
+    }
+
+    @Test func destinationDiscHasALeftFacingNotch() {
+        let notch = GitRelayMark.notchPoints
+        #expect(notch.tip.x < GitRelayMark.discCenter.x)
+        #expect(isClose(notch.tip.y, GitRelayMark.discCenter.y))
+        #expect(notch.top.x < GitRelayMark.discCenter.x)
+        #expect(notch.bottom.x < GitRelayMark.discCenter.x)
+        #expect(notch.top.y < GitRelayMark.discCenter.y)
+        #expect(notch.bottom.y > GitRelayMark.discCenter.y)
+    }
+
+    @Test func markBoundsWrapNodesDiscAndArrow() {
+        let bounds = GitRelayMark.markBounds
+        #expect(isClose(bounds.minX, GitRelayMark.topNode.x - GitRelayMark.outerRadius))
+        #expect(isClose(bounds.maxX, GitRelayMark.discCenter.x + GitRelayMark.discRadius + GitRelayMark.outerRadius))
+        #expect(bounds.minY < GitRelayMark.topNode.y)
+        #expect(bounds.maxY > GitRelayMark.bottomNode.y)
         #expect(bounds.minX > 0)
-        #expect(bounds.minY > 0)
         #expect(bounds.maxX < 1)
-        #expect(bounds.maxY < 1)
     }
 
-    @Test func plateIsAClosedSquircleFillingTheUnitSquare() {
-        let outline = GitRelayMark.plateOutline()
-        #expect(outline.count == GitRelayMark.plateSampleCount)
-
-        // Kept out of the #expect arguments: the macro re-type-checks whatever it
-        // wraps, and a closure of chained Double comparisons blows past the
-        // solver's budget.
-        let insideUnitSquare = outline.allSatisfy { point in
-            point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1
-        }
-        #expect(insideUnitSquare)
-
-        // Touches the middle of each edge. The 2/n exponent magnifies the tiny
-        // residue `cos(.pi / 2)` leaves behind, hence the looser tolerance.
-        let touchesRightEdge = outline.contains { point in
-            isClose(point.x, 1) && isClose(point.y, 0.5, tolerance: 1e-5)
-        }
-        let touchesTopEdge = outline.contains { point in
-            isClose(point.y, 1) && isClose(point.x, 0.5, tolerance: 1e-5)
-        }
-        #expect(touchesRightEdge)
-        #expect(touchesTopEdge)
-    }
-
-    /// A squircle corner sits between a circle's and a square's: fuller than a
-    /// circle, still short of a right angle.
-    @Test func plateCornerIsFullerThanACircleButNotSquare() {
-        let outline = GitRelayMark.plateOutline(sampleCount: 8)
-        guard let corner = outline.first(where: { $0.x > 0.5 && $0.y > 0.5 }) else {
-            Issue.record("no corner sample")
-            return
-        }
-        let circleCorner = 0.5 + 0.5 * Double(0.5).squareRoot()
-        #expect(corner.x > circleCorner)
-        #expect(corner.x < 1)
-        #expect(isClose(corner.x, corner.y))
-    }
-
-    /// The AppIcon is raster artwork; only the menu-bar template still reads
-    /// these numbers. Pin them so `MenuBarBranchMark` never drifts.
+    /// Pin the merge-arrow geometry so `MenuBarBranchMark` never drifts.
     @Test func menuBarMarkConstantsAreStable() {
-        #expect(isClose(GitRelayMark.strokeWidth, 0.044))
+        #expect(isClose(GitRelayMark.strokeWidth, 0.068))
         #expect(isClose(GitRelayMark.nodeRadius, 0.072))
-        #expect(GitRelayMark.fork == GitRelayMarkPoint(x: 0.5, y: 0.505))
-        #expect(GitRelayMark.trunkNode == GitRelayMarkPoint(x: 0.5, y: 0.69))
-        #expect(GitRelayMark.leftBranchNode == GitRelayMarkPoint(x: 0.293, y: 0.283))
-        #expect(GitRelayMark.rightBranchNode == GitRelayMarkPoint(x: 0.707, y: 0.283))
+        #expect(GitRelayMark.topNode == GitRelayMarkPoint(x: 0.165, y: 0.265))
+        #expect(GitRelayMark.bottomNode == GitRelayMarkPoint(x: 0.165, y: 0.665))
+        #expect(GitRelayMark.mergePoint == GitRelayMarkPoint(x: 0.385, y: 0.475))
+        #expect(GitRelayMark.shaftEnd == GitRelayMarkPoint(x: 0.555, y: 0.475))
+        #expect(GitRelayMark.arrowTip == GitRelayMarkPoint(x: 0.635, y: 0.475))
+        #expect(GitRelayMark.discCenter == GitRelayMarkPoint(x: 0.778, y: 0.475))
+        #expect(isClose(GitRelayMark.discRadius, 0.112))
+        #expect(isClose(GitRelayMark.arrowHalfHeight, 0.065))
+        #expect(isClose(GitRelayMark.notchSpread, 0.62))
     }
 }
 

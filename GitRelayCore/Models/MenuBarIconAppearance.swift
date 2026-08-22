@@ -1,7 +1,7 @@
 import Foundation
 
 /// How the status item renders. The mark never changes: failure tints the same
-/// Y-branch red instead of swapping in a second symbol (#92).
+/// merge-arrow red instead of swapping in a second symbol (#92).
 ///
 /// The shape itself comes from ``GitRelayMark`` — the monochrome menu-bar
 /// template, not the full-color AppIcon artwork.
