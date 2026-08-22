@@ -13,7 +13,7 @@ enum AppLocalization {
         let bundle: Bundle
     }
 
-    nonisolated(unsafe) private static let lock = NSLock()
+    nonisolated private static let lock = NSLock()
     nonisolated(unsafe) private static var activeOverride: Override?
 
     nonisolated static func apply(_ preference: AppLanguagePreference, in bundle: Bundle = .main) {
