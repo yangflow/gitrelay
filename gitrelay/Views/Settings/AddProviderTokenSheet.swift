@@ -61,7 +61,7 @@ struct AddProviderTokenSheet: View {
                 }
 
                 Section {
-                    GatedSecureTokenField(placeholder: "Personal Access Token", text: $token)
+                    GatedSecureTokenField(placeholder: "", text: $token)
 
                     Text(provider.tokenHelpText)
                         .font(.caption)

@@ -148,20 +148,24 @@ struct BrowseRemotePane: View {
             }
 
             Section {
-                GatedSecureTokenField(
-                    placeholder: "Used only to fetch the repository list, not for git sync",
-                    text: $vm.token
-                )
-                .onChange(of: vm.token) { _, _ in
-                    vm.sourceScopeValidation = nil
-                    vm.refreshCachedSourceScopeValidation()
+                LabeledContent(String(localized: "Token")) {
+                    GatedSecureTokenField(
+                        placeholder: "",
+                        text: $vm.token
+                    )
+                    .onChange(of: vm.token) { _, _ in
+                        vm.sourceScopeValidation = nil
+                        vm.refreshCachedSourceScopeValidation()
+                    }
                 }
                 Toggle(String(localized: "Save to Keychain (Autofill Next Time)"), isOn: $vm.rememberToken)
-            } header: {
-                Text(String(localized: "Personal Access Token"))
             } footer: {
-                Text(vm.provider.tokenHelpText)
-                    .font(.caption)
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+                    Text(String(localized: "Used only to fetch the repository list, not for git sync"))
+                        .font(.caption)
+                    Text(vm.provider.tokenHelpText)
+                        .font(.caption)
+                }
             }
 
             Section {
