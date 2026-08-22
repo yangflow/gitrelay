@@ -124,6 +124,17 @@ struct ContentView: View {
             )
             .interactiveDismissDisabled()
         }
+        .sheet(item: Binding(
+            get: { appVM.presentedOrgDiscovery },
+            set: { _ in }
+        )) { item in
+            OrgDiscoverySheet(
+                item: item,
+                canJoinAndSync: appVM.canJoinAndSyncOrgDiscovery(item),
+                onDecision: { appVM.resolveOrgDiscovery($0) }
+            )
+            .interactiveDismissDisabled()
+        }
     }
 
     // MARK: - Right pane

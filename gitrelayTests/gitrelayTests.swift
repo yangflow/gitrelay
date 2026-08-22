@@ -5975,6 +5975,139 @@ struct OrgDiscoveryNotificationCopyTests {
     }
 }
 
+// MARK: - OrgDiscoverySheetCopy
+
+struct OrgDiscoverySheetCopyTests {
+    private var sampleRepo: RemoteRepo {
+        RemoteRepo(
+            id: "yangflow/baton-cli",
+            name: "baton-cli",
+            fullName: "yangflow/baton-cli",
+            description: nil,
+            isPrivate: false,
+            httpsCloneURL: "https://github.com/yangflow/baton-cli.git",
+            sshCloneURL: "git@github.com:yangflow/baton-cli.git",
+            defaultBranch: "main"
+        )
+    }
+
+    @Test func discoverySentenceNamesOrganizationAndRepo() {
+        let sentence = OrgDiscoverySheetCopy.discoverySentence(
+            organizationName: "yangflow",
+            repoName: "baton-cli"
+        )
+        #expect(sentence.contains("yangflow"))
+        #expect(sentence.contains("baton-cli"))
+    }
+
+    @Test func sourceHostPathUsesProviderDefaultHost() {
+        let path = OrgDiscoverySheetCopy.sourceHostPath(
+            provider: .github,
+            fullName: "yangflow/baton-cli",
+            customHost: nil
+        )
+        #expect(path == "github.com/yangflow/baton-cli")
+    }
+
+    @Test func targetPreviewUsesTemplateSubstitution() {
+        var template = OrgSubscriptionTemplate.default
+        template.targetURLTemplate = "git@gitee.com:yangflow/{name}.git"
+        let preview = OrgDiscoverySheetCopy.targetPreview(for: sampleRepo, template: template)
+        #expect(preview == "gitee.com/yangflow/baton-cli")
+    }
+
+    @Test func targetPreviewFallsBackWhenTemplateInvalid() {
+        let template = OrgSubscriptionTemplate.default
+        let preview = OrgDiscoverySheetCopy.targetPreview(for: sampleRepo, template: template)
+        #expect(preview == OrgDiscoverySheetCopy.targetFromTemplatePlaceholder)
+    }
+}
+
+// MARK: - OrgDiscoveryPendingFilter
+
+struct OrgDiscoveryPendingFilterTests {
+  private func subscription(ignored: [String] = []) -> OrgSubscription {
+    OrgSubscription(
+      provider: .github,
+      organizationName: "yangflow",
+      ignoredDiscoveredRepoIDs: ignored
+    )
+  }
+
+  private func remote(_ fullName: String) -> RemoteRepo {
+    RemoteRepo(
+      id: fullName,
+      name: fullName.split(separator: "/").last.map(String.init) ?? fullName,
+      fullName: fullName,
+      description: nil,
+      isPrivate: false,
+      httpsCloneURL: "https://github.com/\(fullName).git",
+      sshCloneURL: "git@github.com:\(fullName).git",
+      defaultBranch: "main"
+    )
+  }
+
+  @Test func actionableReposExcludesIgnoredIDs() {
+    let sub = subscription(ignored: ["yangflow/ignored"])
+    let newRepos = [remote("yangflow/ignored"), remote("yangflow/fresh")]
+    let actionable = OrgDiscoveryPendingFilter.actionableRepos(
+      subscription: sub,
+      newRepos: newRepos
+    )
+    #expect(actionable.map(\.fullName) == ["yangflow/fresh"])
+  }
+
+  @Test func actionableReposExcludesAlreadyMirroredLocals() {
+    let sub = subscription()
+    let newRepos = [remote("yangflow/alpha"), remote("yangflow/beta")]
+    let local = [
+      RepoConfig(
+        id: UUID(),
+        name: "alpha",
+        srcURL: "git@github.com:yangflow/alpha.git",
+        targets: [],
+        createdAt: Date()
+      )
+    ]
+    let actionable = OrgDiscoveryPendingFilter.actionableRepos(
+      subscription: sub,
+      newRepos: newRepos,
+      localRepos: local
+    )
+    #expect(actionable.map(\.fullName) == ["yangflow/beta"])
+  }
+}
+
+// MARK: - OrgDiscoveryDecisionHandler
+
+struct OrgDiscoveryDecisionHandlerTests {
+  @Test func ignorePersistsAndDismissesWithoutJoin() {
+    let outcome = OrgDiscoveryDecisionHandler.outcome(
+      for: .ignore,
+      repoRemoteID: "yangflow/baton-cli"
+    )
+    #expect(outcome.shouldPersistIgnore)
+    #expect(outcome.ignoredRepoID == "yangflow/baton-cli")
+    #expect(!outcome.shouldJoinAndSync)
+    #expect(outcome.shouldDismissFromQueue)
+  }
+
+  @Test func laterDismissesWithoutPersistingIgnore() {
+    let outcome = OrgDiscoveryDecisionHandler.outcome(for: .later, repoRemoteID: "id")
+    #expect(!outcome.shouldPersistIgnore)
+    #expect(outcome.ignoredRepoID == nil)
+    #expect(!outcome.shouldJoinAndSync)
+    #expect(outcome.shouldDismissFromQueue)
+  }
+
+  @Test func joinAndSyncRequestsAddWithoutIgnore() {
+    let outcome = OrgDiscoveryDecisionHandler.outcome(for: .joinAndSync, repoRemoteID: "id")
+    #expect(!outcome.shouldPersistIgnore)
+    #expect(outcome.shouldJoinAndSync)
+    #expect(outcome.shouldDismissFromQueue)
+  }
+}
+
 // MARK: - OrgSubscriptionTemplateApplier
 
 struct OrgSubscriptionTemplateApplierTests {

@@ -13,18 +13,39 @@ enum OrgSubscriptionAutoAdder {
 
         var configs: [RepoConfig] = []
         for repo in result.newRepos {
-            if let config = await buildConfig(
-                for: repo,
-                template: template,
+            if let config = await addRepo(
+                repo: repo,
                 subscription: result.subscription,
                 store: store
             ) {
                 configs.append(config)
             }
         }
-
-        persistTokens(for: configs, subscription: result.subscription, template: template, store: store)
         return configs
+    }
+
+    static func addRepo(
+        repo: RemoteRepo,
+        subscription: OrgSubscription,
+        store: OrgSubscriptionStore
+    ) async -> RepoConfig? {
+        let template = subscription.template
+        guard OrgSubscriptionTemplateApplier.isValidTemplate(template) else { return nil }
+        guard let config = await buildConfig(
+            for: repo,
+            template: template,
+            subscription: subscription,
+            store: store
+        ) else {
+            return nil
+        }
+        persistTokens(
+            for: [config],
+            subscription: subscription,
+            template: template,
+            store: store
+        )
+        return config
     }
 
     private static func buildConfig(
