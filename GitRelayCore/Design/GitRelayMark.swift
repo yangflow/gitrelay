@@ -7,9 +7,17 @@ nonisolated struct GitRelayMarkPoint: Equatable, Sendable {
     var y: Double
 }
 
-/// A straight run of the branch, drawn with a round cap at each end.
+/// A straight run of the mark, drawn with a round cap at each end.
 nonisolated struct GitRelayMarkSegment: Equatable, Sendable {
     var start: GitRelayMarkPoint
+    var end: GitRelayMarkPoint
+}
+
+/// A cubic Bézier curve in the mark's unit square, y-down.
+nonisolated struct GitRelayMarkCurve: Equatable, Sendable {
+    var start: GitRelayMarkPoint
+    var control1: GitRelayMarkPoint
+    var control2: GitRelayMarkPoint
     var end: GitRelayMarkPoint
 }
 
@@ -24,64 +32,110 @@ nonisolated struct GitRelayMarkRect: Equatable, Sendable {
     var maxY: Double { minY + height }
 }
 
-/// The GitRelay mark: a Y-shaped git branch of three hollow nodes — a trunk node
-/// at the bottom feeding two branch nodes above it.
+/// The GitRelay mark: two source nodes on the left whose paths merge into an
+/// arrow that meets a notched destination disc on the right.
 ///
 /// One source of truth for the menu-bar status template (#92). The AppIcon is
 /// raster artwork exported from `scripts/assets/gitrelay-status-first-01.png`;
 /// `MenuBarBranchMark` reads these normalized numbers so the monochrome
-/// Y-branch in the menu bar stays stable.
+/// merge-arrow in the menu bar stays stable.
 ///
 /// Coordinates are unit-square, y-down. AppKit draws y-up by default, so an
 /// AppKit renderer flips y when it maps a point onto its canvas.
 nonisolated enum GitRelayMark {
-    // MARK: - Branch
+    // MARK: - Merge arrow
 
-    /// Stroke weight of both the node rings and the lines between them.
-    static let strokeWidth: Double = 0.044
+    /// Stroke weight of the merge paths and shaft.
+    static let strokeWidth: Double = 0.068
 
-    /// Radius of a ring's centerline. The hollow core is ``innerRadius`` wide.
+    /// Radius of each solid source node.
     static let nodeRadius: Double = 0.072
 
-    /// Outer edge of a ring — where a connecting line starts.
+    /// Outer edge of a node — where a connecting path starts.
     static var outerRadius: Double { nodeRadius + strokeWidth / 2 }
 
-    /// Inner edge of a ring — the hollow core punched out of the plate.
-    static var innerRadius: Double { nodeRadius - strokeWidth / 2 }
+    /// Top and bottom source nodes on the left.
+    static let topNode = GitRelayMarkPoint(x: 0.165, y: 0.265)
+    static let bottomNode = GitRelayMarkPoint(x: 0.165, y: 0.665)
 
-    /// Where the two branch lines meet the trunk.
-    static let fork = GitRelayMarkPoint(x: 0.5, y: 0.505)
+    /// Where the two incoming paths join before the shaft.
+    static let mergePoint = GitRelayMarkPoint(x: 0.385, y: 0.475)
 
-    /// Trunk node, at the bottom of the Y.
-    static let trunkNode = GitRelayMarkPoint(x: 0.5, y: 0.69)
+    /// Base of the arrowhead, at the end of the horizontal shaft.
+    static let shaftEnd = GitRelayMarkPoint(x: 0.555, y: 0.475)
 
-    /// Branch nodes, above and to either side of the fork.
-    static let leftBranchNode = GitRelayMarkPoint(x: 0.293, y: 0.283)
-    static let rightBranchNode = GitRelayMarkPoint(x: 0.707, y: 0.283)
+    /// Tip of the arrowhead, sitting in the destination disc notch.
+    static let arrowTip = GitRelayMarkPoint(x: 0.635, y: 0.475)
 
-    /// Every hollow node, trunk first.
-    static var nodes: [GitRelayMarkPoint] { [trunkNode, leftBranchNode, rightBranchNode] }
+    /// Half-height of the filled arrowhead triangle.
+    static let arrowHalfHeight: Double = 0.065
 
-    /// One line per node, running from that node's outer ring edge to the fork.
-    ///
-    /// Starting at the outer edge rather than the center keeps the hollow core
-    /// clear; the round cap tucks back under the ring stroke so the join reads as
-    /// one continuous branch.
-    static var segments: [GitRelayMarkSegment] {
-        nodes.map { node in
-            GitRelayMarkSegment(start: edgePoint(from: node, towards: fork), end: fork)
-        }
+    /// Center of the notched destination disc.
+    static let discCenter = GitRelayMarkPoint(x: 0.785, y: 0.475)
+
+    /// Radius of the destination disc.
+    static let discRadius: Double = 0.115
+
+    /// Angular spread of the disc notch opening, in radians (y-down, clockwise).
+    static let notchSpread: Double = 0.62
+
+    static var nodes: [GitRelayMarkPoint] { [topNode, bottomNode] }
+
+    /// Curved paths from each source node into the merge point.
+    static var mergeCurves: [GitRelayMarkCurve] {
+        [
+            GitRelayMarkCurve(
+                start: edgePoint(from: topNode, towards: mergePoint),
+                control1: GitRelayMarkPoint(x: 0.220, y: 0.300),
+                control2: GitRelayMarkPoint(x: 0.320, y: 0.420),
+                end: mergePoint
+            ),
+            GitRelayMarkCurve(
+                start: edgePoint(from: bottomNode, towards: mergePoint),
+                control1: GitRelayMarkPoint(x: 0.220, y: 0.630),
+                control2: GitRelayMarkPoint(x: 0.320, y: 0.530),
+                end: mergePoint
+            ),
+        ]
     }
 
-    /// The branch alone, without the plate.
-    ///
-    /// The node rings enclose everything else: the fork sits between them, and a
-    /// line's round cap only ever reaches back to the ring it started from. So
-    /// the union of the three outer rings is the whole ink extent, which is what
-    /// the menu-bar status item fits to the bar.
-    static var branchBounds: GitRelayMarkRect {
-        let xs = nodes.map(\.x)
-        let ys = nodes.map(\.y)
+    /// Horizontal shaft from the merge point to the arrow base.
+    static var shaft: GitRelayMarkSegment {
+        GitRelayMarkSegment(start: mergePoint, end: shaftEnd)
+    }
+
+    /// The three corners of the filled arrowhead triangle: tip, base-top, base-bottom.
+    static var arrowHead: [GitRelayMarkPoint] {
+        [
+            arrowTip,
+            GitRelayMarkPoint(x: shaftEnd.x, y: shaftEnd.y - arrowHalfHeight),
+            GitRelayMarkPoint(x: shaftEnd.x, y: shaftEnd.y + arrowHalfHeight),
+        ]
+    }
+
+    /// The notch tip and the two points where the notch meets the disc edge.
+    static var notchPoints: (tip: GitRelayMarkPoint, top: GitRelayMarkPoint, bottom: GitRelayMarkPoint) {
+        let topAngle = Double.pi - notchSpread
+        let bottomAngle = Double.pi + notchSpread
+        return (
+            tip: GitRelayMarkPoint(
+                x: discCenter.x - discRadius * 0.55,
+                y: discCenter.y
+            ),
+            top: pointOnDisc(angle: topAngle),
+            bottom: pointOnDisc(angle: bottomAngle)
+        )
+    }
+
+    /// Ink extent of the whole mark, used to fit the menu-bar status item.
+    static var markBounds: GitRelayMarkRect {
+        let xs = nodes.map(\.x) + [arrowTip.x, discCenter.x + discRadius]
+        let ys = nodes.map(\.y) + [
+            discCenter.y - discRadius,
+            discCenter.y + discRadius,
+            arrowTip.y - arrowHalfHeight,
+            arrowTip.y + arrowHalfHeight,
+        ]
         let minX = (xs.min() ?? 0) - outerRadius
         let minY = (ys.min() ?? 0) - outerRadius
         let maxX = (xs.max() ?? 0) + outerRadius
@@ -94,7 +148,7 @@ nonisolated enum GitRelayMark {
         )
     }
 
-    /// The point on `node`'s outer ring edge that faces `target`.
+    /// The point on `node`'s outer edge that faces `target`.
     static func edgePoint(
         from node: GitRelayMarkPoint,
         towards target: GitRelayMarkPoint
@@ -109,35 +163,10 @@ nonisolated enum GitRelayMark {
         )
     }
 
-    // MARK: - Plate
-
-    /// Superellipse exponent for the icon plate. macOS rounded-rect icons read as
-    /// continuous curvature, which a circular-corner rounded rect does not give.
-    static let plateExponent: Double = 5
-
-    /// Sample count of ``plateOutline(sampleCount:)``. High enough that the
-    /// polygon is indistinguishable from the curve at 1024 px.
-    static let plateSampleCount = 720
-
-    /// Deep ink plate gradient, top to bottom, as sRGB components in 0...1.
-    static let plateTopColor = (red: 0.204, green: 0.204, blue: 0.216)
-    static let plateBottomColor = (red: 0.129, green: 0.129, blue: 0.141)
-
-    /// The plate outline, sampled once around the superellipse.
-    static func plateOutline(sampleCount: Int = plateSampleCount) -> [GitRelayMarkPoint] {
-        guard sampleCount > 2 else { return [] }
-        let exponent = 2 / plateExponent
-        return (0..<sampleCount).map { index in
-            let angle = 2 * Double.pi * Double(index) / Double(sampleCount)
-            return GitRelayMarkPoint(
-                x: 0.5 + 0.5 * signedPower(cos(angle), exponent),
-                y: 0.5 + 0.5 * signedPower(sin(angle), exponent)
-            )
-        }
-    }
-
-    private static func signedPower(_ value: Double, _ exponent: Double) -> Double {
-        let magnitude = pow(abs(value), exponent)
-        return value < 0 ? -magnitude : magnitude
+    private static func pointOnDisc(angle: Double) -> GitRelayMarkPoint {
+        GitRelayMarkPoint(
+            x: discCenter.x + discRadius * cos(angle),
+            y: discCenter.y + discRadius * sin(angle)
+        )
     }
 }

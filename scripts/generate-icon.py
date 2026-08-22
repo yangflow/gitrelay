@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Export GitRelay AppIcon PNGs from the committed source artwork."""
+"""Export GitRelay AppIcon PNGs from the committed source artwork.
+
+The source must be a 1024×1024 full-bleed square with opaque charcoal to every
+edge. Do not bake in a squircle plate or rim — macOS applies its own icon mask.
+"""
 
 from __future__ import annotations
 

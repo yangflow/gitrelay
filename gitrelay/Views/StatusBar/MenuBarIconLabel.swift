@@ -23,8 +23,8 @@ struct MenuBarIconLabel: View {
         }
     }
 
-    /// Same Y-branch in both states. Failure tints it red rather than swapping in
-    /// a second glyph, and a tinted mark has to drop template rendering to keep
+    /// Same merge-arrow in both states. Failure tints it red rather than swapping
+    /// in a second glyph, and a tinted mark has to drop template rendering to keep
     /// the color.
     private static let normalIcon = MenuBarBranchMark.image(
         pointSize: DesignTokens.Size.menuBarIconPointSize,
