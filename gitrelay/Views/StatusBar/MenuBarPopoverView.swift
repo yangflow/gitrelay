@@ -24,7 +24,6 @@ struct MenuBarPopoverView: View {
             footer
         }
         .frame(width: DesignTokens.Layout.popoverWidth)
-        .gitRelayChrome(.popover)
         .onReceive(NotificationCenter.default.publisher(for: .gitrelayOpenMainWindow)) { _ in
             openMainWindow()
         }

@@ -18,7 +18,6 @@ struct MainSidebarView: View {
                         ForEach(section.items) { item in
                             row(item)
                                 .tag(item)
-                                .listRowBackground(selectionBackground(isSelected: selection == item))
                         }
                     } header: {
                         Text(section.title)
@@ -26,7 +25,6 @@ struct MainSidebarView: View {
                 }
             }
             .listStyle(.sidebar)
-            .scrollContentBackground(.hidden)
 
             Divider()
 
@@ -56,18 +54,6 @@ struct MainSidebarView: View {
                 .badge(queueCount)
         } else {
             Label(item.title, systemImage: item.systemImage)
-        }
-    }
-
-    @ViewBuilder
-    private func selectionBackground(isSelected: Bool) -> some View {
-        if isSelected {
-            RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.control, style: .continuous)
-                .fill(DesignTokens.Surface.selectionTint)
-                .padding(.horizontal, DesignTokens.Spacing.xxxs)
-                .padding(.vertical, 1)
-        } else {
-            Color.clear
         }
     }
 }
