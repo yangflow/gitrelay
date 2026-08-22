@@ -32,11 +32,11 @@ nonisolated enum AppLanguagePreference: String, CaseIterable, Identifiable, Send
     var pickerLabel: String {
         switch self {
         case .system:
-            String.loc("Follow System")
+            String(localized: "Follow System")
         case .english:
-            String.loc("English")
+            String(localized: "English")
         case .simplifiedChinese:
-            String.loc("Simplified Chinese")
+            String(localized: "Simplified Chinese")
         }
     }
 }

@@ -597,7 +597,7 @@ struct SettingsView: View {
         Section {
             Picker(String.loc("Language"), selection: $languageStore.preference) {
                 ForEach(AppLanguagePreference.allCases) { choice in
-                    Text(choice.pickerLabel).tag(choice)
+                    Text(choice.livePickerLabel).tag(choice)
                 }
             }
 

@@ -53,7 +53,7 @@ nonisolated enum GitProgressParser {
             else {
                 continue
             }
-            return String.loc("\(done) / \(total) objects")
+            return String(localized: "\(done) / \(total) objects")
         }
         return nil
     }

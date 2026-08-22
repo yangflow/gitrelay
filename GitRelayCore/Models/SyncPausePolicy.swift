@@ -71,15 +71,15 @@ enum SyncPauseReason: Equatable, Sendable {
     var displayMessage: String {
         switch self {
         case .manual:
-            return String.loc("Scheduled sync paused")
+            return String(localized: "Scheduled sync paused")
         case .quietHours:
-            return String.loc("Quiet hours")
+            return String(localized: "Quiet hours")
         case .lowPowerMode:
-            return String.loc("Low Power Mode is on; scheduled sync is paused")
+            return String(localized: "Low Power Mode is on; scheduled sync is paused")
         case .expensiveNetwork:
-            return String.loc("The current network is a cellular hotspot or an expensive network; scheduled sync is paused")
+            return String(localized: "The current network is a cellular hotspot or an expensive network; scheduled sync is paused")
         case .lowPowerAndExpensiveNetwork:
-            return String.loc("Low Power Mode is on and the network is expensive; scheduled sync is paused")
+            return String(localized: "Low Power Mode is on and the network is expensive; scheduled sync is paused")
         }
     }
 
@@ -88,15 +88,15 @@ enum SyncPauseReason: Equatable, Sendable {
     var shortLabel: String {
         switch self {
         case .manual:
-            return String.loc("Manual pause")
+            return String(localized: "Manual pause")
         case .quietHours:
-            return String.loc("Quiet hours")
+            return String(localized: "Quiet hours")
         case .lowPowerMode:
-            return String.loc("Low Power Mode")
+            return String(localized: "Low Power Mode")
         case .expensiveNetwork:
-            return String.loc("Metered network")
+            return String(localized: "Metered network")
         case .lowPowerAndExpensiveNetwork:
-            return String.loc("Low Power Mode · Metered network")
+            return String(localized: "Low Power Mode · Metered network")
         }
     }
 

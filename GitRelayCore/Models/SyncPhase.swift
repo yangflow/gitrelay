@@ -28,17 +28,17 @@ nonisolated struct SyncPhase: Equatable, Sendable {
     var statusTitle: String {
         switch kind {
         case .cloningSource:
-            return String.loc("Cloning...")
+            return String(localized: "Cloning...")
         case .fetchingSource:
-            return String.loc("Fetching...")
+            return String(localized: "Fetching...")
         case .fetchingLFS:
-            return String.loc("Fetching LFS...")
+            return String(localized: "Fetching LFS...")
         case .pushingTarget:
-            return String.loc("Pushing...")
+            return String(localized: "Pushing...")
         case .pushingLFS:
-            return String.loc("Pushing LFS...")
+            return String(localized: "Pushing LFS...")
         case .archivingTarget:
-            return String.loc("Archiving...")
+            return String(localized: "Archiving...")
         }
     }
 

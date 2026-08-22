@@ -20,54 +20,54 @@ nonisolated enum AddPreflightCopy {
         case .idle, .ready:
             return nil
         case .duplicatePair:
-            return String.loc("This mirror already exists. Open it or change the target.")
+            return String(localized: "This mirror already exists. Open it or change the target.")
         case .destinationMissing:
             guard let provider = destinationProviderLabel(destinationURL: destinationURL) else {
-                return String.loc("The destination repository does not exist. An empty one will be created before the first sync.")
+                return String(localized: "The destination repository does not exist. An empty one will be created before the first sync.")
             }
-            return String.loc("The destination repository does not exist. An empty one will be created on \(provider).")
+            return String(localized: "The destination repository does not exist. An empty one will be created on \(provider).")
         case .sourceMissing:
-            return String.loc("The source repository was not found. Check the URL.")
+            return String(localized: "The source repository was not found. Check the URL.")
         case .authenticationFailed(.source):
-            return String.loc("The source refused the credentials. Take a look at its token or account.")
+            return String(localized: "The source refused the credentials. Take a look at its token or account.")
         case .authenticationFailed(.destination):
-            return String.loc("The destination refused the credentials. Take a look at its token or account.")
+            return String(localized: "The destination refused the credentials. Take a look at its token or account.")
         case .unreachable(.source):
-            return String.loc("Could not reach the source just now.")
+            return String(localized: "Could not reach the source just now.")
         case .unreachable(.destination):
-            return String.loc("Could not reach the destination just now.")
+            return String(localized: "Could not reach the destination just now.")
         }
     }
 
     static var checkingCaption: String {
-        String.loc("Checking both URLs…")
+        String(localized: "Checking both URLs…")
     }
 
     static var creatingDestinationCaption: String {
-        String.loc("Creating the destination repository…")
+        String(localized: "Creating the destination repository…")
     }
 
     /// Shown when the destination host has no saved token to create with.
     static func missingCreateTokenCaption(destinationURL: String) -> String {
         guard let provider = destinationProviderLabel(destinationURL: destinationURL) else {
-            return String.loc("Creating the destination needs an API token. Add one in the accounts pane, or change the target.")
+            return String(localized: "Creating the destination needs an API token. Add one in the accounts pane, or change the target.")
         }
-        return String.loc("Creating the destination needs a \(provider) token. Add one in the accounts pane, or change the target.")
+        return String(localized: "Creating the destination needs a \(provider) token. Add one in the accounts pane, or change the target.")
     }
 
     static func createFailedCaption(_ message: String) -> String {
-        String.loc("Could not create the destination repository: \(message)")
+        String(localized: "Could not create the destination repository: \(message)")
     }
 
     static var createAndStartSyncTitle: String {
-        String.loc("Create and Start Sync")
+        String(localized: "Create and Start Sync")
     }
 
     static var openExistingTitle: String {
-        String.loc("Open the Existing One")
+        String(localized: "Open the Existing One")
     }
 
     static var addAnywayTitle: String {
-        String.loc("Add Anyway")
+        String(localized: "Add Anyway")
     }
 }

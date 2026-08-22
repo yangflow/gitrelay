@@ -13,7 +13,7 @@ nonisolated struct DestructivePushPlan: Equatable, Sendable {
     }
 
     var summary: String {
-        String.loc("\(deletedRefs.count) deletions, \(forcedUpdateRefs.count) forced updates")
+        String(localized: "\(deletedRefs.count) deletions, \(forcedUpdateRefs.count) forced updates")
     }
 
     static let empty = DestructivePushPlan(deletedRefs: [], forcedUpdateRefs: [])

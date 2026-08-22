@@ -33,7 +33,7 @@ nonisolated struct CredentialProbe: Sendable {
 
 nonisolated enum RepoCredentialGate {
     static var missingCredentialsMessage: String {
-        String.loc("This repository needs credentials before it can sync. Edit the repository to add a token or SSH key.")
+        String(localized: "This repository needs credentials before it can sync. Edit the repository to add a token or SSH key.")
     }
 
     static func isMissing(auth: AuthConfig, probe: CredentialProbe = .live) -> Bool {

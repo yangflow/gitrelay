@@ -8,8 +8,8 @@ nonisolated enum MirrorTargetKind: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .gitRemote: return String.loc("Git Remote")
-        case .filesystem: return String.loc("Filesystem Archive")
+        case .gitRemote: return String(localized: "Git Remote")
+        case .filesystem: return String(localized: "Filesystem Archive")
         }
     }
 }

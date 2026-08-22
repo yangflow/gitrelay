@@ -18,9 +18,9 @@ enum MirrorCacheFormatting {
     static func usageSummary(usageBytes: Int64, quotaGB: Int?) -> String {
         let usage = byteCount(usageBytes)
         guard let quotaGB else {
-            return String(format: String.loc("%@ used (unlimited quota)"), usage)
+            return String(format: String(localized: "%@ used (unlimited quota)"), usage)
         }
         let quota = byteCount(MirrorCacheManager.quotaLimitBytes(for: quotaGB) ?? 0)
-        return String(format: String.loc("%1$@ of %2$@ used"), usage, quota)
+        return String(format: String(localized: "%1$@ of %2$@ used"), usage, quota)
     }
 }

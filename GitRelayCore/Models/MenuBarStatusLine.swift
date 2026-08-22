@@ -26,9 +26,9 @@ nonisolated enum MenuBarStatusLine: Equatable, Sendable {
     var message: String {
         switch self {
         case .paused(let reason):
-            return String.loc("Schedule paused · \(reason.shortLabel)")
+            return String(localized: "Schedule paused · \(reason.shortLabel)")
         case .catchingUp(let missedRuns):
-            return String.loc("Missed runs: \(missedRuns) · catching up")
+            return String(localized: "Missed runs: \(missedRuns) · catching up")
         }
     }
 

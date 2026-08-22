@@ -13,19 +13,19 @@ nonisolated enum ProviderTokenRejection: String, Equatable, Sendable {
     var text: String {
         switch self {
         case .unauthorized:
-            return String.loc("Token rejected")
+            return String(localized: "Token rejected")
         case .forbidden:
-            return String.loc("Permission denied")
+            return String(localized: "Permission denied")
         case .notFound:
-            return String.loc("Account not found")
+            return String(localized: "Account not found")
         case .network:
-            return String.loc("Could not reach the host")
+            return String(localized: "Could not reach the host")
         case .unreadableResponse:
-            return String.loc("Response could not be read")
+            return String(localized: "Response could not be read")
         case .httpError:
-            return String.loc("The host refused the check")
+            return String(localized: "The host refused the check")
         case .unknown:
-            return String.loc("Test failed")
+            return String(localized: "Test failed")
         }
     }
 }
@@ -129,14 +129,14 @@ extension ProviderTokenTestOutcome {
         switch self {
         case .ok(let grantedScopes):
             return grantedScopes.isEmpty
-                ? String.loc("Token works; scopes not reported")
-                : String.loc("Token works")
+                ? String(localized: "Token works; scopes not reported")
+                : String(localized: "Token works")
         case .missingScopes(let missing):
-            return String.loc("Missing scope: \(missing.joined(separator: ", "))")
+            return String(localized: "Missing scope: \(missing.joined(separator: ", "))")
         case .rejected(let rejection):
             return rejection.text
         case .noToken:
-            return String.loc("No token saved")
+            return String(localized: "No token saved")
         }
     }
 

@@ -133,7 +133,9 @@ struct AppLocalizationTests {
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         defaults.set(AppLanguagePreference.english.rawValue, forKey: AppLanguageStore.preferenceKey)
+        let catalog = Bundle.main
         AppLanguageStore.bootstrapAppleLanguages(defaults: defaults)
+        AppLocalization.apply(.english, in: catalog)
         let store = AppLanguageStore(defaults: defaults)
 
         let english = String.loc("Settings")

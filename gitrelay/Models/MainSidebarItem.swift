@@ -61,11 +61,11 @@ nonisolated enum MainSidebarItem: String, CaseIterable, Identifiable, Hashable, 
         case .browseRemote:
             String.loc("Browse Remote")
         case .githubAccounts:
-            GitProvider.github.displayName
+            GitProvider.github.shortName
         case .gitlabAccounts:
-            GitProvider.gitlab.displayName
+            GitProvider.gitlab.shortName
         case .giteaAccounts:
-            GitProvider.gitea.displayName
+            GitProvider.gitea.shortName
         case .settings:
             String.loc("Settings")
         }

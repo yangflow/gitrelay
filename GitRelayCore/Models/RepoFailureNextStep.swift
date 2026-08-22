@@ -34,9 +34,9 @@ struct RepoFailureNextStep: Equatable, Sendable {
     var missingRepositoryCaption: String? {
         switch missingRepositorySide {
         case .source:
-            return String.loc("Source repository not found")
+            return String(localized: "Source repository not found")
         case .destination:
-            return String.loc("Destination repository not found")
+            return String(localized: "Destination repository not found")
         case nil:
             return nil
         }

@@ -5,7 +5,7 @@ import Foundation
 /// the destination has, what overwriting it would cost, and the way out.
 nonisolated enum DestructivePushCopy {
     static var title: String {
-        String.loc("Target already has different history")
+        String(localized: "Target already has different history")
     }
 
     /// `https://gitlab.com/yangflow/keychord.git` reads back as
@@ -24,30 +24,30 @@ nonisolated enum DestructivePushCopy {
     /// What the destination is holding that the source is not.
     static func divergence(destinationLabel label: String, plan: DestructivePushPlan) -> String {
         guard let count = plan.destinationOnlyCommits, count > 0 else {
-            return String.loc("\(label) already has commits that the source does not.")
+            return String(localized: "\(label) already has commits that the source does not.")
         }
-        return String.loc("\(label) already has \(count) commits that the source does not.")
+        return String(localized: "\(label) already has \(count) commits that the source does not.")
     }
 
     /// What Overwrite and Sync would cost.
     static var overwriteExplanation: String {
-        String.loc("Continuing replaces those commits with the source, and the branches already on the target are replaced.")
+        String(localized: "Continuing replaces those commits with the source, and the branches already on the target are replaced.")
     }
 
     /// The way out, naming the namespace the check branches land in.
     static var checkBranchExplanation: String {
-        String.loc("You can push to check branches under \(CheckBranchRefMapping.displayPrefix) first and leave the target's own branches where they are.")
+        String(localized: "You can push to check branches under \(CheckBranchRefMapping.displayPrefix) first and leave the target's own branches where they are.")
     }
 
     static var cancelTitle: String {
-        String.loc("Cancel")
+        String(localized: "Cancel")
     }
 
     static var overwriteTitle: String {
-        String.loc("Overwrite and Sync")
+        String(localized: "Overwrite and Sync")
     }
 
     static var checkBranchTitle: String {
-        String.loc("Push to Check Branch")
+        String(localized: "Push to Check Branch")
     }
 }

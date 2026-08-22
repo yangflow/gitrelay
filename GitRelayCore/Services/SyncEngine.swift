@@ -174,7 +174,7 @@ final class SyncEngine {
                 emit(.statusChanged(.idle))
                 emit(.completed(record))
             } else if let message = SyncRecord.aggregateErrorMessage(from: targetResults) {
-                log(String.loc("Error: \(message)"))
+                log(String(localized: "Error: \(message)"))
                 emit(.failed(message, record))
                 emit(.statusChanged(.failed(message)))
             } else {
@@ -191,7 +191,7 @@ final class SyncEngine {
 
         } catch {
             let message = classifyError(error)
-            log(String.loc("Error: \(message)"))
+            log(String(localized: "Error: \(message)"))
             record.finishedAt = Date()
             emit(.failed(message, record))
             emit(.statusChanged(.failed(message)))
@@ -243,7 +243,7 @@ final class SyncEngine {
             result.succeeded = true
         } catch {
             let message = classifyError(error)
-            targetLog(String.loc("Error: \(message)"))
+            targetLog(String(localized: "Error: \(message)"))
             result.error = message
             result.succeeded = false
         }
@@ -393,7 +393,7 @@ final class SyncEngine {
                     }
                 } catch {
                     let message = classifyError(error)
-                    targetLog(String.loc("LFS push error: \(message)"))
+                    targetLog(String(localized: "LFS push error: \(message)"))
                     result.error = message
                     result.succeeded = false
                     return result
@@ -419,7 +419,7 @@ final class SyncEngine {
             result.succeeded = true
         } catch {
             let message = classifyError(error)
-            targetLog(String.loc("Error: \(message)"))
+            targetLog(String(localized: "Error: \(message)"))
             result.error = message
             result.succeeded = false
         }

@@ -14,15 +14,15 @@ nonisolated enum RepoPairStatusKind: String, Equatable, Sendable {
     var title: String {
         switch self {
         case .succeeded:
-            String.loc("Succeeded")
+            String(localized: "Succeeded")
         case .failed:
-            String.loc("Failed")
+            String(localized: "Failed")
         case .syncing:
-            String.loc("Syncing...")
+            String(localized: "Syncing...")
         case .queued:
-            String.loc("Queued")
+            String(localized: "Queued")
         case .notSynced:
-            String.loc("Not Synced")
+            String(localized: "Not Synced")
         }
     }
 

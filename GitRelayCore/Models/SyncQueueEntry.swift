@@ -20,7 +20,7 @@ nonisolated struct SyncQueueEntry: Identifiable, Equatable, Sendable {
             case .syncing(let caption):
                 return caption
             case .queued:
-                return String.loc("Queued")
+                return String(localized: "Queued")
             }
         }
     }
@@ -45,7 +45,7 @@ nonisolated enum SyncQueueList {
             let provider = GitRemoteHost.inferredProvider(fromRemoteURL: repo.srcURL)
             switch statuses[repo.id] ?? .unknown {
             case .syncing:
-                let caption = syncPhases[repo.id]?.displayCaption ?? String.loc("Syncing...")
+                let caption = syncPhases[repo.id]?.displayCaption ?? String(localized: "Syncing...")
                 syncing.append(
                     SyncQueueEntry(
                         id: repo.id,

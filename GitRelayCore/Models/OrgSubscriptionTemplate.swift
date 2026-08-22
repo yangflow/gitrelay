@@ -38,9 +38,9 @@ nonisolated enum OrgSubscriptionTargetNamespaceKind: String, Codable, CaseIterab
 
     var displayName: String {
         switch self {
-        case .currentUser:  String.loc("Current User")
-        case .organization: String.loc("Organization")
-        case .adminForUser: String.loc("Administrator Creates for User")
+        case .currentUser:  String(localized: "Current User")
+        case .organization: String(localized: "Organization")
+        case .adminForUser: String(localized: "Administrator Creates for User")
         }
     }
 }

@@ -19,11 +19,11 @@ nonisolated struct SidebarFooterSummary: Equatable, Sendable {
     }
 
     var stateText: String {
-        pauseReason?.displayMessage ?? String.loc("Running")
+        pauseReason?.displayMessage ?? String(localized: "Running")
     }
 
     var countsText: String {
-        String.loc("\(repoCount) repos · \(failedCount) failed")
+        String(localized: "\(repoCount) repos · \(failedCount) failed")
     }
 
     static func make(

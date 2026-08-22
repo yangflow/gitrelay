@@ -40,7 +40,7 @@ extension SyncRecord {
         }
         let succeededCount = results.count - failures.count
         let detail = failures.map { failureSummary($0) }.joined(separator: "; ")
-        return String.loc("\(failures.count)/\(results.count) targets failed (\(succeededCount) succeeded): \(detail)")
+        return String(localized: "\(failures.count)/\(results.count) targets failed (\(succeededCount) succeeded): \(detail)")
     }
 
     private static func failureSummary(_ result: TargetSyncResult) -> String {

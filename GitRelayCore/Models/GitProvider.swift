@@ -13,7 +13,7 @@ nonisolated enum GitProvider: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .github: "GitHub"
         case .gitlab: "GitLab"
-        case .gitea:  String.loc("Gitea (the open-source edition of Gitee)")
+        case .gitea:  String(localized: "Gitea (the open-source edition of Gitee)")
         }
     }
 
@@ -48,11 +48,11 @@ nonisolated enum GitProvider: String, CaseIterable, Identifiable, Codable {
     var tokenHelpText: String {
         switch self {
         case .github:
-            String.loc("Create a Personal Access Token (classic) with the repo and read:org scopes. https://github.com/settings/tokens")
+            String(localized: "Create a Personal Access Token (classic) with the repo and read:org scopes. https://github.com/settings/tokens")
         case .gitlab:
-            String.loc("Create a Personal Access Token with the read_api scope. https://gitlab.com/-/user_settings/personal_access_tokens")
+            String(localized: "Create a Personal Access Token with the read_api scope. https://gitlab.com/-/user_settings/personal_access_tokens")
         case .gitea:
-            String.loc("Create a token with the write:repository scope (required to create repositories). Visit <your-gitea-host>/user/settings/applications")
+            String(localized: "Create a token with the write:repository scope (required to create repositories). Visit <your-gitea-host>/user/settings/applications")
         }
     }
 }

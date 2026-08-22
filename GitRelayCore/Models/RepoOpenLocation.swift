@@ -10,9 +10,9 @@ nonisolated enum RepoOpenLocation: Equatable, Sendable {
     var actionTitle: String {
         switch self {
         case .web:
-            return String.loc("Open")
+            return String(localized: "Open")
         case .revealInFinder:
-            return String.loc("Show in Finder")
+            return String(localized: "Show in Finder")
         }
     }
 
