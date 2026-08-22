@@ -1,23 +1,20 @@
 #!/usr/bin/env swift
 //
-// generate-icon.swift — Produce the GitRelay AppIcon asset from scratch.
+// generate-icon.swift — Export GitRelay AppIcon PNGs from the committed source artwork.
 //
-// Run once from the repo root, on a Mac:
+// Run from the repo root, on a Mac:
 //     swift scripts/generate-icon.swift
 //
 // Writes 10 PNG files into gitrelay/Assets.xcassets/AppIcon.appiconset/
 // at exact pixel dimensions (no Retina-doubling).
 //
-// The mark is a deep ink squircle plate carrying a white Y-shaped git branch of
-// three hollow nodes (#92 / #121). Its geometry mirrors `GitRelayMark` in
-// GitRelayCore/Design/GitRelayMark.swift, which is what the menu-bar status item
-// draws from. A standalone `swift` script cannot import the app module, so the
-// numbers below are duplicated; `GitRelayMarkTests` pins the same values so a
-// change on either side fails the test suite instead of drifting silently.
+// The AppIcon is a raster 3D merge-arrow mark. The menu-bar status item still
+// draws the monochrome Y-branch template from GitRelayMark — not this artwork.
 
 import AppKit
 import Foundation
 
+let sourcePath = "scripts/assets/gitrelay-status-first-01.png"
 let assetPath = "gitrelay/Assets.xcassets/AppIcon.appiconset"
 
 let sizes: [(filename: String, pixels: Int)] = [
@@ -33,176 +30,55 @@ let sizes: [(filename: String, pixels: Int)] = [
     ("icon_512@2x.png",  1024),
 ]
 
-// MARK: - Mark geometry (mirrors GitRelayCore/Design/GitRelayMark.swift)
-
-struct MarkPoint {
-    var x: Double
-    var y: Double
-}
-
-enum Mark {
-    static let strokeWidth = 0.044
-    static let nodeRadius = 0.072
-    static var outerRadius: Double { nodeRadius + strokeWidth / 2 }
-    static var innerRadius: Double { nodeRadius - strokeWidth / 2 }
-
-    static let fork = MarkPoint(x: 0.5, y: 0.505)
-    static let nodes = [
-        MarkPoint(x: 0.5, y: 0.69),     // trunk
-        MarkPoint(x: 0.293, y: 0.283),  // left branch
-        MarkPoint(x: 0.707, y: 0.283),  // right branch
-    ]
-
-    static let plateExponent = 5.0
-    static let plateSampleCount = 720
-
-    static func edgePoint(from node: MarkPoint, towards target: MarkPoint) -> MarkPoint {
-        let dx = target.x - node.x
-        let dy = target.y - node.y
-        let length = (dx * dx + dy * dy).squareRoot()
-        guard length > 0 else { return node }
-        return MarkPoint(
-            x: node.x + dx / length * outerRadius,
-            y: node.y + dy / length * outerRadius
-        )
-    }
-
-    static func plateOutline() -> [MarkPoint] {
-        let exponent = 2 / plateExponent
-        return (0..<plateSampleCount).map { index in
-            let angle = 2 * Double.pi * Double(index) / Double(plateSampleCount)
-            return MarkPoint(
-                x: 0.5 + 0.5 * signedPower(cos(angle), exponent),
-                y: 0.5 + 0.5 * signedPower(sin(angle), exponent)
-            )
-        }
-    }
-
-    private static func signedPower(_ value: Double, _ exponent: Double) -> Double {
-        let magnitude = pow(abs(value), exponent)
-        return value < 0 ? -magnitude : magnitude
-    }
-}
-
-// MARK: - Palette
-
-let plateTop = NSColor(srgbRed: 0.204, green: 0.204, blue: 0.216, alpha: 1)
-let plateBottom = NSColor(srgbRed: 0.129, green: 0.129, blue: 0.141, alpha: 1)
-let branchColor = NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1)
-
-// MARK: - Drawing
-
-/// Unit-square, y-down mark coordinates onto an AppKit y-up canvas.
-func canvasPoint(_ point: MarkPoint, size: CGFloat) -> NSPoint {
-    NSPoint(x: CGFloat(point.x) * size, y: (1 - CGFloat(point.y)) * size)
-}
-
-func platePath(size: CGFloat) -> NSBezierPath {
-    let path = NSBezierPath()
-    for (index, point) in Mark.plateOutline().enumerated() {
-        let canvas = canvasPoint(point, size: size)
-        if index == 0 {
-            path.move(to: canvas)
-        } else {
-            path.line(to: canvas)
-        }
-    }
-    path.close()
-    return path
-}
-
-/// One even-odd path holding all three rings, so each hollow core stays clear.
-func ringsPath(size: CGFloat) -> NSBezierPath {
-    let path = NSBezierPath()
-    path.windingRule = .evenOdd
-    for node in Mark.nodes {
-        let center = canvasPoint(node, size: size)
-        for radius in [Mark.outerRadius, Mark.innerRadius] {
-            let scaled = CGFloat(radius) * size
-            path.appendOval(in: NSRect(
-                x: center.x - scaled,
-                y: center.y - scaled,
-                width: scaled * 2,
-                height: scaled * 2
-            ))
-        }
-    }
-    return path
-}
-
-/// Lines from each ring's outer edge to the fork. Round caps tuck the ends back
-/// under the ring stroke without reaching into the hollow core.
-func branchLinesPath(size: CGFloat) -> NSBezierPath {
-    let path = NSBezierPath()
-    path.lineWidth = CGFloat(Mark.strokeWidth) * size
-    path.lineCapStyle = .round
-    path.lineJoinStyle = .round
-    for node in Mark.nodes {
-        let start = Mark.edgePoint(from: node, towards: Mark.fork)
-        path.move(to: canvasPoint(start, size: size))
-        path.line(to: canvasPoint(Mark.fork, size: size))
-    }
-    return path
-}
-
-func iconPNG(pixelSize px: Int) -> Data? {
-    guard let rep = NSBitmapImageRep(
-        bitmapDataPlanes: nil,
-        pixelsWide: px,
-        pixelsHigh: px,
-        bitsPerSample: 8,
-        samplesPerPixel: 4,
-        hasAlpha: true,
-        isPlanar: false,
-        colorSpaceName: .deviceRGB,
-        bytesPerRow: 0,
-        bitsPerPixel: 0
-    ) else { return nil }
-    rep.size = NSSize(width: px, height: px)
-
-    NSGraphicsContext.saveGraphicsState()
-    defer { NSGraphicsContext.restoreGraphicsState() }
-    guard let ctx = NSGraphicsContext(bitmapImageRep: rep) else { return nil }
-    NSGraphicsContext.current = ctx
-    ctx.shouldAntialias = true
-    ctx.imageInterpolation = .high
-
-    let size = CGFloat(px)
-
-    // Ink plate, slightly lighter at the top.
-    let plate = platePath(size: size)
-    if let gradient = NSGradient(starting: plateBottom, ending: plateTop) {
-        gradient.draw(in: plate, angle: 90)
-    } else {
-        plateBottom.setFill()
-        plate.fill()
-    }
-
-    // White Y branch.
-    branchColor.setStroke()
-    branchLinesPath(size: size).stroke()
-    branchColor.setFill()
-    ringsPath(size: size).fill()
-
-    let tagged = rep.converting(to: .sRGB, renderingIntent: .default) ?? rep
-    return tagged.representation(using: .png, properties: [:])
-}
-
-// MARK: - Main
-
 func warn(_ message: String) {
     if let data = (message + "\n").data(using: .utf8) {
         FileHandle.standardError.write(data)
     }
 }
 
+func resizeIcon(source: NSImage, pixels: Int) -> Data? {
+    let target = NSSize(width: pixels, height: pixels)
+    let image = NSImage(size: target)
+    image.lockFocus()
+    defer { image.unlockFocus() }
+
+    NSGraphicsContext.current?.imageInterpolation = .high
+    source.draw(
+        in: NSRect(origin: .zero, size: target),
+        from: NSRect(origin: .zero, size: source.size),
+        operation: .copy,
+        fraction: 1
+    )
+
+    guard let tiff = image.tiffRepresentation,
+          let rep = NSBitmapImageRep(data: tiff),
+          let png = rep.representation(using: .png, properties: [:]) else {
+        return nil
+    }
+    return png
+}
+
 let fm = FileManager.default
+guard fm.fileExists(atPath: sourcePath) else {
+    warn("error: source artwork not found at \(sourcePath)")
+    exit(1)
+}
+
+guard let source = NSImage(contentsOfFile: sourcePath) else {
+    warn("error: could not load \(sourcePath)")
+    exit(1)
+}
+
+if source.size != NSSize(width: 1024, height: 1024) {
+    warn("warning: expected 1024×1024 source, got \(Int(source.size.width))×\(Int(source.size.height))")
+}
+
 if !fm.fileExists(atPath: assetPath) {
     try fm.createDirectory(atPath: assetPath, withIntermediateDirectories: true)
 }
 
 for (filename, px) in sizes {
-    guard let data = iconPNG(pixelSize: px) else {
+    guard let data = resizeIcon(source: source, pixels: px) else {
         warn("failed to encode \(filename)")
         continue
     }

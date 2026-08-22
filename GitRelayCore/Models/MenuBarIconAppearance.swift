@@ -3,8 +3,8 @@ import Foundation
 /// How the status item renders. The mark never changes: failure tints the same
 /// Y-branch red instead of swapping in a second symbol (#92).
 ///
-/// The shape itself comes from ``GitRelayMark``, the same geometry the AppIcon is
-/// drawn from, so there is no SF Symbol name to pick here.
+/// The shape itself comes from ``GitRelayMark`` — the monochrome menu-bar
+/// template, not the full-color AppIcon artwork.
 nonisolated enum MenuBarIconAppearance: Equatable, Sendable {
     case normal
     case failed

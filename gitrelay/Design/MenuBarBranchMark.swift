@@ -2,10 +2,10 @@ import AppKit
 
 /// Draws the shared Y-branch mark for the menu-bar status item.
 ///
-/// The ink plate stays behind in the AppIcon. A filled 16 pt square sitting
-/// between system menu extras reads as a badge, so the menu bar gets the branch
-/// on its own (#92). The geometry still comes from ``GitRelayMark``, so the
-/// status item and the Dock icon can only ever show the same shape.
+/// The AppIcon is full-color raster artwork; a filled 16 pt square sitting
+/// between system menu extras reads as a badge, so the menu bar gets the
+/// monochrome Y-branch on its own (#92). The geometry comes from
+/// ``GitRelayMark`` — not from the AppIcon PNG.
 ///
 /// Nonisolated on purpose: AppKit re-runs the drawing handler whenever the
 /// backing scale or the menu-bar appearance changes, and it does not promise to
