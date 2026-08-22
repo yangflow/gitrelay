@@ -8,8 +8,8 @@
 // Writes 10 PNG files into gitrelay/Assets.xcassets/AppIcon.appiconset/
 // at exact pixel dimensions (no Retina-doubling).
 //
-// The mark is a purple squircle plate carrying a white Y-shaped git branch of
-// three hollow nodes (#92). Its geometry mirrors `GitRelayMark` in
+// The mark is a deep ink squircle plate carrying a white Y-shaped git branch of
+// three hollow nodes (#92 / #121). Its geometry mirrors `GitRelayMark` in
 // GitRelayCore/Design/GitRelayMark.swift, which is what the menu-bar status item
 // draws from. A standalone `swift` script cannot import the app module, so the
 // numbers below are duplicated; `GitRelayMarkTests` pins the same values so a
@@ -86,8 +86,8 @@ enum Mark {
 
 // MARK: - Palette
 
-let plateTop = NSColor(srgbRed: 0.443, green: 0.400, blue: 0.831, alpha: 1)
-let plateBottom = NSColor(srgbRed: 0.357, green: 0.306, blue: 0.745, alpha: 1)
+let plateTop = NSColor(srgbRed: 0.204, green: 0.204, blue: 0.216, alpha: 1)
+let plateBottom = NSColor(srgbRed: 0.129, green: 0.129, blue: 0.141, alpha: 1)
 let branchColor = NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1)
 
 // MARK: - Drawing
@@ -169,7 +169,7 @@ func iconPNG(pixelSize px: Int) -> Data? {
 
     let size = CGFloat(px)
 
-    // Purple plate, lighter at the top.
+    // Ink plate, slightly lighter at the top.
     let plate = platePath(size: size)
     if let gradient = NSGradient(starting: plateBottom, ending: plateTop) {
         gradient.draw(in: plate, angle: 90)
