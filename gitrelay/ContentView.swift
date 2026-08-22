@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import UniformTypeIdentifiers
 
 private struct SidebarColumnWidthKey: PreferenceKey {
@@ -10,7 +11,6 @@ private struct SidebarColumnWidthKey: PreferenceKey {
 
 struct ContentView: View {
     @Environment(AppViewModel.self) private var appVM
-    @Environment(\.toggleSidebar) private var toggleSidebar
     @State private var sidebarSelection: MainSidebarItem = .default
     @State private var selectedRepoID: UUID?
     @State private var sheetMode: SheetMode?
@@ -42,7 +42,7 @@ struct ContentView: View {
                 .gitRelayChrome(.detail)
                 .toolbar {
                     ToolbarItem(placement: .navigation) {
-                        Button(action: toggleSidebar) {
+                        Button(action: toggleMainSidebar) {
                             Label(String(localized: "Toggle Sidebar"), systemImage: "sidebar.left")
                         }
                         .help(String(localized: "Toggle Sidebar"))
@@ -250,5 +250,15 @@ struct ContentView: View {
         guard appVM.pendingFocusSidebarSearch else { return }
         sidebarSelection = .repositories
         selectedRepoID = nil
+    }
+
+    /// `\.toggleSidebar` is not on the macOS 14 environment; AppKit's split-view
+    /// action is the stable toggle for our deployment floor.
+    private func toggleMainSidebar() {
+        NSApp.sendAction(
+            #selector(NSSplitViewController.toggleSidebar(_:)),
+            to: nil,
+            from: nil
+        )
     }
 }
