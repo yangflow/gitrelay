@@ -71,10 +71,10 @@ nonisolated enum GitRelayMark {
     static let arrowHalfHeight: Double = 0.065
 
     /// Center of the notched destination disc.
-    static let discCenter = GitRelayMarkPoint(x: 0.785, y: 0.475)
+    static let discCenter = GitRelayMarkPoint(x: 0.778, y: 0.475)
 
     /// Radius of the destination disc.
-    static let discRadius: Double = 0.115
+    static let discRadius: Double = 0.112
 
     /// Angular spread of the disc notch opening, in radians (y-down, clockwise).
     static let notchSpread: Double = 0.62
@@ -114,9 +114,10 @@ nonisolated enum GitRelayMark {
     }
 
     /// The notch tip and the two points where the notch meets the disc edge.
+    /// In y-down coordinates, ``top`` sits above ``discCenter`` and ``bottom`` below it.
     static var notchPoints: (tip: GitRelayMarkPoint, top: GitRelayMarkPoint, bottom: GitRelayMarkPoint) {
-        let topAngle = Double.pi - notchSpread
-        let bottomAngle = Double.pi + notchSpread
+        let topAngle = Double.pi + notchSpread
+        let bottomAngle = Double.pi - notchSpread
         return (
             tip: GitRelayMarkPoint(
                 x: discCenter.x - discRadius * 0.55,

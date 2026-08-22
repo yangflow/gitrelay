@@ -8448,8 +8448,8 @@ struct GitRelayMarkTests {
         #expect(GitRelayMark.mergePoint == GitRelayMarkPoint(x: 0.385, y: 0.475))
         #expect(GitRelayMark.shaftEnd == GitRelayMarkPoint(x: 0.555, y: 0.475))
         #expect(GitRelayMark.arrowTip == GitRelayMarkPoint(x: 0.635, y: 0.475))
-        #expect(GitRelayMark.discCenter == GitRelayMarkPoint(x: 0.785, y: 0.475))
-        #expect(isClose(GitRelayMark.discRadius, 0.115))
+        #expect(GitRelayMark.discCenter == GitRelayMarkPoint(x: 0.778, y: 0.475))
+        #expect(isClose(GitRelayMark.discRadius, 0.112))
         #expect(isClose(GitRelayMark.arrowHalfHeight, 0.065))
         #expect(isClose(GitRelayMark.notchSpread, 0.62))
     }
