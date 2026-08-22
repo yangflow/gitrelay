@@ -5818,12 +5818,10 @@ struct MirrorCacheServiceTests {
 }
 
 struct MirrorCacheFormattingTests {
-    private let enUS = Locale(identifier: "en_US")
-
     @Test func byteCountFormatsGigabytesAndMegabytes() {
-        let gigabytes = MirrorCacheFormatting.byteCount(1_400_000_000, locale: enUS)
-        let megabytes = MirrorCacheFormatting.byteCount(980_000_000, locale: enUS)
-        let zero = MirrorCacheFormatting.byteCount(0, locale: enUS)
+        let gigabytes = MirrorCacheFormatting.byteCount(1_400_000_000)
+        let megabytes = MirrorCacheFormatting.byteCount(980_000_000)
+        let zero = MirrorCacheFormatting.byteCount(0)
 
         #expect(gigabytes.contains("1.4"))
         #expect(gigabytes.localizedCaseInsensitiveContains("GB") || gigabytes.contains("G"))
@@ -5835,18 +5833,16 @@ struct MirrorCacheFormattingTests {
     @Test func usageSummaryIncludesQuotaWhenLimited() {
         let summary = MirrorCacheFormatting.usageSummary(
             usageBytes: 1_000_000_000,
-            quotaGB: 50,
-            locale: enUS
+            quotaGB: 50
         )
         #expect(summary.localizedCaseInsensitiveContains("used"))
-        #expect(summary.contains(MirrorCacheFormatting.byteCount(1_000_000_000, locale: enUS)))
+        #expect(summary.contains(MirrorCacheFormatting.byteCount(1_000_000_000)))
     }
 
     @Test func usageSummaryMarksUnlimitedQuota() {
         let summary = MirrorCacheFormatting.usageSummary(
             usageBytes: 500_000_000,
-            quotaGB: nil,
-            locale: enUS
+            quotaGB: nil
         )
         #expect(summary.localizedCaseInsensitiveContains("unlimited"))
     }
