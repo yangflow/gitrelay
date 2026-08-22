@@ -85,7 +85,8 @@ nonisolated enum MainSidebarItem: String, CaseIterable, Identifiable, Hashable, 
         }
     }
 
-    /// Provider whose accounts this row lists, when the row is an account row.
+    /// Provider whose accounts this row scopes the 安全 list to, when the row is
+    /// an account row.
     var provider: GitProvider? {
         switch self {
         case .githubAccounts:
@@ -94,6 +95,20 @@ nonisolated enum MainSidebarItem: String, CaseIterable, Identifiable, Hashable, 
             .gitlab
         default:
             nil
+        }
+    }
+
+    /// The row that scopes the account list to one provider. Nil for a provider
+    /// without a row of its own — Gitea is reached through the unscoped list.
+    static func accountsItem(for provider: GitProvider?) -> MainSidebarItem? {
+        guard let provider else { return nil }
+        switch provider {
+        case .github:
+            return .githubAccounts
+        case .gitlab:
+            return .gitlabAccounts
+        case .gitea:
+            return nil
         }
     }
 }

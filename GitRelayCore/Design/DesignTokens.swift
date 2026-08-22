@@ -32,6 +32,9 @@ enum DesignTokens {
         static let addEditRepoSheetMinWidth: CGFloat = 640
         static let addEditRepoSheetMinHeight: CGFloat = 420
 
+        /// 添加令牌 sheet: one narrow column of provider, name, host, token.
+        static let addProviderTokenSheetWidth: CGFloat = 440
+
         /// Browse-remote wizard rail: keeps 1–2–3 centered instead of stretching
         /// across a wide, resized detail pane.
         static let browseStepBarMaxWidth: CGFloat = 320

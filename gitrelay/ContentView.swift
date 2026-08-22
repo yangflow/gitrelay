@@ -137,14 +137,22 @@ struct ContentView: View {
             SyncQueueView(onOpen: { select(repoID: $0) })
         case .browseRemote:
             BrowseRemotePane(vm: browseVM) { select(repoID: nil) }
-        case .githubAccounts, .gitlabAccounts:
-            ProviderAccountsView(
-                provider: sidebarSelection.provider ?? .github,
-                onBrowse: { openBrowse(provider: sidebarSelection.provider ?? .github) }
-            )
-        case .settings:
-            SettingsView()
+        case .githubAccounts, .gitlabAccounts, .settings:
+            // One accounts list, in 设置 → 安全. The provider rows open it scoped
+            // rather than opening a second screen of their own.
+            SettingsView(accountProviderFilter: accountProviderFilter)
         }
+    }
+
+    /// Reads the provider scope off the sidebar selection, so clearing the
+    /// filter chip in 安全 also drops the provider row's highlight.
+    private var accountProviderFilter: Binding<GitProvider?> {
+        Binding(
+            get: { sidebarSelection.provider },
+            set: { provider in
+                sidebarSelection = MainSidebarItem.accountsItem(for: provider) ?? .settings
+            }
+        )
     }
 
     @ViewBuilder
@@ -163,14 +171,6 @@ struct ContentView: View {
     }
 
     // MARK: - Navigation
-
-    /// Brings the 浏览远程 pane forward already pointed at a provider (账号
-    /// panes) without disturbing a flow that is already underway.
-    private func openBrowse(provider: GitProvider) {
-        browseVM.restoreContextIfNeeded()
-        browseVM.selectProvider(provider)
-        sidebarSelection = .browseRemote
-    }
 
     private func select(repoID: UUID?) {
         sidebarSelection = .repositories
