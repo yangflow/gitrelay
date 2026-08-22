@@ -100,7 +100,9 @@ enum DesignTokens {
     enum Size {
         static let statusDot: CGFloat = 8
         static let searchFieldMinHeight: CGFloat = 28
-        static let menuBarIconPointSize: CGFloat = 16
+        static let menuBarIconPointSize: CGFloat = 18
+        /// Multiplier on ``GitRelayMark`` stroke and ring thickness for the menu-bar mark.
+        static let menuBarStrokeScale: CGFloat = 1.28
         static let aboutIcon: CGFloat = 80
         static let runIndicatorDot: CGFloat = 7
         static let paneTabUnderline: CGFloat = 2

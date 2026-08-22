@@ -534,6 +534,7 @@ struct SecurityAccountFilterRoutingTests {
     @Test func theProviderRowsCarryTheProviderTheyScopeTo() {
         #expect(MainSidebarItem.githubAccounts.provider == .github)
         #expect(MainSidebarItem.gitlabAccounts.provider == .gitlab)
+        #expect(MainSidebarItem.giteaAccounts.provider == .gitea)
         #expect(MainSidebarItem.settings.provider == nil)
         #expect(MainSidebarItem.repositories.provider == nil)
     }
@@ -541,19 +542,19 @@ struct SecurityAccountFilterRoutingTests {
     @Test func aProviderMapsBackToTheRowThatScopesTheList() {
         #expect(MainSidebarItem.accountsItem(for: .github) == .githubAccounts)
         #expect(MainSidebarItem.accountsItem(for: .gitlab) == .gitlabAccounts)
+        #expect(MainSidebarItem.accountsItem(for: .gitea) == .giteaAccounts)
     }
 
-    /// Clearing the filter has to land somewhere, and Gitea has no row of its
-    /// own, so both cases fall back to the unscoped 设置 destination.
-    @Test func noRowMeansTheUnscopedSettingsDestination() {
+    @Test func noProviderMeansNoSidebarAccountRow() {
         #expect(MainSidebarItem.accountsItem(for: nil) == nil)
-        #expect(MainSidebarItem.accountsItem(for: .gitea) == nil)
     }
 
     @Test func theSidebarStillOffersExactlyTheLockedSetOfRows() {
         #expect(
             MainSidebarItem.allCases == [
-                .repositories, .queue, .browseRemote, .githubAccounts, .gitlabAccounts, .settings
+                .repositories, .queue, .browseRemote,
+                .githubAccounts, .gitlabAccounts, .giteaAccounts,
+                .settings
             ]
         )
     }

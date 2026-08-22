@@ -2,7 +2,7 @@ import AppKit
 
 /// Draws the shared Y-branch mark for the menu-bar status item.
 ///
-/// The purple plate stays behind in the AppIcon. A filled 16 pt square sitting
+/// The ink plate stays behind in the AppIcon. A filled 16 pt square sitting
 /// between system menu extras reads as a badge, so the menu bar gets the branch
 /// on its own (#92). The geometry still comes from ``GitRelayMark``, so the
 /// status item and the Dock icon can only ever show the same shape.
@@ -16,13 +16,17 @@ nonisolated enum MenuBarBranchMark {
     ///   - color: `nil` draws a template image that follows the menu-bar
     ///     appearance. Any other color draws the same shape opaquely, which is
     ///     how the failure and divergence state tints the mark red.
-    static func image(pointSize: CGFloat, color: NSColor?) -> NSImage {
+    static func image(
+        pointSize: CGFloat,
+        color: NSColor?,
+        strokeScale: CGFloat = 1
+    ) -> NSImage {
         let strokeColor = color ?? .black
         let image = NSImage(
             size: NSSize(width: pointSize, height: pointSize),
             flipped: false
         ) { rect in
-            draw(in: rect, color: strokeColor)
+            draw(in: rect, color: strokeColor, strokeScale: strokeScale)
             return true
         }
         image.isTemplate = color == nil
@@ -30,7 +34,7 @@ nonisolated enum MenuBarBranchMark {
         return image
     }
 
-    private static func draw(in rect: NSRect, color: NSColor) {
+    private static func draw(in rect: NSRect, color: NSColor, strokeScale: CGFloat) {
         let bounds = GitRelayMark.branchBounds
         guard bounds.width > 0, bounds.height > 0 else { return }
 
@@ -50,7 +54,7 @@ nonisolated enum MenuBarBranchMark {
 
         color.setStroke()
         let lines = NSBezierPath()
-        lines.lineWidth = CGFloat(GitRelayMark.strokeWidth) * scale
+        lines.lineWidth = CGFloat(GitRelayMark.strokeWidth) * scale * strokeScale
         lines.lineCapStyle = .round
         lines.lineJoinStyle = .round
         for segment in GitRelayMark.segments {
@@ -65,7 +69,9 @@ nonisolated enum MenuBarBranchMark {
         rings.windingRule = .evenOdd
         for node in GitRelayMark.nodes {
             let center = canvasPoint(node)
-            for radius in [GitRelayMark.outerRadius, GitRelayMark.innerRadius] {
+            let outer = GitRelayMark.outerRadius * Double(strokeScale)
+            let inner = GitRelayMark.innerRadius * Double(strokeScale)
+            for radius in [outer, inner] {
                 let scaled = CGFloat(radius) * scale
                 rings.appendOval(in: NSRect(
                     x: center.x - scaled,

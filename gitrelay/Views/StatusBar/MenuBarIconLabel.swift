@@ -28,10 +28,12 @@ struct MenuBarIconLabel: View {
     /// the color.
     private static let normalIcon = MenuBarBranchMark.image(
         pointSize: DesignTokens.Size.menuBarIconPointSize,
-        color: nil
+        color: nil,
+        strokeScale: DesignTokens.Size.menuBarStrokeScale
     )
     private static let failedIcon = MenuBarBranchMark.image(
         pointSize: DesignTokens.Size.menuBarIconPointSize,
-        color: .systemRed
+        color: .systemRed,
+        strokeScale: DesignTokens.Size.menuBarStrokeScale
     )
 }
