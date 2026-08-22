@@ -7379,6 +7379,23 @@
         }
       }
     },
+    "Toggle Sidebar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toggle Sidebar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换边栏"
+          }
+        }
+      }
+    },
     "Sync Summary After Focus": {
       "extractionState": "manual",
       "localizations": {

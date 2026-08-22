@@ -12,6 +12,14 @@ struct MainSidebarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            HStack {
+                SidebarToggleButton()
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, DesignTokens.Spacing.sidebarChromeHorizontal)
+            .padding(.top, DesignTokens.Spacing.sidebarChromeVertical)
+            .padding(.bottom, DesignTokens.Spacing.xxs)
+
             List(selection: optionalSelection) {
                 ForEach(MainSidebarSection.allCases) { section in
                     Section {

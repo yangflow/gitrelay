@@ -21,10 +21,14 @@ extension View {
     func gitRelaySidebarColumnWidth(
         ideal: CGFloat = DesignTokens.Layout.sidebarIdealWidth
     ) -> some View {
-        navigationSplitViewColumnWidth(
-            min: DesignTokens.Layout.sidebarMinWidth,
-            ideal: ideal,
-            max: DesignTokens.Layout.sidebarMaxWidth
+        let clampedIdeal = min(
+            max(ideal, DesignTokens.Layout.sidebarMinWidth),
+            DesignTokens.Layout.sidebarMaxWidth
+        )
+        return frame(
+            minWidth: DesignTokens.Layout.sidebarMinWidth,
+            idealWidth: clampedIdeal,
+            maxWidth: DesignTokens.Layout.sidebarMaxWidth
         )
     }
 

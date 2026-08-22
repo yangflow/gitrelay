@@ -5192,6 +5192,23 @@ struct WindowLayoutStoreTests {
         #expect(store.selectedRepoID == nil)
         #expect(store.detailTab == .overview)
         #expect(store.sidebarWidth == DesignTokens.Layout.sidebarIdealWidth)
+        #expect(store.sidebarVisible == true)
+    }
+
+    @Test func persistsAndReloadsSidebarVisibility() {
+        let suite = "gitrelay.tests.window-layout.sidebar-visible.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = WindowLayoutStore(defaults: defaults)
+        store.sidebarVisible = false
+
+        let reloaded = WindowLayoutStore(defaults: defaults)
+        #expect(reloaded.sidebarVisible == false)
+
+        store.sidebarVisible = true
+        let shown = WindowLayoutStore(defaults: defaults)
+        #expect(shown.sidebarVisible == true)
     }
 
     @Test func persistsAndReloadsSelectionTabAndSidebarWidth() {
@@ -5347,6 +5364,11 @@ struct WindowLayoutModelTests {
         #expect(reconciled.selectedRepoID == nil)
         #expect(reconciled.detailTab == .releases)
         #expect(reconciled.sidebarWidth == 260)
+        #expect(reconciled.sidebarVisible == true)
+    }
+
+    @Test func defaultSidebarIsVisible() {
+        #expect(WindowLayout.default.sidebarVisible == true)
     }
 
     @Test func clampedSidebarWidthRespectsMinMax() {
