@@ -20,6 +20,7 @@ struct AppLanguageStoreTests {
     }
 
     @Test func persistingEnglishWritesAppleLanguages() {
+        defer { AppLocalization.resetOverride() }
         let (defaults, _) = freshDefaults()
         let store = AppLanguageStore(defaults: defaults)
 
@@ -31,6 +32,7 @@ struct AppLanguageStoreTests {
     }
 
     @Test func theNoteAppearsOnlyAfterAChange() {
+        defer { AppLocalization.resetOverride() }
         let (defaults, _) = freshDefaults()
         let store = AppLanguageStore(defaults: defaults)
         let quietAtLaunch = store.showsLaunchCatalogNote
@@ -43,6 +45,7 @@ struct AppLanguageStoreTests {
     }
 
     @Test func switchingBackToTheLaunchLanguageClearsTheNote() {
+        defer { AppLocalization.resetOverride() }
         let (defaults, _) = freshDefaults()
         defaults.set(
             AppLanguagePreference.simplifiedChinese.rawValue,
@@ -62,6 +65,7 @@ struct AppLanguageStoreTests {
     }
 
     @Test func persistingSimplifiedChineseWritesAppleLanguages() {
+        defer { AppLocalization.resetOverride() }
         let (defaults, _) = freshDefaults()
         let store = AppLanguageStore(defaults: defaults)
 
@@ -72,6 +76,7 @@ struct AppLanguageStoreTests {
     }
 
     @Test func returningToSystemClearsAppleLanguagesOverride() {
+        defer { AppLocalization.resetOverride() }
         let (defaults, suiteName) = freshDefaults()
         defaults.set(["en"], forKey: "AppleLanguages")
         defaults.set(AppLanguagePreference.english.rawValue, forKey: AppLanguageStore.preferenceKey)
@@ -86,6 +91,7 @@ struct AppLanguageStoreTests {
     }
 
     @Test func bootstrapAppliesStoredPreference() {
+        defer { AppLocalization.resetOverride() }
         let (defaults, _) = freshDefaults()
         defaults.set(AppLanguagePreference.simplifiedChinese.rawValue, forKey: AppLanguageStore.preferenceKey)
 
@@ -95,6 +101,7 @@ struct AppLanguageStoreTests {
     }
 
     @Test func bootstrapSystemRemovesOverride() {
+        defer { AppLocalization.resetOverride() }
         let (defaults, suiteName) = freshDefaults()
         defaults.set(["zh-Hans"], forKey: "AppleLanguages")
 
@@ -121,6 +128,7 @@ struct AppLocalizationTests {
     }
 
     @Test @MainActor func stringFollowsPreferenceChanges() {
+        defer { AppLocalization.resetOverride() }
         let suiteName = "gitrelay.tests.localization.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)

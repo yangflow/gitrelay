@@ -75,6 +75,14 @@ enum AppLocalization {
         let prefix = language.lowercased() + "-"
         return available.first { $0.lowercased().hasPrefix(prefix) }
     }
+
+    /// Clears any in-session catalog override. Unit tests should call this after
+    /// exercising ``apply(_:)`` so later tests see the default catalog.
+    static func resetOverride() {
+        lock.lock()
+        activeOverride = nil
+        lock.unlock()
+    }
 }
 
 extension String {
