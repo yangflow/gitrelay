@@ -91,6 +91,7 @@ struct SettingsView: View {
     @Environment(CachePreferencesStore.self) private var cacheStore
     @Environment(AppBehaviorPreferencesStore.self) private var behaviorStore
     @Environment(AppViewModel.self) private var appVM
+    @Environment(AppLanguageStore.self) private var languageStore
 
     @State private var selectedPane: SettingsPane = .security
     @State private var loginItem = LoginItemController()
@@ -599,6 +600,24 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func configurationSections() -> some View {
+        @Bindable var languageStore = languageStore
+
+        Section {
+            Picker(String(localized: "Language"), selection: $languageStore.preference) {
+                ForEach(AppLanguagePreference.allCases) { choice in
+                    Text(choice.pickerLabel).tag(choice)
+                }
+            }
+
+            if languageStore.showsLaunchCatalogNote {
+                Text(String(localized: "Some text updates the next time you open GitRelay."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text(String(localized: "Language"))
+        }
+
         Section {
             Button(String(localized: "Export Configuration…")) {
                 exportConfiguration()
