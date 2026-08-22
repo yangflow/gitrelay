@@ -544,22 +544,50 @@ struct SettingsView: View {
                     }
                 }
             }
-
-            LabeledContent(String(localized: "Current Usage")) {
-                Text(MirrorCacheFormatting.usageSummary(
-                    usageBytes: appVM.mirrorCacheUsageBytes,
-                    quotaGB: cache.preferences.cacheQuotaGB
-                ))
-            }
-
-            Button(String(localized: "Clean Now")) {
-                Task { await appVM.cleanMirrorCacheNow() }
-            }
-            .disabled(appVM.isCleaningMirrorCache)
         } header: {
             Text(String(localized: "Mirror Cache"))
         } footer: {
             Text(String(localized: "Bare clones are stored under ~/.local/share/gitrelay/mirrors/. When over quota, GitRelay runs git gc on least-recently synced mirrors first, then deletes entire clones if needed. The next sync rebuilds deleted mirrors."))
+        }
+
+        Section {
+            LabeledContent(String(localized: "Local Mirrors")) {
+                Text(MirrorCacheFormatting.byteCount(appVM.mirrorCacheUsageBytes))
+                    .foregroundStyle(.secondary)
+            }
+
+            if appVM.mirrorCacheRepoUsages.isEmpty {
+                Text(String(localized: "No local mirrors."))
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(appVM.mirrorCacheRepoUsages) { usage in
+                    HStack(spacing: DesignTokens.Spacing.md) {
+                        Image(systemName: "cylinder.split.1x2")
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+
+                        Text(usage.name)
+
+                        Spacer(minLength: DesignTokens.Spacing.sm)
+
+                        Text(MirrorCacheFormatting.byteCount(usage.sizeBytes))
+                            .foregroundStyle(.secondary)
+
+                        Button(String(localized: "Clean")) {
+                            Task { await appVM.cleanMirrorCache(for: usage.repoID) }
+                        }
+                        .disabled(
+                            appVM.isCleaningMirrorCache
+                                || appVM.inProgressSyncIDs.contains(usage.repoID)
+                        )
+                    }
+                }
+            }
+
+            Button(String(localized: "Clean All")) {
+                Task { await appVM.cleanMirrorCacheNow() }
+            }
+            .disabled(appVM.isCleaningMirrorCache || appVM.mirrorCacheRepoUsages.isEmpty)
         }
     }
 

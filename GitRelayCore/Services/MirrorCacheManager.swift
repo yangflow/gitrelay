@@ -6,6 +6,15 @@ nonisolated struct MirrorCacheEntry: Equatable, Sendable {
     let sizeBytes: Int64
 }
 
+/// One local bare-clone folder under `mirrors/`, sized for the Cache settings list.
+nonisolated struct MirrorCacheRepoUsage: Equatable, Identifiable, Sendable {
+    let repoID: UUID
+    let name: String
+    let sizeBytes: Int64
+
+    var id: UUID { repoID }
+}
+
 nonisolated enum MirrorCacheEvictionStep: Equatable, Sendable {
     case garbageCollect(repoID: UUID)
     case deleteMirror(repoID: UUID)
@@ -160,5 +169,50 @@ nonisolated enum MirrorDirectorySizer {
             )
             return MirrorCacheEntry(repoID: repo.id, lastAccessedAt: accessed, sizeBytes: size)
         }
+    }
+
+    /// Per-folder sizes for the Cache pane: configured pairs first, then orphan UUID folders.
+    static func repoUsages(
+        repos: [RepoConfig],
+        mirrorsDirectory: URL = Constants.mirrorsDirectory,
+        fileManager: FileManager = .default,
+        sizeOf: (URL) -> Int64 = { directorySize(at: $0) }
+    ) -> [MirrorCacheRepoUsage] {
+        var rows: [MirrorCacheRepoUsage] = []
+        var seen = Set<UUID>()
+
+        for repo in repos {
+            let path = mirrorsDirectory.appendingPathComponent(repo.id.uuidString)
+            let size = sizeOf(path)
+            guard size > 0 else { continue }
+            seen.insert(repo.id)
+            rows.append(
+                MirrorCacheRepoUsage(repoID: repo.id, name: repo.name, sizeBytes: size)
+            )
+        }
+
+        guard let entries = try? fileManager.contentsOfDirectory(
+            at: mirrorsDirectory,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else {
+            return rows.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        }
+
+        for entry in entries {
+            guard let repoID = UUID(uuidString: entry.lastPathComponent),
+                  !seen.contains(repoID) else { continue }
+            let size = sizeOf(entry)
+            guard size > 0 else { continue }
+            rows.append(
+                MirrorCacheRepoUsage(
+                    repoID: repoID,
+                    name: entry.lastPathComponent,
+                    sizeBytes: size
+                )
+            )
+        }
+
+        return rows.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 }

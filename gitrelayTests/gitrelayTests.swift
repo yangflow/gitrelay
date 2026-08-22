@@ -5674,6 +5674,182 @@ struct MirrorCacheServiceTests {
         #expect(freed == 128)
         #expect(deleted)
     }
+
+    @Test func freeMirrorSpaceOnlyTouchesOneRepo() async {
+        final class SizeBox {
+            var values: [UUID: Int64]
+            init(_ values: [UUID: Int64]) { self.values = values }
+        }
+        let sizes = SizeBox([repoA: 200, repoB: 300])
+        var deleted: [UUID] = []
+
+        let freed = await MirrorCacheService.freeMirrorSpace(
+            for: repoA,
+            sizeOf: { url in
+                guard let id = UUID(uuidString: url.lastPathComponent) else { return 0 }
+                return sizes.values[id] ?? 0
+            },
+            runGarbageCollection: { _ in },
+            deleteMirror: { repoID in
+                deleted.append(repoID)
+                sizes.values[repoID] = 0
+            }
+        )
+
+        #expect(freed == 200)
+        #expect(deleted == [repoA])
+        #expect(sizes.values[repoB] == 300)
+    }
+
+    @Test func evictAllMirrorsDeletesEveryRepo() async {
+        final class SizeBox {
+            var values: [UUID: Int64]
+            init(_ values: [UUID: Int64]) { self.values = values }
+        }
+        let sizes = SizeBox([repoA: 200, repoB: 300])
+        var deleted: [UUID] = []
+
+        let repos = [
+            RepoConfig(
+                id: repoA,
+                name: "a",
+                srcURL: "git@github.com:org/a.git",
+                targets: [],
+                createdAt: Date(timeIntervalSince1970: 0)
+            ),
+            RepoConfig(
+                id: repoB,
+                name: "b",
+                srcURL: "git@github.com:org/b.git",
+                targets: [],
+                createdAt: Date(timeIntervalSince1970: 0)
+            )
+        ]
+
+        let result = await MirrorCacheService.evictAllMirrors(
+            repos: repos,
+            sizeOf: { url in
+                guard let id = UUID(uuidString: url.lastPathComponent) else { return 0 }
+                return sizes.values[id] ?? 0
+            },
+            runGarbageCollection: { _ in },
+            deleteMirror: { repoID in
+                deleted.append(repoID)
+                sizes.values[repoID] = 0
+            }
+        )
+
+        #expect(Set(deleted) == Set([repoA, repoB]))
+        #expect(result.initialUsageBytes == 500)
+        #expect(result.finalUsageBytes == 0)
+        #expect(result.bytesFreed == 500)
+        #expect(result.steps.contains(.deleteMirror(repoID: repoA)))
+        #expect(result.steps.contains(.deleteMirror(repoID: repoB)))
+    }
+
+    @Test func evictAllMirrorsSkipsExcludedInProgressRepos() async {
+        var deleted: [UUID] = []
+        let repos = [
+            RepoConfig(
+                id: repoA,
+                name: "a",
+                srcURL: "git@github.com:org/a.git",
+                targets: [],
+                createdAt: Date(timeIntervalSince1970: 0)
+            ),
+            RepoConfig(
+                id: repoB,
+                name: "b",
+                srcURL: "git@github.com:org/b.git",
+                targets: [],
+                createdAt: Date(timeIntervalSince1970: 0)
+            )
+        ]
+
+        let result = await MirrorCacheService.evictAllMirrors(
+            repos: repos,
+            excluding: [repoA],
+            sizeOf: { url in
+                guard let id = UUID(uuidString: url.lastPathComponent) else { return 0 }
+                return id == repoA || id == repoB ? 100 : 0
+            },
+            runGarbageCollection: { _ in },
+            deleteMirror: { repoID in deleted.append(repoID) }
+        )
+
+        #expect(deleted == [repoB])
+        #expect(result.steps == [.garbageCollect(repoID: repoB), .deleteMirror(repoID: repoB)])
+    }
+
+    @Test func repoUsagesSplitsPerFolderAndSkipsEmpty() {
+        let repos = [
+            RepoConfig(
+                id: repoB,
+                name: "keychord",
+                srcURL: "git@github.com:org/keychord.git",
+                targets: [],
+                createdAt: Date(timeIntervalSince1970: 0)
+            ),
+            RepoConfig(
+                id: repoA,
+                name: "gitrelay",
+                srcURL: "git@github.com:org/gitrelay.git",
+                targets: [],
+                createdAt: Date(timeIntervalSince1970: 0)
+            )
+        ]
+
+        let usages = MirrorCacheService.repoUsages(
+            repos: repos,
+            sizeOf: { url in
+                guard let id = UUID(uuidString: url.lastPathComponent) else { return 0 }
+                switch id {
+                case repoA: return 1_400_000_000
+                case repoB: return 980_000_000
+                default: return 0
+                }
+            }
+        )
+
+        #expect(usages.map(\.name) == ["gitrelay", "keychord"])
+        #expect(usages.map(\.sizeBytes) == [1_400_000_000, 980_000_000])
+        #expect(usages.map(\.repoID) == [repoA, repoB])
+    }
+}
+
+struct MirrorCacheFormattingTests {
+    private let enUS = Locale(identifier: "en_US")
+
+    @Test func byteCountFormatsGigabytesAndMegabytes() {
+        let gigabytes = MirrorCacheFormatting.byteCount(1_400_000_000, locale: enUS)
+        let megabytes = MirrorCacheFormatting.byteCount(980_000_000, locale: enUS)
+        let zero = MirrorCacheFormatting.byteCount(0, locale: enUS)
+
+        #expect(gigabytes.contains("1.4"))
+        #expect(gigabytes.localizedCaseInsensitiveContains("GB") || gigabytes.contains("G"))
+        #expect(megabytes.contains("980"))
+        #expect(megabytes.localizedCaseInsensitiveContains("MB") || megabytes.contains("M"))
+        #expect(!zero.isEmpty)
+    }
+
+    @Test func usageSummaryIncludesQuotaWhenLimited() {
+        let summary = MirrorCacheFormatting.usageSummary(
+            usageBytes: 1_000_000_000,
+            quotaGB: 50,
+            locale: enUS
+        )
+        #expect(summary.localizedCaseInsensitiveContains("used"))
+        #expect(summary.contains(MirrorCacheFormatting.byteCount(1_000_000_000, locale: enUS)))
+    }
+
+    @Test func usageSummaryMarksUnlimitedQuota() {
+        let summary = MirrorCacheFormatting.usageSummary(
+            usageBytes: 500_000_000,
+            quotaGB: nil,
+            locale: enUS
+        )
+        #expect(summary.localizedCaseInsensitiveContains("unlimited"))
+    }
 }
 
 // MARK: - OrgRepoDiff
