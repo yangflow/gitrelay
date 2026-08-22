@@ -37,6 +37,9 @@ final class AppViewModel {
     /// Opens the browse-remote pane prefilled from an org subscription discovery notification.
     var pendingBrowsePrefill: BrowseRemotePrefill?
 
+    /// FIFO queue for org-discovery quiet sheets (#108); one repo at a time.
+    var pendingOrgDiscoveries: [OrgPendingDiscoveryItem] = []
+
     /// Opens the add-repository sheet from the main-window ⌘N / File menu command.
     var pendingOpenAddRepository = false
 
@@ -118,6 +121,10 @@ final class AppViewModel {
 
     var presentedDestructiveConfirmation: DestructivePushConfirmationRequest? {
         pendingDestructiveConfirmations.first
+    }
+
+    var presentedOrgDiscovery: OrgPendingDiscoveryItem? {
+        pendingOrgDiscoveries.first
     }
 
     var isShowingError: Bool {
@@ -277,7 +284,7 @@ final class AppViewModel {
         }
 
         let openDiscovery: (UUID) -> Void = { [weak self] subscriptionID in
-            self?.openBrowsePrefill(for: subscriptionID)
+            self?.openOrgDiscoverySheet(for: subscriptionID)
         }
         orgDiscoveryNotifier.onView = openDiscovery
         failureNotifier.onOrgDiscoveryView = openDiscovery
@@ -887,16 +894,44 @@ final class AppViewModel {
         await runScheduledOrgSubscriptionPoll()
     }
 
-    func openBrowsePrefill(for subscriptionID: UUID) {
+    func openOrgDiscoverySheet(for subscriptionID: UUID) {
         guard let subscription = orgSubscriptionStore.subscription(id: subscriptionID) else { return }
         Task {
             guard let result = await orgSubscriptionPoller.checkSubscription(subscription, localRepos: repos) else {
                 return
             }
-            guard !result.newRepos.isEmpty else { return }
-            pendingBrowsePrefill = makeBrowsePrefill(from: result)
-            bringAppForwardForConfirmation()
+            enqueueOrgDiscoveries(from: result)
+            presentOrgDiscoveryIfNeeded()
         }
+    }
+
+    func resolveOrgDiscovery(_ decision: OrgDiscoveryDecision) {
+        guard let current = presentedOrgDiscovery else { return }
+        let outcome = OrgDiscoveryDecisionHandler.outcome(
+            for: decision,
+            repoRemoteID: current.repo.id
+        )
+        if outcome.shouldPersistIgnore, let ignoredID = outcome.ignoredRepoID {
+            persistIgnoredDiscoveredRepo(ignoredID, subscriptionID: current.subscriptionID)
+        }
+        pendingOrgDiscoveries.removeFirst()
+        if outcome.shouldJoinAndSync {
+            Task {
+                await joinAndSyncOrgDiscovery(current)
+                presentOrgDiscoveryIfNeeded()
+            }
+        } else {
+            presentOrgDiscoveryIfNeeded()
+        }
+    }
+
+    func canJoinAndSyncOrgDiscovery(_ item: OrgPendingDiscoveryItem) -> Bool {
+        OrgSubscriptionTemplateApplier.isValidTemplate(item.template)
+    }
+
+    /// Legacy browse-remote prefill path; org discovery now uses the quiet sheet.
+    func openBrowsePrefill(for subscriptionID: UUID) {
+        openOrgDiscoverySheet(for: subscriptionID)
     }
 
     func consumePendingBrowsePrefill() -> BrowseRemotePrefill? {
@@ -1148,9 +1183,22 @@ final class AppViewModel {
         guard scheduledSyncPauseReason == nil else { return }
         let results = await orgSubscriptionPoller.checkAllSubscriptions(localRepos: repos)
         for result in results where !result.newRepos.isEmpty {
+            let actionable = OrgDiscoveryPendingFilter.actionableRepos(
+                subscription: result.subscription,
+                newRepos: result.newRepos,
+                localRepos: repos
+            )
+            guard !actionable.isEmpty else { continue }
+
+            let filteredResult = OrgSubscriptionCheckResult(
+                subscription: result.subscription,
+                newRepos: actionable,
+                allRemoteRepos: result.allRemoteRepos
+            )
+
             if result.subscription.autoAddEnabled {
                 let configs = await OrgSubscriptionAutoAdder.addNewRepos(
-                    from: result,
+                    from: filteredResult,
                     store: orgSubscriptionStore
                 )
                 if !configs.isEmpty {
@@ -1158,12 +1206,65 @@ final class AppViewModel {
                     continue
                 }
             }
+
+            enqueueOrgDiscoveries(from: filteredResult)
+            presentOrgDiscoveryIfNeeded()
             orgDiscoveryNotifier.handleDiscovery(
-                result,
+                filteredResult,
                 notificationsEnabled: orgSubscriptionPreferences.notificationsEnabled,
                 interruptionLevel: notificationPreferences.preferences.interruptionLevel
             )
         }
+    }
+
+    private func enqueueOrgDiscoveries(from result: OrgSubscriptionCheckResult) {
+        let gitlabHost = result.subscription.provider == .gitlab
+            ? ProviderAccountStore.host(for: .gitlab, label: result.subscription.accountLabel)
+            : nil
+        for repo in result.newRepos {
+            let item = OrgPendingDiscoveryItem(
+                subscriptionID: result.subscription.id,
+                repo: repo,
+                provider: result.subscription.provider,
+                accountLabel: result.subscription.accountLabel,
+                organizationName: result.subscription.organizationName,
+                gitlabHost: gitlabHost,
+                template: result.subscription.template
+            )
+            if pendingOrgDiscoveries.contains(where: { $0.id == item.id }) {
+                continue
+            }
+            if presentedOrgDiscovery?.id == item.id {
+                continue
+            }
+            pendingOrgDiscoveries.append(item)
+        }
+    }
+
+    private func presentOrgDiscoveryIfNeeded() {
+        guard presentedOrgDiscovery != nil else { return }
+        bringAppForwardForConfirmation()
+    }
+
+    private func persistIgnoredDiscoveredRepo(_ repoRemoteID: String, subscriptionID: UUID) {
+        guard let subscription = orgSubscriptionStore.subscription(id: subscriptionID) else { return }
+        guard !subscription.ignoredDiscoveredRepoIDs.contains(repoRemoteID) else { return }
+        var updated = subscription
+        updated.ignoredDiscoveredRepoIDs.append(repoRemoteID)
+        updateOrgSubscription(updated)
+    }
+
+    private func joinAndSyncOrgDiscovery(_ item: OrgPendingDiscoveryItem) async {
+        guard let subscription = orgSubscriptionStore.subscription(id: item.subscriptionID) else { return }
+        guard let config = await OrgSubscriptionAutoAdder.addRepo(
+            repo: item.repo,
+            subscription: subscription,
+            store: orgSubscriptionStore
+        ) else {
+            errorMessage = String(localized: "Could not add the repository from the subscription template.")
+            return
+        }
+        addRepos([config], triggerSync: true)
     }
 
     private func makeBrowsePrefill(from result: OrgSubscriptionCheckResult) -> BrowseRemotePrefill {
