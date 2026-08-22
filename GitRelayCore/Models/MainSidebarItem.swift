@@ -34,6 +34,7 @@ nonisolated enum MainSidebarItem: String, CaseIterable, Identifiable, Hashable, 
     case browseRemote
     case githubAccounts
     case gitlabAccounts
+    case giteaAccounts
     case settings
 
     var id: String { rawValue }
@@ -44,7 +45,7 @@ nonisolated enum MainSidebarItem: String, CaseIterable, Identifiable, Hashable, 
         switch self {
         case .repositories, .queue, .browseRemote:
             .overview
-        case .githubAccounts, .gitlabAccounts:
+        case .githubAccounts, .gitlabAccounts, .giteaAccounts:
             .accounts
         case .settings:
             .settings
@@ -63,6 +64,8 @@ nonisolated enum MainSidebarItem: String, CaseIterable, Identifiable, Hashable, 
             GitProvider.github.displayName
         case .gitlabAccounts:
             GitProvider.gitlab.displayName
+        case .giteaAccounts:
+            GitProvider.gitea.displayName
         case .settings:
             String(localized: "Settings")
         }
@@ -80,6 +83,8 @@ nonisolated enum MainSidebarItem: String, CaseIterable, Identifiable, Hashable, 
             GitProvider.github.symbolName
         case .gitlabAccounts:
             GitProvider.gitlab.symbolName
+        case .giteaAccounts:
+            GitProvider.gitea.symbolName
         case .settings:
             "gearshape"
         }
@@ -93,13 +98,14 @@ nonisolated enum MainSidebarItem: String, CaseIterable, Identifiable, Hashable, 
             .github
         case .gitlabAccounts:
             .gitlab
+        case .giteaAccounts:
+            .gitea
         default:
             nil
         }
     }
 
-    /// The row that scopes the account list to one provider. Nil for a provider
-    /// without a row of its own — Gitea is reached through the unscoped list.
+    /// The sidebar row that opens the dedicated account page for one provider.
     static func accountsItem(for provider: GitProvider?) -> MainSidebarItem? {
         guard let provider else { return nil }
         switch provider {
@@ -108,7 +114,7 @@ nonisolated enum MainSidebarItem: String, CaseIterable, Identifiable, Hashable, 
         case .gitlab:
             return .gitlabAccounts
         case .gitea:
-            return nil
+            return .giteaAccounts
         }
     }
 }

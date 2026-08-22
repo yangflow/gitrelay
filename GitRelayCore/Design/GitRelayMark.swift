@@ -119,9 +119,9 @@ nonisolated enum GitRelayMark {
     /// polygon is indistinguishable from the curve at 1024 px.
     static let plateSampleCount = 720
 
-    /// Purple plate gradient, top to bottom, as sRGB components in 0...1.
-    static let plateTopColor = (red: 0.443, green: 0.400, blue: 0.831)
-    static let plateBottomColor = (red: 0.357, green: 0.306, blue: 0.745)
+    /// Deep ink plate gradient, top to bottom, as sRGB components in 0...1.
+    static let plateTopColor = (red: 0.204, green: 0.204, blue: 0.216)
+    static let plateBottomColor = (red: 0.129, green: 0.129, blue: 0.141)
 
     /// The plate outline, sampled once around the superellipse.
     static func plateOutline(sampleCount: Int = plateSampleCount) -> [GitRelayMarkPoint] {

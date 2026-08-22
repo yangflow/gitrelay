@@ -1816,7 +1816,8 @@ struct DesignTokensTests {
         #expect(DesignTokens.Layout.settingsSidebarIdealWidth < DesignTokens.Layout.settingsSidebarMaxWidth)
         #expect(DesignTokens.Spacing.sheetFooter == 16)
         #expect(DesignTokens.Size.statusDot == 8)
-        #expect(DesignTokens.Size.menuBarIconPointSize == 16)
+        #expect(DesignTokens.Size.menuBarIconPointSize == 18)
+        #expect(DesignTokens.Size.menuBarStrokeScale == 1.28)
     }
 }
 
@@ -7736,9 +7737,9 @@ struct MainSidebarItemTests {
     @Test func sectionsExposeOnlyTheLockedRows() {
         #expect(MainSidebarSection.allCases.map(\.rawValue) == ["overview", "accounts", "settings"])
         #expect(MainSidebarSection.overview.items == [.repositories, .queue, .browseRemote])
-        #expect(MainSidebarSection.accounts.items == [.githubAccounts, .gitlabAccounts])
+        #expect(MainSidebarSection.accounts.items == [.githubAccounts, .gitlabAccounts, .giteaAccounts])
         #expect(MainSidebarSection.settings.items == [.settings])
-        #expect(MainSidebarItem.allCases.count == 6)
+        #expect(MainSidebarItem.allCases.count == 7)
     }
 
     @Test func defaultRowIsRepositories() {
@@ -7748,6 +7749,7 @@ struct MainSidebarItemTests {
     @Test func accountRowsCarryTheirProvider() {
         #expect(MainSidebarItem.githubAccounts.provider == .github)
         #expect(MainSidebarItem.gitlabAccounts.provider == .gitlab)
+        #expect(MainSidebarItem.giteaAccounts.provider == .gitea)
         #expect(MainSidebarItem.repositories.provider == nil)
         #expect(MainSidebarItem.settings.provider == nil)
     }
@@ -8483,12 +8485,12 @@ struct GitRelayMarkTests {
         #expect(GitRelayMark.rightBranchNode == GitRelayMarkPoint(x: 0.707, y: 0.283))
         #expect(isClose(GitRelayMark.plateExponent, 5))
         #expect(GitRelayMark.plateSampleCount == 720)
-        #expect(isClose(GitRelayMark.plateTopColor.red, 0.443))
-        #expect(isClose(GitRelayMark.plateTopColor.green, 0.400))
-        #expect(isClose(GitRelayMark.plateTopColor.blue, 0.831))
-        #expect(isClose(GitRelayMark.plateBottomColor.red, 0.357))
-        #expect(isClose(GitRelayMark.plateBottomColor.green, 0.306))
-        #expect(isClose(GitRelayMark.plateBottomColor.blue, 0.745))
+        #expect(isClose(GitRelayMark.plateTopColor.red, 0.204))
+        #expect(isClose(GitRelayMark.plateTopColor.green, 0.204))
+        #expect(isClose(GitRelayMark.plateTopColor.blue, 0.216))
+        #expect(isClose(GitRelayMark.plateBottomColor.red, 0.129))
+        #expect(isClose(GitRelayMark.plateBottomColor.green, 0.129))
+        #expect(isClose(GitRelayMark.plateBottomColor.blue, 0.141))
         // The plate is lighter at the top.
         #expect(GitRelayMark.plateTopColor.red > GitRelayMark.plateBottomColor.red)
         #expect(GitRelayMark.plateTopColor.blue > GitRelayMark.plateBottomColor.blue)

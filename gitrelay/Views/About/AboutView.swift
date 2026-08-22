@@ -55,6 +55,5 @@ struct AboutView: View {
         .padding(.vertical, DesignTokens.Spacing.xxl)
         .frame(width: DesignTokens.Layout.aboutWidth)
         .fixedSize()
-        .gitRelayChrome(.sheet)
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import UniformTypeIdentifiers
 
 private struct SidebarColumnWidthKey: PreferenceKey {
@@ -35,12 +36,21 @@ struct ContentView: View {
                     guard didRestoreWindowLayout else { return }
                     appVM.windowLayout.sidebarWidth = width
                 }
-                .gitRelayChrome(.sidebar)
         } detail: {
             detailPane
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .gitRelayChrome(.detail)
+                .toolbar {
+                    ToolbarItem(placement: .navigation) {
+                        Button(action: toggleMainSidebar) {
+                            Label(String(localized: "Toggle Sidebar"), systemImage: "sidebar.left")
+                        }
+                        .help(String(localized: "Toggle Sidebar"))
+                    }
+                }
         }
+        .navigationSplitViewStyle(.balanced)
+        .toolbar(removing: .sidebarToggle)
         .frame(
             minWidth: DesignTokens.Layout.windowMinWidth,
             minHeight: DesignTokens.Layout.windowMinHeight
@@ -148,22 +158,13 @@ struct ContentView: View {
             SyncQueueView(onOpen: { select(repoID: $0) })
         case .browseRemote:
             BrowseRemotePane(vm: browseVM) { select(repoID: nil) }
-        case .githubAccounts, .gitlabAccounts, .settings:
-            // One accounts list, in 设置 → 安全. The provider rows open it scoped
-            // rather than opening a second screen of their own.
-            SettingsView(accountProviderFilter: accountProviderFilter)
-        }
-    }
-
-    /// Reads the provider scope off the sidebar selection, so clearing the
-    /// filter chip in 安全 also drops the provider row's highlight.
-    private var accountProviderFilter: Binding<GitProvider?> {
-        Binding(
-            get: { sidebarSelection.provider },
-            set: { provider in
-                sidebarSelection = MainSidebarItem.accountsItem(for: provider) ?? .settings
+        case .githubAccounts, .gitlabAccounts, .giteaAccounts:
+            if let provider = sidebarSelection.provider {
+                ProviderAccountsView(provider: provider)
             }
-        )
+        case .settings:
+            SettingsView()
+        }
     }
 
     @ViewBuilder
@@ -249,5 +250,15 @@ struct ContentView: View {
         guard appVM.pendingFocusSidebarSearch else { return }
         sidebarSelection = .repositories
         selectedRepoID = nil
+    }
+
+    /// `\.toggleSidebar` is not on the macOS 14 environment; AppKit's split-view
+    /// action is the stable toggle for our deployment floor.
+    private func toggleMainSidebar() {
+        NSApp.sendAction(
+            #selector(NSSplitViewController.toggleSidebar(_:)),
+            to: nil,
+            from: nil
+        )
     }
 }

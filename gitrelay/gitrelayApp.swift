@@ -5,11 +5,18 @@ import AppKit
 struct gitrelayApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var appVM = AppViewModel()
+    @State private var languageStore = AppLanguageStore()
+
+    init() {
+        AppLanguageStore.bootstrapAppleLanguages()
+    }
 
     var body: some Scene {
         WindowGroup(id: "main") {
             ContentView()
                 .environment(appVM)
+                .environment(languageStore)
+                .environment(\.locale, languageStore.locale)
                 .environment(appVM.notificationPreferences)
                 .environment(appVM.securityPreferences)
                 .environment(appVM.cachePreferences)
@@ -32,6 +39,8 @@ struct gitrelayApp: App {
 
         Window("About GitRelay", id: "about") {
             AboutView()
+                .environment(languageStore)
+                .environment(\.locale, languageStore.locale)
         }
         .windowResizability(.contentSize)
 
@@ -50,6 +59,8 @@ struct gitrelayApp: App {
             .environment(appVM.appBehaviorPreferences)
             .environment(appVM.environmentMonitor)
             .environment(appVM)
+            .environment(languageStore)
+            .environment(\.locale, languageStore.locale)
             .onAppear {
                 appDelegate.behaviorStore = appVM.appBehaviorPreferences
             }
@@ -58,6 +69,8 @@ struct gitrelayApp: App {
         MenuBarExtra {
             MenuBarPopoverView()
                 .environment(appVM)
+                .environment(languageStore)
+                .environment(\.locale, languageStore.locale)
                 .environment(appVM.notificationPreferences)
                 .environment(appVM.securityPreferences)
                 .environment(appVM.appBehaviorPreferences)
