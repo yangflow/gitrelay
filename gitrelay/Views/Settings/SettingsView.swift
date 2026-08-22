@@ -92,6 +92,10 @@ struct SettingsView: View {
     @Environment(AppBehaviorPreferencesStore.self) private var behaviorStore
     @Environment(AppViewModel.self) private var appVM
 
+    /// Scopes the 安全 account list to one provider. Owned by the caller so the
+    /// sidebar's GitHub / GitLab rows and the filter chip stay in step.
+    @Binding private var accountProviderFilter: GitProvider?
+
     @State private var selectedPane: SettingsPane = .security
     @State private var loginItem = LoginItemController()
     @State private var limitMirrorCache = false
@@ -99,12 +103,20 @@ struct SettingsView: View {
     @State private var showImportModePicker = false
     @State private var pendingImportURL: URL?
     @State private var configMessage: String?
+    @State private var accountSummaries: [ProviderAccountSummary] = []
+    @State private var tokenTestOutcomes: [String: ProviderTokenTestOutcome] = [:]
+    @State private var accountsUnderTest: Set<String> = []
+    @State private var isPresentingAddToken = false
+
+    init(accountProviderFilter: Binding<GitProvider?> = .constant(nil)) {
+        _accountProviderFilter = accountProviderFilter
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             PaneHeaderView(title: MainSidebarItem.settings.title)
 
-            SettingsPaneTabBar(selection: $selectedPane)
+            SettingsPaneTabBar(selection: paneSelection)
 
             detailForm
                 .formStyle(.grouped)
@@ -114,6 +126,20 @@ struct SettingsView: View {
             loginItem.refresh()
             syncCacheControlsFromStore()
             appVM.refreshMirrorCacheUsage()
+            reloadAccounts()
+        }
+        .onChange(of: accountProviderFilter) { _, provider in
+            guard provider != nil else { return }
+            selectedPane = .security
+        }
+        .sheet(isPresented: $isPresentingAddToken) {
+            AddProviderTokenSheet(
+                initialProvider: accountProviderFilter,
+                onSaved: { provider, label in
+                    reloadAccounts()
+                    testToken(provider: provider, accountLabel: label)
+                }
+            )
         }
         .alert(
             String(localized: "Import Configuration"),
@@ -167,6 +193,8 @@ struct SettingsView: View {
         @Bindable var security = securityStore
         @Bindable var behavior = behaviorStore
 
+        accountsSection()
+
         Section {
             Toggle(
                 String(localized: "Open at Login"),
@@ -214,6 +242,112 @@ struct SettingsView: View {
         } footer: {
             Text(String(localized: "When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action."))
         }
+    }
+
+    // MARK: - Accounts (issue #104)
+
+    private var visibleAccounts: [ProviderAccountSummary] {
+        ProviderAccountSummary.filtered(accountSummaries, provider: accountProviderFilter)
+    }
+
+    @ViewBuilder
+    private func accountsSection() -> some View {
+        Section {
+            if visibleAccounts.isEmpty {
+                Text(String(localized: "No account is connected yet."))
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(visibleAccounts) { summary in
+                    ProviderAccountRowView(
+                        summary: summary,
+                        outcome: tokenTestOutcomes[summary.id],
+                        isTesting: accountsUnderTest.contains(summary.id),
+                        onTest: {
+                            testToken(provider: summary.provider, accountLabel: summary.label)
+                        }
+                    )
+                }
+            }
+
+            Button {
+                isPresentingAddToken = true
+            } label: {
+                Label(String(localized: "Add Token"), systemImage: "plus")
+            }
+        } header: {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Text(String(localized: "Accounts"))
+                if let provider = accountProviderFilter {
+                    providerFilterChip(provider)
+                }
+                Spacer(minLength: 0)
+            }
+        } footer: {
+            Text(String(localized: "Tokens are stored in the Keychain and are never written to a log or to exported configuration. Test asks the provider whether a saved token still works."))
+        }
+    }
+
+    /// The quiet chip that says the list is scoped to one provider. Clearing it
+    /// also releases the sidebar row that set it.
+    private func providerFilterChip(_ provider: GitProvider) -> some View {
+        Button {
+            accountProviderFilter = nil
+        } label: {
+            HStack(spacing: DesignTokens.Spacing.xxs) {
+                Text(provider.shortName)
+                Image(systemName: "xmark")
+                    .font(.caption2)
+            }
+            .padding(.horizontal, DesignTokens.Spacing.chipHorizontal)
+            .padding(.vertical, DesignTokens.Spacing.chipVertical)
+            .background(
+                RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.chip)
+                    .fill(DesignTokens.Surface.chipFill)
+            )
+        }
+        .buttonStyle(.plain)
+        .help(String(localized: "Show accounts from every provider"))
+    }
+
+    private func reloadAccounts() {
+        accountSummaries = ProviderAccountSummary.listed(
+            ProviderAccountSummary.summaries(
+                recordsByProvider: ProviderAccountStore.allAccounts(),
+                hasToken: { provider, label in
+                    ProviderTokenStore.load(provider: provider, accountLabel: label) != nil
+                }
+            )
+        )
+    }
+
+    private func testToken(provider: GitProvider, accountLabel: String) {
+        let id = ProviderAccount.id(provider: provider, label: accountLabel)
+        guard !accountsUnderTest.contains(id) else { return }
+        accountsUnderTest.insert(id)
+        tokenTestOutcomes[id] = nil
+
+        Task {
+            let outcome = await ProviderTokenTester.run(
+                provider: provider,
+                accountLabel: accountLabel,
+                host: ProviderAccountStore.host(for: provider, label: accountLabel)
+            )
+            accountsUnderTest.remove(id)
+            tokenTestOutcomes[id] = outcome
+            reloadAccounts()
+        }
+    }
+
+    private var paneSelection: Binding<SettingsPane> {
+        Binding(
+            get: { selectedPane },
+            set: { pane in
+                selectedPane = pane
+                // Leaving 安全 drops the provider scope, which also releases the
+                // sidebar's GitHub / GitLab row.
+                if pane != .security { accountProviderFilter = nil }
+            }
+        )
     }
 
     @ViewBuilder

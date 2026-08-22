@@ -513,6 +513,13 @@ final class BrowseRemoteRepoViewModel {
             hasMore = page.hasMore
             nextPage = page.nextPage
             phase = .selecting
+            // The account's token just listed repositories, which is what the
+            // 安全 tab reports as 最后使用.
+            ProviderAccountStore.markUsed(
+                for: provider,
+                label: sourceAccountLabel,
+                defaults: accountDefaults
+            )
         } catch {
             connectError = (error as? ProviderAPIError)?.errorDescription ?? error.localizedDescription
         }
@@ -673,6 +680,11 @@ final class BrowseRemoteRepoViewModel {
             }()
             let config = makeConfig(repo: repo, dstURL: dstURL)
             batchResults.append(.success(repo: repo, config: config, alreadyExists: existed))
+            ProviderAccountStore.markUsed(
+                for: .gitea,
+                label: targetGiteaAccountLabel,
+                defaults: accountDefaults
+            )
         } catch {
             let msg = (error as? TargetProviderAPIError)?.errorDescription ?? error.localizedDescription
             batchResults.append(.failed(repo: repo, message: msg))
@@ -765,23 +777,11 @@ final class BrowseRemoteRepoViewModel {
     }
 
     private func resolvedGitLabBaseURL() -> URL? {
-        let raw = gitlabHost.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !raw.isEmpty else { return nil }
-        var host = raw
-        if !host.hasPrefix("http://"), !host.hasPrefix("https://") { host = "https://" + host }
-        while host.hasSuffix("/") { host.removeLast() }
-        if host.hasSuffix("/api/v4") { host = String(host.dropLast("/api/v4".count)) }
-        return URL(string: host + "/api/v4")
+        ProviderAPIBaseURL.resolve(provider: .gitlab, host: gitlabHost)
     }
 
     private func resolvedGiteaBaseURL() -> URL? {
-        let raw = targetCreateHost.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !raw.isEmpty else { return nil }
-        var host = raw
-        if !host.hasPrefix("http://"), !host.hasPrefix("https://") { host = "https://" + host }
-        while host.hasSuffix("/") { host.removeLast() }
-        if host.hasSuffix("/api/v1") { host = String(host.dropLast("/api/v1".count)) }
-        return URL(string: host + "/api/v1")
+        ProviderAPIBaseURL.resolve(provider: .gitea, host: targetCreateHost)
     }
 
     private func normalizedHostOnly(_ raw: String) -> String {

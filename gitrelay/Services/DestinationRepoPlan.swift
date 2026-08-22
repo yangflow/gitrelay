@@ -28,7 +28,7 @@ nonisolated struct DestinationRepoPlan: Sendable {
         else { return nil }
 
         let provider = GitRemoteHost.inferredProvider(from: host)
-        guard let apiBaseURL = apiBaseURL(provider: provider, host: host) else { return nil }
+        guard let apiBaseURL = ProviderAPIBaseURL.resolve(provider: provider, host: host) else { return nil }
 
         return DestinationRepoPlan(
             provider: provider,
@@ -86,19 +86,6 @@ nonisolated struct DestinationRepoPlan: Sendable {
         }
     }
 
-    private static func apiBaseURL(provider: GitProvider, host: String) -> URL? {
-        switch provider {
-        case .github:
-            if host == "github.com" || host == "www.github.com" {
-                return GitProvider.github.apiBaseURL
-            }
-            return URL(string: "https://\(host)/api/v3")
-        case .gitlab:
-            return URL(string: "https://\(host)/api/v4")
-        case .gitea:
-            return URL(string: "https://\(host)/api/v1")
-        }
-    }
 }
 
 /// Picks the saved account token that fits a host: the account pinned to that

@@ -30,6 +30,25 @@ nonisolated struct ProviderAccount: Hashable, Codable, Identifiable, Sendable {
     }
 }
 
+/// One saved account as it is persisted: its label, the host it talks to, and
+/// when its token last reached that host.
+///
+/// The token itself lives in the Keychain under ``ProviderTokenStore``; nothing
+/// here ever carries it.
+nonisolated struct ProviderAccountRecord: Codable, Hashable, Sendable {
+    var label: String
+    var host: String?
+    /// Absent for an account whose token has never been exercised, and for
+    /// records written before last-used tracking existed.
+    var lastUsedAt: Date?
+
+    init(label: String, host: String? = nil, lastUsedAt: Date? = nil) {
+        self.label = label
+        self.host = host
+        self.lastUsedAt = lastUsedAt
+    }
+}
+
 nonisolated enum BrowseRemoteAccountSelection {
     /// Returns a normalized label when `raw` is valid and not already used.
     static func validatedNewLabel(_ raw: String, existing: [String]) -> String? {
