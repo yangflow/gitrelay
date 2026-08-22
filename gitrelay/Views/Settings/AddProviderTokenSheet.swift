@@ -6,6 +6,8 @@ import SwiftUI
 /// ``ProviderTokenStore``; nothing else keeps a copy of it.
 struct AddProviderTokenSheet: View {
     let initialProvider: GitProvider?
+    /// When true, the provider picker is hidden and ``initialProvider`` is fixed.
+    var locksProviderSelection: Bool = false
     let onSaved: (GitProvider, String) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -38,9 +40,11 @@ struct AddProviderTokenSheet: View {
 
             Form {
                 Section {
-                    Picker(String(localized: "Provider"), selection: $provider) {
-                        ForEach(GitProvider.allCases) { candidate in
-                            Text(candidate.shortName).tag(candidate)
+                    if !locksProviderSelection {
+                        Picker(String(localized: "Provider"), selection: $provider) {
+                            ForEach(GitProvider.allCases) { candidate in
+                                Text(candidate.shortName).tag(candidate)
+                            }
                         }
                     }
 
