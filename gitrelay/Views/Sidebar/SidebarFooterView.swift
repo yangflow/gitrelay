@@ -42,12 +42,6 @@ struct SidebarFooterView: View {
         .padding(.horizontal, DesignTokens.Spacing.sidebarChromeHorizontal)
         .padding(.vertical, DesignTokens.Spacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            GitRelayVisualEffectView(
-                material: DesignTokens.Material.footer.nsMaterial,
-                blendingMode: DesignTokens.Material.footer.blendingMode
-            )
-        }
     }
 
     @ViewBuilder

@@ -26,8 +26,6 @@ struct MainSidebarView: View {
             }
             .listStyle(.sidebar)
 
-            Divider()
-
             SidebarFooterView(
                 summary: appVM.sidebarFooterSummary,
                 onTogglePause: { appVM.toggleScheduledSyncPause() }
