@@ -521,6 +521,58 @@ struct SettingsView: View {
         } footer: {
             Text(String(localized: "Off by default. When enabled, a random port on 127.0.0.1 accepts POST /hook/<id>. The HMAC secret is stored only in Keychain. Cloudflare and Tailscale are optional runtime dependencies that must be installed locally."))
         }
+
+        if webhookStore.preferences.listenerEnabled {
+            webhookHookURLSection()
+            webhookLastEventSection()
+            webhookSendTestSection()
+        }
+    }
+
+    @ViewBuilder
+    private func webhookHookURLSection() -> some View {
+        Section {
+            if let repo = appVM.webhookTestTargetRepo {
+                let path = appVM.webhookHookPath(for: repo)
+                HStack {
+                    Text(path)
+                        .font(.system(.body, design: .monospaced))
+                        .textSelection(.enabled)
+                    Spacer(minLength: DesignTokens.Spacing.sm)
+                    Button(String(localized: "Copy")) {
+                        ClipboardService.copy(path)
+                    }
+                }
+            } else {
+                Text(String(localized: "Enable instant webhook sync on a repository to get a hook path."))
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text(String(localized: "Repository Hook URL"))
+        }
+    }
+
+    @ViewBuilder
+    private func webhookLastEventSection() -> some View {
+        Section {
+            Text(WebhookLastEventFormatting.displayOrEmpty(appVM.webhookLastEvent))
+                .foregroundStyle(appVM.webhookLastEvent == nil ? .secondary : .primary)
+        } header: {
+            Text(String(localized: "Last Event"))
+        }
+    }
+
+    @ViewBuilder
+    private func webhookSendTestSection() -> some View {
+        Section {
+            HStack {
+                Spacer(minLength: 0)
+                Button(String(localized: "Send Test")) {
+                    Task { await appVM.sendWebhookTest() }
+                }
+                .disabled(!appVM.canSendWebhookTest)
+            }
+        }
     }
 
     @ViewBuilder

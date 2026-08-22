@@ -117,6 +117,13 @@ REQUIRED_KEYS = {
         "Clean",
         "Clean All",
         "No local mirrors.",
+        # Webhook tab: hook path, last event, send test (issue #106).
+        "Repository Hook URL",
+        "Last Event",
+        "Send Test",
+        "Enable instant webhook sync on a repository to get a hook path.",
+        "Unknown repository",
+        "%@ · %@ · %lld",
     ),
     # Quiet widget face (issue #89): 今日 + three counts, no glyph-leading keys.
     ROOT / "gitrelayWidget" / "Localizable.xcstrings": (
