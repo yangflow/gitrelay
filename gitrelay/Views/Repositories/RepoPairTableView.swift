@@ -24,32 +24,16 @@ struct RepoPairTableView: View {
             PaneHeaderView(
                 title: MainSidebarItem.repositories.title,
                 subtitle: String(localized: "\(appVM.repos.count) repos")
-            )
+            ) {
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    searchField(text: $appVM.sidebarSearchText)
+                    addButton
+                }
+            }
 
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .toolbar {
-            // Pin search / add / sync on the detail toolbar only (KeyChord collapse
-            // pattern). Inline header controls reparent beside the system sidebar
-            // toggle on collapse and flash the overflow chevron.
-            ToolbarItem(placement: .automatic) {
-                searchField(text: $appVM.sidebarSearchText)
-            }
-            ToolbarItem(placement: .primaryAction) {
-                addButton
-            }
-            if !appVM.repos.isEmpty {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        appVM.triggerSyncAll()
-                    } label: {
-                        Label(String(localized: "Sync All"), systemImage: "arrow.triangle.2.circlepath")
-                    }
-                    .help(String(localized: "Sync All"))
-                }
-            }
-        }
         .onAppear { applyPendingFocusSearch() }
         .onChange(of: appVM.pendingFocusSidebarSearch) { _, isPending in
             guard isPending else { return }
@@ -110,9 +94,16 @@ struct RepoPairTableView: View {
 
     private var addButton: some View {
         Button(action: onAdd) {
-            Label(String(localized: "Add Repository"), systemImage: "plus")
+            Image(systemName: "plus")
+                .frame(
+                    width: DesignTokens.Size.searchFieldMinHeight,
+                    height: DesignTokens.Size.searchFieldMinHeight
+                )
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.borderedProminent)
         .help(String(localized: "Add a Repository Manually"))
+        .accessibilityLabel(String(localized: "Add Repository"))
     }
 
     // MARK: - Content

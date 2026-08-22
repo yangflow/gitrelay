@@ -26,16 +26,6 @@ struct ProviderAccountsView: View {
             .formStyle(.grouped)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isPresentingAddToken = true
-                } label: {
-                    Label(String(localized: "Add Token"), systemImage: "plus")
-                }
-                .help(String(localized: "Add Token"))
-            }
-        }
         .onAppear { reloadAccounts() }
         .sheet(isPresented: $isPresentingAddToken) {
             AddProviderTokenSheet(
