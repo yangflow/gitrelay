@@ -271,7 +271,7 @@ final class AppViewModel {
             try MirrorStore.ensureBaseDirectoryExists()
             repos = try RepoStore.load()
         } catch {
-            errorMessage = String.loc("Failed to load repository configuration: \(error.localizedDescription)")
+            errorMessage = String(format: String.loc("Failed to load repository configuration: %@"), error.localizedDescription)
         }
 
         self.windowLayout.reconcileSelection(withExistingIDs: Set(repos.map(\.id)))
@@ -709,7 +709,7 @@ final class AppViewModel {
             }
             try webhookListener.start()
         } catch {
-            errorMessage = String.loc("Failed to start the webhook listener: \(error.localizedDescription)")
+            errorMessage = String(format: String.loc("Failed to start the webhook listener: %@"), error.localizedDescription)
             webhookListener.stop()
         }
     }
@@ -1423,7 +1423,7 @@ final class AppViewModel {
             try RepoStore.save(repos)
             refreshWidgetSnapshot()
         } catch {
-            errorMessage = String.loc("Failed to save repository configuration: \(error.localizedDescription)")
+            errorMessage = String(format: String.loc("Failed to save repository configuration: %@"), error.localizedDescription)
         }
     }
 

@@ -34,7 +34,7 @@ struct GenerateSSHKeySheet: View {
                 Section {
                     TextField(String.loc("Private Key Path"), text: $keyPath)
                         .font(.system(.body, design: .monospaced))
-                    Text(String.loc("The default path is \(SSHKeyGenerator.defaultDisplayPath). The public key will be written to a .pub file at the same path."))
+                    Text(String(format: String.loc("The default path is %@. The public key will be written to a .pub file at the same path."), SSHKeyGenerator.defaultDisplayPath))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } header: {

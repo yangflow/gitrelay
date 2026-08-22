@@ -20,7 +20,7 @@ struct RepoFailureRowView: View {
                     .font(.callout)
                     .fontWeight(.medium)
                 if consecutiveFailureCount > 0 {
-                    Text(String.loc("\(consecutiveFailureCount) consecutive failures"))
+                    Text(String(format: String.loc("%lld consecutive failures"), consecutiveFailureCount))
                         .font(.caption)
                         .foregroundStyle(
                             consecutiveFailureCount >= 3
@@ -33,7 +33,7 @@ struct RepoFailureRowView: View {
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                 if let lastSuccessfulSyncedAt {
-                    Text(String.loc("Last success: \(lastSuccessfulSyncedAt.formatted(.relative(presentation: .named)))"))
+                    Text(String(format: String.loc("Last success: %@"), lastSuccessfulSyncedAt.formatted(.relative(presentation: .named))))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

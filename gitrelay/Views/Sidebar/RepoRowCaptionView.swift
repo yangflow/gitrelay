@@ -20,7 +20,7 @@ struct RepoRowCaptionView: View {
             return String.loc("Not Synced")
         case .lastSync(let date):
             let relative = date.formatted(.relative(presentation: .named))
-            return String.loc("Last synced \(relative)")
+            return String(format: String.loc("Last synced %@"), relative)
         case .queued:
             return String.loc("Queued")
         case .syncing(let text):

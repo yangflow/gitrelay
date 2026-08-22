@@ -13,12 +13,12 @@ struct RepoIdleRowView: View {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
                 RepoStatusLabel(status: status)
                 if let lastSyncedAt {
-                    Text(String.loc("Last synced: \(lastSyncedAt.formatted(.dateTime.year().month().day().hour().minute()))"))
+                    Text(String(format: String.loc("Last synced: %@"), lastSyncedAt.formatted(.dateTime.year().month().day().hour().minute())))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 if let lastVerifiedAt {
-                    Text(String.loc("Last verified: \(lastVerifiedAt.formatted(.relative(presentation: .named)))"))
+                    Text(String(format: String.loc("Last verified: %@"), lastVerifiedAt.formatted(.relative(presentation: .named))))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

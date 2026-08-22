@@ -100,10 +100,6 @@ struct SettingsView: View {
     @State private var showImportModePicker = false
     @State private var pendingImportURL: URL?
     @State private var configMessage: String?
-    @State private var accountSummaries: [ProviderAccountSummary] = []
-    @State private var tokenTestOutcomes: [String: ProviderTokenTestOutcome] = [:]
-    @State private var accountsUnderTest: Set<String> = []
-    @State private var isPresentingAddToken = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -119,15 +115,6 @@ struct SettingsView: View {
             loginItem.refresh()
             syncCacheControlsFromStore()
             appVM.refreshMirrorCacheUsage()
-            reloadAccounts()
-        }
-        .sheet(isPresented: $isPresentingAddToken) {
-            AddProviderTokenSheet(
-                onSaved: { provider, label in
-                    reloadAccounts()
-                    testToken(provider: provider, accountLabel: label)
-                }
-            )
         }
         .alert(
             String.loc("Import Configuration"),
@@ -181,8 +168,6 @@ struct SettingsView: View {
         @Bindable var security = securityStore
         @Bindable var behavior = behaviorStore
 
-        accountsSection()
-
         Section {
             Toggle(
                 String.loc("Open at Login"),
@@ -228,72 +213,6 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Accounts (issue #104)
-
-    private var visibleAccounts: [ProviderAccountSummary] {
-        accountSummaries
-    }
-
-    @ViewBuilder
-    private func accountsSection() -> some View {
-        Section {
-            if visibleAccounts.isEmpty {
-                Text(String.loc("No account is connected yet."))
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(visibleAccounts) { summary in
-                    ProviderAccountRowView(
-                        summary: summary,
-                        outcome: tokenTestOutcomes[summary.id],
-                        isTesting: accountsUnderTest.contains(summary.id),
-                        onTest: {
-                            testToken(provider: summary.provider, accountLabel: summary.label)
-                        }
-                    )
-                }
-            }
-
-            Button {
-                isPresentingAddToken = true
-            } label: {
-                Label(String.loc("Add Token"), systemImage: "plus")
-            }
-        } header: {
-            Text(String.loc("Accounts"))
-        } footer: {
-            Text(String.loc("Tokens are stored in the Keychain and are never written to a log or to exported configuration. Test asks the provider whether a saved token still works."))
-        }
-    }
-
-    private func reloadAccounts() {
-        accountSummaries = ProviderAccountSummary.listed(
-            ProviderAccountSummary.summaries(
-                recordsByProvider: ProviderAccountStore.allAccounts(),
-                hasToken: { provider, label in
-                    ProviderTokenStore.load(provider: provider, accountLabel: label) != nil
-                }
-            )
-        )
-    }
-
-    private func testToken(provider: GitProvider, accountLabel: String) {
-        let id = ProviderAccount.id(provider: provider, label: accountLabel)
-        guard !accountsUnderTest.contains(id) else { return }
-        accountsUnderTest.insert(id)
-        tokenTestOutcomes[id] = nil
-
-        Task {
-            let outcome = await ProviderTokenTester.run(
-                provider: provider,
-                accountLabel: accountLabel,
-                host: ProviderAccountStore.host(for: provider, label: accountLabel)
-            )
-            accountsUnderTest.remove(id)
-            tokenTestOutcomes[id] = outcome
-            reloadAccounts()
-        }
-    }
-
     private var paneSelection: Binding<SettingsPane> {
         Binding(
             get: { selectedPane },
@@ -315,7 +234,7 @@ struct SettingsView: View {
                 value: $store.preferences.consecutiveFailureThreshold,
                 in: 1...20
             ) {
-                Text(String.loc("Consecutive failure threshold: \(store.preferences.consecutiveFailureThreshold)"))
+                Text(String(format: String.loc("Consecutive failure threshold: %lld"), store.preferences.consecutiveFailureThreshold))
             }
             .disabled(!store.preferences.notificationsEnabled)
 
@@ -346,7 +265,7 @@ struct SettingsView: View {
                 in: 1...GitRetryPolicy.clampedMaxAttempts(100)
             ) {
                 Text(
-                    String.loc("Transient network retries: \(store.preferences.transientGitMaxAttempts) attempts")
+                    String(format: String.loc("Transient network retries: %lld attempts"), store.preferences.transientGitMaxAttempts)
                 )
             }
         } header: {
@@ -361,7 +280,7 @@ struct SettingsView: View {
                 in: NotificationPreferences.maxConcurrentSyncsRange
             ) {
                 Text(
-                    String.loc("Max concurrent syncs: \(store.preferences.maxConcurrentSyncs)")
+                    String(format: String.loc("Max concurrent syncs: %lld"), store.preferences.maxConcurrentSyncs)
                 )
             }
         } header: {
@@ -416,7 +335,7 @@ struct SettingsView: View {
             if webhookStore.preferences.listenerEnabled {
                 if let port = appVM.webhookListenPort {
                     LabeledContent(String.loc("Listening Address")) {
-                        Text(String.loc("127.0.0.1:\(port)"))
+                        Text(String(format: String.loc("127.0.0.1:%lld"), port))
                             .font(.system(.body, design: .monospaced))
                             .textSelection(.enabled)
                     }
@@ -731,9 +650,20 @@ struct SettingsView: View {
             let data = try Data(contentsOf: url)
             let plan = try appVM.importConfiguration(from: data, mode: mode)
             if plan.skippedRepoCount > 0 {
-                configMessage = String.loc("Imported \(plan.importedRepoCount) repositories (skipped \(plan.skippedRepoCount) existing). Repositories missing credentials are marked and will not sync until you edit them.")
+                configMessage = String(
+                    format: String.loc(
+                        "Imported %lld repositories (skipped %lld existing). Repositories missing credentials are marked and will not sync until you edit them."
+                    ),
+                    plan.importedRepoCount,
+                    plan.skippedRepoCount
+                )
             } else {
-                configMessage = String.loc("Imported \(plan.importedRepoCount) repositories. Repositories missing credentials are marked and will not sync until you edit them.")
+                configMessage = String(
+                    format: String.loc(
+                        "Imported %lld repositories. Repositories missing credentials are marked and will not sync until you edit them."
+                    ),
+                    plan.importedRepoCount
+                )
             }
         } catch {
             configMessage = error.localizedDescription
@@ -744,7 +674,7 @@ struct SettingsView: View {
     private func tunnelHint(available: Bool, tool: String, command: String) -> some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
             Label(
-                available ? String.loc("\(tool) detected") : String.loc("\(tool) not detected (you can install it manually)"),
+                available ? String(format: String.loc("%@ detected"), tool) : String(format: String.loc("%@ not detected (you can install it manually)"), tool),
                 systemImage: available ? "checkmark.circle" : "questionmark.circle"
             )
             .font(.caption)

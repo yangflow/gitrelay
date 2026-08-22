@@ -13,7 +13,7 @@ struct VerificationSettingsView: View {
                 }
 
                 Stepper(value: sampleSizeBinding, in: VerificationPreferences.sampleSizeRange) {
-                    Text(String.loc("Sample \(appVM.verificationPreferences.sampleSize) repositories each time"))
+                    Text(String(format: String.loc("Sample %lld repositories each time"), appVM.verificationPreferences.sampleSize))
                 }
 
                 if let next = appVM.nextVerificationFireDate() {

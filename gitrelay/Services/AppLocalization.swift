@@ -16,14 +16,14 @@ enum AppLocalization {
     private static let lock = NSLock()
     nonisolated(unsafe) private static var activeOverride: Override?
 
-    static func apply(_ preference: AppLanguagePreference, in bundle: Bundle = .main) {
+    nonisolated static func apply(_ preference: AppLanguagePreference, in bundle: Bundle = .main) {
         let resolved = resolveOverride(preference, in: bundle)
         lock.lock()
         activeOverride = resolved
         lock.unlock()
     }
 
-    static func string(for key: String.LocalizationValue) -> String {
+    nonisolated static func string(for key: String.LocalizationValue) -> String {
         lock.lock()
         let active = activeOverride
         lock.unlock()
@@ -31,7 +31,7 @@ enum AppLocalization {
         return String(localized: key, bundle: active.bundle, locale: active.locale)
     }
 
-    private static func resolveOverride(
+    private nonisolated static func resolveOverride(
         _ preference: AppLanguagePreference,
         in bundle: Bundle
     ) -> Override? {
@@ -48,7 +48,7 @@ enum AppLocalization {
         return Override(locale: preference.locale, bundle: languageBundle)
     }
 
-    private static func targetLocalization(
+    private nonisolated static func targetLocalization(
         _ preference: AppLanguagePreference,
         in bundle: Bundle
     ) -> String? {
@@ -61,7 +61,7 @@ enum AppLocalization {
         ).first
     }
 
-    static func localizationName(for code: String?, available: [String]) -> String? {
+    nonisolated static func localizationName(for code: String?, available: [String]) -> String? {
         guard let code, !code.isEmpty else { return nil }
         if let exact = available.first(where: { $0.caseInsensitiveCompare(code) == .orderedSame }) {
             return exact
@@ -78,7 +78,7 @@ enum AppLocalization {
 
     /// Clears any in-session catalog override. Unit tests should call this after
     /// exercising ``apply(_:)`` so later tests see the default catalog.
-    static func resetOverride() {
+    nonisolated static func resetOverride() {
         lock.lock()
         activeOverride = nil
         lock.unlock()
@@ -91,7 +91,7 @@ extension String {
     /// Prefer this over `String(localized:)` for anything a running window can
     /// show, so switching language in Settings does not leave the sentence in
     /// the previous language until the next launch.
-    static func loc(_ key: String.LocalizationValue) -> String {
+    nonisolated static func loc(_ key: String.LocalizationValue) -> String {
         AppLocalization.string(for: key)
     }
 }

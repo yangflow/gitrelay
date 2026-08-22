@@ -35,7 +35,7 @@ struct ProviderAccountRowView: View {
 
             Button(String.loc("Test"), action: onTest)
                 .disabled(isTesting || !summary.hasToken)
-                .help(String.loc("Ask \(summary.provider.shortName) whether the saved token still works"))
+                .help(String(format: String.loc("Ask %@ whether the saved token still works"), summary.provider.shortName))
         }
     }
 

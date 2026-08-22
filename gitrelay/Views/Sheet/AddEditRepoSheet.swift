@@ -374,7 +374,7 @@ struct AddEditRepoSheet: View {
             Toggle(String.loc("Allow Instant Webhook Sync"), isOn: $vm.webhookEnabled)
             if vm.webhookEnabled {
                 if let editing = editingRepo {
-                    Text(String.loc("Path: /hook/\(editing.webhookPathID)"))
+                    Text(String(format: String.loc("Path: /hook/%@"), editing.webhookPathID))
                         .font(.system(.caption, design: .monospaced))
                         .textSelection(.enabled)
 
@@ -591,9 +591,9 @@ struct AddEditRepoSheet: View {
                 hookURL: hookURL,
                 secret: secret
             )
-            return String.loc("Registered webhook #\(registration.id) on GitHub.")
+            return String(format: String.loc("Registered webhook #%@ on GitHub."), registration.id)
         } catch {
-            return String.loc("Automatic webhook registration failed: \(error.localizedDescription)")
+            return String(format: String.loc("Automatic webhook registration failed: %@"), error.localizedDescription)
         }
     }
 

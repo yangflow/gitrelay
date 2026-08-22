@@ -56,7 +56,7 @@ struct ReleaseMirrorStatusView: View {
                     ProgressView()
                         .controlSize(.small)
                 } else if let lastSyncedAt = status.lastSyncedAt {
-                    Text(String.loc("Last \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))"))
+                    Text(String(format: String.loc("Last %@"), lastSyncedAt.formatted(date: .abbreviated, time: .shortened)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -95,7 +95,7 @@ struct ReleaseMirrorStatusView: View {
                 Text(tag.tagName)
                     .font(.system(.body, design: .monospaced))
                 if tag.totalAssets > 0 {
-                    Text(String.loc("\(tag.completedCount)/\(tag.totalAssets) assets"))
+                    Text(String(format: String.loc("%lld/%lld assets"), tag.completedCount, tag.totalAssets))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
