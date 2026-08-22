@@ -24,9 +24,7 @@ nonisolated enum ConfigExportError: LocalizedError, Equatable {
         case .corruptJSON:
             return String.loc("The configuration file is damaged or is not valid JSON.")
         case .unsupportedSchemaVersion(let found, let supported):
-            return String(
-                localized: "Unsupported configuration schema version \(found). This app supports version \(supported)."
-            )
+            return String.loc("Unsupported configuration schema version \(found). This app supports version \(supported).")
         case .partialDecode(let detail):
             return String.loc("The configuration file could not be fully read: \(detail)")
         }

@@ -270,8 +270,6 @@ nonisolated enum GitRetryLog {
     /// User-visible / sync-log line. `reason` must already be redacted if it may contain URLs.
     static func line(attempt: Int, maxAttempts: Int, reason: String) -> String {
         let safeReason = SyncEngine.redactCredentials(reason)
-        return String(
-            localized: "Retry \(attempt) of \(maxAttempts), reason: \(safeReason)"
-        )
+        return String.loc("Retry \(attempt) of \(maxAttempts), reason: \(safeReason)")
     }
 }

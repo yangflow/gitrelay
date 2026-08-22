@@ -198,9 +198,7 @@ struct SettingsView: View {
                     .foregroundStyle(DesignTokens.StatusColor.error)
             } else if loginItem.requiresApproval {
                 Text(
-                    String(
-                        localized: "Open at Login needs approval in System Settings → General → Login Items."
-                    )
+                    String.loc("Open at Login needs approval in System Settings → General → Login Items.")
                 )
                 .font(.caption)
                 .foregroundStyle(DesignTokens.StatusColor.warning)
@@ -214,9 +212,7 @@ struct SettingsView: View {
             Text(String.loc("Startup & Menu Bar"))
         } footer: {
             Text(
-                String(
-                    localized: "When enabled, closing the main window leaves GitRelay in the menu bar (Dock icon may hide). Turn off to quit when the last window closes."
-                )
+                String.loc("When enabled, closing the main window leaves GitRelay in the menu bar (Dock icon may hide). Turn off to quit when the last window closes.")
             )
         }
 
@@ -350,9 +346,7 @@ struct SettingsView: View {
                 in: 1...GitRetryPolicy.clampedMaxAttempts(100)
             ) {
                 Text(
-                    String(
-                        localized: "Transient network retries: \(store.preferences.transientGitMaxAttempts) attempts"
-                    )
+                    String.loc("Transient network retries: \(store.preferences.transientGitMaxAttempts) attempts")
                 )
             }
         } header: {
@@ -367,9 +361,7 @@ struct SettingsView: View {
                 in: NotificationPreferences.maxConcurrentSyncsRange
             ) {
                 Text(
-                    String(
-                        localized: "Max concurrent syncs: \(store.preferences.maxConcurrentSyncs)"
-                    )
+                    String.loc("Max concurrent syncs: \(store.preferences.maxConcurrentSyncs)")
                 )
             }
         } header: {
@@ -739,13 +731,9 @@ struct SettingsView: View {
             let data = try Data(contentsOf: url)
             let plan = try appVM.importConfiguration(from: data, mode: mode)
             if plan.skippedRepoCount > 0 {
-                configMessage = String(
-                    localized: "Imported \(plan.importedRepoCount) repositories (skipped \(plan.skippedRepoCount) existing). Repositories missing credentials are marked and will not sync until you edit them."
-                )
+                configMessage = String.loc("Imported \(plan.importedRepoCount) repositories (skipped \(plan.skippedRepoCount) existing). Repositories missing credentials are marked and will not sync until you edit them.")
             } else {
-                configMessage = String(
-                    localized: "Imported \(plan.importedRepoCount) repositories. Repositories missing credentials are marked and will not sync until you edit them."
-                )
+                configMessage = String.loc("Imported \(plan.importedRepoCount) repositories. Repositories missing credentials are marked and will not sync until you edit them.")
             }
         } catch {
             configMessage = error.localizedDescription
