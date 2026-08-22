@@ -16,11 +16,14 @@ struct WindowLayout: Equatable, Sendable {
     var detailTab: RepoDetailTab
     /// Sidebar column width in points; clamped to ``sidebarMinWidth``…``sidebarMaxWidth``.
     var sidebarWidth: Double
+    /// Whether the main-window sidebar column is shown (width is still persisted when hidden).
+    var sidebarVisible: Bool = true
 
     static let `default` = WindowLayout(
         selectedRepoID: nil,
         detailTab: .overview,
-        sidebarWidth: sidebarIdealWidth
+        sidebarWidth: sidebarIdealWidth,
+        sidebarVisible: true
     )
 
     /// Clamps sidebar width into the allowed column range.

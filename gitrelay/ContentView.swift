@@ -22,20 +22,10 @@ struct ContentView: View {
 
     var body: some View {
         @Bindable var appVM = appVM
-        NavigationSplitView {
-            MainSidebarView(selection: $sidebarSelection)
-                .gitRelaySidebarColumnWidth(ideal: appVM.windowLayout.sidebarWidth)
-                .background {
-                    GeometryReader { proxy in
-                        Color.clear
-                            .preference(key: SidebarColumnWidthKey.self, value: proxy.size.width)
-                    }
-                }
-                .onPreferenceChange(SidebarColumnWidthKey.self) { width in
-                    guard didRestoreWindowLayout else { return }
-                    appVM.windowLayout.sidebarWidth = width
-                }
-        } detail: {
+        HSplitView {
+            if appVM.windowLayout.sidebarVisible {
+                sidebarColumn
+            }
             detailPane
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .gitRelayChrome(.detail)
@@ -134,6 +124,23 @@ struct ContentView: View {
             )
             .interactiveDismissDisabled()
         }
+    }
+
+    // MARK: - Columns
+
+    private var sidebarColumn: some View {
+        MainSidebarView(selection: $sidebarSelection)
+            .gitRelaySidebarColumnWidth(ideal: appVM.windowLayout.sidebarWidth)
+            .background {
+                GeometryReader { proxy in
+                    Color.clear
+                        .preference(key: SidebarColumnWidthKey.self, value: proxy.size.width)
+                }
+            }
+            .onPreferenceChange(SidebarColumnWidthKey.self) { width in
+                guard didRestoreWindowLayout else { return }
+                appVM.windowLayout.sidebarWidth = width
+            }
     }
 
     // MARK: - Right pane

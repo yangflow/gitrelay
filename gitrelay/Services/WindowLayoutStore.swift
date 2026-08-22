@@ -9,6 +9,7 @@ final class WindowLayoutStore {
         static let selectedRepoID = "WindowLayout.selectedRepoID"
         static let detailTab = "WindowLayout.detailTab"
         static let sidebarWidth = "WindowLayout.sidebarWidth"
+        static let sidebarVisible = "WindowLayout.sidebarVisible"
     }
 
     private let defaults: UserDefaults
@@ -54,6 +55,15 @@ final class WindowLayoutStore {
         }
     }
 
+    var sidebarVisible: Bool {
+        get { storage.sidebarVisible }
+        set {
+            guard storage.sidebarVisible != newValue else { return }
+            storage.sidebarVisible = newValue
+            defaults.set(newValue, forKey: Keys.sidebarVisible)
+        }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.storage = Self.normalized(Self.load(from: defaults))
@@ -74,6 +84,7 @@ final class WindowLayoutStore {
         persistSelectedRepoID(value.selectedRepoID)
         defaults.set(value.detailTab.rawValue, forKey: Keys.detailTab)
         defaults.set(value.sidebarWidth, forKey: Keys.sidebarWidth)
+        defaults.set(value.sidebarVisible, forKey: Keys.sidebarVisible)
     }
 
     private func persistSelectedRepoID(_ id: UUID?) {
@@ -116,10 +127,18 @@ final class WindowLayoutStore {
             sidebarWidth = WindowLayout.clampedSidebarWidth(defaults.double(forKey: Keys.sidebarWidth))
         }
 
+        let sidebarVisible: Bool
+        if defaults.object(forKey: Keys.sidebarVisible) == nil {
+            sidebarVisible = fallback.sidebarVisible
+        } else {
+            sidebarVisible = defaults.bool(forKey: Keys.sidebarVisible)
+        }
+
         return WindowLayout(
             selectedRepoID: selectedRepoID,
             detailTab: detailTab,
-            sidebarWidth: sidebarWidth
+            sidebarWidth: sidebarWidth,
+            sidebarVisible: sidebarVisible
         )
     }
 }

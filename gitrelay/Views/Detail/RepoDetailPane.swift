@@ -4,6 +4,7 @@ import SwiftUI
 /// repository name with its 同步 / 暂停 toolbar, then the ``RepoDetailView`` body.
 struct RepoDetailPane: View {
     @Environment(AppViewModel.self) private var appVM
+    @Environment(WindowLayoutStore.self) private var windowLayout
 
     let repo: RepoConfig
     let onBack: () -> Void
@@ -35,6 +36,10 @@ struct RepoDetailPane: View {
                 .help(String.loc("Back to Repositories"))
 
                 HStack(alignment: .firstTextBaseline, spacing: DesignTokens.Spacing.md) {
+                    if !windowLayout.sidebarVisible {
+                        SidebarToggleButton()
+                    }
+
                     Text(repo.name)
                         .font(.title2.weight(.semibold))
 
