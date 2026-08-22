@@ -100,10 +100,6 @@ struct SettingsView: View {
     @State private var showImportModePicker = false
     @State private var pendingImportURL: URL?
     @State private var configMessage: String?
-    @State private var accountSummaries: [ProviderAccountSummary] = []
-    @State private var tokenTestOutcomes: [String: ProviderTokenTestOutcome] = [:]
-    @State private var accountsUnderTest: Set<String> = []
-    @State private var isPresentingAddToken = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -119,15 +115,6 @@ struct SettingsView: View {
             loginItem.refresh()
             syncCacheControlsFromStore()
             appVM.refreshMirrorCacheUsage()
-            reloadAccounts()
-        }
-        .sheet(isPresented: $isPresentingAddToken) {
-            AddProviderTokenSheet(
-                onSaved: { provider, label in
-                    reloadAccounts()
-                    testToken(provider: provider, accountLabel: label)
-                }
-            )
         }
         .alert(
             String.loc("Import Configuration"),
@@ -181,8 +168,6 @@ struct SettingsView: View {
         @Bindable var security = securityStore
         @Bindable var behavior = behaviorStore
 
-        accountsSection()
-
         Section {
             Toggle(
                 String.loc("Open at Login"),
@@ -225,72 +210,6 @@ struct SettingsView: View {
             Text(String.loc("Security"))
         } footer: {
             Text(String.loc("When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action."))
-        }
-    }
-
-    // MARK: - Accounts (issue #104)
-
-    private var visibleAccounts: [ProviderAccountSummary] {
-        accountSummaries
-    }
-
-    @ViewBuilder
-    private func accountsSection() -> some View {
-        Section {
-            if visibleAccounts.isEmpty {
-                Text(String.loc("No account is connected yet."))
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(visibleAccounts) { summary in
-                    ProviderAccountRowView(
-                        summary: summary,
-                        outcome: tokenTestOutcomes[summary.id],
-                        isTesting: accountsUnderTest.contains(summary.id),
-                        onTest: {
-                            testToken(provider: summary.provider, accountLabel: summary.label)
-                        }
-                    )
-                }
-            }
-
-            Button {
-                isPresentingAddToken = true
-            } label: {
-                Label(String.loc("Add Token"), systemImage: "plus")
-            }
-        } header: {
-            Text(String.loc("Accounts"))
-        } footer: {
-            Text(String.loc("Tokens are stored in the Keychain and are never written to a log or to exported configuration. Test asks the provider whether a saved token still works."))
-        }
-    }
-
-    private func reloadAccounts() {
-        accountSummaries = ProviderAccountSummary.listed(
-            ProviderAccountSummary.summaries(
-                recordsByProvider: ProviderAccountStore.allAccounts(),
-                hasToken: { provider, label in
-                    ProviderTokenStore.load(provider: provider, accountLabel: label) != nil
-                }
-            )
-        )
-    }
-
-    private func testToken(provider: GitProvider, accountLabel: String) {
-        let id = ProviderAccount.id(provider: provider, label: accountLabel)
-        guard !accountsUnderTest.contains(id) else { return }
-        accountsUnderTest.insert(id)
-        tokenTestOutcomes[id] = nil
-
-        Task {
-            let outcome = await ProviderTokenTester.run(
-                provider: provider,
-                accountLabel: accountLabel,
-                host: ProviderAccountStore.host(for: provider, label: accountLabel)
-            )
-            accountsUnderTest.remove(id)
-            tokenTestOutcomes[id] = outcome
-            reloadAccounts()
         }
     }
 

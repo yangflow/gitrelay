@@ -127,6 +127,12 @@ struct AppLocalizationTests {
         #expect(AppLocalization.localizationName(for: "en", available: available) == "en")
     }
 
+    @Test func locCallableFromNonisolatedContext() {
+        defer { AppLocalization.resetOverride() }
+        AppLocalization.apply(.english)
+        #expect(NonisolatedLocProbe.settingsLabel == "Settings")
+    }
+
     @Test @MainActor func stringFollowsPreferenceChanges() {
         defer { AppLocalization.resetOverride() }
         let suiteName = "gitrelay.tests.localization.\(UUID().uuidString)"
@@ -145,4 +151,8 @@ struct AppLocalizationTests {
         #expect(english == "Settings")
         #expect(chinese == "设置")
     }
+}
+
+private nonisolated enum NonisolatedLocProbe {
+    static var settingsLabel: String { String.loc("Settings") }
 }
