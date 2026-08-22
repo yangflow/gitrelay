@@ -206,6 +206,25 @@ final class AppViewModel {
     /// Override in tests to avoid Keychain. Production loads HMAC secrets from Keychain only.
     var webhookSecretProvider: (UUID) -> String? = { WebhookSecretStore.loadSecret(repoID: $0) }
 
+    /// Last inbound webhook POST handled this session (Settings → 最近一次).
+    var webhookLastEvent: WebhookLastEvent?
+
+    /// First repository with instant webhook sync enabled; used for Settings copy + Send Test.
+    var webhookTestTargetRepo: RepoConfig? {
+        repos.first(where: \.webhookEnabled)
+    }
+
+    var canSendWebhookTest: Bool {
+        guard webhookPreferences.preferences.listenerEnabled,
+              webhookListenPort != nil,
+              let repo = webhookTestTargetRepo,
+              let secret = webhookSecretProvider(repo.id),
+              !secret.isEmpty else {
+            return false
+        }
+        return true
+    }
+
     init(
         verificationPreferencesStore: VerificationPreferencesStore? = nil,
         orgSubscriptionStore: OrgSubscriptionStore? = nil,
@@ -607,10 +626,59 @@ final class AppViewModel {
             targets: targets,
             secretForRepo: { [webhookSecretProvider] in webhookSecretProvider($0) }
         )
+        recordWebhookLastEventIfNeeded(request: request, response: result.httpResponse)
         if let repoID = result.syncRepoID {
             triggerSync(repoID: repoID)
         }
         return result.httpResponse
+    }
+
+    func webhookHookPath(for repo: RepoConfig) -> String {
+        WebhookURLTemplate.hookPath(pathID: repo.webhookPathID)
+    }
+
+    /// POSTs a signed ping to the loopback listener and refreshes 最近一次 via `handleWebhookRequest`.
+    func sendWebhookTest() async {
+        guard let port = webhookListenPort,
+              let repo = webhookTestTargetRepo,
+              let secret = webhookSecretProvider(repo.id),
+              let request = WebhookLocalTestClient.makePingRequest(
+                port: port,
+                pathID: repo.webhookPathID,
+                secret: secret
+              ) else {
+            return
+        }
+
+        do {
+            _ = try await WebhookLocalTestClient.send(request: request)
+        } catch {
+            webhookLastEvent = WebhookLastEvent(
+                receivedAt: Date(),
+                repoName: repo.name,
+                statusCode: 0
+            )
+        }
+    }
+
+    private func recordWebhookLastEventIfNeeded(
+        request: WebhookHTTPRequest,
+        response: WebhookHTTPResponse
+    ) {
+        guard request.method.uppercased() == "POST" else { return }
+        guard case .hook(let pathID) = WebhookRoute.parse(method: request.method, path: request.path) else {
+            return
+        }
+
+        let normalizedID = pathID.lowercased()
+        let repoName = repos.first(where: { $0.webhookPathID.lowercased() == normalizedID })?.name
+            ?? String(localized: "Unknown repository")
+
+        webhookLastEvent = WebhookLastEvent(
+            receivedAt: Date(),
+            repoName: repoName,
+            statusCode: response.statusCode
+        )
     }
 
     func webhookURL(for repo: RepoConfig) -> String {

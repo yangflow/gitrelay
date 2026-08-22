@@ -2789,6 +2789,23 @@
         }
       }
     },
+    "Enable instant webhook sync on a repository to get a hook path.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable instant webhook sync on a repository to get a hook path."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在仓库上启用 Webhook 即时同步后可获得钩子路径。"
+          }
+        }
+      }
+    },
     "Enable local webhook listener": {
       "extractionState": "manual",
       "localizations": {
@@ -4009,6 +4026,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "最近成功：%@"
+          }
+        }
+      }
+    },
+    "Last Event": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last Event"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近一次"
           }
         }
       }
@@ -6002,6 +6036,23 @@
         }
       }
     },
+    "Repository Hook URL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repository Hook URL"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仓库钩子 URL"
+          }
+        }
+      }
+    },
     "Repository: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -6525,6 +6576,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "安全"
+          }
+        }
+      }
+    },
+    "Send Test": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send Test"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送测试"
           }
         }
       }
@@ -8157,6 +8225,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法在 127.0.0.1 上绑定 webhook 监听端口"
+          }
+        }
+      }
+    },
+    "Unknown repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown repository"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知仓库"
           }
         }
       }
@@ -10214,6 +10299,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "源认证"
+          }
+        }
+      }
+    },
+    "%@ · %@ · %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ · %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ · %lld"
           }
         }
       }

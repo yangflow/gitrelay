@@ -2,8 +2,12 @@ import Foundation
 
 /// Builds webhook URL templates for local listeners and optional tunnel exposure modes.
 nonisolated enum WebhookURLTemplate {
+    static func hookPath(pathID: String) -> String {
+        "/hook/\(pathID.lowercased())"
+    }
+
     static func localURL(port: UInt16, pathID: String) -> String {
-        "http://127.0.0.1:\(port)/hook/\(pathID.lowercased())"
+        "http://127.0.0.1:\(port)\(hookPath(pathID: pathID))"
     }
 
     static func publicURL(baseURL: String, pathID: String) -> String? {

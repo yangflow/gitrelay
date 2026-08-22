@@ -4669,8 +4669,58 @@ struct WebhookSyncTriggerTests {
 
         let response = vm.handleWebhookRequest(request)
         #expect(response.statusCode == 202)
+        #expect(vm.webhookLastEvent?.repoName == "hooked")
+        #expect(vm.webhookLastEvent?.statusCode == 202)
         #expect(vm.inProgressSyncIDs.contains(repoID) || vm.statuses[repoID] == .syncing)
         vm.cancelSync(repoID: repoID)
+    }
+}
+
+struct WebhookLastEventFormattingTests {
+    @Test func formatsRelativeTimeRepoAndStatus() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let event = WebhookLastEvent(
+            receivedAt: now.addingTimeInterval(-120),
+            repoName: "keychord",
+            statusCode: 200
+        )
+        let text = WebhookLastEventFormatting.display(event, now: now)
+        #expect(text.contains("keychord"))
+        #expect(text.contains("200"))
+        #expect(text.contains("·"))
+    }
+
+    @Test func emptyWhenNoEvent() {
+        #expect(WebhookLastEventFormatting.displayOrEmpty(nil).isEmpty)
+    }
+
+    @Test func justNowWithinWindow() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let event = WebhookLastEvent(receivedAt: now.addingTimeInterval(-5), repoName: "a", statusCode: 200)
+        let text = WebhookLastEventFormatting.display(event, now: now)
+        #expect(text.contains("Just now") || text.contains("刚刚"))
+    }
+}
+
+struct WebhookLocalTestClientTests {
+    @Test func pingRequestUsesPostPathAndSignatureWithoutSecret() {
+        let secret = "unit-test-secret-do-not-log"
+        let pathID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        let request = WebhookLocalTestClient.makePingRequest(port: 38_451, pathID: pathID, secret: secret)
+        #expect(request != nil)
+        guard let request else { return }
+
+        #expect(request.method == "POST")
+        #expect(request.path == "/hook/\(pathID)")
+        #expect(request.signatureHeader.hasPrefix("sha256="))
+        let redacted = WebhookLocalTestClient.redactedDescription(for: request)
+        #expect(!redacted.contains(secret))
+        #expect(redacted.contains(request.path))
+    }
+
+    @Test func hookPathMatchesListenerRoute() {
+        let pathID = "AbCdEf"
+        #expect(WebhookURLTemplate.hookPath(pathID: pathID) == "/hook/abcdef")
     }
 }
 
