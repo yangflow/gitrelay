@@ -31,7 +31,7 @@ struct SSHKeyGeneratedSheet: View {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
                     Text(String.loc("SSH Key Generated"))
                         .font(.headline)
-                    Text(String.loc("Add the public key to \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) to use SSH authentication."))
+                    Text(String(format: String.loc("Add the public key to %@ to use SSH authentication."), GitRemoteHost.sshKeysSettingsLabel(for: provider)))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     if didCopy {
@@ -65,7 +65,7 @@ struct SSHKeyGeneratedSheet: View {
                     ClipboardService.copy(result.publicKey)
                     didCopy = true
                 }
-                Button(String.loc("Open \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) SSH Settings")) {
+                Button(String(format: String.loc("Open %@ SSH Settings"), GitRemoteHost.sshKeysSettingsLabel(for: provider))) {
                     if !didCopy {
                         ClipboardService.copy(result.publicKey)
                         didCopy = true

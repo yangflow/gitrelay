@@ -69,7 +69,7 @@ struct BrowseRemotePane: View {
     private var headingSubtitle: String {
         switch vm.phase {
         case .submitting:
-            String.loc("Processing \(vm.submitProgress) / \(vm.submitTotal)")
+            String(format: String.loc("Processing %lld / %lld"), vm.submitProgress, vm.submitTotal)
         case .result:
             String.loc("Review the outcome, then add the pairs to the sync list.")
         case .connect, .selecting, .configureTarget:
@@ -212,7 +212,7 @@ struct BrowseRemotePane: View {
                 TextField("Search Names or Descriptions", text: $vm.searchText)
                     .textFieldStyle(.plain)
                 Spacer(minLength: DesignTokens.Spacing.sm)
-                Text(String.loc("\(vm.selectedIDs.count) selected"))
+                Text(String(format: String.loc("%lld selected"), vm.selectedIDs.count))
                     .font(.caption)
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
@@ -346,10 +346,10 @@ struct BrowseRemotePane: View {
                             Text(vm.previewName(for: repo))
                                 .font(.caption)
                                 .bold()
-                            Text(String.loc("src: \(vm.sourceURL(for: repo))"))
+                            Text(String(format: String.loc("src: %@"), vm.sourceURL(for: repo)))
                                 .font(.system(.caption2, design: .monospaced))
                                 .foregroundStyle(.secondary)
-                            Text(String.loc("dst: \(vm.previewURL(for: repo))"))
+                            Text(String(format: String.loc("dst: %@"), vm.previewURL(for: repo)))
                                 .font(.system(.caption2, design: .monospaced))
                                 .foregroundStyle(.secondary)
                         }
@@ -450,7 +450,7 @@ struct BrowseRemotePane: View {
             ProgressView(value: submitFraction)
                 .progressViewStyle(.linear)
                 .frame(maxWidth: DesignTokens.Layout.browseStepBarMaxWidth)
-                .accessibilityLabel(String.loc("Processing \(vm.submitProgress) / \(vm.submitTotal)"))
+                .accessibilityLabel(String(format: String.loc("Processing %lld / %lld"), vm.submitProgress, vm.submitTotal))
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -477,14 +477,14 @@ struct BrowseRemotePane: View {
         return Form {
             Section {
                 HStack(spacing: DesignTokens.Spacing.lg) {
-                    Label(String.loc("Succeeded \(succeeded)"), systemImage: "checkmark.circle.fill")
+                    Label(String(format: String.loc("Succeeded %lld"), succeeded), systemImage: "checkmark.circle.fill")
                         .foregroundStyle(DesignTokens.StatusColor.success)
                     if existed > 0 {
-                        Label(String.loc("Reused \(existed)"), systemImage: "arrow.counterclockwise.circle.fill")
+                        Label(String(format: String.loc("Reused %lld"), existed), systemImage: "arrow.counterclockwise.circle.fill")
                             .foregroundStyle(DesignTokens.StatusColor.info)
                     }
                     if failed > 0 {
-                        Label(String.loc("Failed \(failed)"), systemImage: "xmark.octagon.fill")
+                        Label(String(format: String.loc("Failed %lld"), failed), systemImage: "xmark.octagon.fill")
                             .foregroundStyle(DesignTokens.StatusColor.error)
                     }
                 }
@@ -534,7 +534,7 @@ struct BrowseRemotePane: View {
             .disabled(!vm.canAdvanceToSelect || vm.isLoading)
             .keyboardShortcut(.return)
         case .selecting:
-            Button(String.loc("Next (\(vm.selectedIDs.count))")) {
+            Button(String(format: String.loc("Next (%lld)"), vm.selectedIDs.count)) {
                 Task { await vm.advanceToTargetConfiguration() }
             }
             .buttonStyle(.borderedProminent)
@@ -553,7 +553,7 @@ struct BrowseRemotePane: View {
             EmptyView()
         case .result:
             let count = vm.successfulConfigs.count
-            Button(String.loc("Add \(count) to Sync List")) {
+            Button(String(format: String.loc("Add %lld to Sync List"), count)) {
                 let configs = vm.successfulConfigs
                 vm.persistTokensForSuccessfulConfigs()
                 appVM.addRepos(configs, triggerSync: true)

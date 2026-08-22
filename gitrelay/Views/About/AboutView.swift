@@ -29,7 +29,7 @@ struct AboutView: View {
             Text(String.loc("GitRelay"))
                 .font(.title3.weight(.semibold))
 
-            Text(String.loc("Version \(version) (\(build))"))
+            Text(String(format: String.loc("Version %@ (%@)"), version, build))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .textSelection(.enabled)

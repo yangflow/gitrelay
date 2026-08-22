@@ -19,7 +19,7 @@ struct AuthFieldView: View {
     @State private var previewError: String?
 
     private var resolvedPickerTitle: String {
-        pickerTitle ?? String.loc("\(label) Authentication")
+        pickerTitle ?? String(format: String.loc("%@ Authentication"), label)
     }
 
     var body: some View {

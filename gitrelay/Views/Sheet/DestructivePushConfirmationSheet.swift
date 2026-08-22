@@ -40,7 +40,7 @@ struct DestructivePushConfirmationSheet: View {
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
                         if !plan.deletedRefs.isEmpty {
                             refSection(
-                                title: String.loc("Delete \(plan.deletedRefs.count) refs"),
+                                title: String(format: String.loc("Delete %lld refs"), plan.deletedRefs.count),
                                 refs: plan.deletedRefs,
                                 symbol: "trash",
                                 tint: DesignTokens.StatusColor.error,
@@ -49,7 +49,7 @@ struct DestructivePushConfirmationSheet: View {
                         }
                         if !plan.forcedUpdateRefs.isEmpty {
                             refSection(
-                                title: String.loc("Force-update \(plan.forcedUpdateRefs.count) refs"),
+                                title: String(format: String.loc("Force-update %lld refs"), plan.forcedUpdateRefs.count),
                                 refs: plan.forcedUpdateRefs,
                                 symbol: "arrow.triangle.2.circlepath",
                                 tint: DesignTokens.StatusColor.warning,

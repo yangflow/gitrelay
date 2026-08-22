@@ -81,7 +81,7 @@ struct GitLabTargetAPIClient: TargetProviderAPIClient {
         )
         guard let match = namespaces.first(where: { $0.full_path.lowercased() == owner.lowercased() }) else {
             throw TargetProviderAPIError.validation(
-                String.loc("No GitLab group or user namespace named \(owner) is visible to this token.")
+                String(format: String.loc("No GitLab group or user namespace named %@ is visible to this token."), owner)
             )
         }
         return match.id

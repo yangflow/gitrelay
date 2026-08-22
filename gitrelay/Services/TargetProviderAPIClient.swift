@@ -8,8 +8,8 @@ nonisolated enum TargetNamespace: Hashable, Sendable {
     var displayLabel: String {
         switch self {
         case .currentUser:              String.loc("Current User")
-        case .organization(let org):    String.loc("Organization: \(org)")
-        case .adminForUser(let user):   String.loc("Administrator → User: \(user)")
+        case .organization(let org):    String(format: String.loc("Organization: %@"), org)
+        case .adminForUser(let user):   String(format: String.loc("Administrator → User: %@"), user)
         }
     }
 }
@@ -36,12 +36,22 @@ nonisolated enum TargetProviderAPIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unauthorized(let m): return m.map { String.loc("Authentication failed (401): \($0)") } ?? String.loc("Authentication failed (401)")
-        case .forbidden(let m):    return m.map { String.loc("Permission denied (403): \($0)") } ?? String.loc("Permission denied (403)")
-        case .validation(let m):   return m.map { String.loc("Invalid parameters: \($0)") } ?? String.loc("Invalid parameters (422)")
-        case .network(let e):      return String.loc("Network error: \(e.localizedDescription)")
-        case .decoding(let e):     return String.loc("Failed to parse response: \(e.localizedDescription)")
-        case .http(let s, let m):  return m.map { String.loc("HTTP \(s): \($0)") } ?? String.loc("HTTP \(s)")
+        case .unauthorized(let m):
+            return m.map { String(format: String.loc("Authentication failed (401): %@"), $0) }
+                ?? String.loc("Authentication failed (401)")
+        case .forbidden(let m):
+            return m.map { String(format: String.loc("Permission denied (403): %@"), $0) }
+                ?? String.loc("Permission denied (403)")
+        case .validation(let m):
+            return m.map { String(format: String.loc("Invalid parameters: %@"), $0) }
+                ?? String.loc("Invalid parameters (422)")
+        case .network(let e):
+            return String(format: String.loc("Network error: %@"), e.localizedDescription)
+        case .decoding(let e):
+            return String(format: String.loc("Failed to parse response: %@"), e.localizedDescription)
+        case .http(let s, let m):
+            return m.map { String(format: String.loc("HTTP %@: %@"), String(s), $0) }
+                ?? String(format: String.loc("HTTP %@"), String(s))
         }
     }
 }

@@ -27,11 +27,11 @@ struct RepoHeaderView: View {
                     targetRow(repo.targets[0])
                 }
             } else {
-                LabeledContent(String.loc("Targets (\(repo.targets.count))")) {
+                LabeledContent(String(format: String.loc("Targets (%lld)"), repo.targets.count)) {
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
                         ForEach(Array(repo.targets.enumerated()), id: \.element.id) { index, target in
                             HStack(spacing: DesignTokens.Spacing.xs) {
-                                Text(String.loc("\(index + 1)."))
+                                Text(String(format: String.loc("%@."), String(index + 1)))
                                     .foregroundStyle(.secondary)
                                 targetRow(target)
                             }

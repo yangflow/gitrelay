@@ -11,7 +11,7 @@ nonisolated struct RepoAccountLine: Equatable, Sendable {
     let names: [String]
 
     var text: String {
-        String.loc("Account · \(names.joined(separator: " · "))")
+        String(format: String.loc("Account · %@"), names.joined(separator: " · "))
     }
 
     /// Nil when nothing was resolved, which is the quiet case.

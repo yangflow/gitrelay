@@ -15,7 +15,7 @@ struct RepoStatusLabel: View {
     private var statusText: some View {
         switch status {
         case .ahead(let n):
-            Text(String.loc("src is \(n) commits ahead"))
+            Text(String(format: String.loc("src is %lld commits ahead"), n))
                 .foregroundStyle(DesignTokens.StatusColor.ahead)
         case .idle:
             Text(String.loc("Synced"))

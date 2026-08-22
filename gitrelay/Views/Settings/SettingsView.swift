@@ -234,7 +234,7 @@ struct SettingsView: View {
                 value: $store.preferences.consecutiveFailureThreshold,
                 in: 1...20
             ) {
-                Text(String.loc("Consecutive failure threshold: \(store.preferences.consecutiveFailureThreshold)"))
+                Text(String(format: String.loc("Consecutive failure threshold: %lld"), store.preferences.consecutiveFailureThreshold))
             }
             .disabled(!store.preferences.notificationsEnabled)
 
@@ -265,7 +265,7 @@ struct SettingsView: View {
                 in: 1...GitRetryPolicy.clampedMaxAttempts(100)
             ) {
                 Text(
-                    String.loc("Transient network retries: \(store.preferences.transientGitMaxAttempts) attempts")
+                    String(format: String.loc("Transient network retries: %lld attempts"), store.preferences.transientGitMaxAttempts)
                 )
             }
         } header: {
@@ -280,7 +280,7 @@ struct SettingsView: View {
                 in: NotificationPreferences.maxConcurrentSyncsRange
             ) {
                 Text(
-                    String.loc("Max concurrent syncs: \(store.preferences.maxConcurrentSyncs)")
+                    String(format: String.loc("Max concurrent syncs: %lld"), store.preferences.maxConcurrentSyncs)
                 )
             }
         } header: {
@@ -335,7 +335,7 @@ struct SettingsView: View {
             if webhookStore.preferences.listenerEnabled {
                 if let port = appVM.webhookListenPort {
                     LabeledContent(String.loc("Listening Address")) {
-                        Text(String.loc("127.0.0.1:\(port)"))
+                        Text(String(format: String.loc("127.0.0.1:%lld"), port))
                             .font(.system(.body, design: .monospaced))
                             .textSelection(.enabled)
                     }
@@ -650,9 +650,20 @@ struct SettingsView: View {
             let data = try Data(contentsOf: url)
             let plan = try appVM.importConfiguration(from: data, mode: mode)
             if plan.skippedRepoCount > 0 {
-                configMessage = String.loc("Imported \(plan.importedRepoCount) repositories (skipped \(plan.skippedRepoCount) existing). Repositories missing credentials are marked and will not sync until you edit them.")
+                configMessage = String(
+                    format: String.loc(
+                        "Imported %lld repositories (skipped %lld existing). Repositories missing credentials are marked and will not sync until you edit them."
+                    ),
+                    plan.importedRepoCount,
+                    plan.skippedRepoCount
+                )
             } else {
-                configMessage = String.loc("Imported \(plan.importedRepoCount) repositories. Repositories missing credentials are marked and will not sync until you edit them.")
+                configMessage = String(
+                    format: String.loc(
+                        "Imported %lld repositories. Repositories missing credentials are marked and will not sync until you edit them."
+                    ),
+                    plan.importedRepoCount
+                )
             }
         } catch {
             configMessage = error.localizedDescription
@@ -663,7 +674,7 @@ struct SettingsView: View {
     private func tunnelHint(available: Bool, tool: String, command: String) -> some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
             Label(
-                available ? String.loc("\(tool) detected") : String.loc("\(tool) not detected (you can install it manually)"),
+                available ? String(format: String.loc("%@ detected"), tool) : String(format: String.loc("%@ not detected (you can install it manually)"), tool),
                 systemImage: available ? "checkmark.circle" : "questionmark.circle"
             )
             .font(.caption)

@@ -25,7 +25,7 @@ final class IntegrityVerifier {
     func run() async {
         emit(.started)
         let branch = RepoConfig.normalizedBranch(repo.defaultBranch)
-        log(String.loc("Integrity verification started (branch: \(branch))..."))
+        log(String(format: String.loc("Integrity verification started (branch: %@)..."), branch))
 
         let srcURL = authenticatedURL(url: repo.srcURL, auth: repo.srcAuth)
         let srcEnv = buildEnv(for: repo.srcAuth)
@@ -36,14 +36,14 @@ final class IntegrityVerifier {
             let message = enabledTargets.isEmpty
                 ? SyncEngineError.noEnabledTargets.localizedDescription
                 : "No git remote targets to verify (filesystem archive targets skipped)"
-            log(String.loc("Error: \(message)"))
+            log(String(format: String.loc("Error: %@"), message))
             record.finishedAt = Date()
             emit(.failed(message, record))
             return
         }
 
         if verifiableTargets.count < enabledTargets.count {
-            log(String.loc("Skipped \(enabledTargets.count - verifiableTargets.count) filesystem archive targets."))
+            log(String(format: String.loc("Skipped %lld filesystem archive targets."), enabledTargets.count - verifiableTargets.count))
         }
 
         do {
@@ -115,7 +115,7 @@ final class IntegrityVerifier {
                 case .diverged(let detail):
                     targetResult.succeeded = false
                     targetResult.error = detail.summary
-                    targetLog(String.loc("⚠ Content divergence detected: \(detail.summary)"))
+                    targetLog(String(format: String.loc("⚠ Content divergence detected: %@"), detail.summary))
                     targetLog("  src tree: \(detail.srcTreeHash.truncatingSHA)")
                     targetLog("  dst tree: \(detail.dstTreeHash.truncatingSHA)")
                     divergedDetails.append(detail)
@@ -124,7 +124,7 @@ final class IntegrityVerifier {
                     targetResult.succeeded = false
                     let redacted = SyncEngine.redactCredentials(message)
                     targetResult.error = redacted
-                    targetLog(String.loc("Inconclusive: \(redacted)"))
+                    targetLog(String(format: String.loc("Inconclusive: %@"), redacted))
                     inconclusiveMessages.append("\(target.displayLabel): \(redacted)")
                 }
 
@@ -136,7 +136,7 @@ final class IntegrityVerifier {
             if let firstDiverged = divergedDetails.first {
                 record.succeeded = false
                 let summary = multiTargetDivergenceSummary(details: divergedDetails)
-                log(String.loc("⚠ Content divergence detected: \(summary)"))
+                log(String(format: String.loc("⚠ Content divergence detected: %@"), summary))
                 var detail = firstDiverged
                 if divergedDetails.count > 1 {
                     detail.summaryOverride = summary
@@ -148,13 +148,13 @@ final class IntegrityVerifier {
             if !inconclusiveMessages.isEmpty {
                 record.succeeded = false
                 let message = inconclusiveMessages.joined(separator: "; ")
-                log(String.loc("Inconclusive: \(message)"))
+                log(String(format: String.loc("Inconclusive: %@"), message))
                 emit(.failed(message, record))
                 return
             }
 
             record.succeeded = matchedCount == verifiableTargets.count
-            log(String.loc("All \(matchedCount) targets passed verification."))
+            log(String(format: String.loc("All %lld targets passed verification."), matchedCount))
             emit(.completed(.matched(reason: .identicalCommitSHA), record))
 
         } catch GitError.cancelled {
@@ -164,7 +164,7 @@ final class IntegrityVerifier {
 
         } catch {
             let message = SyncEngine.redactCredentials(error.localizedDescription)
-            log(String.loc("Error: \(message)"))
+            log(String(format: String.loc("Error: %@"), message))
             record.finishedAt = Date()
             emit(.failed(message, record))
         }
@@ -178,7 +178,7 @@ final class IntegrityVerifier {
 
     private func multiTargetDivergenceSummary(details: [VerificationDecision.Detail]) -> String {
         guard details.count > 1 else { return details[0].summary }
-        return String.loc("\(details.count) targets have content divergence: \(details[0].summary)")
+        return String(format: String.loc("%lld targets have content divergence: %@"), details.count, details[0].summary)
     }
 
     private func prepareWorkRepo() async throws -> String {
@@ -200,7 +200,7 @@ final class IntegrityVerifier {
         label: String,
         log: (String) -> Void
     ) async throws -> String {
-        log(String.loc("Fetching \(label) commit \(commitSHA.truncatingSHA)..."))
+        log(String(format: String.loc("Fetching %@ commit %@..."), label, commitSHA.truncatingSHA))
         try await runner.fetchCommit(
             repoPath: workPath,
             remoteURL: remoteURL,

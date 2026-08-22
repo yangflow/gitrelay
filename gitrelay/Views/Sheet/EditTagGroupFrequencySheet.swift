@@ -26,7 +26,7 @@ struct EditTagGroupFrequencySheet: View {
 
             Form {
                 Section {
-                    Text(String.loc("Set the sync frequency for all \(repoCount) repositories in “\(groupTitle)” to:"))
+                    Text(String(format: String.loc("Set the sync frequency for all %lld repositories in “%@” to:"), repoCount, groupTitle))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     FrequencyPickerView(frequency: $frequency)

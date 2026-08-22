@@ -23,7 +23,7 @@ struct RepoPairTableView: View {
         VStack(spacing: 0) {
             PaneHeaderView(
                 title: MainSidebarItem.repositories.title,
-                subtitle: String.loc("\(appVM.repos.count) repos")
+                subtitle: String(format: String.loc("%lld repos"), appVM.repos.count)
             ) {
                 HStack(spacing: DesignTokens.Spacing.sm) {
                     searchField(text: $appVM.sidebarSearchText)
@@ -55,7 +55,7 @@ struct RepoPairTableView: View {
             Button(String.loc("Cancel"), role: .cancel) { }
         } message: { id in
             let name = appVM.repos.first(where: { $0.id == id })?.name ?? ""
-            Text(String.loc("Delete “\(name)”? The local mirror cache will also be deleted. This action cannot be undone."))
+            Text(String(format: String.loc("Delete “%@”? The local mirror cache will also be deleted. This action cannot be undone."), name))
         }
     }
 
@@ -273,7 +273,7 @@ private struct RepoPairPathCell: View {
                             style: .continuous
                         )
                     )
-                    .help(String.loc("\(additionalCount) more targets"))
+                    .help(String(format: String.loc("%lld more targets"), additionalCount))
             }
         }
         .help(fullURL)

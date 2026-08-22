@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOGS = (
     ROOT / "gitrelay" / "Localizable.xcstrings",
     ROOT / "gitrelayWidget" / "Localizable.xcstrings",
+    ROOT / "gitrelay" / "InfoPlist.xcstrings",
 )
 REQUIRED_LOCALES = ("en", "zh-Hans")
 
@@ -133,11 +134,26 @@ REQUIRED_KEYS = {
     ),
     # Quiet widget face (issue #89): 今日 + three counts, no glyph-leading keys.
     ROOT / "gitrelayWidget" / "Localizable.xcstrings": (
+        "All mirrors look healthy",
+        "Not Synced",
         "Queued",
+        "Stale",
+        "Sync Health",
+        "Syncing",
         "Today",
+        "Today's mirror sync status at a glance.",
         "Today: %lld succeeded, %lld failed, %lld not run",
     ),
+    ROOT / "gitrelay" / "InfoPlist.xcstrings": (
+        "NSFaceIDUsageDescription",
+        "NSFocusStatusUsageDescription",
+    ),
 }
+
+# Widget catalog must stay widget-only; GitRelayCore in the extension must not
+# auto-extract the app catalog (SWIFT_EMIT_LOC_STRINGS=NO on gitrelayWidget).
+WIDGET_CATALOG = ROOT / "gitrelayWidget" / "Localizable.xcstrings"
+WIDGET_MAX_KEYS = 9
 
 # The widget target builds with STRING_CATALOG_GENERATE_SYMBOLS=YES, so every
 # widget catalog key has to derive a Swift identifier. Keys such as "✓ %lld"
@@ -193,6 +209,13 @@ def validate_catalog(catalog: Path) -> list[str]:
                     f"{catalog.relative_to(ROOT)} {key!r}: key must start with an ASCII "
                     "letter so STRING_CATALOG_GENERATE_SYMBOLS can derive a Swift symbol"
                 )
+
+    if catalog == WIDGET_CATALOG and len(strings) > WIDGET_MAX_KEYS:
+        errors.append(
+            f"{catalog.relative_to(ROOT)}: expected at most {WIDGET_MAX_KEYS} keys "
+            f"(widget-only strings), found {len(strings)}"
+        )
+
     return errors
 
 

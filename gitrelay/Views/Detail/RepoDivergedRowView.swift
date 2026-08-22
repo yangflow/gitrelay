@@ -20,7 +20,7 @@ struct RepoDivergedRowView: View {
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                 if let lastVerifiedAt {
-                    Text(String.loc("Last verified: \(lastVerifiedAt.formatted(.relative(presentation: .named)))"))
+                    Text(String(format: String.loc("Last verified: %@"), lastVerifiedAt.formatted(.relative(presentation: .named))))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
