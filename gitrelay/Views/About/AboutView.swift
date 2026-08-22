@@ -2,8 +2,8 @@ import SwiftUI
 import AppKit
 
 /// The system About panel, not a landing page (#88): app icon, name, version,
-/// and two quiet links. The icon is whatever the bundle ships, so the Y-branch
-/// AppIcon is the only mark here — there is no second logotype.
+/// and two quiet links. The icon is whatever the bundle ships via
+/// `NSApp.applicationIconImage` — there is no second logotype.
 struct AboutView: View {
     private var version: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "–"

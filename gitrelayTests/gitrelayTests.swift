@@ -8473,27 +8473,15 @@ struct GitRelayMarkTests {
         #expect(isClose(corner.x, corner.y))
     }
 
-    /// `scripts/generate-icon.swift` runs standalone and cannot import this
-    /// module, so it duplicates these numbers. Pin them here: a change on either
-    /// side fails the suite instead of quietly redrawing a different AppIcon.
-    @Test func constantsMatchTheAppIconScript() {
+    /// The AppIcon is raster artwork; only the menu-bar template still reads
+    /// these numbers. Pin them so `MenuBarBranchMark` never drifts.
+    @Test func menuBarMarkConstantsAreStable() {
         #expect(isClose(GitRelayMark.strokeWidth, 0.044))
         #expect(isClose(GitRelayMark.nodeRadius, 0.072))
         #expect(GitRelayMark.fork == GitRelayMarkPoint(x: 0.5, y: 0.505))
         #expect(GitRelayMark.trunkNode == GitRelayMarkPoint(x: 0.5, y: 0.69))
         #expect(GitRelayMark.leftBranchNode == GitRelayMarkPoint(x: 0.293, y: 0.283))
         #expect(GitRelayMark.rightBranchNode == GitRelayMarkPoint(x: 0.707, y: 0.283))
-        #expect(isClose(GitRelayMark.plateExponent, 5))
-        #expect(GitRelayMark.plateSampleCount == 720)
-        #expect(isClose(GitRelayMark.plateTopColor.red, 0.204))
-        #expect(isClose(GitRelayMark.plateTopColor.green, 0.204))
-        #expect(isClose(GitRelayMark.plateTopColor.blue, 0.216))
-        #expect(isClose(GitRelayMark.plateBottomColor.red, 0.129))
-        #expect(isClose(GitRelayMark.plateBottomColor.green, 0.129))
-        #expect(isClose(GitRelayMark.plateBottomColor.blue, 0.141))
-        // The plate is lighter at the top.
-        #expect(GitRelayMark.plateTopColor.red > GitRelayMark.plateBottomColor.red)
-        #expect(GitRelayMark.plateTopColor.blue > GitRelayMark.plateBottomColor.blue)
     }
 }
 

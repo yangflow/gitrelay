@@ -27,10 +27,10 @@ nonisolated struct GitRelayMarkRect: Equatable, Sendable {
 /// The GitRelay mark: a Y-shaped git branch of three hollow nodes — a trunk node
 /// at the bottom feeding two branch nodes above it.
 ///
-/// One source of truth for every place the mark ships (#92): the AppIcon plate
-/// drawn by `scripts/generate-icon.swift`, and the menu-bar status item drawn by
-/// `MenuBarBranchMark`. Both read these normalized numbers and scale them, so the
-/// Dock, About, and menu bar can never drift apart.
+/// One source of truth for the menu-bar status template (#92). The AppIcon is
+/// raster artwork exported from `scripts/assets/gitrelay-status-first-01.png`;
+/// `MenuBarBranchMark` reads these normalized numbers so the monochrome
+/// Y-branch in the menu bar stays stable.
 ///
 /// Coordinates are unit-square, y-down. AppKit draws y-up by default, so an
 /// AppKit renderer flips y when it maps a point onto its canvas.

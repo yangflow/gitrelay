@@ -108,15 +108,20 @@ open gitrelay.xcodeproj
 
 ## 重新生成图标
 
-图标 PNG 由 Swift 脚本生成并提交到仓库。如需修改配色后重新生成：
+AppIcon PNG 从仓库内提交的源图导出。修改
+`scripts/assets/gitrelay-status-first-01.png` 后重新生成：
 
 ```bash
+# macOS
 swift scripts/generate-icon.swift
+
+# Linux / CI 友好
+python3 scripts/generate-icon.py
 ```
 
-图标为紫色圆角方块加白色 Y 形 Git 分支。其几何参数与
-`GitRelayCore/Design/GitRelayMark.swift` 保持一致，菜单栏状态项也从同一份参数绘制
-（单色模板，不带紫色底板）。修改时两处都要改；若不一致，`GitRelayMarkTests` 会失败。
+AppIcon 为炭灰圆角方块上的 3D 合并箭头。菜单栏状态项单独绘制：通过
+`MenuBarBranchMark` 从 `GitRelayCore/Design/GitRelayMark.swift` 读取单色 Y 形
+模板（无彩色底板，失败时红色着色）。`GitRelayMarkTests` 固定该几何参数。
 
 ---
 
