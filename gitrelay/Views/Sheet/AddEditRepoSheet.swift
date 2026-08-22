@@ -22,20 +22,20 @@ struct AddEditRepoSheet: View {
     private var title: String {
         if editingRepo != nil {
             return vm.showsMoreOptions
-                ? String(localized: "More Options")
-                : String(localized: "Edit Repository")
+                ? String.loc("More Options")
+                : String.loc("Edit Repository")
         }
         return vm.showsMoreOptions
-            ? String(localized: "More Options")
-            : String(localized: "Add Repository")
+            ? String.loc("More Options")
+            : String.loc("Add Repository")
     }
 
     private var primaryActionTitle: String {
-        guard editingRepo == nil else { return String(localized: "Save") }
+        guard editingRepo == nil else { return String.loc("Save") }
         if preflight.primaryAction == .createDestination {
             return AddPreflightCopy.createAndStartSyncTitle
         }
-        return String(localized: "Add and Start Syncing")
+        return String.loc("Add and Start Syncing")
     }
 
     /// Preflight only runs while adding: an existing pair has already been probed
@@ -153,7 +153,7 @@ struct AddEditRepoSheet: View {
     @ViewBuilder
     private var footer: some View {
         HStack(spacing: DesignTokens.Spacing.sm) {
-            Button(String(localized: "Cancel")) { dismiss() }
+            Button(String.loc("Cancel")) { dismiss() }
                 .keyboardShortcut(.escape)
 
             if showsDuplicatePairChoice {
@@ -166,11 +166,11 @@ struct AddEditRepoSheet: View {
                     .keyboardShortcut(.return)
             } else {
                 if showsBasicsOnly {
-                    Button(String(localized: "More Options")) {
+                    Button(String.loc("More Options")) {
                         vm.openMoreOptions()
                     }
                 } else {
-                    Button(String(localized: "Back")) {
+                    Button(String.loc("Back")) {
                         vm.backToBasics()
                     }
                 }
@@ -191,13 +191,13 @@ struct AddEditRepoSheet: View {
     private var basicsContent: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxl) {
             if focusAuth, editingRepo != nil {
-                Text(String(localized: "Update the token or SSH key for this repository, then save."))
+                Text(String.loc("Update the token or SSH key for this repository, then save."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                Text(String(localized: "Source"))
+                Text(String.loc("Source"))
                     .font(.headline)
 
                 TextField("git@gitlab.com:org/repo.git", text: $vm.srcURL)
@@ -219,7 +219,7 @@ struct AddEditRepoSheet: View {
             }
 
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                Text(String(localized: "Target"))
+                Text(String.loc("Target"))
                     .font(.headline)
 
                 TextField(
@@ -257,21 +257,21 @@ struct AddEditRepoSheet: View {
                 Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
             }
         } header: {
-            Text(String(localized: "Name"))
+            Text(String.loc("Name"))
         }
 
         Section {
             AuthFieldView(
-                label: String(localized: "Source"),
+                label: String.loc("Source"),
                 remoteURL: vm.srcURL,
                 mode: $vm.srcAuthMode,
                 keyPath: $vm.srcKeyPath,
                 token: $vm.srcToken,
-                pickerTitle: String(localized: "Authentication Method")
+                pickerTitle: String.loc("Authentication Method")
             )
             .id(AddEditRepoScrollTarget.sourceAuth)
         } header: {
-            Text(String(localized: "Source Authentication"))
+            Text(String.loc("Source Authentication"))
         }
 
         Section {
@@ -283,27 +283,27 @@ struct AddEditRepoSheet: View {
                     canRemove: vm.targets.count > 1,
                     onRemove: { vm.removeTarget(id: vm.targets[index].id) },
                     showsHeader: true,
-                    urlFieldTitle: String(localized: "Target URL"),
-                    authPickerTitle: String(localized: "Authentication Method")
+                    urlFieldTitle: String.loc("Target URL"),
+                    authPickerTitle: String.loc("Authentication Method")
                 )
             }
 
             Button {
                 vm.addTarget()
             } label: {
-                Label(String(localized: "Add Target"), systemImage: "plus.circle")
+                Label(String.loc("Add Target"), systemImage: "plus.circle")
             }
         } header: {
-            Text(String(localized: "Targets"))
+            Text(String.loc("Targets"))
         } footer: {
-            Text(String(localized: "A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync."))
+            Text(String.loc("A source repository can be mirrored to multiple targets. Choose a Git remote or filesystem archive (tar.gz, zip, or git bundle). Disabled targets are skipped during sync."))
                 .font(.caption)
         }
 
         Section {
             FrequencyPickerView(frequency: $vm.frequency)
         } header: {
-            Text(String(localized: "Sync Frequency"))
+            Text(String.loc("Sync Frequency"))
         }
 
         Section {
@@ -312,21 +312,21 @@ struct AddEditRepoSheet: View {
                 suggestions: appVM.allKnownTags
             )
         } header: {
-            Text(String(localized: "Tags"))
+            Text(String.loc("Tags"))
         }
 
         Section {
             TextField("main", text: $vm.defaultBranch)
                 .font(.system(.body, design: .monospaced))
-            Text(String(localized: "Integrity verification compares this branch's tip and tree hash on src and dst."))
+            Text(String.loc("Integrity verification compares this branch's tip and tree hash on src and dst."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } header: {
-            Text(String(localized: "Verification Branch"))
+            Text(String.loc("Verification Branch"))
         }
 
         Section {
-            Picker(String(localized: "Policy"), selection: $vm.destructivePushPolicy) {
+            Picker(String.loc("Policy"), selection: $vm.destructivePushPolicy) {
                 ForEach(DestructivePushPolicy.allCases) { policy in
                     Text(policy.displayName).tag(policy)
                 }
@@ -337,20 +337,20 @@ struct AddEditRepoSheet: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } header: {
-            Text(String(localized: "Destructive Push Protection"))
+            Text(String.loc("Destructive Push Protection"))
         }
 
         Section {
-            Toggle(String(localized: "Mirror Releases and Binary Assets"), isOn: $vm.mirrorReleases)
-            Text(String(localized: "After syncing the git repository, incrementally copy source Release tags, titles, bodies, and attachments such as .dmg and .tar.gz files to each enabled target. A GitHub or GitLab API token is required."))
+            Toggle(String.loc("Mirror Releases and Binary Assets"), isOn: $vm.mirrorReleases)
+            Text(String.loc("After syncing the git repository, incrementally copy source Release tags, titles, bodies, and attachments such as .dmg and .tar.gz files to each enabled target. A GitHub or GitLab API token is required."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } header: {
-            Text(String(localized: "Release Mirroring"))
+            Text(String.loc("Release Mirroring"))
         }
 
         Section {
-            Picker(String(localized: "Git LFS"), selection: $vm.lfsMirrorMode) {
+            Picker(String.loc("Git LFS"), selection: $vm.lfsMirrorMode) {
                 ForEach(LFSMirrorMode.allCases) { mode in
                     Text(mode.displayName).tag(mode)
                 }
@@ -367,14 +367,14 @@ struct AddEditRepoSheet: View {
                     .foregroundStyle(.secondary)
             }
         } header: {
-            Text(String(localized: "Git LFS Objects"))
+            Text(String.loc("Git LFS Objects"))
         }
 
         Section {
-            Toggle(String(localized: "Allow Instant Webhook Sync"), isOn: $vm.webhookEnabled)
+            Toggle(String.loc("Allow Instant Webhook Sync"), isOn: $vm.webhookEnabled)
             if vm.webhookEnabled {
                 if let editing = editingRepo {
-                    Text(String(localized: "Path: /hook/\(editing.webhookPathID)"))
+                    Text(String.loc("Path: /hook/\(editing.webhookPathID)"))
                         .font(.system(.caption, design: .monospaced))
                         .textSelection(.enabled)
 
@@ -385,27 +385,27 @@ struct AddEditRepoSheet: View {
                             .textSelection(.enabled)
                             .lineLimit(2)
                         Spacer()
-                        Button(String(localized: "Copy URL")) { ClipboardService.copy(url) }
+                        Button(String.loc("Copy URL")) { ClipboardService.copy(url) }
                             .font(.caption)
                     }
 
                     if let secret = WebhookSecretStore.loadSecret(repoID: editing.id) {
                         HStack {
-                            Text(String(localized: "HMAC secret saved in Keychain"))
+                            Text(String.loc("HMAC secret saved in Keychain"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Spacer()
-                            Button(String(localized: "Copy Secret")) { ClipboardService.copy(secret) }
+                            Button(String.loc("Copy Secret")) { ClipboardService.copy(secret) }
                                 .font(.caption)
                         }
                     }
                 } else {
-                    Text(String(localized: "Saving generates a /hook/<repo-id> path and an HMAC secret stored in Keychain. Also enable the local listener in Settings."))
+                    Text(String.loc("Saving generates a /hook/<repo-id> path and an HMAC secret stored in Keychain. Also enable the local listener in Settings."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                Toggle(String(localized: "Try to Register the Webhook Through the GitHub API When Saving"), isOn: $vm.registerWebhookOnSave)
+                Toggle(String.loc("Try to Register the Webhook Through the GitHub API When Saving"), isOn: $vm.registerWebhookOnSave)
                 if vm.registerWebhookOnSave {
                     if let disclosure = ProviderTokenUsage.webhookRegistration(provider: .github).disclosureText {
                         Text(disclosure)
@@ -425,21 +425,21 @@ struct AddEditRepoSheet: View {
                 }
             }
         } header: {
-            Text(String(localized: "Webhook"))
+            Text(String.loc("Webhook"))
         } footer: {
-            Text(String(localized: "Sync immediately after receiving a verified push event, independent of the frequency schedule. Enable the local listener in Settings → Webhook. Cloudflare Tunnel or Tailscale Funnel can optionally provide external access."))
+            Text(String.loc("Sync immediately after receiving a verified push event, independent of the frequency schedule. Enable the local listener in Settings → Webhook. Cloudflare Tunnel or Tailscale Funnel can optionally provide external access."))
         }
 
         Section {
-            DisclosureGroup(String(localized: "Advanced Options")) {
-                TextField(String(localized: "Clone Depth (Blank = Full History)"), text: $vm.depthText)
+            DisclosureGroup(String.loc("Advanced Options")) {
+                TextField(String.loc("Clone Depth (Blank = Full History)"), text: $vm.depthText)
                     .font(.system(.body, design: .monospaced))
                 if let err = vm.depthError {
                     Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
                 }
 
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-                    Text(String(localized: "Fetch Refspecs (One per Line)"))
+                    Text(String.loc("Fetch Refspecs (One per Line)"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     TextEditor(text: $vm.refSpecsText)
@@ -447,7 +447,7 @@ struct AddEditRepoSheet: View {
                         .frame(minHeight: 72)
                 }
 
-                Text(String(localized: "By default, all branches and tags are synced. You can limit this to main and v* tags, for example:\n+refs/heads/main:refs/heads/main\n+refs/tags/v*:refs/tags/v*"))
+                Text(String.loc("By default, all branches and tags are synced. You can limit this to main and v* tags, for example:\n+refs/heads/main:refs/heads/main\n+refs/tags/v*:refs/tags/v*"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -466,7 +466,7 @@ struct AddEditRepoSheet: View {
 
         Section {
             Label {
-                Text(String(localized: "GitRelay performs a dry run first. Strict Protection asks for confirmation before deletions or forced updates; canceling blocks the sync and records a failure. Run Automatically preserves traditional mirror behavior."))
+                Text(String.loc("GitRelay performs a dry run first. Strict Protection asks for confirmation before deletions or forced updates; canceling blocks the sync and records a failure. Run Automatically preserves traditional mirror behavior."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } icon: {
@@ -569,10 +569,10 @@ struct AddEditRepoSheet: View {
     ) async -> String? {
         let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            return String(localized: "Automatic webhook registration was skipped because no GitHub token was provided.")
+            return String.loc("Automatic webhook registration was skipped because no GitHub token was provided.")
         }
         guard let path = GitRemoteRepoPath.parse(from: repo.srcURL), !path.namespace.isEmpty else {
-            return String(localized: "Automatic webhook registration was skipped because owner/repo could not be parsed from the source URL.")
+            return String.loc("Automatic webhook registration was skipped because owner/repo could not be parsed from the source URL.")
         }
         let client = GitHubWebhookAPIClient(token: trimmed)
         do {
@@ -582,7 +582,7 @@ struct AddEditRepoSheet: View {
                 usage: .webhookRegistration(provider: .github)
             )
             guard validation.isFullyAuthorized else {
-                return String(localized: "Automatic webhook registration was skipped because the token lacks admin:repo_hook.")
+                return String.loc("Automatic webhook registration was skipped because the token lacks admin:repo_hook.")
             }
             let secret = try WebhookSecretStore.ensureSecret(repoID: repo.id)
             let registration = try await client.createPushHook(
@@ -591,9 +591,9 @@ struct AddEditRepoSheet: View {
                 hookURL: hookURL,
                 secret: secret
             )
-            return String(localized: "Registered webhook #\(registration.id) on GitHub.")
+            return String.loc("Registered webhook #\(registration.id) on GitHub.")
         } catch {
-            return String(localized: "Automatic webhook registration failed: \(error.localizedDescription)")
+            return String.loc("Automatic webhook registration failed: \(error.localizedDescription)")
         }
     }
 

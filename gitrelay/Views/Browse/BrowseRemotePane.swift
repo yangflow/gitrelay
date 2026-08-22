@@ -58,9 +58,9 @@ struct BrowseRemotePane: View {
     private var headingTitle: String {
         switch vm.phase {
         case .submitting:
-            String(localized: "Creating Target Repositories")
+            String.loc("Creating Target Repositories")
         case .result:
-            String(localized: "Results")
+            String.loc("Results")
         case .connect, .selecting, .configureTarget:
             vm.step.title
         }
@@ -69,9 +69,9 @@ struct BrowseRemotePane: View {
     private var headingSubtitle: String {
         switch vm.phase {
         case .submitting:
-            String(localized: "Processing \(vm.submitProgress) / \(vm.submitTotal)")
+            String.loc("Processing \(vm.submitProgress) / \(vm.submitTotal)")
         case .result:
-            String(localized: "Review the outcome, then add the pairs to the sync list.")
+            String.loc("Review the outcome, then add the pairs to the sync list.")
         case .connect, .selecting, .configureTarget:
             vm.step.subtitle
         }
@@ -105,7 +105,7 @@ struct BrowseRemotePane: View {
     private var connectView: some View {
         Form {
             Section {
-                Picker(String(localized: "Host"), selection: $vm.provider) {
+                Picker(String.loc("Host"), selection: $vm.provider) {
                     ForEach(GitProvider.listingCases) { candidate in
                         Label(candidate.displayName, systemImage: candidate.symbolName)
                             .tag(candidate)
@@ -126,7 +126,7 @@ struct BrowseRemotePane: View {
                     onDelete: { vm.deleteSourceAccount($0) }
                 )
             } header: {
-                Text(String(localized: "Connection"))
+                Text(String.loc("Connection"))
             } footer: {
                 accountFooter(canDelete: vm.canDeleteSourceAccount)
             }
@@ -140,15 +140,15 @@ struct BrowseRemotePane: View {
                             vm.persistGitLabHost()
                         }
                 } header: {
-                    Text(String(localized: "GitLab Host"))
+                    Text(String.loc("GitLab Host"))
                 } footer: {
-                    Text(String(localized: "Leave blank to use gitlab.com. The /api/v4 path is appended automatically."))
+                    Text(String.loc("Leave blank to use gitlab.com. The /api/v4 path is appended automatically."))
                         .font(.caption)
                 }
             }
 
             Section {
-                LabeledContent(String(localized: "Token")) {
+                LabeledContent(String.loc("Token")) {
                     GatedSecureTokenField(
                         placeholder: "",
                         text: $vm.token
@@ -158,10 +158,10 @@ struct BrowseRemotePane: View {
                         vm.refreshCachedSourceScopeValidation()
                     }
                 }
-                Toggle(String(localized: "Save to Keychain (Autofill Next Time)"), isOn: $vm.rememberToken)
+                Toggle(String.loc("Save to Keychain (Autofill Next Time)"), isOn: $vm.rememberToken)
             } footer: {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
-                    Text(String(localized: "Used only to fetch the repository list, not for git sync"))
+                    Text(String.loc("Used only to fetch the repository list, not for git sync"))
                         .font(.caption)
                     Text(vm.provider.tokenHelpText)
                         .font(.caption)
@@ -169,7 +169,7 @@ struct BrowseRemotePane: View {
             }
 
             Section {
-                Picker(String(localized: "Select Scope"), selection: $vm.scopeKind) {
+                Picker(String.loc("Select Scope"), selection: $vm.scopeKind) {
                     ForEach(BrowseRemoteRepoViewModel.ScopeKind.allCases) { kind in
                         Text(kind.label).tag(kind)
                     }
@@ -189,7 +189,7 @@ struct BrowseRemotePane: View {
                     .textFieldStyle(.roundedBorder)
                 }
             } header: {
-                Text(String(localized: "Scope"))
+                Text(String.loc("Scope"))
             }
 
             if let connectError = vm.connectError {
@@ -212,14 +212,14 @@ struct BrowseRemotePane: View {
                 TextField("Search Names or Descriptions", text: $vm.searchText)
                     .textFieldStyle(.plain)
                 Spacer(minLength: DesignTokens.Spacing.sm)
-                Text(String(localized: "\(vm.selectedIDs.count) selected"))
+                Text(String.loc("\(vm.selectedIDs.count) selected"))
                     .font(.caption)
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
-                Button(String(localized: "Select All Visible")) { vm.selectAllVisible() }
+                Button(String.loc("Select All Visible")) { vm.selectAllVisible() }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
-                Button(String(localized: "Clear")) { vm.clearSelection() }
+                Button(String.loc("Clear")) { vm.clearSelection() }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
                     .disabled(vm.selectedIDs.isEmpty)
@@ -271,22 +271,22 @@ struct BrowseRemotePane: View {
         Form {
             Section {
                 AuthFieldView(
-                    label: String(localized: "Source"),
+                    label: String.loc("Source"),
                     remoteURL: sourceRemoteURL,
                     mode: $vm.sourceAuthMode,
                     keyPath: $vm.sourceKeyPath,
                     token: $vm.sourceToken,
-                    pickerTitle: String(localized: "Authentication Method")
+                    pickerTitle: String.loc("Authentication Method")
                 )
             } header: {
-                Text(String(localized: "Source Repository Authentication (for git clone/fetch)"))
+                Text(String.loc("Source Repository Authentication (for git clone/fetch)"))
             } footer: {
-                Text(String(localized: "Source URLs come from the repositories you picked; this choice decides whether they use SSH or HTTPS."))
+                Text(String.loc("Source URLs come from the repositories you picked; this choice decides whether they use SSH or HTTPS."))
                     .font(.caption)
             }
 
             Section {
-                Toggle(String(localized: "Automatically Create Repositories on the Target (Gitea)"), isOn: $vm.targetAutoCreate)
+                Toggle(String.loc("Automatically Create Repositories on the Target (Gitea)"), isOn: $vm.targetAutoCreate)
                     .onChange(of: vm.targetAutoCreate) { _, enabled in
                         if enabled {
                             Task { await vm.prepareTargetConfiguration() }
@@ -295,7 +295,7 @@ struct BrowseRemotePane: View {
                         }
                     }
             } header: {
-                Text(String(localized: "Target Repository"))
+                Text(String.loc("Target Repository"))
             } footer: {
                 Text(vm.targetAutoCreate
                      ? "Use the Gitea API to create the selected repositories in a batch; reuse existing repositories when names conflict."
@@ -311,24 +311,24 @@ struct BrowseRemotePane: View {
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.caption, design: .monospaced))
                 } header: {
-                    Text(String(localized: "Target URL Template"))
+                    Text(String.loc("Target URL Template"))
                 } footer: {
-                    Text(String(localized: "Use {name} as the repository name placeholder."))
+                    Text(String.loc("Use {name} as the repository name placeholder."))
                         .font(.caption)
                 }
             }
 
             Section {
                 AuthFieldView(
-                    label: String(localized: "Target"),
+                    label: String.loc("Target"),
                     remoteURL: targetRemoteURL,
                     mode: $vm.targetAuthMode,
                     keyPath: $vm.targetKeyPath,
                     token: $vm.targetToken,
-                    pickerTitle: String(localized: "Authentication Method")
+                    pickerTitle: String.loc("Authentication Method")
                 )
             } header: {
-                Text(String(localized: "Target Repository Authentication (for git push)"))
+                Text(String.loc("Target Repository Authentication (for git push)"))
             }
 
             Section {
@@ -336,7 +336,7 @@ struct BrowseRemotePane: View {
                     .textFieldStyle(.roundedBorder)
                 FrequencyPickerView(frequency: $vm.frequency)
             } header: {
-                Text(String(localized: "Naming & Frequency"))
+                Text(String.loc("Naming & Frequency"))
             }
 
             if !vm.selectedRepos.isEmpty {
@@ -346,16 +346,16 @@ struct BrowseRemotePane: View {
                             Text(vm.previewName(for: repo))
                                 .font(.caption)
                                 .bold()
-                            Text(String(localized: "src: \(vm.sourceURL(for: repo))"))
+                            Text(String.loc("src: \(vm.sourceURL(for: repo))"))
                                 .font(.system(.caption2, design: .monospaced))
                                 .foregroundStyle(.secondary)
-                            Text(String(localized: "dst: \(vm.previewURL(for: repo))"))
+                            Text(String.loc("dst: \(vm.previewURL(for: repo))"))
                                 .font(.system(.caption2, design: .monospaced))
                                 .foregroundStyle(.secondary)
                         }
                     }
                 } header: {
-                    Text(String(localized: "Preview (First 3)"))
+                    Text(String.loc("Preview (First 3)"))
                 }
             }
 
@@ -380,7 +380,7 @@ struct BrowseRemotePane: View {
                 onDelete: { vm.deleteTargetGiteaAccount($0) }
             )
         } header: {
-            Text(String(localized: "Gitea Account"))
+            Text(String.loc("Gitea Account"))
         } footer: {
             accountFooter(canDelete: vm.canDeleteTargetGiteaAccount)
         }
@@ -395,9 +395,9 @@ struct BrowseRemotePane: View {
                     vm.refreshCachedTargetScopeValidation()
                 }
         } header: {
-            Text(String(localized: "Gitea Host"))
+            Text(String.loc("Gitea Host"))
         } footer: {
-            Text(String(localized: "The /api/v1 path is appended automatically."))
+            Text(String.loc("The /api/v1 path is appended automatically."))
                 .font(.caption)
         }
 
@@ -410,13 +410,13 @@ struct BrowseRemotePane: View {
                 vm.targetScopeValidation = nil
                 vm.refreshCachedTargetScopeValidation()
             }
-            Toggle(String(localized: "Save to Keychain (Autofill Next Time)"), isOn: $vm.rememberTargetCreateToken)
+            Toggle(String.loc("Save to Keychain (Autofill Next Time)"), isOn: $vm.rememberTargetCreateToken)
         } header: {
-            Text(String(localized: "Gitea API Token"))
+            Text(String.loc("Gitea API Token"))
         }
 
         Section {
-            Picker(String(localized: "Location"), selection: $vm.targetNamespaceKind) {
+            Picker(String.loc("Location"), selection: $vm.targetNamespaceKind) {
                 ForEach(BrowseRemoteRepoViewModel.NamespaceKind.allCases) { kind in
                     Text(kind.label).tag(kind)
                 }
@@ -431,12 +431,12 @@ struct BrowseRemotePane: View {
                     .textFieldStyle(.roundedBorder)
             }
 
-            Toggle(String(localized: "Create as Private Repositories"), isOn: $vm.targetVisibilityPrivate)
+            Toggle(String.loc("Create as Private Repositories"), isOn: $vm.targetVisibilityPrivate)
         } header: {
-            Text(String(localized: "Namespace"))
+            Text(String.loc("Namespace"))
         } footer: {
             if vm.targetNamespaceKind == .currentUser {
-                Text(String(localized: "Repositories will be created under the username associated with the current token."))
+                Text(String.loc("Repositories will be created under the username associated with the current token."))
                     .font(.caption)
             }
         }
@@ -450,7 +450,7 @@ struct BrowseRemotePane: View {
             ProgressView(value: submitFraction)
                 .progressViewStyle(.linear)
                 .frame(maxWidth: DesignTokens.Layout.browseStepBarMaxWidth)
-                .accessibilityLabel(String(localized: "Processing \(vm.submitProgress) / \(vm.submitTotal)"))
+                .accessibilityLabel(String.loc("Processing \(vm.submitProgress) / \(vm.submitTotal)"))
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -477,14 +477,14 @@ struct BrowseRemotePane: View {
         return Form {
             Section {
                 HStack(spacing: DesignTokens.Spacing.lg) {
-                    Label(String(localized: "Succeeded \(succeeded)"), systemImage: "checkmark.circle.fill")
+                    Label(String.loc("Succeeded \(succeeded)"), systemImage: "checkmark.circle.fill")
                         .foregroundStyle(DesignTokens.StatusColor.success)
                     if existed > 0 {
-                        Label(String(localized: "Reused \(existed)"), systemImage: "arrow.counterclockwise.circle.fill")
+                        Label(String.loc("Reused \(existed)"), systemImage: "arrow.counterclockwise.circle.fill")
                             .foregroundStyle(DesignTokens.StatusColor.info)
                     }
                     if failed > 0 {
-                        Label(String(localized: "Failed \(failed)"), systemImage: "xmark.octagon.fill")
+                        Label(String.loc("Failed \(failed)"), systemImage: "xmark.octagon.fill")
                             .foregroundStyle(DesignTokens.StatusColor.error)
                     }
                 }
@@ -497,7 +497,7 @@ struct BrowseRemotePane: View {
                     BrowseRemoteOutcomeRow(outcome: outcome)
                 }
             } header: {
-                Text(String(localized: "Details"))
+                Text(String.loc("Details"))
             }
         }
         .formStyle(.grouped)
@@ -508,14 +508,14 @@ struct BrowseRemotePane: View {
     private var footer: some View {
         HStack(spacing: DesignTokens.Spacing.sm) {
             if vm.phase.canGoBack {
-                Button(String(localized: "Back")) { vm.goBack() }
+                Button(String.loc("Back")) { vm.goBack() }
                     .buttonStyle(.bordered)
             }
 
             Spacer()
 
             if vm.phase == .result {
-                Button(String(localized: "Start Over")) { vm.startOver() }
+                Button(String.loc("Start Over")) { vm.startOver() }
             }
 
             primaryButton
@@ -534,7 +534,7 @@ struct BrowseRemotePane: View {
             .disabled(!vm.canAdvanceToSelect || vm.isLoading)
             .keyboardShortcut(.return)
         case .selecting:
-            Button(String(localized: "Next (\(vm.selectedIDs.count))")) {
+            Button(String.loc("Next (\(vm.selectedIDs.count))")) {
                 Task { await vm.advanceToTargetConfiguration() }
             }
             .buttonStyle(.borderedProminent)
@@ -553,7 +553,7 @@ struct BrowseRemotePane: View {
             EmptyView()
         case .result:
             let count = vm.successfulConfigs.count
-            Button(String(localized: "Add \(count) to Sync List")) {
+            Button(String.loc("Add \(count) to Sync List")) {
                 let configs = vm.successfulConfigs
                 vm.persistTokensForSuccessfulConfigs()
                 appVM.addRepos(configs, triggerSync: true)
@@ -580,7 +580,7 @@ struct BrowseRemotePane: View {
         onCreate: @escaping (String) -> Void,
         onDelete: @escaping (String) -> Void
     ) -> some View {
-        Picker(String(localized: "Account"), selection: Binding(
+        Picker(String.loc("Account"), selection: Binding(
             get: { selectedLabel },
             set: { onSelect($0) }
         )) {
@@ -594,7 +594,7 @@ struct BrowseRemotePane: View {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 TextField("New account name (for example, work)", text: $vm.newAccountLabelInput)
                     .textFieldStyle(.roundedBorder)
-                Button(String(localized: "Add")) {
+                Button(String.loc("Add")) {
                     onCreate(vm.newAccountLabelInput)
                     isAdding.wrappedValue = false
                 }
@@ -604,7 +604,7 @@ struct BrowseRemotePane: View {
                         existing: labels
                     ) == nil
                 )
-                Button(String(localized: "Cancel")) {
+                Button(String.loc("Cancel")) {
                     vm.newAccountLabelInput = ""
                     isAdding.wrappedValue = false
                 }
@@ -612,11 +612,11 @@ struct BrowseRemotePane: View {
             }
         } else {
             HStack(spacing: DesignTokens.Spacing.md) {
-                Button(String(localized: "Add Account")) { isAdding.wrappedValue = true }
+                Button(String.loc("Add Account")) { isAdding.wrappedValue = true }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
                 if canDelete {
-                    Button(String(localized: "Remove Account"), role: .destructive) {
+                    Button(String.loc("Remove Account"), role: .destructive) {
                         onDelete(selectedLabel)
                     }
                     .buttonStyle(.borderless)
@@ -634,7 +634,7 @@ struct BrowseRemotePane: View {
                 .font(.caption)
                 .foregroundStyle(DesignTokens.StatusColor.error)
         } else if !canDelete {
-            Text(String(localized: "At least one account must remain."))
+            Text(String.loc("At least one account must remain."))
                 .font(.caption)
         }
     }
@@ -647,7 +647,7 @@ struct BrowseRemotePane: View {
 
     private func displayAccountLabel(_ label: String) -> String {
         if label == ProviderAccount.defaultLabel {
-            return String(localized: "Default")
+            return String.loc("Default")
         }
         return label
     }
@@ -669,8 +669,8 @@ private struct BrowseRemoteRepoRow: View {
                         Image(systemName: "lock")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .help(String(localized: "Private repository"))
-                            .accessibilityLabel(String(localized: "Private repository"))
+                            .help(String.loc("Private repository"))
+                            .accessibilityLabel(String.loc("Private repository"))
                     }
                 }
                 if let detail = repo.description, !detail.isEmpty {
@@ -701,8 +701,8 @@ private struct BrowseRemoteOutcomeRow: View {
                     : DesignTokens.StatusColor.success,
                 title: repo.fullName,
                 detail: alreadyExists
-                    ? String(localized: "Remote already exists and will be reused")
-                    : String(localized: "Created Successfully"),
+                    ? String.loc("Remote already exists and will be reused")
+                    : String.loc("Created Successfully"),
                 detailTint: .secondary
             )
         case .failed(let repo, let message):

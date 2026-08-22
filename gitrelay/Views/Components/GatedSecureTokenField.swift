@@ -28,7 +28,7 @@ struct GatedSecureTokenField: View {
                 Image(systemName: isRevealed ? "eye.slash" : "eye")
             }
             .buttonStyle(.borderless)
-            .help(isRevealed ? String(localized: "Hide Token") : String(localized: "Show Token"))
+            .help(isRevealed ? String.loc("Hide Token") : String.loc("Show Token"))
             .disabled(isAuthenticating || text.isEmpty)
         }
     }

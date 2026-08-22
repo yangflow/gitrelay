@@ -17,11 +17,9 @@ enum LoginItemServiceError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .requiresApproval:
-            return String(
-                localized: "Open at Login needs approval in System Settings → General → Login Items."
-            )
+            return String.loc("Open at Login needs approval in System Settings → General → Login Items.")
         case .registrationDidNotEnable:
-            return String(localized: "Could not enable Open at Login. Check System Settings → Login Items.")
+            return String.loc("Could not enable Open at Login. Check System Settings → Login Items.")
         case .underlying(let message):
             return message
         }

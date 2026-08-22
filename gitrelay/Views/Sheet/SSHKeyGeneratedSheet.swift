@@ -29,14 +29,14 @@ struct SSHKeyGeneratedSheet: View {
                     .font(.title2)
                     .foregroundStyle(DesignTokens.StatusColor.success)
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.formFieldGap) {
-                    Text(String(localized: "SSH Key Generated"))
+                    Text(String.loc("SSH Key Generated"))
                         .font(.headline)
-                    Text(String(localized: "Add the public key to \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) to use SSH authentication."))
+                    Text(String.loc("Add the public key to \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) to use SSH authentication."))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     if didCopy {
                         Label(
-                            String(localized: "Copied to Clipboard"),
+                            String.loc("Copied to Clipboard"),
                             systemImage: "checkmark.circle.fill"
                         )
                         .font(.caption)
@@ -61,11 +61,11 @@ struct SSHKeyGeneratedSheet: View {
             Divider()
 
             HStack {
-                Button(String(localized: "Copy Public Key")) {
+                Button(String.loc("Copy Public Key")) {
                     ClipboardService.copy(result.publicKey)
                     didCopy = true
                 }
-                Button(String(localized: "Open \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) SSH Settings")) {
+                Button(String.loc("Open \(GitRemoteHost.sshKeysSettingsLabel(for: provider)) SSH Settings")) {
                     if !didCopy {
                         ClipboardService.copy(result.publicKey)
                         didCopy = true
@@ -73,7 +73,7 @@ struct SSHKeyGeneratedSheet: View {
                     NSWorkspace.shared.open(settingsURL)
                 }
                 Spacer()
-                Button(String(localized: "Done")) { dismiss() }
+                Button(String.loc("Done")) { dismiss() }
                     .keyboardShortcut(.return)
                     .buttonStyle(.borderedProminent)
             }

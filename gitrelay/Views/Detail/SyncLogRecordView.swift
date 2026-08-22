@@ -17,7 +17,7 @@ struct SyncLogRecordView: View {
 
             if !record.targetResults.isEmpty {
                 if !record.logLines.isEmpty {
-                    logBlock(title: String(localized: "Source"), lines: record.logLines)
+                    logBlock(title: String.loc("Source"), lines: record.logLines)
                 }
                 ForEach(record.targetResults) { result in
                     targetBlock(result)

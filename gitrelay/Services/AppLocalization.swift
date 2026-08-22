@@ -45,16 +45,7 @@ enum AppLocalization {
         else {
             return nil
         }
-        let locale: Locale
-        switch preference {
-        case .system:
-            locale = .autoupdatingCurrent
-        case .english:
-            locale = Locale(identifier: "en")
-        case .simplifiedChinese:
-            locale = Locale(identifier: "zh-Hans")
-        }
-        return Override(locale: locale, bundle: languageBundle)
+        return Override(locale: preference.locale, bundle: languageBundle)
     }
 
     private static func targetLocalization(
@@ -84,10 +75,22 @@ enum AppLocalization {
         let prefix = language.lowercased() + "-"
         return available.first { $0.lowercased().hasPrefix(prefix) }
     }
+
+    /// Clears any in-session catalog override. Unit tests should call this after
+    /// exercising ``apply(_:)`` so later tests see the default catalog.
+    static func resetOverride() {
+        lock.lock()
+        activeOverride = nil
+        lock.unlock()
+    }
 }
 
 extension String {
     /// Catalog lookup that follows the in-app language choice.
+    ///
+    /// Prefer this over `String(localized:)` for anything a running window can
+    /// show, so switching language in Settings does not leave the sentence in
+    /// the previous language until the next launch.
     static func loc(_ key: String.LocalizationValue) -> String {
         AppLocalization.string(for: key)
     }

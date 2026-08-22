@@ -26,27 +26,27 @@ struct AboutView: View {
                 .accessibilityHidden(true)
                 .padding(.bottom, DesignTokens.Spacing.sm)
 
-            Text(String(localized: "GitRelay"))
+            Text(String.loc("GitRelay"))
                 .font(.title3.weight(.semibold))
 
-            Text(String(localized: "Version \(version) (\(build))"))
+            Text(String.loc("Version \(version) (\(build))"))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .textSelection(.enabled)
 
             HStack(spacing: DesignTokens.Spacing.lg) {
-                Button(String(localized: "GitHub")) {
+                Button(String.loc("GitHub")) {
                     guard let url = Self.githubURL else { return }
                     NSWorkspace.shared.open(url)
                 }
-                Button(String(localized: "Check for Updates")) {
+                Button(String.loc("Check for Updates")) {
                     UpdaterService.shared.checkForUpdates()
                 }
             }
             .buttonStyle(.link)
             .padding(.top, DesignTokens.Spacing.md)
 
-            Text(String(localized: "© 2026 yangflow · MIT License"))
+            Text(String.loc("© 2026 yangflow · MIT License"))
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 .padding(.top, DesignTokens.Spacing.md)

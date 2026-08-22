@@ -31,11 +31,11 @@ enum MainWindowShortcutBinding: String, CaseIterable, Sendable {
     var menuTitle: String {
         switch self {
         case .addRepository:
-            String(localized: "Add Repository")
+            String.loc("Add Repository")
         case .focusSearch:
-            String(localized: "Search Repositories")
+            String.loc("Search Repositories")
         case .syncSelected:
-            String(localized: "Sync Selected Repository")
+            String.loc("Sync Selected Repository")
         }
     }
 }

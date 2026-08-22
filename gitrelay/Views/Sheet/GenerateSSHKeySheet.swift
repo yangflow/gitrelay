@@ -22,7 +22,7 @@ struct GenerateSSHKeySheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text(String(localized: "Generate SSH Key"))
+                Text(String.loc("Generate SSH Key"))
                     .font(.headline)
                 Spacer()
             }
@@ -32,23 +32,23 @@ struct GenerateSSHKeySheet: View {
 
             Form {
                 Section {
-                    TextField(String(localized: "Private Key Path"), text: $keyPath)
+                    TextField(String.loc("Private Key Path"), text: $keyPath)
                         .font(.system(.body, design: .monospaced))
-                    Text(String(localized: "The default path is \(SSHKeyGenerator.defaultDisplayPath). The public key will be written to a .pub file at the same path."))
+                    Text(String.loc("The default path is \(SSHKeyGenerator.defaultDisplayPath). The public key will be written to a .pub file at the same path."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } header: {
-                    Text(String(localized: "Key Location"))
+                    Text(String.loc("Key Location"))
                 }
 
                 Section {
-                    Toggle(String(localized: "Encrypt the private key with a passphrase"), isOn: $usePassphrase)
+                    Toggle(String.loc("Encrypt the private key with a passphrase"), isOn: $usePassphrase)
                     if usePassphrase {
-                        SecureField(String(localized: "Passphrase"), text: $passphrase)
+                        SecureField(String.loc("Passphrase"), text: $passphrase)
                             .textFieldStyle(.roundedBorder)
                     }
                 } header: {
-                    Text(String(localized: "Passphrase"))
+                    Text(String.loc("Passphrase"))
                 }
 
                 if let errorMessage {
@@ -65,10 +65,10 @@ struct GenerateSSHKeySheet: View {
 
             HStack {
                 Spacer()
-                Button(String(localized: "Cancel")) { dismiss() }
+                Button(String.loc("Cancel")) { dismiss() }
                     .keyboardShortcut(.escape)
                     .disabled(isGenerating)
-                Button(String(localized: "Generate"), action: generate)
+                Button(String.loc("Generate"), action: generate)
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.return)
                     .disabled(isGenerating)

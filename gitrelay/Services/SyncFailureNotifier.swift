@@ -164,12 +164,12 @@ final class SyncFailureNotifier: NSObject {
     static func makeFailureCategories() -> Set<UNNotificationCategory> {
         let syncAgain = UNNotificationAction(
             identifier: syncAgainActionIdentifier,
-            title: String(localized: "Sync again"),
+            title: String.loc("Sync again"),
             options: [.foreground]
         )
         let open = UNNotificationAction(
             identifier: openActionIdentifier,
-            title: String(localized: "Open"),
+            title: String.loc("Open"),
             options: [.foreground]
         )
         let failure = UNNotificationCategory(

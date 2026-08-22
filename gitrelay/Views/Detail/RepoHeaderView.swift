@@ -11,27 +11,27 @@ struct RepoHeaderView: View {
                 .font(.title3)
                 .fontWeight(.semibold)
 
-            LabeledContent(String(localized: "Source")) {
+            LabeledContent(String.loc("Source")) {
                 HStack(spacing: DesignTokens.Spacing.xs) {
                     locationText(repo.srcURL)
                     openButton(
                         for: RepoOpenLocation.source(of: repo),
-                        sideLabel: String(localized: "Source"),
+                        sideLabel: String.loc("Source"),
                         help: repo.srcURL
                     )
                 }
             }
 
             if repo.targets.count == 1 {
-                LabeledContent(String(localized: "Target")) {
+                LabeledContent(String.loc("Target")) {
                     targetRow(repo.targets[0])
                 }
             } else {
-                LabeledContent(String(localized: "Targets (\(repo.targets.count))")) {
+                LabeledContent(String.loc("Targets (\(repo.targets.count))")) {
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
                         ForEach(Array(repo.targets.enumerated()), id: \.element.id) { index, target in
                             HStack(spacing: DesignTokens.Spacing.xs) {
-                                Text(String(localized: "\(index + 1)."))
+                                Text(String.loc("\(index + 1)."))
                                     .foregroundStyle(.secondary)
                                 targetRow(target)
                             }
@@ -48,7 +48,7 @@ struct RepoHeaderView: View {
 
             if repo.usesSelectiveRefSync {
                 Label {
-                    Text(repo.partialSyncWarning ?? String(localized: "Partial ref sync (not a complete backup)"))
+                    Text(repo.partialSyncWarning ?? String.loc("Partial ref sync (not a complete backup)"))
                         .font(.caption)
                         .foregroundStyle(DesignTokens.StatusColor.pause)
                 } icon: {
@@ -88,7 +88,7 @@ struct RepoHeaderView: View {
     private func targetRow(_ target: MirrorTarget) -> some View {
         HStack(spacing: DesignTokens.Spacing.xs) {
             if target.kind == .filesystem {
-                Text(String(localized: "Archive"))
+                Text(String.loc("Archive"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -99,13 +99,13 @@ struct RepoHeaderView: View {
                     .foregroundStyle(.secondary)
             }
             if !target.enabled {
-                Text(String(localized: "Disabled"))
+                Text(String.loc("Disabled"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
             openButton(
                 for: RepoOpenLocation.target(target),
-                sideLabel: String(localized: "Target"),
+                sideLabel: String.loc("Target"),
                 help: target.displayLabel
             )
         }

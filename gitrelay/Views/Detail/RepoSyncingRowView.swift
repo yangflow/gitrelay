@@ -20,7 +20,7 @@ struct RepoSyncingRowView: View {
                 }
             }
             Spacer(minLength: DesignTokens.Spacing.md)
-            Button(String(localized: "Cancel"), action: onCancel)
+            Button(String.loc("Cancel"), action: onCancel)
                 .buttonStyle(.bordered)
                 .controlSize(.small)
         }

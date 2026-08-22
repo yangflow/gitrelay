@@ -295,13 +295,13 @@ enum ProviderAccountStoreError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidLabel:
-            return String(localized: "Account name must be 1–32 letters, numbers, spaces, hyphens, or underscores.")
+            return String.loc("Account name must be 1–32 letters, numbers, spaces, hyphens, or underscores.")
         case .duplicateLabel:
-            return String(localized: "An account with this name already exists.")
+            return String.loc("An account with this name already exists.")
         case .cannotDeleteLastAccount:
-            return String(localized: "At least one account must remain.")
+            return String.loc("At least one account must remain.")
         case .accountNotFound:
-            return String(localized: "Account not found.")
+            return String.loc("Account not found.")
         }
     }
 }

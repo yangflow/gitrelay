@@ -9,7 +9,7 @@ struct IncompleteBackupMarkView: View {
             .font(.caption2)
             .foregroundStyle(DesignTokens.StatusColor.warning)
             .help(helpText)
-            .accessibilityLabel(String(localized: "Incomplete backup"))
+            .accessibilityLabel(String.loc("Incomplete backup"))
             .accessibilityHint(helpText)
     }
 }

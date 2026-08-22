@@ -77,7 +77,7 @@ struct GitHubTargetAPIClient: TargetProviderAPIClient {
             return "/orgs/\(encoded)/repos"
         case .adminForUser:
             throw TargetProviderAPIError.validation(
-                String(localized: "GitHub cannot create a repository on behalf of another user.")
+                String.loc("GitHub cannot create a repository on behalf of another user.")
             )
         }
     }
@@ -100,7 +100,7 @@ struct GitHubTargetAPIClient: TargetProviderAPIClient {
             return .alreadyExists(httpsCloneURL: https, sshCloneURL: ssh)
         case .missing:
             throw TargetProviderAPIError.validation(
-                String(localized: "GitHub reported the repository name as taken, but it could not be read back.")
+                String.loc("GitHub reported the repository name as taken, but it could not be read back.")
             )
         }
     }

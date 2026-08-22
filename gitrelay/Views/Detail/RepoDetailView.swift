@@ -17,7 +17,7 @@ struct RepoDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Picker(String(localized: "Detail Page"), selection: $selectedTab) {
+            Picker(String.loc("Detail Page"), selection: $selectedTab) {
                 ForEach(RepoDetailTab.allCases) { tab in
                     Text(tab.localizedTitle).tag(tab)
                 }
@@ -25,7 +25,7 @@ struct RepoDetailView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
             .controlSize(.regular)
-            .accessibilityLabel(String(localized: "Detail Page"))
+            .accessibilityLabel(String.loc("Detail Page"))
             .padding(.horizontal, DesignTokens.Spacing.detailContent)
             .padding(.top, DesignTokens.Spacing.sm)
             .padding(.bottom, DesignTokens.Spacing.xs)
@@ -104,7 +104,7 @@ struct RepoDetailView: View {
                 onCopyFailure: copyFailureAction
             )
         } header: {
-            Text(String(localized: "Status"))
+            Text(String.loc("Status"))
         }
 
         Section {
@@ -112,20 +112,20 @@ struct RepoDetailView: View {
                 sparkline: SyncHistorySparkline.make(from: repo.dailySyncOutcomes)
             )
         } header: {
-            Text(String(localized: "Syncs in the Last 30 Days"))
+            Text(String.loc("Syncs in the Last 30 Days"))
         }
 
         Section {
             BranchListView(branches: detailVM.branches, isLoading: detailVM.isLoadingBranches)
         } header: {
-            Text(String(localized: "Branches"))
+            Text(String.loc("Branches"))
         }
 
         Section {
             SyncLogView(records: records)
                 .id(RepoDetailScrollTarget.syncLog)
         } header: {
-            Text(String(localized: "Sync Log"))
+            Text(String.loc("Sync Log"))
         }
     }
 
@@ -142,7 +142,7 @@ struct RepoDetailView: View {
                 isSyncing: isSyncing
             )
         } header: {
-            Text(String(localized: "Releases"))
+            Text(String.loc("Releases"))
         }
     }
 
@@ -182,9 +182,9 @@ private extension RepoDetailTab {
     var localizedTitle: String {
         switch self {
         case .overview:
-            String(localized: "Overview")
+            String.loc("Overview")
         case .releases:
-            String(localized: "Releases")
+            String.loc("Releases")
         }
     }
 }

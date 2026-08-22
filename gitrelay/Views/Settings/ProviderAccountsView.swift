@@ -43,7 +43,7 @@ struct ProviderAccountsView: View {
     private func accountsSection() -> some View {
         Section {
             if visibleAccounts.isEmpty {
-                Text(String(localized: "No account is connected yet."))
+                Text(String.loc("No account is connected yet."))
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(visibleAccounts) { summary in
@@ -61,10 +61,10 @@ struct ProviderAccountsView: View {
             Button {
                 isPresentingAddToken = true
             } label: {
-                Label(String(localized: "Add Token"), systemImage: "plus")
+                Label(String.loc("Add Token"), systemImage: "plus")
             }
         } footer: {
-            Text(String(localized: "Tokens are stored in the Keychain and are never written to a log or to exported configuration. Test asks the provider whether a saved token still works."))
+            Text(String.loc("Tokens are stored in the Keychain and are never written to a log or to exported configuration. Test asks the provider whether a saved token still works."))
         }
     }
 

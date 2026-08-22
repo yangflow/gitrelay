@@ -17,6 +17,17 @@ nonisolated enum AppLanguagePreference: String, CaseIterable, Identifiable, Send
         }
     }
 
+    var locale: Locale {
+        switch self {
+        case .system:
+            Locale.autoupdatingCurrent
+        case .english:
+            Locale(identifier: "en")
+        case .simplifiedChinese:
+            Locale(identifier: "zh-Hans")
+        }
+    }
+
     /// Picker label shown in Settings → 配置.
     var pickerLabel: String {
         switch self {
