@@ -36,7 +36,7 @@ struct MainWindowCommands: Commands {
                 modifiers: MainWindowShortcutBinding.syncSelected.modifiers
             )
 
-            // The pair table keeps only search and add, so Sync All lives here.
+            // The pair table toolbar also exposes Sync All; keep the menu command too.
             Button(String(localized: "Sync All")) {
                 appVM.triggerSyncAll()
             }

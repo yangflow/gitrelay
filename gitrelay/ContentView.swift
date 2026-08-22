@@ -40,7 +40,6 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .gitRelayChrome(.detail)
         }
-        .navigationSplitViewStyle(.balanced)
         .frame(
             minWidth: DesignTokens.Layout.windowMinWidth,
             minHeight: DesignTokens.Layout.windowMinHeight
