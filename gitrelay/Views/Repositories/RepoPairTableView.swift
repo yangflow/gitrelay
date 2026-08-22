@@ -83,13 +83,20 @@ struct RepoPairTableView: View {
         }
         .padding(.horizontal, DesignTokens.Spacing.sm)
         .frame(width: 260, height: DesignTokens.Size.searchFieldMinHeight)
-        .background(DesignTokens.Surface.searchFieldFill)
+        .background(DesignTokens.Surface.suggestionFill)
         .clipShape(
             RoundedRectangle(
                 cornerRadius: DesignTokens.CornerRadius.control,
                 style: .continuous
             )
         )
+        .overlay {
+            RoundedRectangle(
+                cornerRadius: DesignTokens.CornerRadius.control,
+                style: .continuous
+            )
+            .strokeBorder(DesignTokens.Surface.separator, lineWidth: 1)
+        }
     }
 
     private var addButton: some View {

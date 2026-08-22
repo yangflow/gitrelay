@@ -33,12 +33,15 @@ struct MainSidebarView: View {
                 }
             }
             .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             SidebarFooterView(
                 summary: appVM.sidebarFooterSummary,
                 onTogglePause: { appVM.toggleScheduledSyncPause() }
             )
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     /// `List` selection is optional; the pane always has a destination, so a nil

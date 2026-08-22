@@ -131,6 +131,8 @@ struct ContentView: View {
     private var sidebarColumn: some View {
         MainSidebarView(selection: $sidebarSelection)
             .gitRelaySidebarColumnWidth(ideal: appVM.windowLayout.sidebarWidth)
+            .frame(maxHeight: .infinity, alignment: .topLeading)
+            .gitRelayChrome(.sidebar)
             .background {
                 GeometryReader { proxy in
                     Color.clear
