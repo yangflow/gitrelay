@@ -5,10 +5,20 @@ import SwiftUI
 /// The token goes straight from the field into the Keychain through
 /// ``ProviderTokenStore``; nothing else keeps a copy of it.
 struct AddProviderTokenSheet: View {
-    let initialProvider: GitProvider? = nil
+    let initialProvider: GitProvider?
     /// When true, the provider picker is hidden and ``initialProvider`` is fixed.
     var locksProviderSelection: Bool = false
     let onSaved: (GitProvider, String) -> Void
+
+    init(
+        initialProvider: GitProvider? = nil,
+        locksProviderSelection: Bool = false,
+        onSaved: @escaping (GitProvider, String) -> Void
+    ) {
+        self.initialProvider = initialProvider
+        self.locksProviderSelection = locksProviderSelection
+        self.onSaved = onSaved
+    }
 
     @Environment(\.dismiss) private var dismiss
 
