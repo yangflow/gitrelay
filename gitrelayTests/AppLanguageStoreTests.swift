@@ -5,22 +5,22 @@ import Testing
 @Suite("AppLanguageStore")
 @MainActor
 struct AppLanguageStoreTests {
-    private func freshDefaults() -> UserDefaults {
-        let suite = "gitrelay.tests.language.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
-        defaults.removePersistentDomain(forName: suite)
-        return defaults
+    private func freshDefaults() -> (defaults: UserDefaults, suiteName: String) {
+        let suiteName = "gitrelay.tests.language.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        return (defaults, suiteName)
     }
 
     @Test func defaultsToSystem() {
-        let defaults = freshDefaults()
+        let (defaults, _) = freshDefaults()
         let store = AppLanguageStore(defaults: defaults)
         #expect(store.preference == .system)
         #expect(store.preference.appleLanguageCode == nil)
     }
 
     @Test func persistingEnglishWritesAppleLanguages() {
-        let defaults = freshDefaults()
+        let (defaults, _) = freshDefaults()
         let store = AppLanguageStore(defaults: defaults)
 
         store.preference = .english
@@ -31,7 +31,7 @@ struct AppLanguageStoreTests {
     }
 
     @Test func theNoteAppearsOnlyAfterAChange() {
-        let defaults = freshDefaults()
+        let (defaults, _) = freshDefaults()
         let store = AppLanguageStore(defaults: defaults)
         let quietAtLaunch = store.showsLaunchCatalogNote
 
@@ -43,7 +43,7 @@ struct AppLanguageStoreTests {
     }
 
     @Test func persistingSimplifiedChineseWritesAppleLanguages() {
-        let defaults = freshDefaults()
+        let (defaults, _) = freshDefaults()
         let store = AppLanguageStore(defaults: defaults)
 
         store.preference = .simplifiedChinese
@@ -53,19 +53,21 @@ struct AppLanguageStoreTests {
     }
 
     @Test func returningToSystemClearsAppleLanguagesOverride() {
-        let defaults = freshDefaults()
+        let (defaults, suiteName) = freshDefaults()
         defaults.set(["en"], forKey: "AppleLanguages")
         defaults.set(AppLanguagePreference.english.rawValue, forKey: AppLanguageStore.preferenceKey)
         let store = AppLanguageStore(defaults: defaults)
 
         store.preference = .system
 
-        #expect(defaults.object(forKey: "AppleLanguages") == nil)
+        // Suite defaults fall back to the host AppleLanguages when read through
+        // `object(forKey:)`, so assert against the suite's own persistent domain.
+        #expect(defaults.persistentDomain(forName: suiteName)?["AppleLanguages"] == nil)
         #expect(defaults.string(forKey: AppLanguageStore.preferenceKey) == "system")
     }
 
     @Test func bootstrapAppliesStoredPreference() {
-        let defaults = freshDefaults()
+        let (defaults, _) = freshDefaults()
         defaults.set(AppLanguagePreference.simplifiedChinese.rawValue, forKey: AppLanguageStore.preferenceKey)
 
         AppLanguageStore.bootstrapAppleLanguages(defaults: defaults)
