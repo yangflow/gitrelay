@@ -31,16 +31,30 @@ struct MenuBarPopoverView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            HStack(spacing: DesignTokens.Spacing.xs) {
-                Text(verbatim: "GitRelay")
-                    .font(.headline)
+            HStack(alignment: .center, spacing: DesignTokens.Spacing.xs) {
+                Button(action: { openMainWindow() }) {
+                    Text(verbatim: "GitRelay")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "Open Main Window"))
+
                 Spacer(minLength: DesignTokens.Spacing.xs)
+
                 if !appVM.repos.isEmpty {
                     Button(String(localized: "Sync All")) { appVM.triggerSyncAll() }
                         .buttonStyle(QuietPressButtonStyle())
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                Button { openMainWindow(showing: .settings) } label: {
+                    Image(systemName: "gearshape")
+                }
+                .buttonStyle(.borderless)
+                .help(String(localized: "Settings"))
+                .accessibilityLabel(String(localized: "Settings"))
             }
 
             searchField
@@ -125,34 +139,22 @@ struct MenuBarPopoverView: View {
 
     private var footer: some View {
         HStack(spacing: DesignTokens.Spacing.md) {
-            Button { openMainWindow() } label: {
-                Label(String(localized: "Open Main Window"), systemImage: "macwindow")
+            Button(action: openAbout) {
+                Image(systemName: "info.circle")
             }
-
-            Divider()
-                .frame(height: DesignTokens.Spacing.md)
-
-            // The six locked settings panes live in the main window since #109.
-            Button { openMainWindow(showing: .settings) } label: {
-                Label(String(localized: "Settings"), systemImage: "gearshape")
-            }
+            .help(String(localized: "About GitRelay"))
+            .accessibilityLabel(String(localized: "About GitRelay"))
 
             Spacer(minLength: 0)
 
-            HStack(spacing: DesignTokens.Spacing.sm) {
-                Button(action: openAbout) {
-                    Image(systemName: "info.circle")
-                }
-                .help(String(localized: "About GitRelay"))
-
-                Button {
-                    NSApp.terminate(nil)
-                } label: {
-                    Image(systemName: "power")
-                }
-                .keyboardShortcut("q")
-                .help(String(localized: "Quit GitRelay"))
+            Button {
+                NSApp.terminate(nil)
+            } label: {
+                Image(systemName: "power")
             }
+            .keyboardShortcut("q")
+            .help(String(localized: "Quit GitRelay"))
+            .accessibilityLabel(String(localized: "Quit GitRelay"))
         }
         .buttonStyle(QuietPressButtonStyle())
         .font(.caption)
