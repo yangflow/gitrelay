@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import gitrelay
+@testable import GitRelay
 
 @Suite("AppLanguageStore")
 @MainActor
