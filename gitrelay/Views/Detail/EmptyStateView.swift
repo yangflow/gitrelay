@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct EmptyStateView: View {
+    let onAdd: () -> Void
     var onExamplePrefill: ((RepoSourceDropPrefill) -> Void)? = nil
     var isDropTargeted: Bool = false
 
@@ -10,27 +11,46 @@ struct EmptyStateView: View {
 
     var body: some View {
         VStack(spacing: DesignTokens.Spacing.md) {
-            Image(systemName: "arrow.left.arrow.right")
+            Image(systemName: "arrow.triangle.branch")
                 .font(.title2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.accentColor)
+                .frame(
+                    width: DesignTokens.Size.emptyStateIconTile,
+                    height: DesignTokens.Size.emptyStateIconTile
+                )
+                .background(Color.accentColor.opacity(0.10))
+                .clipShape(
+                    RoundedRectangle(
+                        cornerRadius: DesignTokens.CornerRadius.panel,
+                        style: .continuous
+                    )
+                )
                 .accessibilityHidden(true)
 
-            Text(String.loc("Add a repository, or drop a git URL to create a pair."))
+            Text(String.loc("No Mirrors"))
+                .font(.title3.weight(.semibold))
+
+            Text(String.loc("Add a Mirror, or drop a Git URL to get started."))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
-            if let onExamplePrefill {
-                Button {
-                    onExamplePrefill(example)
-                } label: {
-                    Text(String.loc("Try an example pair"))
-                        .font(.callout)
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Button(String.loc("Add Mirror"), action: onAdd)
+                    .buttonStyle(.borderedProminent)
+
+                if let onExamplePrefill {
+                    Button {
+                        onExamplePrefill(example)
+                    } label: {
+                        Text(String.loc("Try an example Mirror"))
+                            .font(.callout)
+                    }
+                    .buttonStyle(QuietPressButtonStyle())
+                    .foregroundStyle(.secondary)
+                    .help(examplePairCaption)
+                    .accessibilityHint(String.loc("Opens the add sheet with example URLs. Nothing is saved until you confirm."))
                 }
-                .buttonStyle(QuietPressButtonStyle())
-                .foregroundStyle(.secondary)
-                .help(examplePairCaption)
-                .accessibilityHint(String.loc("Opens the add sheet with example URLs. Nothing is saved until you confirm."))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

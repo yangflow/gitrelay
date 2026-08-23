@@ -14,7 +14,7 @@ struct SyncHealthSummary: Equatable {
     }
 
     static func make(
-        repos: [RepoConfig],
+        repos: [MirrorSnapshot],
         statuses: [UUID: SyncStatus],
         now: Date = .now,
         calendar: Calendar = .current

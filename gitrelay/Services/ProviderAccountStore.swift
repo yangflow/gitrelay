@@ -2,28 +2,18 @@ import Foundation
 
 enum ProviderAccountStore {
     private enum Keys {
-        static let registry = "ProviderAccounts.registry"
-        static let selectedPrefix = "ProviderAccounts.selected."
-        static let migrationDone = "ProviderAccounts.legacyMigrationDone"
-        static let legacyGitLabHost = "BrowseRemoteRepo.gitlabHost"
-        static let legacyGiteaHost = "BrowseRemoteRepo.giteaHost"
+        static let registry = "GitRelay.connections.registry"
+        static let selectedPrefix = "GitRelay.connections.selected."
     }
 
-    static func migrateIfNeeded(defaults: UserDefaults = .standard) {
-        guard !defaults.bool(forKey: Keys.migrationDone) else { return }
-
+    static func ensureInitialized(defaults: UserDefaults = .standard) {
         for provider in GitProvider.allCases {
-            ProviderTokenStore.migrateLegacyTokenIfNeeded(for: provider)
             ensureDefaultAccount(for: provider, defaults: defaults)
         }
-
-        migrateLegacyHosts(defaults: defaults)
-
-        defaults.set(true, forKey: Keys.migrationDone)
     }
 
     static func accounts(for provider: GitProvider, defaults: UserDefaults = .standard) -> [ProviderAccountRecord] {
-        migrateIfNeeded(defaults: defaults)
+        ensureInitialized(defaults: defaults)
         let registry = loadRegistry(defaults: defaults)
         return registry[provider.rawValue] ?? [ProviderAccountRecord(label: ProviderAccount.defaultLabel, host: nil)]
     }
@@ -34,7 +24,7 @@ enum ProviderAccountStore {
 
     /// Every provider's records in one call, for the 安全 tab's account list.
     static func allAccounts(defaults: UserDefaults = .standard) -> [GitProvider: [ProviderAccountRecord]] {
-        migrateIfNeeded(defaults: defaults)
+        ensureInitialized(defaults: defaults)
         var result: [GitProvider: [ProviderAccountRecord]] = [:]
         for provider in GitProvider.allCases {
             result[provider] = accounts(for: provider, defaults: defaults)
@@ -61,7 +51,7 @@ enum ProviderAccountStore {
         at date: Date = Date(),
         defaults: UserDefaults = .standard
     ) {
-        migrateIfNeeded(defaults: defaults)
+        ensureInitialized(defaults: defaults)
         var registry = loadRegistry(defaults: defaults)
         var records = registry[provider.rawValue] ?? [ProviderAccountRecord(label: ProviderAccount.defaultLabel, host: nil)]
         guard let index = records.firstIndex(where: { $0.label == label }) else { return }
@@ -72,7 +62,7 @@ enum ProviderAccountStore {
     }
 
     static func selectedLabel(for provider: GitProvider, defaults: UserDefaults = .standard) -> String {
-        migrateIfNeeded(defaults: defaults)
+        ensureInitialized(defaults: defaults)
         let key = Keys.selectedPrefix + provider.rawValue
         let labels = accountLabels(for: provider, defaults: defaults)
         if let stored = defaults.string(forKey: key), labels.contains(stored) {
@@ -82,7 +72,7 @@ enum ProviderAccountStore {
     }
 
     static func setSelectedLabel(_ label: String, for provider: GitProvider, defaults: UserDefaults = .standard) {
-        migrateIfNeeded(defaults: defaults)
+        ensureInitialized(defaults: defaults)
         defaults.set(label, forKey: Keys.selectedPrefix + provider.rawValue)
     }
 
@@ -93,7 +83,7 @@ enum ProviderAccountStore {
     }
 
     static func setHost(_ host: String?, for provider: GitProvider, label: String, defaults: UserDefaults = .standard) {
-        migrateIfNeeded(defaults: defaults)
+        ensureInitialized(defaults: defaults)
         setHostUnchecked(host, for: provider, label: label, defaults: defaults)
     }
 
@@ -103,7 +93,7 @@ enum ProviderAccountStore {
         for provider: GitProvider,
         defaults: UserDefaults = .standard
     ) throws -> ProviderAccountRecord {
-        migrateIfNeeded(defaults: defaults)
+        ensureInitialized(defaults: defaults)
         guard let normalized = ProviderAccount.normalizeLabel(label) else {
             throw ProviderAccountStoreError.invalidLabel
         }
@@ -145,7 +135,7 @@ enum ProviderAccountStore {
         for provider: GitProvider,
         defaults: UserDefaults = .standard
     ) throws {
-        migrateIfNeeded(defaults: defaults)
+        ensureInitialized(defaults: defaults)
         var registry = loadRegistry(defaults: defaults)
         var records = registry[provider.rawValue] ?? [ProviderAccountRecord(label: ProviderAccount.defaultLabel, host: nil)]
         guard records.count > 1 else { throw ProviderAccountStoreError.cannotDeleteLastAccount }
@@ -159,7 +149,7 @@ enum ProviderAccountStore {
 
         let selected = selectedLabel(for: provider, defaults: defaults)
         if selected == label {
-            let next = BrowseRemoteAccountSelection.selectedLabelAfterDelete(
+            let next = ConnectionAccountSelection.selectedLabelAfterDelete(
                 deleted: label,
                 current: selected,
                 remaining: records.map(\.label)
@@ -171,7 +161,7 @@ enum ProviderAccountStore {
     // MARK: - Config export / import
 
     static func exportedAccounts(defaults: UserDefaults = .standard) -> [ExportedProviderAccount] {
-        migrateIfNeeded(defaults: defaults)
+        ensureInitialized(defaults: defaults)
         var result: [ExportedProviderAccount] = []
         for provider in GitProvider.allCases {
             for record in accounts(for: provider, defaults: defaults) {
@@ -197,7 +187,7 @@ enum ProviderAccountStore {
         _ accounts: [ExportedProviderAccount],
         defaults: UserDefaults = .standard
     ) {
-        migrateIfNeeded(defaults: defaults)
+        ensureInitialized(defaults: defaults)
         var registry: [String: [ProviderAccountRecord]] = [:]
         for account in accounts {
             guard let label = ProviderAccount.normalizeLabel(account.label) else {
@@ -227,7 +217,7 @@ enum ProviderAccountStore {
         _ accounts: [ExportedProviderAccount],
         defaults: UserDefaults = .standard
     ) {
-        migrateIfNeeded(defaults: defaults)
+        ensureInitialized(defaults: defaults)
         let existing = exportedAccounts(defaults: defaults)
         let merged = ConfigExportCodec.mergeProviderAccounts(existing: existing, imported: accounts)
         replaceExportedAccounts(merged, defaults: defaults)
@@ -242,17 +232,6 @@ enum ProviderAccountStore {
             records = [ProviderAccountRecord(label: ProviderAccount.defaultLabel, host: nil)]
             registry[provider.rawValue] = records
             saveRegistry(registry, defaults: defaults)
-        }
-    }
-
-    private static func migrateLegacyHosts(defaults: UserDefaults) {
-        if let gitlabHost = defaults.string(forKey: Keys.legacyGitLabHost), !gitlabHost.isEmpty {
-            setHostUnchecked(gitlabHost, for: .gitlab, label: ProviderAccount.defaultLabel, defaults: defaults)
-            defaults.removeObject(forKey: Keys.legacyGitLabHost)
-        }
-        if let giteaHost = defaults.string(forKey: Keys.legacyGiteaHost), !giteaHost.isEmpty {
-            setHostUnchecked(giteaHost, for: .gitea, label: ProviderAccount.defaultLabel, defaults: defaults)
-            defaults.removeObject(forKey: Keys.legacyGiteaHost)
         }
     }
 

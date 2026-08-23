@@ -59,7 +59,7 @@ nonisolated struct MirrorPairIdentity: Hashable, Sendable {
 
 nonisolated enum MirrorPairDuplicates {
     /// Identity of every pair a saved repository already covers (one per target).
-    static func identities(of repo: RepoConfig) -> [MirrorPairIdentity] {
+    static func identities(of repo: MirrorSnapshot) -> [MirrorPairIdentity] {
         guard let source = GitRemoteIdentity.any(repo.srcURL) else { return [] }
         return repo.targets.compactMap { target in
             guard let identity = GitRemoteIdentity.any(target.displayLabel) else { return nil }
@@ -72,7 +72,7 @@ nonisolated enum MirrorPairDuplicates {
     static func existingRepoID(
         source: String,
         target: String,
-        in repos: [RepoConfig],
+        in repos: [MirrorSnapshot],
         excluding excludedID: UUID? = nil
     ) -> UUID? {
         guard let pair = MirrorPairIdentity.make(source: source, target: target) else { return nil }

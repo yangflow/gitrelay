@@ -4,7 +4,7 @@ struct EditTagGroupFrequencySheet: View {
     let tag: String?
     let repoCount: Int
 
-    @Environment(AppViewModel.self) private var appVM
+    @Environment(MirrorManagementController.self) private var management
     @Environment(\.dismiss) private var dismiss
 
     @State private var frequency: SyncFrequency = .manual
@@ -43,7 +43,7 @@ struct EditTagGroupFrequencySheet: View {
                 Button(String.loc("Cancel")) { dismiss() }
                     .keyboardShortcut(.escape)
                 Button(String.loc("Save")) {
-                    appVM.updateFrequency(matchingTag: tag, frequency: frequency)
+                    management.updateFrequency(matchingTag: tag, frequency: frequency)
                     dismiss()
                 }
                 .buttonStyle(.borderedProminent)
@@ -54,7 +54,7 @@ struct EditTagGroupFrequencySheet: View {
         .frame(width: 420)
         .gitRelayChrome(.sheet)
         .onAppear {
-            frequency = appVM.repos(matchingTag: tag).first?.frequency ?? .manual
+            frequency = management.mirrors(matchingTag: tag).first?.frequency ?? .manual
         }
     }
 }

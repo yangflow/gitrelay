@@ -1,12 +1,12 @@
 import Foundation
 
-/// Builds `RepoConfig` values from org subscription templates (shared by auto-add and tests).
+/// Builds mirror plans from organization subscription templates.
 nonisolated enum OrgSubscriptionTemplateApplier {
-    static func makeConfig(
+    static func makePlan(
         repo: RemoteRepo,
         template: OrgSubscriptionTemplate,
         dstURL: String
-    ) -> RepoConfig {
+    ) -> MirrorPlan {
         let id = UUID()
         let targetID = UUID()
         let name = template.namePrefix + repo.name
@@ -16,12 +16,20 @@ nonisolated enum OrgSubscriptionTemplateApplier {
             case .httpsToken:        repo.httpsCloneURL
             }
         }()
-        return RepoConfig(
+        return MirrorPlan(
             id: id,
             name: name,
-            srcURL: srcURL,
-            targets: [
-                MirrorTarget(
+            source: GitEndpoint(
+                url: srcURL,
+                auth: buildAuth(
+                    mode: template.sourceAuthMode,
+                    keyPath: template.sourceKeyPath,
+                    repoID: id,
+                    side: "src"
+                )
+            ),
+            destinations: [
+                .git(
                     id: targetID,
                     url: dstURL,
                     auth: buildAuth(
@@ -32,13 +40,7 @@ nonisolated enum OrgSubscriptionTemplateApplier {
                     )
                 )
             ],
-            srcAuth: buildAuth(
-                mode: template.sourceAuthMode,
-                keyPath: template.sourceKeyPath,
-                repoID: id,
-                side: "src"
-            ),
-            frequency: template.frequency
+            policy: MirrorPolicy(frequency: template.frequency)
         )
     }
 

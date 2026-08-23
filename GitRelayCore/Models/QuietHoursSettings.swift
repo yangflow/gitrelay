@@ -2,7 +2,7 @@ import Foundation
 
 /// Global quiet-hours window in the user's local timezone.
 /// When enabled, scheduled syncs are skipped inside the window; manual / webhook / App Intent syncs are not.
-struct QuietHoursSettings: Equatable, Sendable {
+nonisolated struct QuietHoursSettings: Equatable, Sendable {
     /// Master switch. Off by default.
     var isEnabled: Bool
 
@@ -94,7 +94,7 @@ struct QuietHoursSettings: Equatable, Sendable {
 
 /// Remembers repos whose scheduled tick was skipped during quiet hours so we
 /// can catch up **once** when the window ends (no stacked backlog).
-struct QuietHoursCatchUpTracker: Equatable, Sendable {
+nonisolated struct QuietHoursCatchUpTracker: Equatable, Sendable {
     private(set) var pendingRepoIDs: Set<UUID> = []
 
     mutating func noteScheduledSkip(repoID: UUID) {

@@ -3,9 +3,6 @@ import SwiftUI
 struct RepoDivergedRowView: View {
     let detail: String
     let lastVerifiedAt: Date?
-    let isVerifying: Bool
-    let onVerifyNow: () -> Void
-    let onSyncNow: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: DesignTokens.Spacing.sm) {
@@ -24,16 +21,6 @@ struct RepoDivergedRowView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-            }
-            Spacer(minLength: DesignTokens.Spacing.md)
-            VStack(spacing: DesignTokens.Spacing.xs) {
-                Button(String.loc("Verify Now"), action: onVerifyNow)
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(isVerifying)
-                Button(String.loc("Sync Now"), action: onSyncNow)
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
             }
         }
     }

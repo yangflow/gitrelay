@@ -4,41 +4,106 @@ import AppKit
 @main
 struct gitrelayApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @State private var appVM = AppViewModel()
-    @State private var languageStore = AppLanguageStore()
+    @State private var appModel: GitRelayAppModel
+    @State private var languageStore: AppLanguageStore
+
+    private var workspace: WorkspaceModel { appModel.workspace }
 
     init() {
+        #if DEBUG
+        UITestBootstrap.prepareIfNeeded()
+        #endif
         AppLanguageStore.bootstrapAppleLanguages()
+        _appModel = State(initialValue: GitRelayAppModel())
+        _languageStore = State(initialValue: AppLanguageStore())
     }
 
     var body: some Scene {
         WindowGroup(id: "main") {
             ContentView()
-                .environment(appVM)
+                .environment(appModel.library)
+                .environment(appModel.operations)
+                .environment(appModel.scheduling)
+                .environment(appModel.management)
+                .environment(workspace)
+                .environment(appModel.issues)
+                .environment(appModel.preferences)
+                .environment(appModel.security)
+                .environment(appModel.cache)
+                .environment(appModel.webhooks)
+                .environment(appModel.notifications)
+                .environment(appModel.orgDiscovery)
                 .environment(languageStore)
                 .environment(\.locale, languageStore.locale)
                 .id(languageStore.preference)
-                .environment(appVM.notificationPreferences)
-                .environment(appVM.securityPreferences)
-                .environment(appVM.cachePreferences)
-                .environment(appVM.appBehaviorPreferences)
-                .environment(appVM.windowLayout)
-                .environment(appVM.environmentMonitor)
+                .environment(appModel.preferences.notificationStore)
+                .environment(appModel.preferences.securityStore)
+                .environment(appModel.preferences.cacheStore)
+                .environment(appModel.preferences.behaviorStore)
+                .environment(workspace.windowLayout)
+                .environment(appModel.scheduling.environmentMonitor)
                 .onOpenURL(perform: handleIncomingURL)
+                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
                 .onAppear {
-                    appDelegate.behaviorStore = appVM.appBehaviorPreferences
+                    appDelegate.behaviorStore = appModel.preferences.behaviorStore
                 }
                 .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { _ in
                     handleWindowWillClose()
                 }
         }
+        .windowToolbarStyle(.unified(showsTitle: false))
         .windowResizability(.contentMinSize)
-        .defaultSize(width: 900, height: 600)
+        .defaultSize(
+            width: DesignTokens.Layout.windowDefaultWidth,
+            height: DesignTokens.Layout.windowDefaultHeight
+        )
         .commands {
-            MainWindowCommands(appVM: appVM)
+            MainWindowCommands(
+                workspace: workspace,
+                operations: appModel.operations,
+                notifications: appModel.notifications
+            )
+            SettingsCommands()
+            AboutCommands()
         }
 
-        Window("About GitRelay", id: "about") {
+        Window(String.loc("Add Mirror"), id: "add-mirror") {
+            MirrorEditorSheet(
+                repo: nil,
+                prefill: workspace.addMirrorPrefill,
+                defaultPolicy: appModel.preferences.defaultPolicyStore.preferences,
+                presentation: .window
+            )
+                .environment(appModel.library)
+                .environment(appModel.operations)
+                .environment(appModel.scheduling)
+                .environment(appModel.management)
+                .environment(workspace)
+                .environment(appModel.issues)
+                .environment(appModel.preferences)
+                .environment(appModel.security)
+                .environment(appModel.cache)
+                .environment(appModel.webhooks)
+                .environment(appModel.notifications)
+                .environment(appModel.orgDiscovery)
+                .environment(languageStore)
+                .environment(\.locale, languageStore.locale)
+                .id(workspace.addMirrorRequestID)
+                .environment(appModel.preferences.notificationStore)
+                .environment(appModel.preferences.securityStore)
+                .environment(appModel.preferences.cacheStore)
+                .environment(appModel.preferences.behaviorStore)
+                .environment(workspace.windowLayout)
+                .environment(appModel.scheduling.environmentMonitor)
+        }
+        .windowToolbarStyle(.unified(showsTitle: false))
+        .windowResizability(.contentMinSize)
+        .defaultSize(
+            width: DesignTokens.Layout.addEditRepoSheetDefaultWidth,
+            height: DesignTokens.Layout.addEditRepoSheetDefaultHeight
+        )
+
+        Window(String.loc("About GitRelay"), id: "about") {
             AboutView()
                 .environment(languageStore)
                 .environment(\.locale, languageStore.locale)
@@ -46,48 +111,60 @@ struct gitrelayApp: App {
         }
         .windowResizability(.contentSize)
 
-        // The six locked settings panes live in the main window's 设置 row.
-        // Only org subscriptions and integrity verification remain here.
-        Settings {
-            TabView {
-                OrgSubscriptionSettingsView()
-                    .tabItem { Label(String.loc("Subscribe"), systemImage: "building.2") }
-                VerificationSettingsView()
-                    .tabItem { Label("Verify", systemImage: "checkmark.shield") }
-            }
-            .environment(appVM.notificationPreferences)
-            .environment(appVM.securityPreferences)
-            .environment(appVM.cachePreferences)
-            .environment(appVM.appBehaviorPreferences)
-            .environment(appVM.environmentMonitor)
-            .environment(appVM)
+        Window(String.loc("Settings"), id: "settings") {
+            SettingsView()
+            .environment(appModel.library)
+            .environment(appModel.operations)
+            .environment(appModel.scheduling)
+            .environment(appModel.management)
+            .environment(appModel.cache)
+            .environment(appModel.webhooks)
+            .environment(workspace)
+            .environment(appModel.preferences)
+            .environment(appModel.security)
+            .environment(appModel.orgDiscovery)
+            .environment(appModel.preferences.notificationStore)
+            .environment(appModel.preferences.securityStore)
+            .environment(appModel.preferences.cacheStore)
+            .environment(appModel.preferences.behaviorStore)
+            .environment(appModel.scheduling.environmentMonitor)
             .environment(languageStore)
             .environment(\.locale, languageStore.locale)
-            .id(languageStore.preference)
             .onAppear {
-                appDelegate.behaviorStore = appVM.appBehaviorPreferences
+                appDelegate.behaviorStore = appModel.preferences.behaviorStore
             }
         }
+        .windowResizability(.contentMinSize)
+        .defaultSize(
+            width: DesignTokens.Layout.settingsDefaultWidth,
+            height: DesignTokens.Layout.settingsDefaultHeight
+        )
 
         MenuBarExtra {
             MenuBarPopoverView()
-                .environment(appVM)
+                .environment(appModel.library)
+                .environment(appModel.operations)
+                .environment(appModel.scheduling)
+                .environment(workspace)
                 .environment(languageStore)
                 .environment(\.locale, languageStore.locale)
                 .id(languageStore.preference)
-                .environment(appVM.notificationPreferences)
-                .environment(appVM.securityPreferences)
-                .environment(appVM.appBehaviorPreferences)
-                .environment(appVM.environmentMonitor)
+                .environment(appModel.preferences.notificationStore)
+                .environment(appModel.preferences.securityStore)
+                .environment(appModel.preferences.behaviorStore)
+                .environment(appModel.scheduling.environmentMonitor)
         } label: {
-            MenuBarIconLabel(appVM: appVM)
+            MenuBarIconLabel(
+                mirrors: appModel.library.mirrors,
+                statuses: appModel.operations.statuses
+            )
         }
         .menuBarExtraStyle(.window)
     }
 
     private func handleIncomingURL(_ url: URL) {
         if let repoID = WidgetDeepLink.repoID(from: url) {
-            appVM.pendingMainWindowRepoID = repoID
+            workspace.requestMirrorSelection(repoID)
         }
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
@@ -101,7 +178,7 @@ struct gitrelayApp: App {
                 (isTitled: $0.styleMask.contains(.titled), isVisible: $0.isVisible)
             }
             guard !AppLifecyclePolicy.hasVisibleTitledWindow(windowStates) else { return }
-            let keepInMenuBar = appVM.appBehaviorPreferences.preferences.keepInMenuBarWhenMainWindowCloses
+            let keepInMenuBar = appModel.preferences.behaviorStore.preferences.keepInMenuBarWhenMainWindowCloses
             if AppLifecyclePolicy.shouldSwitchToAccessoryAfterLastWindowCloses(keepInMenuBar: keepInMenuBar) {
                 NSApp.setActivationPolicy(.accessory)
             }

@@ -6,32 +6,32 @@ enum OrgSubscriptionAutoAdder {
     static func addNewRepos(
         from result: OrgSubscriptionCheckResult,
         store: OrgSubscriptionStore
-    ) async -> [RepoConfig] {
+    ) async -> [MirrorPlan] {
         guard result.subscription.autoAddEnabled else { return [] }
         let template = result.subscription.template
         guard OrgSubscriptionTemplateApplier.isValidTemplate(template) else { return [] }
 
-        var configs: [RepoConfig] = []
+        var plans: [MirrorPlan] = []
         for repo in result.newRepos {
-            if let config = await addRepo(
+            if let plan = await addRepo(
                 repo: repo,
                 subscription: result.subscription,
                 store: store
             ) {
-                configs.append(config)
+                plans.append(plan)
             }
         }
-        return configs
+        return plans
     }
 
     static func addRepo(
         repo: RemoteRepo,
         subscription: OrgSubscription,
         store: OrgSubscriptionStore
-    ) async -> RepoConfig? {
+    ) async -> MirrorPlan? {
         let template = subscription.template
         guard OrgSubscriptionTemplateApplier.isValidTemplate(template) else { return nil }
-        guard let config = await buildConfig(
+        guard let plan = await buildPlan(
             for: repo,
             template: template,
             subscription: subscription,
@@ -40,27 +40,27 @@ enum OrgSubscriptionAutoAdder {
             return nil
         }
         persistTokens(
-            for: [config],
+            for: [plan],
             subscription: subscription,
             template: template,
             store: store
         )
-        return config
+        return plan
     }
 
-    private static func buildConfig(
+    private static func buildPlan(
         for repo: RemoteRepo,
         template: OrgSubscriptionTemplate,
         subscription: OrgSubscription,
         store: OrgSubscriptionStore
-    ) async -> RepoConfig? {
+    ) async -> MirrorPlan? {
         if template.targetAutoCreate {
             return await buildAutoCreateConfig(for: repo, template: template)
         }
         guard let dstURL = OrgSubscriptionTemplateApplier.destinationURL(for: repo, template: template) else {
             return nil
         }
-        return OrgSubscriptionTemplateApplier.makeConfig(
+        return OrgSubscriptionTemplateApplier.makePlan(
             repo: repo,
             template: template,
             dstURL: dstURL
@@ -70,7 +70,7 @@ enum OrgSubscriptionAutoAdder {
     private static func buildAutoCreateConfig(
         for repo: RemoteRepo,
         template: OrgSubscriptionTemplate
-    ) async -> RepoConfig? {
+    ) async -> MirrorPlan? {
         guard let baseURL = resolvedGiteaBaseURL(template.targetCreateHost) else { return nil }
         let token = ProviderTokenStore.load(provider: .gitea, accountLabel: ProviderAccount.defaultLabel) ?? ""
         guard !token.isEmpty else { return nil }
@@ -98,7 +98,7 @@ enum OrgSubscriptionAutoAdder {
                     }
                 }
             }()
-            return OrgSubscriptionTemplateApplier.makeConfig(
+            return OrgSubscriptionTemplateApplier.makePlan(
                 repo: repo,
                 template: template,
                 dstURL: dstURL
@@ -109,7 +109,7 @@ enum OrgSubscriptionAutoAdder {
     }
 
     private static func persistTokens(
-        for configs: [RepoConfig],
+        for plans: [MirrorPlan],
         subscription: OrgSubscription,
         template: OrgSubscriptionTemplate,
         store: OrgSubscriptionStore
@@ -120,14 +120,15 @@ enum OrgSubscriptionAutoAdder {
         )
         let targetToken = store.loadTargetToken(for: subscription.id)
 
-        for config in configs {
-            if case .httpsToken(let tag) = config.srcAuth,
+        for plan in plans {
+            if case .httpsToken(let tag) = plan.source.auth,
                template.sourceAuthMode == .httpsToken,
                let sourceToken, !sourceToken.isEmpty {
                 try? KeychainService.saveToken(sourceToken, tag: tag)
             }
-            for target in config.targets {
-                if case .httpsToken(let tag) = target.auth,
+            for destination in plan.destinations {
+                guard case .git(let endpoint) = destination.location else { continue }
+                if case .httpsToken(let tag) = endpoint.auth,
                    template.targetAuthMode == .httpsToken,
                    let targetToken, !targetToken.isEmpty {
                     try? KeychainService.saveToken(targetToken, tag: tag)

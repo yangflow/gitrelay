@@ -4,22 +4,9 @@ import AppKit
 import Sparkle
 #endif
 
-/// Wrapper around Sparkle's auto-update controller.
-///
-/// Apps that haven't yet added the Sparkle Swift Package Manager dependency
-/// get a stub that opens the GitHub Releases page. Apps that have added
-/// Sparkle get the real updater with zero code changes elsewhere.
-///
-/// Setup steps for the fully-wired updater:
-///   1. Add the Sparkle package to the gitrelay app target via Xcode.
-///   2. Generate an Ed25519 keypair for appcast signing:
-///        ./path/to/Sparkle/bin/generate_keys
-///      Store the private key in your login keychain.
-///   3. In Xcode build settings, set:
-///        INFOPLIST_KEY_SUFeedURL   = https://yangflow.github.io/gitrelay/appcast.xml
-///        INFOPLIST_KEY_SUPublicEDKey = <base64 public key from step 2>
-///   4. At release time, `scripts/release.sh` can sign the artifact and
-///      update docs/appcast.xml with the new entry.
+/// Owns the Sparkle updater used by the About window and application commands.
+/// The feed URL and Ed25519 public key live in `Info.plist`; release artifacts
+/// are signed with the matching private key before `docs/appcast.xml` is published.
 
 #if canImport(Sparkle)
 
@@ -30,8 +17,6 @@ final class UpdaterService: NSObject {
     private let controller: SPUStandardUpdaterController
 
     override private init() {
-        // startingUpdater: false — do not auto-check on launch until
-        // SUFeedURL and SUPublicEDKey are configured in build settings.
         self.controller = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: nil,

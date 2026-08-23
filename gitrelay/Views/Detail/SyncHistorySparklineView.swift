@@ -3,38 +3,67 @@ import SwiftUI
 struct SyncHistorySparklineView: View {
     let sparkline: SyncHistorySparkline
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            legend
+    private var successCount: Int {
+        sparkline.days.reduce(0) { $0 + $1.successes }
+    }
 
-            GeometryReader { geometry in
-                HStack(alignment: .bottom, spacing: DesignTokens.Spacing.xxxs) {
-                    ForEach(sparkline.days) { day in
-                        dayColumn(day, maxHeight: geometry.size.height)
+    private var failureCount: Int {
+        sparkline.days.reduce(0) { $0 + $1.failures }
+    }
+
+    private var totalCount: Int { successCount + failureCount }
+
+    var body: some View {
+        Group {
+            if totalCount == 0 {
+                Text(String.loc("No sync activity in the last 30 days"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+            } else {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                    legend
+
+                    GeometryReader { geometry in
+                        HStack(alignment: .bottom, spacing: DesignTokens.Spacing.xxxs) {
+                            ForEach(sparkline.days) { day in
+                                dayColumn(day, maxHeight: geometry.size.height)
+                            }
+                        }
                     }
+                    .frame(height: 44)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(accessibilitySummary)
                 }
             }
-            .frame(height: 56)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(accessibilitySummary)
         }
     }
 
     private var legend: some View {
         HStack(spacing: DesignTokens.Spacing.sm) {
-            legendItem(title: String.loc("Succeeded"), color: DesignTokens.StatusColor.success)
-            legendItem(title: String.loc("Failed"), color: DesignTokens.StatusColor.escalatedFailure)
+            legendItem(
+                title: String.loc("Succeeded"),
+                count: successCount,
+                color: DesignTokens.StatusColor.success
+            )
+            legendItem(
+                title: String.loc("Failed"),
+                count: failureCount,
+                color: DesignTokens.StatusColor.escalatedFailure
+            )
             Spacer(minLength: 0)
         }
         .font(.caption2)
         .foregroundStyle(.secondary)
     }
 
-    private func legendItem(title: String, color: Color) -> some View {
+    private func legendItem(title: String, count: Int, color: Color) -> some View {
         HStack(spacing: DesignTokens.Spacing.xxxs) {
             Circle()
                 .fill(color)
                 .frame(width: DesignTokens.Size.statusDot, height: DesignTokens.Size.statusDot)
+            Text(count, format: .number)
+                .monospacedDigit()
             Text(title)
         }
     }
@@ -79,8 +108,10 @@ struct SyncHistorySparklineView: View {
     }
 
     private var accessibilitySummary: String {
-        let successes = sparkline.days.reduce(0) { $0 + $1.successes }
-        let failures = sparkline.days.reduce(0) { $0 + $1.failures }
-        return String(format: String.loc("Over the last 30 days, %lld succeeded and %lld failed"), successes, failures)
+        String(
+            format: String.loc("Over the last 30 days, %lld succeeded and %lld failed"),
+            successCount,
+            failureCount
+        )
     }
 }

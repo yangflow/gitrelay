@@ -16,6 +16,8 @@ nonisolated enum ConfigImportMode: String, Codable, CaseIterable, Identifiable, 
 
 nonisolated enum ConfigExportError: LocalizedError, Equatable {
     case corruptJSON
+    case unsupportedRepositoryDocument
+    case unsupportedFormat(String)
     case unsupportedSchemaVersion(found: Int, supported: Int)
     case partialDecode(String)
 
@@ -23,6 +25,10 @@ nonisolated enum ConfigExportError: LocalizedError, Equatable {
         switch self {
         case .corruptJSON:
             return String(localized: "The configuration file is damaged or is not valid JSON.")
+        case .unsupportedRepositoryDocument:
+            return String(localized: "This configuration uses an unsupported repository-list format. GitRelay imports mirror-plan configuration files.")
+        case .unsupportedFormat(let format):
+            return String(localized: "Unsupported configuration format: \(format).")
         case .unsupportedSchemaVersion(let found, let supported):
             return String(localized: "Unsupported configuration schema version \(found). This app supports version \(supported).")
         case .partialDecode(let detail):
@@ -32,7 +38,7 @@ nonisolated enum ConfigExportError: LocalizedError, Equatable {
 }
 
 nonisolated struct ConfigImportPlan: Equatable, Sendable {
-    var repos: [RepoConfig]
+    var mirrors: [MirrorPlan]
     var providerAccounts: [ExportedProviderAccount]
     var orgSubscriptions: [OrgSubscription]
     var orgSubscriptionPreferences: OrgSubscriptionPreferences?
@@ -57,16 +63,17 @@ nonisolated enum ConfigExportCodec {
     // MARK: - Export
 
     static func makeDocument(
-        repos: [RepoConfig],
+        mirrors: [MirrorPlan],
         providerAccounts: [ExportedProviderAccount],
         orgSubscriptions: [OrgSubscription],
         orgSubscriptionPreferences: OrgSubscriptionPreferences?,
         exportedAt: Date = Date()
     ) -> ConfigExportDocument {
         ConfigExportDocument(
+            format: ConfigExportDocument.formatIdentifier,
             schemaVersion: ConfigExportDocument.currentSchemaVersion,
             exportedAt: exportedAt,
-            repos: repos.map(ExportedRepo.init(from:)),
+            mirrors: mirrors.map(ExportedMirrorPlan.init(from:)),
             providerAccounts: providerAccounts,
             orgSubscriptions: orgSubscriptions.map(ExportedOrgSubscription.init(from:)),
             orgSubscriptionPreferences: orgSubscriptionPreferences
@@ -83,8 +90,25 @@ nonisolated enum ConfigExportCodec {
         guard !data.isEmpty else { throw ConfigExportError.corruptJSON }
 
         // Reject non-JSON before attempting a typed decode so callers get a clear corrupt error.
-        guard (try? JSONSerialization.jsonObject(with: data)) != nil else {
+        guard let object = try? JSONSerialization.jsonObject(with: data),
+              let envelope = object as? [String: Any] else {
             throw ConfigExportError.corruptJSON
+        }
+
+        let schemaVersion = envelope["schemaVersion"] as? Int
+        if envelope["repos"] != nil {
+            throw ConfigExportError.unsupportedRepositoryDocument
+        }
+        if let schemaVersion,
+           schemaVersion != ConfigExportDocument.currentSchemaVersion {
+            throw ConfigExportError.unsupportedSchemaVersion(
+                found: schemaVersion,
+                supported: ConfigExportDocument.currentSchemaVersion
+            )
+        }
+        if let format = envelope["format"] as? String,
+           format != ConfigExportDocument.formatIdentifier {
+            throw ConfigExportError.unsupportedFormat(format)
         }
 
         let document: ConfigExportDocument
@@ -96,11 +120,8 @@ nonisolated enum ConfigExportCodec {
             throw ConfigExportError.partialDecode(error.localizedDescription)
         }
 
-        guard document.schemaVersion == ConfigExportDocument.currentSchemaVersion else {
-            throw ConfigExportError.unsupportedSchemaVersion(
-                found: document.schemaVersion,
-                supported: ConfigExportDocument.currentSchemaVersion
-            )
+        guard document.format == ConfigExportDocument.formatIdentifier else {
+            throw ConfigExportError.unsupportedFormat(document.format)
         }
         return document
     }
@@ -110,37 +131,39 @@ nonisolated enum ConfigExportCodec {
     static func planImport(
         document: ConfigExportDocument,
         mode: ConfigImportMode,
-        existingRepos: [RepoConfig],
-        probe: CredentialProbe = .live
-    ) -> ConfigImportPlan {
-        let importedRepos = document.repos.map { $0.toRepoConfig(probe: probe) }
+        existingMirrors: [MirrorPlan]
+    ) throws -> ConfigImportPlan {
+        let importedMirrors = try document.mirrors.map {
+            try $0.toMirrorPlan().validated(allowMissingCredentials: true)
+        }
+        try validateUniqueMirrorIDs(importedMirrors)
 
         switch mode {
         case .replace:
             return ConfigImportPlan(
-                repos: importedRepos,
+                mirrors: importedMirrors,
                 providerAccounts: document.providerAccounts,
                 orgSubscriptions: document.orgSubscriptions.map { $0.toOrgSubscription() },
                 orgSubscriptionPreferences: document.orgSubscriptionPreferences,
-                importedRepoCount: importedRepos.count,
+                importedRepoCount: importedMirrors.count,
                 skippedRepoCount: 0
             )
         case .merge:
-            var merged = existingRepos
-            let existingIDs = Set(existingRepos.map(\.id))
+            var merged = existingMirrors
+            let existingIDs = Set(existingMirrors.map(\.id))
             var imported = 0
             var skipped = 0
-            for repo in importedRepos {
-                if existingIDs.contains(repo.id) {
+            for mirror in importedMirrors {
+                if existingIDs.contains(mirror.id) {
                     skipped += 1
                     continue
                 }
-                merged.append(repo)
+                merged.append(mirror)
                 imported += 1
             }
 
             return ConfigImportPlan(
-                repos: merged,
+                mirrors: merged,
                 providerAccounts: document.providerAccounts,
                 orgSubscriptions: document.orgSubscriptions.map { $0.toOrgSubscription() },
                 orgSubscriptionPreferences: document.orgSubscriptionPreferences,
@@ -187,6 +210,13 @@ nonisolated enum ConfigExportCodec {
 
     static func accountKey(_ account: ExportedProviderAccount) -> String {
         "\(account.provider.rawValue)|\(account.label)"
+    }
+
+    private static func validateUniqueMirrorIDs(_ mirrors: [MirrorPlan]) throws {
+        var identifiers = Set<UUID>()
+        for mirror in mirrors where !identifiers.insert(mirror.id).inserted {
+            throw MirrorPersistenceError.duplicateMirrorID(mirror.id)
+        }
     }
 
     /// True when serialized export JSON contains forbidden secret-bearing field names.

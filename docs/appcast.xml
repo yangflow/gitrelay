@@ -6,22 +6,28 @@
         <description>GitRelay release feed</description>
         <language>en</language>
 
-        <!--
-        Add a new <item> for each release. Example:
-
         <item>
-            <title>Version 1.0.0</title>
-            <pubDate>Sun, 12 Apr 2026 00:00:00 +0000</pubDate>
-            <sparkle:version>1</sparkle:version>
-            <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <title>GitRelay 0.4.0</title>
+            <link>https://github.com/yangflow/gitrelay/releases/tag/v0.4.0</link>
+            <pubDate>Sun, 23 Aug 2026 09:48:45 +0000</pubDate>
+            <description><![CDATA[
+                <h2>GitRelay 0.4.0</h2>
+                <p>A local-first macOS workspace for keeping important Git repositories mirrored, healthy, and recoverable.</p>
+                <ul>
+                    <li>Three-pane Mirror workspace with health-driven details.</li>
+                    <li>Unified connected-service and Git URL add flow.</li>
+                    <li>Multi-destination sync, verification, automation, and recovery tools.</li>
+                </ul>
+            ]]></description>
+            <sparkle:version>10</sparkle:version>
+            <sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.2</sparkle:minimumSystemVersion>
             <enclosure
-                url="https://github.com/yangflow/gitrelay/releases/download/v1.0.0/GitRelay-1.0.0.zip"
-                sparkle:edSignature="REPLACE_WITH_SIGNATURE"
-                length="REPLACE_WITH_BYTES"
+                url="https://github.com/yangflow/gitrelay/releases/download/v0.4.0/GitRelay-0.4.0.dmg"
+                sparkle:edSignature="qpiRn87y9GjCAy2jP2sdqMcepJ9YFh1awRxSb0/R5QvDL8fxtFDUm7Mu1fbVpFVZ+3RvYQLsGgddrlToOy4WDw=="
+                length="11702381"
                 type="application/octet-stream"
             />
         </item>
-        -->
     </channel>
 </rss>

@@ -131,12 +131,12 @@ nonisolated struct GitRemoteExistenceProbe: RemoteExistenceProbing {
         ]
         switch credentials.mode {
         case .sshAgent:
-            env["GIT_SSH_COMMAND"] = "ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+            env["GIT_SSH_COMMAND"] = GitSSHCommand.agent
         case .sshKey:
             let path = credentials.sshKeyPath.trimmingCharacters(in: .whitespacesAndNewlines)
             env["GIT_SSH_COMMAND"] = path.isEmpty
-                ? "ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
-                : "ssh -i \(path) -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+                ? GitSSHCommand.agent
+                : GitSSHCommand.usingPrivateKey(at: path)
         case .httpsToken:
             break
         }

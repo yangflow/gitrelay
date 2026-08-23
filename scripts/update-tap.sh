@@ -42,7 +42,7 @@ cask "gitrelay" do
 
   url      "https://github.com/yangflow/gitrelay/releases/download/v#{version}/GitRelay-#{version}.dmg"
   name     "GitRelay"
-  desc     "Mirror any Git repository to any other Git repository, automatically"
+  desc     "Local-first Git repository mirroring workspace for macOS"
   homepage "https://github.com/yangflow/gitrelay"
 
   livecheck do
@@ -50,13 +50,11 @@ cask "gitrelay" do
     strategy :github_latest
   end
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: ">= :tahoe"
 
   app "GitRelay.app"
 
-  # CLI shipped inside the app bundle (gitrelayctl target → Contents/MacOS/gitrelayctl).
-  # Uncomment after the release DMG includes gitrelayctl:
-  # binary "#{appdir}/GitRelay.app/Contents/MacOS/gitrelayctl", target: "gitrelayctl"
+  binary "#{appdir}/GitRelay.app/Contents/MacOS/gitrelayctl", target: "gitrelayctl"
 
   zap trash: [
     "~/.local/share/gitrelay",

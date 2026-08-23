@@ -418,7 +418,7 @@ struct ProviderAccountLastUsedStoreTests {
         let (defaults, suite) = try scratchDefaults()
         defer { defaults.removePersistentDomain(forName: suite) }
 
-        ProviderAccountStore.migrateIfNeeded(defaults: defaults)
+        ProviderAccountStore.ensureInitialized(defaults: defaults)
         #expect(
             ProviderAccountStore.lastUsedAt(
                 for: .github,
@@ -460,13 +460,12 @@ struct ProviderAccountLastUsedStoreTests {
         )
     }
 
-    @Test func aRecordWrittenBeforeLastUsedTrackingStillDecodes() throws {
+    @Test func aRecordWithoutLastUsedDateDecodesAsNeverUsed() throws {
         let (defaults, suite) = try scratchDefaults()
         defer { defaults.removePersistentDomain(forName: suite) }
 
-        let legacy = #"{"github":[{"label":"default"},{"label":"work","host":"github.com"}]}"#
-        defaults.set(Data(legacy.utf8), forKey: "ProviderAccounts.registry")
-        defaults.set(true, forKey: "ProviderAccounts.legacyMigrationDone")
+        let encoded = #"{"github":[{"label":"default"},{"label":"work","host":"github.com"}]}"#
+        defaults.set(Data(encoded.utf8), forKey: "GitRelay.connections.registry")
 
         let records = ProviderAccountStore.accounts(for: .github, defaults: defaults)
         #expect(records.map(\.label) == ["default", "work"])
@@ -514,7 +513,7 @@ struct ProviderAccountLastUsedStoreTests {
         ProviderAccountStore.markUsed(for: .github, label: "work", defaults: defaults)
 
         let document = ConfigExportCodec.makeDocument(
-            repos: [],
+            mirrors: [],
             providerAccounts: ProviderAccountStore.exportedAccounts(defaults: defaults),
             orgSubscriptions: [],
             orgSubscriptionPreferences: nil
@@ -525,37 +524,5 @@ struct ProviderAccountLastUsedStoreTests {
         #expect(json.contains("\"work\""))
         #expect(!json.lowercased().contains("lastused"))
         #expect(!ConfigExportCodec.containsForbiddenSecretFields(json))
-    }
-}
-
-// MARK: - Sidebar provider rows scope the one list (#104)
-
-struct SecurityAccountFilterRoutingTests {
-    @Test func theProviderRowsCarryTheProviderTheyScopeTo() {
-        #expect(MainSidebarItem.githubAccounts.provider == .github)
-        #expect(MainSidebarItem.gitlabAccounts.provider == .gitlab)
-        #expect(MainSidebarItem.giteaAccounts.provider == .gitea)
-        #expect(MainSidebarItem.settings.provider == nil)
-        #expect(MainSidebarItem.repositories.provider == nil)
-    }
-
-    @Test func aProviderMapsBackToTheRowThatScopesTheList() {
-        #expect(MainSidebarItem.accountsItem(for: .github) == .githubAccounts)
-        #expect(MainSidebarItem.accountsItem(for: .gitlab) == .gitlabAccounts)
-        #expect(MainSidebarItem.accountsItem(for: .gitea) == .giteaAccounts)
-    }
-
-    @Test func noProviderMeansNoSidebarAccountRow() {
-        #expect(MainSidebarItem.accountsItem(for: nil) == nil)
-    }
-
-    @Test func theSidebarStillOffersExactlyTheLockedSetOfRows() {
-        #expect(
-            MainSidebarItem.allCases == [
-                .repositories, .queue, .browseRemote,
-                .githubAccounts, .gitlabAccounts, .giteaAccounts,
-                .settings
-            ]
-        )
     }
 }

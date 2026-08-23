@@ -5,18 +5,18 @@ nonisolated enum OrgRepoDiff {
     /// Returns remote repos whose `fullName` is not already mirrored in `localRepos`.
     static func newRepos(
         remoteRepos: [RemoteRepo],
-        localRepos: [RepoConfig]
+        localMirrors: [MirrorPlan]
     ) -> [RemoteRepo] {
-        let existingPaths = syncedRemotePaths(from: localRepos)
+        let existingPaths = syncedRemotePaths(from: localMirrors)
         return remoteRepos.filter { repo in
             !existingPaths.contains(repo.fullName.lowercased())
         }
     }
 
-    static func syncedRemotePaths(from localRepos: [RepoConfig]) -> Set<String> {
+    static func syncedRemotePaths(from localMirrors: [MirrorPlan]) -> Set<String> {
         Set(
-            localRepos.compactMap { repo in
-                GitRemoteRepoPath.parse(from: repo.srcURL)?
+            localMirrors.compactMap { mirror in
+                GitRemoteRepoPath.parse(from: mirror.source.url)?
                     .pathWithNamespace
                     .lowercased()
             }

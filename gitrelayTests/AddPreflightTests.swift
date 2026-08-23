@@ -219,7 +219,7 @@ struct MirrorPairIdentityTests {
     }
 
     @Test func savedPairIsFoundRegardlessOfURLForm() {
-        let saved = RepoConfig(
+        let saved = MirrorSnapshot(
             name: "keychord",
             srcURL: "https://github.com/yangflow/keychord.git",
             dstURL: "git@gitlab.com:yangflow/keychord.git"
@@ -235,7 +235,7 @@ struct MirrorPairIdentityTests {
     }
 
     @Test func aDifferentTargetIsNotADuplicate() {
-        let saved = RepoConfig(
+        let saved = MirrorSnapshot(
             name: "keychord",
             srcURL: "git@github.com:yangflow/keychord.git",
             dstURL: "git@gitlab.com:yangflow/keychord.git"
@@ -251,7 +251,7 @@ struct MirrorPairIdentityTests {
     }
 
     @Test func anyTargetOfAMultiTargetRepoCounts() {
-        let saved = RepoConfig(
+        let saved = MirrorSnapshot(
             name: "keychord",
             srcURL: "git@github.com:yangflow/keychord.git",
             targets: [
@@ -270,7 +270,7 @@ struct MirrorPairIdentityTests {
     }
 
     @Test func theRepoBeingEditedDoesNotMatchItself() {
-        let saved = RepoConfig(
+        let saved = MirrorSnapshot(
             name: "keychord",
             srcURL: "git@github.com:yangflow/keychord.git",
             dstURL: "git@gitlab.com:yangflow/keychord.git"
@@ -287,7 +287,7 @@ struct MirrorPairIdentityTests {
     }
 
     @Test func archiveTargetsComparedByPath() {
-        let saved = RepoConfig(
+        let saved = MirrorSnapshot(
             name: "keychord",
             srcURL: "git@github.com:yangflow/keychord.git",
             targets: [
@@ -377,7 +377,27 @@ struct GitRemoteExistenceProbeTests {
             credentials: RemoteProbeCredentials(mode: .sshKey, sshKeyPath: "/keys/id_ed25519")
         )
 
-        #expect(env["GIT_SSH_COMMAND"]?.contains("-i /keys/id_ed25519") == true)
+        #expect(env["GIT_SSH_COMMAND"]?.contains("-i '/keys/id_ed25519'") == true)
+    }
+
+    @Test func sshKeyPathIsOneShellArgument() {
+        let path = "/keys/id; touch /tmp/gitrelay-injected #"
+        let env = GitRemoteExistenceProbe.environment(
+            url: "git@github.com:yangflow/keychord.git",
+            credentials: RemoteProbeCredentials(mode: .sshKey, sshKeyPath: path)
+        )
+
+        #expect(
+            env["GIT_SSH_COMMAND"]
+                == "ssh -i '/keys/id; touch /tmp/gitrelay-injected #' -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+        )
+    }
+
+    @Test func sshKeyPathEscapesSingleQuotes() {
+        #expect(
+            GitSSHCommand.usingPrivateKey(at: "/keys/alice's key")
+                == "ssh -i '/keys/alice'\\''s key' -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+        )
     }
 
     @Test func httpsTokenTravelsInTheURLUserinfo() {
@@ -485,7 +505,7 @@ struct AddRepoPreflightViewModelTests {
     }
 
     @Test func duplicatePairAnswersWithoutTouchingTheNetwork() async {
-        let saved = RepoConfig(name: "keychord", srcURL: source, dstURL: destination)
+        let saved = MirrorSnapshot(name: "keychord", srcURL: source, dstURL: destination)
         let probe = StubRemoteProbe(results: [:])
         let vm = makeViewModel(probe: probe)
 
@@ -498,7 +518,7 @@ struct AddRepoPreflightViewModelTests {
     }
 
     @Test func changingTheTargetClearsTheDuplicateState() async {
-        let saved = RepoConfig(name: "keychord", srcURL: source, dstURL: destination)
+        let saved = MirrorSnapshot(name: "keychord", srcURL: source, dstURL: destination)
         let probe = StubRemoteProbe(results: [:])
         let vm = makeViewModel(probe: probe)
 
@@ -553,7 +573,7 @@ struct AddRepoPreflightViewModelTests {
     }
 
     @Test func savingStopsThePreflightFromSpeakingAgain() async {
-        let saved = RepoConfig(name: "keychord", srcURL: source, dstURL: destination)
+        let saved = MirrorSnapshot(name: "keychord", srcURL: source, dstURL: destination)
         let probe = StubRemoteProbe(results: [:])
         let vm = makeViewModel(probe: probe)
 

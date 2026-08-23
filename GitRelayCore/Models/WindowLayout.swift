@@ -1,30 +1,40 @@
 import Foundation
 
-/// Persisted main-window chrome state (UserDefaults only — never `repos.json`).
+/// Persisted main-window chrome state stored only in UserDefaults, never in Mirror plans.
 ///
-/// Sidebar width bounds mirror ``DesignTokens.Layout`` (200…300, ideal 240).
+/// Sidebar width bounds mirror ``DesignTokens.Layout`` (180…240, ideal 200).
 /// Literals are used here so `gitrelayctl` can compile without DesignTokens.
 struct WindowLayout: Equatable, Sendable {
     /// Matches `DesignTokens.Layout.sidebarMinWidth`.
-    static let sidebarMinWidth: Double = 200
+    static let sidebarMinWidth: Double = 180
     /// Matches `DesignTokens.Layout.sidebarIdealWidth`.
-    static let sidebarIdealWidth: Double = 240
+    static let sidebarIdealWidth: Double = 200
     /// Matches `DesignTokens.Layout.sidebarMaxWidth`.
-    static let sidebarMaxWidth: Double = 300
+    static let sidebarMaxWidth: Double = 240
 
     var selectedRepoID: UUID?
+    var selectedSmartView: MirrorSmartView?
     var detailTab: RepoDetailTab
     /// Sidebar column width in points; clamped to ``sidebarMinWidth``…``sidebarMaxWidth``.
     var sidebarWidth: Double
-    /// Whether the main-window sidebar column is shown (width is still persisted when hidden).
-    var sidebarVisible: Bool = true
-
     static let `default` = WindowLayout(
         selectedRepoID: nil,
+        selectedSmartView: nil,
         detailTab: .overview,
-        sidebarWidth: sidebarIdealWidth,
-        sidebarVisible: true
+        sidebarWidth: sidebarIdealWidth
     )
+
+    init(
+        selectedRepoID: UUID?,
+        selectedSmartView: MirrorSmartView? = nil,
+        detailTab: RepoDetailTab,
+        sidebarWidth: Double
+    ) {
+        self.selectedRepoID = selectedRepoID
+        self.selectedSmartView = selectedSmartView
+        self.detailTab = detailTab
+        self.sidebarWidth = sidebarWidth
+    }
 
     /// Clamps sidebar width into the allowed column range.
     static func clampedSidebarWidth(_ width: Double) -> Double {

@@ -39,8 +39,11 @@ nonisolated enum MirrorCacheManager {
         return usageBytes > limit
     }
 
-    static func lastAccessedAt(for repo: RepoConfig, mirrorModificationDate: Date?) -> Date {
-        repo.lastSuccessfulSyncedAt ?? mirrorModificationDate ?? .distantPast
+    static func lastAccessedAt(
+        health: MirrorHealthSnapshot?,
+        mirrorModificationDate: Date?
+    ) -> Date {
+        health?.lastSuccessfulAt ?? mirrorModificationDate ?? .distantPast
     }
 
     static func lruSorted(_ entries: [MirrorCacheEntry]) -> [MirrorCacheEntry] {
@@ -120,17 +123,17 @@ nonisolated enum MirrorDirectorySizer {
     static let defaultSizeProvider: (URL) -> Int64 = { directorySize(at: $0) }
 
     static func mirrorsUsage(
-        repos: [RepoConfig],
-        mirrorsDirectory: URL = Constants.mirrorsDirectory,
+        plans: [MirrorPlan],
+        mirrorsDirectory: URL = Constants.mirrorCacheDirectory,
         fileManager: FileManager = .default,
         sizeOf: (URL) -> Int64 = { directorySize(at: $0) }
     ) -> Int64 {
         var total: Int64 = 0
         var seen = Set<String>()
 
-        for repo in repos {
-            let path = mirrorsDirectory.appendingPathComponent(repo.id.uuidString)
-            seen.insert(repo.id.uuidString)
+        for plan in plans {
+            let path = mirrorsDirectory.appendingPathComponent(plan.id.uuidString)
+            seen.insert(plan.id.uuidString)
             total += sizeOf(path)
         }
 
@@ -150,8 +153,9 @@ nonisolated enum MirrorDirectorySizer {
     }
 
     static func mirrorEntries(
-        repos: [RepoConfig],
-        mirrorsDirectory: URL = Constants.mirrorsDirectory,
+        plans: [MirrorPlan],
+        healthByMirrorID: [UUID: MirrorHealthSnapshot] = [:],
+        mirrorsDirectory: URL = Constants.mirrorCacheDirectory,
         fileManager: FileManager = .default,
         sizeOf: (URL) -> Int64 = { directorySize(at: $0) },
         modificationDate: (URL) -> Date? = { url in
@@ -159,35 +163,35 @@ nonisolated enum MirrorDirectorySizer {
             return try? url.resourceValues(forKeys: keys).contentModificationDate
         }
     ) -> [MirrorCacheEntry] {
-        repos.compactMap { repo in
-            let path = mirrorsDirectory.appendingPathComponent(repo.id.uuidString)
+        plans.compactMap { plan in
+            let path = mirrorsDirectory.appendingPathComponent(plan.id.uuidString)
             let size = sizeOf(path)
             guard size > 0 else { return nil }
             let accessed = MirrorCacheManager.lastAccessedAt(
-                for: repo,
+                health: healthByMirrorID[plan.id],
                 mirrorModificationDate: modificationDate(path)
             )
-            return MirrorCacheEntry(repoID: repo.id, lastAccessedAt: accessed, sizeBytes: size)
+            return MirrorCacheEntry(repoID: plan.id, lastAccessedAt: accessed, sizeBytes: size)
         }
     }
 
     /// Per-folder sizes for the Cache pane: configured pairs first, then orphan UUID folders.
     static func repoUsages(
-        repos: [RepoConfig],
-        mirrorsDirectory: URL = Constants.mirrorsDirectory,
+        plans: [MirrorPlan],
+        mirrorsDirectory: URL = Constants.mirrorCacheDirectory,
         fileManager: FileManager = .default,
         sizeOf: (URL) -> Int64 = { directorySize(at: $0) }
     ) -> [MirrorCacheRepoUsage] {
         var rows: [MirrorCacheRepoUsage] = []
         var seen = Set<UUID>()
 
-        for repo in repos {
-            let path = mirrorsDirectory.appendingPathComponent(repo.id.uuidString)
+        for plan in plans {
+            let path = mirrorsDirectory.appendingPathComponent(plan.id.uuidString)
             let size = sizeOf(path)
             guard size > 0 else { continue }
-            seen.insert(repo.id)
+            seen.insert(plan.id)
             rows.append(
-                MirrorCacheRepoUsage(repoID: repo.id, name: repo.name, sizeBytes: size)
+                MirrorCacheRepoUsage(repoID: plan.id, name: plan.name, sizeBytes: size)
             )
         }
 

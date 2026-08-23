@@ -9,27 +9,29 @@ private struct SidebarColumnWidthKey: PreferenceKey {
 }
 
 struct ContentView: View {
-    @Environment(AppViewModel.self) private var appVM
-    @State private var sidebarSelection: MainSidebarItem = .default
-    @State private var selectedRepoID: UUID?
+    @Environment(MirrorLibraryModel.self) private var library
+    @Environment(MirrorOperationsController.self) private var operations
+    @Environment(AppIssueModel.self) private var issues
+    @Environment(OrgDiscoveryController.self) private var orgDiscovery
+    @Environment(WorkspaceModel.self) private var workspace
+    @Environment(AppPreferencesModel.self) private var preferences
+    @Environment(\.openWindow) private var openWindow
     @State private var sheetMode: SheetMode?
-    /// The browse-remote wizard outlives its pane so leaving 浏览远程 mid-flow
-    /// does not throw away a loaded repository list.
-    @State private var browseVM = BrowseRemoteRepoViewModel()
-    @State private var addPrefill: RepoSourceDropPrefill?
     @State private var isDropTargeted = false
-    @State private var didRestoreWindowLayout = false
 
     var body: some View {
-        @Bindable var appVM = appVM
-        HSplitView {
-            if appVM.windowLayout.sidebarVisible {
-                sidebarColumn
-            }
-            detailPane
+        @Bindable var issues = issues
+        NavigationSplitView {
+            sidebarColumn
+        } content: {
+            mirrorListPane
+                .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 440)
+        } detail: {
+            mirrorDetailPane
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .gitRelayChrome(.detail)
         }
+        .navigationSplitViewStyle(.balanced)
+        .uiTestWindowSizing()
         .frame(
             minWidth: DesignTokens.Layout.windowMinWidth,
             minHeight: DesignTokens.Layout.windowMinHeight
@@ -41,66 +43,50 @@ struct ContentView: View {
             handleDrop(providers: providers)
         }
         .onAppear {
-            restoreWindowLayoutIfNeeded()
-            appVM.mainWindowSelectedRepoID = selectedRepoID
+            workspace.reconcileLibrary()
             applyPendingMainWindowSelection()
-            applyPendingSidebarItem()
-            applyPendingBrowsePrefill()
             applyPendingEditFocusAuth()
             applyPendingOpenAddRepository()
             applyPendingFocusSearch()
         }
-        .onChange(of: selectedRepoID) { _, newValue in
-            appVM.mainWindowSelectedRepoID = newValue
-            guard didRestoreWindowLayout else { return }
-            appVM.windowLayout.selectedRepoID = newValue
+        .onChange(of: library.mirrors.map(\.id)) { _, _ in
+            workspace.reconcileLibrary()
         }
-        .onChange(of: appVM.repos.map(\.id)) { _, ids in
-            appVM.windowLayout.reconcileSelection(withExistingIDs: Set(ids))
-            if let selectedRepoID, !ids.contains(selectedRepoID) {
-                self.selectedRepoID = nil
-            }
-        }
-        .onChange(of: appVM.pendingMainWindowRepoID) { _, _ in
+        .onChange(of: workspace.pendingMirrorSelectionID) { _, _ in
             applyPendingMainWindowSelection()
         }
-        .onChange(of: appVM.pendingMainWindowSidebarItem) { _, _ in
-            applyPendingSidebarItem()
-        }
-        .onChange(of: appVM.pendingBrowsePrefill?.id) { _, _ in
-            applyPendingBrowsePrefill()
-        }
-        .onChange(of: appVM.pendingEditFocusAuthRepoID) { _, _ in
+        .onChange(of: workspace.pendingEditCredentialsMirrorID) { _, _ in
             applyPendingEditFocusAuth()
         }
-        .onChange(of: appVM.pendingOpenAddRepository) { _, isPending in
+        .onChange(of: workspace.pendingOpenAddMirror) { _, isPending in
             guard isPending else { return }
             applyPendingOpenAddRepository()
         }
-        .onChange(of: appVM.pendingFocusSidebarSearch) { _, isPending in
+        .onChange(of: workspace.pendingFocusSearch) { _, isPending in
             guard isPending else { return }
             applyPendingFocusSearch()
         }
         .sheet(item: $sheetMode) { mode in
             switch mode {
-            case .add:
-                AddEditRepoSheet(repo: nil, prefill: addPrefill)
-                    .onDisappear { addPrefill = nil }
             case .edit(let repo, let focusAuth):
-                AddEditRepoSheet(repo: repo, focusAuth: focusAuth)
+                MirrorEditorSheet(
+                    repo: repo,
+                    focusAuth: focusAuth,
+                    defaultPolicy: preferences.defaultPolicyStore.preferences
+                )
             }
         }
         .alert(
             "An Error Occurred",
-            isPresented: $appVM.isShowingError,
-            presenting: appVM.errorMessage
+            isPresented: $issues.isShowingError,
+            presenting: issues.errorMessage
         ) { _ in
             Button("OK", role: .cancel) { }
         } message: { message in
             Text(message)
         }
         .sheet(item: Binding(
-            get: { appVM.presentedDestructiveConfirmation },
+            get: { operations.presentedDestructiveConfirmation },
             // Buttons own the lifecycle; ignore SwiftUI writes so confirming one
             // queued prompt cannot cancel the next via a transient nil set.
             set: { _ in }
@@ -109,18 +95,18 @@ struct ContentView: View {
                 repoName: request.repoName,
                 targetURL: request.targetURL,
                 plan: request.plan,
-                onDecision: { appVM.resolvePendingDestructivePush($0) }
+                onDecision: { operations.resolvePendingDestructivePush($0) }
             )
             .interactiveDismissDisabled()
         }
         .sheet(item: Binding(
-            get: { appVM.presentedOrgDiscovery },
+            get: { orgDiscovery.presentedDiscovery },
             set: { _ in }
         )) { item in
             OrgDiscoverySheet(
                 item: item,
-                canJoinAndSync: appVM.canJoinAndSyncOrgDiscovery(item),
-                onDecision: { appVM.resolveOrgDiscovery($0) }
+                canJoinAndSync: orgDiscovery.canJoinAndSync(item),
+                onDecision: { orgDiscovery.resolve($0) }
             )
             .interactiveDismissDisabled()
         }
@@ -129,10 +115,9 @@ struct ContentView: View {
     // MARK: - Columns
 
     private var sidebarColumn: some View {
-        MainSidebarView(selection: $sidebarSelection)
-            .gitRelaySidebarColumnWidth(ideal: appVM.windowLayout.sidebarWidth)
+        MirrorSmartViewSidebar()
+            .gitRelaySidebarColumnWidth(ideal: workspace.windowLayout.sidebarWidth)
             .frame(maxHeight: .infinity, alignment: .topLeading)
-            .gitRelayChrome(.sidebar)
             .background {
                 GeometryReader { proxy in
                     Color.clear
@@ -140,42 +125,35 @@ struct ContentView: View {
                 }
             }
             .onPreferenceChange(SidebarColumnWidthKey.self) { width in
-                guard didRestoreWindowLayout else { return }
-                appVM.windowLayout.sidebarWidth = width
+                workspace.windowLayout.sidebarWidth = width
             }
     }
 
-    // MARK: - Right pane
+    // MARK: - List and detail
 
-    @ViewBuilder
-    private var detailPane: some View {
-        switch sidebarSelection {
-        case .repositories:
-            repositoriesPane
-        case .queue:
-            SyncQueueView(onOpen: { select(repoID: $0) })
-        case .browseRemote:
-            BrowseRemotePane(vm: browseVM) { select(repoID: nil) }
-        case .githubAccounts, .gitlabAccounts, .giteaAccounts:
-            if let provider = sidebarSelection.provider {
-                ProviderAccountsView(provider: provider)
-            }
-        case .settings:
-            SettingsView()
-        }
+    private var mirrorListPane: some View {
+        MirrorListView(
+            onOpen: { select(repoID: $0) },
+            onAdd: { openAddSheet(prefill: nil) },
+            onEdit: { sheetMode = .edit($0, focusAuth: false) },
+            onExamplePrefill: { openAddSheet(prefill: $0) },
+            isDropTargeted: isDropTargeted
+        )
     }
 
     @ViewBuilder
-    private var repositoriesPane: some View {
-        if let selectedRepoID, let repo = appVM.repos.first(where: { $0.id == selectedRepoID }) {
-            RepoDetailPane(repo: repo) { select(repoID: nil) }
+    private var mirrorDetailPane: some View {
+        if let selectedMirrorID = workspace.selectedMirrorID,
+           let repo = library.mirror(id: selectedMirrorID) {
+            RepoDetailPane(
+                repo: repo,
+                onBack: { select(repoID: nil) },
+                onEdit: { sheetMode = .edit(repo, focusAuth: false) }
+            )
         } else {
-            RepoPairTableView(
-                onOpen: { select(repoID: $0) },
-                onAdd: { openAddSheet(prefill: nil) },
-                onEdit: { sheetMode = .edit($0, focusAuth: false) },
-                onExamplePrefill: { openAddSheet(prefill: $0) },
-                isDropTargeted: isDropTargeted
+            PaneEmptyStateView(
+                systemImage: "square.stack.3d.up",
+                message: String.loc("Select a Mirror")
             )
         }
     }
@@ -183,15 +161,7 @@ struct ContentView: View {
     // MARK: - Navigation
 
     private func select(repoID: UUID?) {
-        sidebarSelection = .repositories
-        selectedRepoID = repoID
-    }
-
-    private func restoreWindowLayoutIfNeeded() {
-        guard !didRestoreWindowLayout else { return }
-        appVM.windowLayout.reconcileSelection(withExistingIDs: Set(appVM.repos.map(\.id)))
-        selectedRepoID = appVM.windowLayout.selectedRepoID
-        didRestoreWindowLayout = true
+        workspace.selectMirror(repoID)
     }
 
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
@@ -203,50 +173,77 @@ struct ContentView: View {
     }
 
     private func openAddSheet(prefill: RepoSourceDropPrefill?) {
-        addPrefill = prefill
-        sheetMode = .add
+        workspace.requestOpenAddMirror(prefill: prefill)
     }
 
     private func applyPendingMainWindowSelection() {
-        guard let repoID = appVM.pendingMainWindowRepoID else { return }
+        guard let repoID = workspace.consumePendingMirrorSelection() else { return }
         select(repoID: repoID)
-        appVM.mainWindowSelectedRepoID = repoID
-        appVM.pendingMainWindowRepoID = nil
-    }
-
-    private func applyPendingSidebarItem() {
-        guard let item = appVM.pendingMainWindowSidebarItem else { return }
-        appVM.pendingMainWindowSidebarItem = nil
-        sidebarSelection = item
-        if item != .repositories {
-            selectedRepoID = nil
-        }
-    }
-
-    private func applyPendingBrowsePrefill() {
-        guard let prefill = appVM.consumePendingBrowsePrefill() else { return }
-        browseVM.restoreContextIfNeeded()
-        browseVM.applyPrefill(prefill)
-        sidebarSelection = .browseRemote
     }
 
     private func applyPendingEditFocusAuth() {
-        guard let repoID = appVM.consumePendingEditFocusAuthRepoID() else { return }
+        guard let repoID = workspace.consumePendingEditCredentialsMirrorID() else { return }
         select(repoID: repoID)
-        guard let repo = appVM.repos.first(where: { $0.id == repoID }) else { return }
+        guard let repo = library.mirror(id: repoID) else { return }
         sheetMode = .edit(repo, focusAuth: true)
     }
 
     private func applyPendingOpenAddRepository() {
-        guard appVM.consumePendingOpenAddRepository() else { return }
-        openAddSheet(prefill: nil)
+        guard workspace.consumePendingOpenAddMirror() else { return }
+        openWindow(id: "add-mirror")
     }
 
-    /// ⌘F focuses the pair-table search field, which only exists on the 仓库
-    /// pane. Bring that pane forward and let it consume the pending flag.
+    /// The list column is persistent in the continuity workspace, so the list
+    /// itself consumes the pending focus request.
     private func applyPendingFocusSearch() {
-        guard appVM.pendingFocusSidebarSearch else { return }
-        sidebarSelection = .repositories
-        selectedRepoID = nil
+        guard workspace.pendingFocusSearch else { return }
     }
 }
+
+private extension View {
+    @ViewBuilder
+    func uiTestWindowSizing() -> some View {
+        #if DEBUG
+        background(UITestWindowSizeConfigurator())
+        #else
+        self
+        #endif
+    }
+}
+
+#if DEBUG
+private struct UITestWindowSizeConfigurator: NSViewRepresentable {
+    final class Coordinator {
+        var configured = false
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        configure(view, context: context)
+        return view
+    }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        configure(view, context: context)
+    }
+
+    private func configure(_ view: NSView, context: Context) {
+        guard !context.coordinator.configured else { return }
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["GITRELAY_UI_TEST_MODE"] == "1",
+              let widthText = environment["GITRELAY_UI_TEST_WINDOW_WIDTH"],
+              let heightText = environment["GITRELAY_UI_TEST_WINDOW_HEIGHT"],
+              let width = Double(widthText),
+              let height = Double(heightText) else { return }
+
+        DispatchQueue.main.async {
+            guard let window = view.window else { return }
+            context.coordinator.configured = true
+            window.setContentSize(NSSize(width: width, height: height))
+            window.center()
+        }
+    }
+}
+#endif

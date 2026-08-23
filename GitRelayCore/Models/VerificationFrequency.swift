@@ -1,6 +1,6 @@
 import Foundation
 
-enum VerificationFrequency: String, Codable, CaseIterable, Identifiable {
+nonisolated enum VerificationFrequency: String, Codable, CaseIterable, Identifiable {
     case manual = "手动"
     case day1 = "每天"
     case week1 = "每周"

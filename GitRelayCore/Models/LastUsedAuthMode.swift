@@ -1,8 +1,8 @@
 import Foundation
 
-/// Remembers the last auth mode chosen in the add/edit repository sheet (no secrets).
+/// Remembers the last auth mode chosen in the mirror editor (no secrets).
 nonisolated enum LastUsedAuthMode {
-    private static let defaultsKey = "AddEditRepo.lastUsedAuthMode"
+    private static let defaultsKey = "GitRelay.mirrorEditor.lastUsedAuthMode"
 
     static func load(from defaults: UserDefaults = .standard) -> AuthMode? {
         guard let raw = defaults.string(forKey: defaultsKey) else { return nil }

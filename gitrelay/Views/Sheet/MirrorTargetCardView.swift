@@ -9,6 +9,7 @@ struct MirrorTargetFieldsView: View {
     let canRemove: Bool
     let onRemove: () -> Void
     var showsHeader: Bool = true
+    var showsEnabledToggle: Bool = true
     var urlFieldTitle: String? = nil
     var authPickerTitle: String? = nil
 
@@ -62,7 +63,9 @@ struct MirrorTargetFieldsView: View {
                 filesystemFields
             }
 
-            Toggle(String.loc("Enabled"), isOn: $target.enabled)
+            if showsEnabledToggle {
+                Toggle(String.loc("Enabled"), isOn: $target.enabled)
+            }
         }
     }
 
@@ -72,9 +75,14 @@ struct MirrorTargetFieldsView: View {
             Text(resolvedURLTitle)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            TextField("git@github.com:user/repo.git", text: $target.url)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(.caption, design: .monospaced))
+            TextField(
+                "",
+                text: $target.url,
+                prompt: Text("git@github.com:user/repo.git")
+            )
+            .labelsHidden()
+            .textFieldStyle(.roundedBorder)
+            .font(.system(.caption, design: .monospaced))
             if let err = error {
                 Text(err).font(.caption).foregroundStyle(DesignTokens.StatusColor.error)
             }
@@ -97,9 +105,14 @@ struct MirrorTargetFieldsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             HStack {
-                TextField("/Volumes/Backup/git-archives", text: $target.filesystemPath)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(.caption, design: .monospaced))
+                TextField(
+                    "",
+                    text: $target.filesystemPath,
+                    prompt: Text("/Volumes/Backup/git-archives")
+                )
+                .labelsHidden()
+                .textFieldStyle(.roundedBorder)
+                .font(.system(.caption, design: .monospaced))
                 Button("Choose…") {
                     pickArchiveDirectory()
                 }

@@ -28,6 +28,28 @@ nonisolated struct SyncRecord: Identifiable, Sendable {
 }
 
 extension SyncRecord {
+    init(run: MirrorRunRecord, plan: MirrorPlan) {
+        self.init(
+            repoID: run.mirrorID,
+            startedAt: run.startedAt,
+            finishedAt: run.finishedAt,
+            succeeded: run.outcome == .succeeded
+        )
+        logLines = run.logLines
+        let destinations = Dictionary(uniqueKeysWithValues: plan.destinations.map { ($0.id, $0) })
+        targetResults = run.destinationResults.map { result in
+            TargetSyncResult(
+                targetID: result.destinationID,
+                targetURL: destinations[result.destinationID]?.location.displayLocation
+                    ?? result.destinationID.uuidString,
+                succeeded: result.succeeded,
+                error: result.failure?.message,
+                failureKind: result.failure?.kind,
+                logLines: []
+            )
+        }
+    }
+
     static func aggregateSucceeded(from results: [TargetSyncResult]) -> Bool {
         !results.isEmpty && results.allSatisfy(\.succeeded)
     }

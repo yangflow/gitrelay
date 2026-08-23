@@ -109,7 +109,6 @@ TRANSLATIONS: dict[str, str] = {
     "连续失败阈值：\\(store.preferences.consecutiveFailureThreshold) 次": "Consecutive failure threshold: \\(store.preferences.consecutiveFailureThreshold)",
     "通知级别": "Notification Level",
     "失败通知": "Failure Notifications",
-    "仅在首次失败（可选）或连续失败达到阈值（及其倍数）时推送，避免短暂网络抖动刷屏。专注模式开启时会暂存，解除后发送聚合摘要。": "Notify only on the first failure (optional), or when consecutive failures reach the threshold and its multiples, to avoid alerts from brief network interruptions. Notifications are deferred while Focus is on and combined into a summary afterward.",
     "低电量模式时暂停计划同步": "Pause scheduled sync in Low Power Mode",
     "昂贵网络 / 热点时暂停计划同步": "Pause scheduled sync on expensive networks or hotspots",
     "计划同步暂停": "Scheduled Sync Pausing",
@@ -388,8 +387,9 @@ TRANSLATIONS: dict[str, str] = {
     "网络请求失败：\\(e.localizedDescription)": "Network request failed: \\(e.localizedDescription)",
     "发生错误": "An Error Occurred",
     "确定": "OK",
+    "此配置使用不受支持的仓库列表格式。GitRelay 仅导入镜像计划配置文件。": "This configuration uses an unsupported repository-list format. GitRelay imports mirror-plan configuration files.",
+    "Bare 克隆保存在 ~/.local/share/gitrelay/mirrors/。超出配额时，GitRelay 会先对最久未同步的镜像执行 git gc，必要时再删除整个克隆；下次同步会自动重建。": "Bare clones are stored under ~/.local/share/gitrelay/mirrors/. When over quota, GitRelay runs git gc on least-recently synced mirrors first, then deletes entire clones if needed. The next sync rebuilds deleted mirrors.",
 }
-
 
 def swift_files() -> list[Path]:
     """Return only production Swift files in the two requested source roots."""
@@ -446,12 +446,19 @@ def catalog_format(value: str) -> str:
 
 
 def build_catalog() -> dict[str, object]:
+    catalog_path = ROOT / "gitrelay" / "Localizable.xcstrings"
     strings: dict[str, object] = {}
+    if catalog_path.is_file():
+        existing = json.loads(catalog_path.read_text(encoding="utf-8"))
+        existing_strings = existing.get("strings")
+        if isinstance(existing_strings, dict):
+            strings.update(existing_strings)
+
     origins: dict[str, str] = {}
     for chinese, english in TRANSLATIONS.items():
         key = catalog_format(english)
         zh_value = catalog_format(chinese)
-        if key in strings:
+        if key in origins:
             previous = origins[key]
             if previous != zh_value:
                 raise ValueError(
@@ -483,11 +490,10 @@ def build_catalog() -> dict[str, object]:
 
 
 def info_plist_catalog() -> dict[str, object]:
-    key = "NSFocusStatusUsageDescription"
     return {
         "sourceLanguage": "en",
         "strings": {
-            key: {
+            "NSFocusStatusUsageDescription": {
                 "localizations": {
                     "en": {
                         "stringUnit": {
@@ -505,7 +511,26 @@ def info_plist_catalog() -> dict[str, object]:
                         }
                     },
                 }
-            }
+            },
+            "NSFaceIDUsageDescription": {
+                "localizations": {
+                    "en": {
+                        "stringUnit": {
+                            "state": "translated",
+                            "value": (
+                                "GitRelay uses Touch ID or your login password to protect "
+                                "sensitive actions such as viewing tokens and deleting mirrors."
+                            ),
+                        }
+                    },
+                    "zh-Hans": {
+                        "stringUnit": {
+                            "state": "translated",
+                            "value": "GitRelay 使用 Touch ID 或登录密码来保护查看令牌和删除镜像等敏感操作。",
+                        }
+                    },
+                }
+            },
         },
         "version": "1.0",
     }

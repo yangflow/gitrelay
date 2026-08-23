@@ -9,21 +9,21 @@ final class ReleaseMirrorService {
     }
 
     func mirrorReleases(
-        repo: RepoConfig,
-        target: MirrorTarget,
+        plan: MirrorPlan,
+        destination: MirrorDestination,
         log: @escaping (String) -> Void
     ) async throws {
-        guard repo.mirrorReleases else { return }
-        guard target.kind == .gitRemote else { return }
+        guard plan.policy.content.mirrorsReleases else { return }
+        guard case .git(let target) = destination.location else { return }
 
-        guard let srcPath = GitRemoteRepoPath.parse(from: repo.srcURL),
+        guard let srcPath = GitRemoteRepoPath.parse(from: plan.source.url),
               let dstPath = GitRemoteRepoPath.parse(from: target.url) else {
-            throw ReleaseMirrorError.invalidRemoteURL(repo.srcURL)
+            throw ReleaseMirrorError.invalidRemoteURL(plan.source.url)
         }
 
         let srcClient = try ReleaseProviderClientFactory.makeClient(
-            remoteURL: repo.srcURL,
-            auth: repo.srcAuth,
+            remoteURL: plan.source.url,
+            auth: plan.source.auth,
             side: "source"
         )
         let dstClient = try ReleaseProviderClientFactory.makeClient(
@@ -32,10 +32,14 @@ final class ReleaseMirrorService {
             side: "target"
         )
 
-        var resume = ReleaseMirrorResumeStore.loadResume(repoID: repo.id, targetID: target.id)
+        var resume = ReleaseMirrorResumeStore.loadResume(
+            repoID: plan.id,
+            targetID: destination.id
+        )
         updatePersistedStatus(
-            repo: repo,
-            target: target,
+            mirrorID: plan.id,
+            destinationID: destination.id,
+            destinationURL: target.url,
             tags: [],
             isSyncing: true,
             lastError: nil
@@ -46,15 +50,23 @@ final class ReleaseMirrorService {
         var tagStatuses = buildInitialTagStatuses(source: sourceReleases)
         log("Listing target releases…")
         let targetReleases = try await dstClient.listReleases(ownerRepo: dstPath.ownerRepoPath)
-        updatePersistedStatus(repo: repo, target: target, tags: tagStatuses, isSyncing: true, lastError: nil)
+        updatePersistedStatus(
+            mirrorID: plan.id,
+            destinationID: destination.id,
+            destinationURL: target.url,
+            tags: tagStatuses,
+            isSyncing: true,
+            lastError: nil
+        )
         let plans = ReleaseMirrorDiff.plans(source: sourceReleases, target: targetReleases, resume: resume)
 
         if plans.isEmpty {
             log("All releases and assets are already mirrored.")
             markAllSynced(&tagStatuses)
             updatePersistedStatus(
-                repo: repo,
-                target: target,
+                mirrorID: plan.id,
+                destinationID: destination.id,
+                destinationURL: target.url,
                 tags: tagStatuses,
                 isSyncing: false,
                 lastError: nil,
@@ -66,67 +78,96 @@ final class ReleaseMirrorService {
         log("Mirroring \(plans.count) release(s) with pending assets…")
         let lastError: String? = nil
 
-        for plan in plans {
+        for releasePlan in plans {
             updateTagStatus(
                 &tagStatuses,
-                tagName: plan.release.tagName,
+                tagName: releasePlan.release.tagName,
                 state: .syncing,
-                completed: Array(resume.completedAssets(for: plan.release.tagName)),
-                totalAssets: plan.release.assets.count,
+                completed: Array(resume.completedAssets(for: releasePlan.release.tagName)),
+                totalAssets: releasePlan.release.assets.count,
                 error: nil
             )
-            updatePersistedStatus(repo: repo, target: target, tags: tagStatuses, isSyncing: true, lastError: nil)
+            updatePersistedStatus(
+                mirrorID: plan.id,
+                destinationID: destination.id,
+                destinationURL: target.url,
+                tags: tagStatuses,
+                isSyncing: true,
+                lastError: nil
+            )
 
             var uploadURL: String?
-            let targetHasRelease = targetReleases.contains(where: { $0.tagName == plan.release.tagName })
-            if plan.needsCreate || !targetHasRelease {
-                log("Creating release \(plan.release.tagName) on target…")
+            let targetHasRelease = targetReleases.contains {
+                $0.tagName == releasePlan.release.tagName
+            }
+            if releasePlan.needsCreate || !targetHasRelease {
+                log("Creating release \(releasePlan.release.tagName) on target…")
                 uploadURL = try await dstClient.createRelease(
                     ownerRepo: dstPath.ownerRepoPath,
-                    release: plan.release
+                    release: releasePlan.release
                 )
             } else if dstClient.provider == .github {
                 uploadURL = try await dstClient.fetchReleaseUploadURL(
                     ownerRepo: dstPath.ownerRepoPath,
-                    tagName: plan.release.tagName
+                    tagName: releasePlan.release.tagName
                 )
             }
 
-            for assetName in plan.missingAssetNames {
-                guard let asset = plan.release.assets.first(where: { $0.name == assetName }) else { continue }
+            for assetName in releasePlan.missingAssetNames {
+                guard let asset = releasePlan.release.assets.first(where: { $0.name == assetName }) else {
+                    continue
+                }
                 log("Downloading asset \(asset.name) (\(asset.size.map(String.init) ?? "?") bytes)…")
-                let data = try await downloadAsset(from: asset.downloadURL, auth: repo.srcAuth, remoteURL: repo.srcURL)
+                let data = try await downloadAsset(
+                    from: asset.downloadURL,
+                    auth: plan.source.auth,
+                    remoteURL: plan.source.url
+                )
 
                 log("Uploading asset \(asset.name) to target…")
                 try await dstClient.uploadAsset(
                     ownerRepo: dstPath.ownerRepoPath,
-                    tagName: plan.release.tagName,
+                    tagName: releasePlan.release.tagName,
                     releaseUploadURL: uploadURL,
                     asset: asset,
                     data: data
                 )
 
-                resume.markAssetCompleted(tag: plan.release.tagName, assetName: asset.name)
-                try ReleaseMirrorResumeStore.saveResume(resume, repoID: repo.id, targetID: target.id)
+                resume.markAssetCompleted(tag: releasePlan.release.tagName, assetName: asset.name)
+                try ReleaseMirrorResumeStore.saveResume(
+                    resume,
+                    repoID: plan.id,
+                    targetID: destination.id
+                )
 
-                let completed = Array(resume.completedAssets(for: plan.release.tagName))
-                let state: ReleaseTagSyncState = completed.count >= plan.release.assets.count ? .synced : .partial
+                let completed = Array(resume.completedAssets(for: releasePlan.release.tagName))
+                let state: ReleaseTagSyncState = completed.count >= releasePlan.release.assets.count
+                    ? .synced
+                    : .partial
                 updateTagStatus(
                     &tagStatuses,
-                    tagName: plan.release.tagName,
+                    tagName: releasePlan.release.tagName,
                     state: state,
                     completed: completed,
-                    totalAssets: plan.release.assets.count,
+                    totalAssets: releasePlan.release.assets.count,
                     error: nil
                 )
-                updatePersistedStatus(repo: repo, target: target, tags: tagStatuses, isSyncing: true, lastError: nil)
+                updatePersistedStatus(
+                    mirrorID: plan.id,
+                    destinationID: destination.id,
+                    destinationURL: target.url,
+                    tags: tagStatuses,
+                    isSyncing: true,
+                    lastError: nil
+                )
             }
         }
 
         markAllSyncedWherePossible(&tagStatuses, source: sourceReleases, resume: resume)
         updatePersistedStatus(
-            repo: repo,
-            target: target,
+            mirrorID: plan.id,
+            destinationID: destination.id,
+            destinationURL: target.url,
             tags: tagStatuses,
             isSyncing: false,
             lastError: lastError,
@@ -135,13 +176,12 @@ final class ReleaseMirrorService {
         log("Release mirror finished.")
     }
 
-    func loadStatus(repo: RepoConfig) -> [ReleaseTargetMirrorStatus] {
-        let stored = ReleaseMirrorResumeStore.loadStatus(repoID: repo.id)
+    func loadStatus(plan: MirrorPlan) -> [ReleaseTargetMirrorStatus] {
+        let stored = ReleaseMirrorResumeStore.loadStatus(repoID: plan.id)
         if stored.isEmpty {
-            return repo.enabledTargets
-                .filter { $0.kind == .gitRemote }
-                .map {
-                ReleaseTargetMirrorStatus(targetID: $0.id, targetURL: $0.url)
+            return plan.enabledDestinations.compactMap { destination in
+                guard case .git(let endpoint) = destination.location else { return nil }
+                return ReleaseTargetMirrorStatus(targetID: destination.id, targetURL: endpoint.url)
             }
         }
         return stored
@@ -235,27 +275,29 @@ final class ReleaseMirrorService {
     }
 
     private func updatePersistedStatus(
-        repo: RepoConfig,
-        target: MirrorTarget,
+        mirrorID: UUID,
+        destinationID: UUID,
+        destinationURL: String,
         tags: [ReleaseTagStatus],
         isSyncing: Bool,
         lastError: String?,
         lastSyncedAt: Date? = nil
     ) {
-        var statuses = ReleaseMirrorResumeStore.loadStatus(repoID: repo.id)
+        var statuses = ReleaseMirrorResumeStore.loadStatus(repoID: mirrorID)
         let entry = ReleaseTargetMirrorStatus(
-            targetID: target.id,
-            targetURL: target.url,
-            lastSyncedAt: lastSyncedAt ?? statuses.first(where: { $0.targetID == target.id })?.lastSyncedAt,
+            targetID: destinationID,
+            targetURL: destinationURL,
+            lastSyncedAt: lastSyncedAt
+                ?? statuses.first(where: { $0.targetID == destinationID })?.lastSyncedAt,
             lastError: lastError,
             tags: tags,
             isSyncing: isSyncing
         )
-        if let index = statuses.firstIndex(where: { $0.targetID == target.id }) {
+        if let index = statuses.firstIndex(where: { $0.targetID == destinationID }) {
             statuses[index] = entry
         } else {
             statuses.append(entry)
         }
-        try? ReleaseMirrorResumeStore.saveStatus(statuses, repoID: repo.id)
+        try? ReleaseMirrorResumeStore.saveStatus(statuses, repoID: mirrorID)
     }
 }

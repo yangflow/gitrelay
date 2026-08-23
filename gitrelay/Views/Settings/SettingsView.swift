@@ -2,86 +2,29 @@ import SwiftUI
 import UniformTypeIdentifiers
 import AppKit
 
-enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
-    case security
-    case notifications
-    case schedule
+private enum SettingsIntegrationMode: String, CaseIterable, Identifiable {
     case webhook
-    case cache
-    case configuration
-
+    case organizationDiscovery
     var id: String { rawValue }
-
     var title: String {
         switch self {
-        case .security:
-            String.loc("Security")
-        case .notifications:
-            String.loc("Notifications")
-        case .schedule:
-            String.loc("Schedule")
-        case .webhook:
-            String.loc("Webhook")
-        case .cache:
-            String.loc("Cache")
-        case .configuration:
-            String.loc("Configuration")
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .security:
-            "lock.shield"
-        case .notifications:
-            "bell"
-        case .schedule:
-            "calendar"
-        case .webhook:
-            "bolt.horizontal"
-        case .cache:
-            "internaldrive"
-        case .configuration:
-            "gearshape"
+        case .webhook: String.loc("Webhook")
+        case .organizationDiscovery: String.loc("Organization Discovery")
         }
     }
 }
 
-/// Six locked top tabs. No sidebar, no extra panes.
-private struct SettingsPaneTabBar: View {
-    @Binding var selection: SettingsPane
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .bottom, spacing: DesignTokens.Spacing.paneTabGap) {
-                ForEach(SettingsPane.allCases) { pane in
-                    tab(pane)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, DesignTokens.Spacing.paneHeaderHorizontal)
-
-            Divider()
+private enum SettingsMaintenanceMode: String, CaseIterable, Identifiable {
+    case storage
+    case verification
+    case configuration
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .storage: String.loc("Storage")
+        case .verification: String.loc("Verification")
+        case .configuration: String.loc("Configuration")
         }
-    }
-
-    private func tab(_ pane: SettingsPane) -> some View {
-        let isSelected = pane == selection
-        return Button {
-            selection = pane
-        } label: {
-            VStack(spacing: DesignTokens.Spacing.xs) {
-                Text(pane.title)
-                    .font(.callout.weight(isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                Rectangle()
-                    .fill(isSelected ? Color.accentColor : Color.clear)
-                    .frame(height: DesignTokens.Size.paneTabUnderline)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
     }
 }
 
@@ -90,31 +33,71 @@ struct SettingsView: View {
     @Environment(SecurityPreferencesStore.self) private var securityStore
     @Environment(CachePreferencesStore.self) private var cacheStore
     @Environment(AppBehaviorPreferencesStore.self) private var behaviorStore
-    @Environment(AppViewModel.self) private var appVM
+    @Environment(MirrorOperationsController.self) private var operations
+    @Environment(MirrorSchedulingController.self) private var scheduling
+    @Environment(MirrorCacheController.self) private var mirrorCache
+    @Environment(WebhookController.self) private var webhooks
+    @Environment(MirrorManagementController.self) private var management
+    @Environment(WorkspaceModel.self) private var workspace
     @Environment(AppLanguageStore.self) private var languageStore
+    @Environment(AppPreferencesModel.self) private var appPreferences
 
-    @State private var selectedPane: SettingsPane = .security
     @State private var loginItem = LoginItemController()
     @State private var limitMirrorCache = false
     @State private var mirrorCacheQuotaGB = 50
     @State private var showImportModePicker = false
     @State private var pendingImportURL: URL?
     @State private var configMessage: String?
+    @State private var selectedProvider: GitProvider = .github
+    @State private var integrationMode = SettingsIntegrationMode.webhook
+    @State private var maintenanceMode = SettingsMaintenanceMode.storage
+    @State private var selectedPane: SettingsPane?
 
     var body: some View {
-        VStack(spacing: 0) {
-            PaneHeaderView(title: MainSidebarItem.settings.title)
-
-            SettingsPaneTabBar(selection: paneSelection)
-
+        NavigationSplitView {
+            List(SettingsPane.allCases, selection: $selectedPane) { pane in
+                Label(pane.title, systemImage: pane.systemImage)
+                    .tag(pane)
+                    .accessibilityIdentifier("settings-pane.\(pane.id)")
+            }
+            .accessibilityIdentifier("settings.sidebar")
+            .listStyle(.sidebar)
+            .navigationSplitViewColumnWidth(
+                min: DesignTokens.Layout.settingsSidebarMinWidth,
+                ideal: DesignTokens.Layout.settingsSidebarIdealWidth,
+                max: DesignTokens.Layout.settingsSidebarMaxWidth
+            )
+        } detail: {
             detailForm
-                .formStyle(.grouped)
+                .navigationTitle(activePane.title)
+                .navigationSplitViewColumnWidth(
+                    min: DesignTokens.Layout.settingsDetailMinWidth,
+                    ideal: DesignTokens.Layout.settingsDetailIdealWidth
+                )
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity,
+                    alignment: .topLeading
+                )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .navigationSplitViewStyle(.balanced)
+        .frame(
+            minWidth: DesignTokens.Layout.settingsMinWidth,
+            minHeight: DesignTokens.Layout.settingsMinHeight
+        )
         .onAppear {
+            selectedPane = workspace.settingsPane
             loginItem.refresh()
             syncCacheControlsFromStore()
-            appVM.refreshMirrorCacheUsage()
+            mirrorCache.refreshUsage()
+        }
+        .onChange(of: selectedPane) { _, newValue in
+            guard let newValue else { return }
+            workspace.settingsPane = newValue
+        }
+        .onChange(of: workspace.settingsPane) { _, newValue in
+            guard selectedPane != newValue else { return }
+            selectedPane = newValue
         }
         .alert(
             String.loc("Import Configuration"),
@@ -147,20 +130,90 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var detailForm: some View {
-        switch selectedPane {
-        case .security:
-            Form { securitySections() }
+        switch activePane {
+        case .general:
+            settingsForm {
+                securitySections()
+                languageSection()
+            }
+        case .connections:
+            connectionsView
+        case .defaultPolicies:
+            settingsForm { scheduleSections() }
         case .notifications:
-            Form { notificationsSection() }
-        case .schedule:
-            Form { scheduleSections() }
-        case .webhook:
-            Form { webhookSection() }
-        case .cache:
-            Form { cacheSection() }
-        case .configuration:
-            Form { configurationSections() }
+            settingsForm { notificationsSection() }
+        case .integrations:
+            integrationsView
+        case .storageMaintenance:
+            storageMaintenanceView
         }
+    }
+
+    private var activePane: SettingsPane {
+        selectedPane ?? workspace.settingsPane
+    }
+
+    private var connectionsView: some View {
+        VStack(spacing: 0) {
+            ProviderSegmentedControl(
+                selection: $selectedProvider,
+                providers: GitProvider.allCases
+            )
+            .accessibilityLabel(String.loc("Provider"))
+            .padding()
+            ProviderAccountsView(provider: selectedProvider)
+        }
+    }
+
+    private var integrationsView: some View {
+        VStack(spacing: 0) {
+            Picker(String.loc("Integrations"), selection: $integrationMode) {
+                ForEach(SettingsIntegrationMode.allCases) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .padding()
+
+            switch integrationMode {
+            case .webhook:
+                settingsForm { webhookSection() }
+            case .organizationDiscovery:
+                OrgSubscriptionSettingsView()
+            }
+        }
+    }
+
+    private var storageMaintenanceView: some View {
+        VStack(spacing: 0) {
+            Picker(String.loc("Storage & Maintenance"), selection: $maintenanceMode) {
+                ForEach(SettingsMaintenanceMode.allCases) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .padding()
+
+            switch maintenanceMode {
+            case .storage:
+                settingsForm { cacheSection() }
+            case .verification:
+                VerificationSettingsView()
+            case .configuration:
+                settingsForm { configurationSections() }
+            }
+        }
+    }
+
+    private func settingsForm<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        Form {
+            content()
+        }
+        .formStyle(.grouped)
     }
 
     @ViewBuilder
@@ -195,10 +248,6 @@ struct SettingsView: View {
             )
         } header: {
             Text(String.loc("Startup & Menu Bar"))
-        } footer: {
-            Text(
-                String.loc("When enabled, closing the main window leaves GitRelay in the menu bar (Dock icon may hide). Turn off to quit when the last window closes.")
-            )
         }
 
         Section {
@@ -208,16 +257,7 @@ struct SettingsView: View {
             )
         } header: {
             Text(String.loc("Security"))
-        } footer: {
-            Text(String.loc("When enabled, viewing tokens in plaintext, deleting repositories, and changing a mirror target to a different host require authentication. Canceling or failing authentication aborts the action."))
         }
-    }
-
-    private var paneSelection: Binding<SettingsPane> {
-        Binding(
-            get: { selectedPane },
-            set: { selectedPane = $0 }
-        )
     }
 
     @ViewBuilder
@@ -244,20 +284,59 @@ struct SettingsView: View {
                 }
             }
             .disabled(!store.preferences.notificationsEnabled)
-
-            Text(store.preferences.interruptionLevel.helpText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
         } header: {
             Text(String.loc("Failure Notifications"))
-        } footer: {
-            Text(String.loc("Notify only on the first failure (optional), or when consecutive failures reach the threshold and its multiples, to avoid alerts from brief network interruptions. Notifications are deferred while Focus is on and combined into a summary afterward."))
         }
     }
 
     @ViewBuilder
     private func scheduleSections() -> some View {
         @Bindable var store = preferencesStore
+        @Bindable var defaults = appPreferences.defaultPolicyStore
+
+        Section {
+            Picker(String.loc("Sync Frequency"), selection: $defaults.preferences.frequency) {
+                ForEach(SyncFrequency.allCases) { frequency in
+                    Text(frequency.displayName).tag(frequency)
+                }
+            }
+
+            Picker(
+                String.loc("Destructive Push Protection"),
+                selection: $defaults.preferences.destructivePush
+            ) {
+                ForEach(DestructivePushPolicy.allCases) { policy in
+                    Text(policy.displayName).tag(policy)
+                }
+            }
+
+            Picker(String.loc("Git LFS"), selection: $defaults.preferences.lfsMode) {
+                ForEach(LFSMirrorMode.allCases) { mode in
+                    Text(mode.displayName).tag(mode)
+                }
+            }
+
+            Toggle(
+                String.loc("Mirror Releases and Binary Assets"),
+                isOn: $defaults.preferences.mirrorsReleases
+            )
+            Toggle(
+                String.loc("Allow Instant Webhook Sync"),
+                isOn: $defaults.preferences.webhookEnabled
+            )
+            Picker(
+                String.loc("Verification Frequency"),
+                selection: $defaults.preferences.verificationFrequency
+            ) {
+                ForEach(VerificationFrequency.allCases) { frequency in
+                    Text(frequency.displayName).tag(frequency)
+                }
+            }
+        } header: {
+            Text(String.loc("New Mirror Defaults"))
+        } footer: {
+            Text(String.loc("These defaults are copied into new mirrors. Existing mirrors keep their own policies."))
+        }
 
         Section {
             Stepper(
@@ -286,7 +365,7 @@ struct SettingsView: View {
         } header: {
             Text(String.loc("Sync Concurrency"))
         } footer: {
-            Text(String.loc("Manual, webhook, and scheduled syncs share this limit. Extra requests wait in a queue (Queued) until a slot frees. Quitting the app discards the queue."))
+            Text(String.loc("Manual, webhook, and scheduled syncs share this limit. Extra requests wait until a slot is available. Waiting work is discarded when GitRelay quits."))
         }
 
         Section {
@@ -313,7 +392,7 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            if let reason = appVM.scheduledSyncPauseReason {
+            if let reason = scheduling.pauseReason {
                 Label(reason.displayMessage, systemImage: "pause.circle")
                     .foregroundStyle(DesignTokens.StatusColor.pause)
                     .font(.callout)
@@ -327,20 +406,20 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func webhookSection() -> some View {
-        @Bindable var webhookStore = appVM.webhookPreferences
+        @Bindable var webhookStore = webhooks.preferences
 
         Section {
             Toggle(String.loc("Enable local webhook listener"), isOn: $webhookStore.preferences.listenerEnabled)
 
             if webhookStore.preferences.listenerEnabled {
-                if let port = appVM.webhookListenPort {
+                if let port = webhooks.listenPort {
                     LabeledContent(String.loc("Listening Address")) {
                         Text(String(format: String.loc("127.0.0.1:%lld"), port))
                             .font(.system(.body, design: .monospaced))
                             .textSelection(.enabled)
                     }
                 } else {
-                    Text(appVM.isWebhookListenerRunning ? String.loc("Binding port…") : String.loc("Listener Not Running"))
+                    Text(webhooks.isListenerRunning ? String.loc("Binding port…") : String.loc("Listener Not Running"))
                         .foregroundStyle(.secondary)
                 }
 
@@ -358,7 +437,7 @@ struct SettingsView: View {
                     TextField("Public Base URL (Optional)", text: $webhookStore.preferences.publicBaseURL)
                         .font(.system(.body, design: .monospaced))
 
-                    if let port = appVM.webhookListenPort {
+                    if let port = webhooks.listenPort {
                         switch webhookStore.preferences.exposureMode {
                         case .cloudflareTunnel:
                             tunnelHint(
@@ -398,8 +477,8 @@ struct SettingsView: View {
     @ViewBuilder
     private func webhookHookURLSection() -> some View {
         Section {
-            if let repo = appVM.webhookTestTargetRepo {
-                let path = appVM.webhookHookPath(for: repo)
+            if let repo = webhooks.testTargetMirror {
+                let path = webhooks.hookPath(for: repo)
                 HStack {
                     Text(path)
                         .font(.system(.body, design: .monospaced))
@@ -421,8 +500,8 @@ struct SettingsView: View {
     @ViewBuilder
     private func webhookLastEventSection() -> some View {
         Section {
-            Text(WebhookLastEventFormatting.displayOrEmpty(appVM.webhookLastEvent))
-                .foregroundStyle(appVM.webhookLastEvent == nil ? .secondary : .primary)
+            Text(WebhookLastEventFormatting.displayOrEmpty(webhooks.lastEvent))
+                .foregroundStyle(webhooks.lastEvent == nil ? .secondary : .primary)
         } header: {
             Text(String.loc("Last Event"))
         }
@@ -434,9 +513,9 @@ struct SettingsView: View {
             HStack {
                 Spacer(minLength: 0)
                 Button(String.loc("Send Test")) {
-                    Task { await appVM.sendWebhookTest() }
+                    Task { await webhooks.sendTest() }
                 }
-                .disabled(!appVM.canSendWebhookTest)
+                .disabled(!webhooks.canSendTest)
             }
         }
     }
@@ -449,7 +528,7 @@ struct SettingsView: View {
             Toggle(String.loc("Limit local mirror cache size"), isOn: $limitMirrorCache)
                 .onChange(of: limitMirrorCache) { _, enabled in
                     cache.preferences.cacheQuotaGB = enabled ? mirrorCacheQuotaGB : nil
-                    appVM.refreshMirrorCacheUsage()
+                    mirrorCache.refreshUsage()
                 }
 
             if limitMirrorCache {
@@ -470,15 +549,15 @@ struct SettingsView: View {
 
         Section {
             LabeledContent(String.loc("Local Mirrors")) {
-                Text(MirrorCacheFormatting.byteCount(appVM.mirrorCacheUsageBytes))
+                Text(MirrorCacheFormatting.byteCount(mirrorCache.usageBytes))
                     .foregroundStyle(.secondary)
             }
 
-            if appVM.mirrorCacheRepoUsages.isEmpty {
+            if mirrorCache.mirrorUsages.isEmpty {
                 Text(String.loc("No local mirrors."))
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(appVM.mirrorCacheRepoUsages) { usage in
+                ForEach(mirrorCache.mirrorUsages) { usage in
                     HStack(spacing: DesignTokens.Spacing.md) {
                         Image(systemName: "cylinder.split.1x2")
                             .foregroundStyle(.secondary)
@@ -492,25 +571,25 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
 
                         Button(String.loc("Clean")) {
-                            Task { await appVM.cleanMirrorCache(for: usage.repoID) }
+                            Task { await mirrorCache.clean(mirrorID: usage.repoID) }
                         }
                         .disabled(
-                            appVM.isCleaningMirrorCache
-                                || appVM.inProgressSyncIDs.contains(usage.repoID)
+                            mirrorCache.isCleaning
+                                || operations.inProgressSyncIDs.contains(usage.repoID)
                         )
                     }
                 }
             }
 
             Button(String.loc("Clean All")) {
-                Task { await appVM.cleanMirrorCacheNow() }
+                Task { await mirrorCache.cleanAll() }
             }
-            .disabled(appVM.isCleaningMirrorCache || appVM.mirrorCacheRepoUsages.isEmpty)
+            .disabled(mirrorCache.isCleaning || mirrorCache.mirrorUsages.isEmpty)
         }
     }
 
     @ViewBuilder
-    private func configurationSections() -> some View {
+    private func languageSection() -> some View {
         @Bindable var languageStore = languageStore
 
         Section {
@@ -519,41 +598,60 @@ struct SettingsView: View {
                     Text(choice.livePickerLabel).tag(choice)
                 }
             }
-
-            if languageStore.showsLaunchCatalogNote {
-                Text(String.loc("Some text updates the next time you open GitRelay."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            .labelsHidden()
         } header: {
             Text(String.loc("Language"))
         }
+    }
 
+    @ViewBuilder
+    private func configurationSections() -> some View {
         Section {
-            Button(String.loc("Export Configuration…")) {
+            configurationAction(
+                String.loc("Export Configuration…"),
+                systemImage: "square.and.arrow.up"
+            ) {
                 exportConfiguration()
             }
-            Button(String.loc("Import Configuration…")) {
+            configurationAction(
+                String.loc("Import Configuration…"),
+                systemImage: "square.and.arrow.down"
+            ) {
                 presentImportPanel()
             }
-        } header: {
-            Text(String.loc("Configuration"))
-        } footer: {
-            Text(String.loc("Export repository pairs, targets, tags, frequency, shallow/ref filters, LFS, org subscriptions, and account labels. Tokens and private keys are never written to the file. After import, repositories missing credentials are marked and stay unscheduled until you fill them in."))
-        }
-
-        Section {
-            Button(String.loc("Restore Defaults")) {
+            configurationAction(
+                String.loc("Restore Defaults"),
+                systemImage: "arrow.counterclockwise",
+                role: .destructive
+            ) {
                 preferencesStore.resetToDefaults()
                 securityStore.resetToDefaults()
                 cacheStore.resetToDefaults()
                 behaviorStore.resetToDefaults()
-                appVM.webhookPreferences.resetToDefaults()
+                appPreferences.defaultPolicyStore.resetToDefaults()
+                webhooks.preferences.resetToDefaults()
                 loginItem.setEnabled(false)
                 syncCacheControlsFromStore()
-                appVM.refreshMirrorCacheUsage()
+                mirrorCache.refreshUsage()
             }
+        } header: {
+            Text(String.loc("Configuration"))
         }
+    }
+
+    private func configurationAction(
+        _ title: String,
+        systemImage: String,
+        role: ButtonRole? = nil,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(role: role, action: action) {
+            Label(title, systemImage: systemImage)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(role == .destructive ? DesignTokens.StatusColor.error : Color.primary)
     }
 
     private func syncCacheControlsFromStore() {
@@ -617,7 +715,7 @@ struct SettingsView: View {
 
     private func exportConfiguration() {
         do {
-            let data = try appVM.exportConfigurationData()
+            let data = try management.exportData()
             let panel = NSSavePanel()
             panel.allowedContentTypes = [.json]
             panel.nameFieldStringValue = "gitrelay-config.json"
@@ -648,7 +746,7 @@ struct SettingsView: View {
         pendingImportURL = nil
         do {
             let data = try Data(contentsOf: url)
-            let plan = try appVM.importConfiguration(from: data, mode: mode)
+            let plan = try management.importConfiguration(from: data, mode: mode)
             if plan.skippedRepoCount > 0 {
                 configMessage = String(
                     format: String.loc(

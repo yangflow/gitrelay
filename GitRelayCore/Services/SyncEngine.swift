@@ -11,10 +11,12 @@ nonisolated enum SyncEvent: Sendable {
 
 @MainActor
 final class SyncEngine {
-    private let repo: RepoConfig
-    private let runner = GitRunner()
-    private let archiveService = FilesystemArchiveService()
+    private let plan: MirrorPlan
+    private let runner: GitRunner
+    private let archiveService: FilesystemArchiveService
+    private let lfsCommandRunner: any LFSCommandRunning
     private let retryPolicy: GitRetryPolicy
+    private let mirrorRootDirectory: URL
     private let cancellation = SyncCancellationFlag()
     private var record: SyncRecord
     private var lfsReadyToPush = false
@@ -23,42 +25,58 @@ final class SyncEngine {
 
     /// Called when `.strict` policy needs the user to choose between overwriting
     /// the destination, pushing to check branches instead, or stopping the sync.
-    var confirmDestructivePush: ((DestructivePushPlan, MirrorTarget) async -> DestructivePushDecision)?
+    var confirmDestructivePush: ((DestructivePushPlan, MirrorDestination) async -> DestructivePushDecision)?
 
-    /// Called after a successful git mirror push when `repo.mirrorReleases` is enabled.
-    var mirrorReleases: ((RepoConfig, MirrorTarget, @escaping @Sendable (String) -> Void) async throws -> Void)?
+    /// Called after a successful Git push when release mirroring is enabled.
+    var mirrorReleases: (
+        (MirrorPlan, MirrorDestination, @escaping @Sendable (String) -> Void) async throws -> Void
+    )?
 
-    init(repo: RepoConfig, retryPolicy: GitRetryPolicy = .default) {
-        self.repo = repo
+    init(
+        plan: MirrorPlan,
+        retryPolicy: GitRetryPolicy = .default,
+        mirrorRootDirectory: URL = Constants.mirrorCacheDirectory,
+        runner: GitRunner = GitRunner(),
+        archiveService: FilesystemArchiveService? = nil,
+        lfsCommandRunner: (any LFSCommandRunning)? = nil
+    ) {
+        self.plan = plan
         self.retryPolicy = retryPolicy
-        self.record = SyncRecord(repoID: repo.id)
+        self.mirrorRootDirectory = mirrorRootDirectory
+        self.runner = runner
+        self.archiveService = archiveService ?? FilesystemArchiveService()
+        self.lfsCommandRunner = lfsCommandRunner ?? runner
+        self.record = SyncRecord(repoID: plan.id)
     }
 
     func run() async {
         emit(.started)
         emit(.statusChanged(.syncing))
 
-        let mirrorPath = MirrorStore.mirrorPath(for: repo.id).path
-        let srcAuth = repo.srcAuth
-        let rawSrcURL = repo.srcURL
+        let mirrorPath = MirrorStore.mirrorPath(
+            for: plan.id,
+            rootDirectory: mirrorRootDirectory
+        ).path
+        let srcAuth = plan.source.auth
+        let rawSrcURL = plan.source.url
         let srcURL = authenticatedURL(url: rawSrcURL, auth: srcAuth)
         let srcEnv = buildEnv(for: srcAuth)
-        let enabledTargets = repo.enabledTargets
-        let lfsService = LFSMirrorService(runner: runner)
+        let enabledTargets = plan.enabledDestinations
+        let lfsService = LFSMirrorService(runner: lfsCommandRunner)
 
         do {
             // 1. Clone or fetch from src once
-            if repo.usesSelectiveRefSync {
+            if usesSelectiveRefSync {
                 log(GitSyncArguments.partialSyncLogLine)
-                if MirrorStore.mirrorExists(for: repo.id) {
+                if MirrorStore.mirrorExists(for: plan.id, rootDirectory: mirrorRootDirectory) {
                     let phase = SyncPhase(.fetchingSource)
                     emit(.phase(phase))
                     log("Fetching selected refs from source...")
                     try await withTransientRetry(log: { self.log($0) }) {
                         try await self.runner.fetchSource(
                             mirrorPath: mirrorPath,
-                            depth: self.repo.depth,
-                            refSpecs: self.repo.resolvedRefSpecs,
+                            depth: self.plan.policy.content.depth,
+                            refSpecs: self.plan.policy.content.refSpecs,
                             env: srcEnv,
                             onProgressLine: progressCallback(for: phase)
                         )
@@ -68,11 +86,16 @@ final class SyncEngine {
                     let phase = SyncPhase(.cloningSource)
                     emit(.phase(phase))
                     log("Initializing partial mirror (first time)...")
-                    let repoID = repo.id
+                    let repoID = plan.id
                     do {
                         try await withTransientRetry(
                             log: { self.log($0) },
-                            beforeRetry: { try? MirrorStore.deleteMirror(for: repoID) }
+                            beforeRetry: {
+                                try? MirrorStore.deleteMirror(
+                                    for: repoID,
+                                    rootDirectory: self.mirrorRootDirectory
+                                )
+                            }
                         ) {
                             try await self.runner.initBareMirror(at: mirrorPath, env: srcEnv)
                             try await self.runner.addRemote(
@@ -83,19 +106,25 @@ final class SyncEngine {
                             )
                             try await self.runner.fetchSource(
                                 mirrorPath: mirrorPath,
-                                depth: self.repo.depth,
-                                refSpecs: self.repo.resolvedRefSpecs,
+                                depth: self.plan.policy.content.depth,
+                                refSpecs: self.plan.policy.content.refSpecs,
                                 env: srcEnv,
                                 onProgressLine: progressCallback(for: phase)
                             )
                         }
                     } catch {
-                        try? MirrorStore.deleteMirror(for: repo.id)
+                        try? MirrorStore.deleteMirror(
+                            for: plan.id,
+                            rootDirectory: mirrorRootDirectory
+                        )
                         throw error
                     }
                     log("Partial clone complete.")
                 }
-            } else if MirrorStore.mirrorExists(for: repo.id) {
+            } else if MirrorStore.mirrorExists(
+                for: plan.id,
+                rootDirectory: mirrorRootDirectory
+            ) {
                 let phase = SyncPhase(.fetchingSource)
                 emit(.phase(phase))
                 log("Fetching from source...")
@@ -111,11 +140,16 @@ final class SyncEngine {
                 let phase = SyncPhase(.cloningSource)
                 emit(.phase(phase))
                 log("Cloning source (first time)...")
-                let repoID = repo.id
+                let repoID = plan.id
                 do {
                     try await withTransientRetry(
                         log: { self.log($0) },
-                        beforeRetry: { try? MirrorStore.deleteMirror(for: repoID) }
+                        beforeRetry: {
+                            try? MirrorStore.deleteMirror(
+                                for: repoID,
+                                rootDirectory: self.mirrorRootDirectory
+                            )
+                        }
                     ) {
                         try await self.runner.cloneMirror(
                             srcURL: srcURL,
@@ -125,7 +159,10 @@ final class SyncEngine {
                         )
                     }
                 } catch {
-                    try? MirrorStore.deleteMirror(for: repo.id)
+                    try? MirrorStore.deleteMirror(
+                            for: plan.id,
+                        rootDirectory: mirrorRootDirectory
+                    )
                     throw error
                 }
                 log("Clone complete.")
@@ -136,7 +173,7 @@ final class SyncEngine {
             let lfsPhase = SyncPhase(.fetchingLFS)
             let lfsPrepare = try await withTransientRetry(log: { self.log($0) }) {
                 try await lfsService.prepareAfterSourceFetch(
-                    mode: self.repo.lfsMirrorMode,
+                    mode: self.plan.policy.content.lfsMode,
                     mirrorPath: mirrorPath,
                     env: srcEnv,
                     log: { [weak self] line in
@@ -208,21 +245,29 @@ final class SyncEngine {
 
     // MARK: - Private
 
+    private var usesSelectiveRefSync: Bool {
+        !plan.policy.content.isCompleteMirror
+    }
+
     private func syncToTarget(
-        _ target: MirrorTarget,
+        _ target: MirrorDestination,
         mirrorPath: String,
         lfsService: LFSMirrorService
     ) async -> TargetSyncResult {
-        switch target.kind {
-        case .gitRemote:
+        switch target.location {
+        case .git:
             return await pushToTarget(target, mirrorPath: mirrorPath, lfsService: lfsService)
-        case .filesystem:
-            return await archiveToTarget(target, mirrorPath: mirrorPath)
+        case .archive(let archive):
+            return await archiveToTarget(target, archive: archive, mirrorPath: mirrorPath)
         }
     }
 
-    private func archiveToTarget(_ target: MirrorTarget, mirrorPath: String) async -> TargetSyncResult {
-        let label = target.displayLabel
+    private func archiveToTarget(
+        _ target: MirrorDestination,
+        archive: ArchiveDestination,
+        mirrorPath: String
+    ) async -> TargetSyncResult {
+        let label = target.location.displayLocation
         var result = TargetSyncResult(targetID: target.id, targetURL: label)
 
         func targetLog(_ line: String) {
@@ -235,8 +280,8 @@ final class SyncEngine {
 
         do {
             _ = try await archiveService.archiveMirror(
-                repo: repo,
-                target: target,
+                mirrorName: plan.name,
+                destination: archive,
                 mirrorPath: mirrorPath,
                 log: sendableTargetLog(targetLog)
             )
@@ -245,6 +290,7 @@ final class SyncEngine {
             let message = classifyError(error)
             targetLog(String(localized: "Error: \(message)"))
             result.error = message
+            result.failureKind = failureKind(for: error, destinationID: target.id)
             result.succeeded = false
         }
 
@@ -252,14 +298,22 @@ final class SyncEngine {
     }
 
     private func pushToTarget(
-        _ target: MirrorTarget,
+        _ target: MirrorDestination,
         mirrorPath: String,
         lfsService: LFSMirrorService
     ) async -> TargetSyncResult {
-        var result = TargetSyncResult(targetID: target.id, targetURL: target.displayLabel)
-        let rawDstURL = target.url
-        let dstURL = authenticatedURL(url: rawDstURL, auth: target.auth)
-        let dstEnv = buildEnv(for: target.auth)
+        guard case .git(let endpoint) = target.location else {
+            return TargetSyncResult(
+                targetID: target.id,
+                targetURL: target.location.displayLocation,
+                succeeded: false,
+                error: "Expected a Git destination"
+            )
+        }
+        var result = TargetSyncResult(targetID: target.id, targetURL: endpoint.url)
+        let rawDstURL = endpoint.url
+        let dstURL = authenticatedURL(url: rawDstURL, auth: endpoint.auth)
+        let dstEnv = buildEnv(for: endpoint.auth)
 
         func targetLog(_ line: String) {
             let safe = SyncEngine.redactCredentials(line)
@@ -290,11 +344,11 @@ final class SyncEngine {
             result.commitsBefore = commitsBefore
 
             targetLog("Checking mirror push impact...")
-            let pushRefSpecs = GitSyncArguments.pushRefSpecs(from: repo.resolvedRefSpecs)
-            let plan: DestructivePushPlan
-            if repo.usesSelectiveRefSync {
+            let pushRefSpecs = GitSyncArguments.pushRefSpecs(from: plan.policy.content.refSpecs)
+            let impactPlan: DestructivePushPlan
+            if usesSelectiveRefSync {
                 targetLog("Using selective ref push (not a complete mirror backup).")
-                plan = try await withTransientRetry(log: targetLog) {
+                impactPlan = try await withTransientRetry(log: targetLog) {
                     try await self.runner.pushSelectiveRefsDryRun(
                         mirrorPath: mirrorPath,
                         dstURL: dstURL,
@@ -303,7 +357,7 @@ final class SyncEngine {
                     )
                 }
             } else {
-                plan = try await withTransientRetry(log: targetLog) {
+                impactPlan = try await withTransientRetry(log: targetLog) {
                     try await self.runner.pushMirrorDryRun(
                         mirrorPath: mirrorPath,
                         dstURL: dstURL,
@@ -312,22 +366,22 @@ final class SyncEngine {
                 }
             }
             var pushesToCheckBranches = false
-            if plan.isDestructive {
-                targetLog("Dry-run detected destructive changes: \(plan.summary).")
-                plan.deletedRefs.forEach { targetLog("  delete: \($0)") }
-                plan.forcedUpdateRefs.forEach { targetLog("  force-update: \($0)") }
+            if impactPlan.isDestructive {
+                targetLog("Dry-run detected destructive changes: \(impactPlan.summary).")
+                impactPlan.deletedRefs.forEach { targetLog("  delete: \($0)") }
+                impactPlan.forcedUpdateRefs.forEach { targetLog("  force-update: \($0)") }
 
-                if repo.destructivePushPolicy.requiresConfirmation(for: plan) {
+                if plan.policy.destructivePush.requiresConfirmation(for: impactPlan) {
                     targetLog("Waiting for confirmation of destructive push...")
                     let divergence = try? await runner.countDestinationOnlyCommits(mirrorPath: mirrorPath)
                     let decision = await confirmDestructivePush?(
-                        plan.withDestinationOnlyCommits(divergence),
+                        impactPlan.withDestinationOnlyCommits(divergence),
                         target
                     ) ?? .cancel
 
                     switch decision {
                     case .cancel:
-                        throw DestructivePushError.blocked(plan)
+                        throw DestructivePushError.blocked(impactPlan)
                     case .overwrite:
                         targetLog("User chose to overwrite the destination; continuing.")
                     case .checkBranch:
@@ -356,7 +410,7 @@ final class SyncEngine {
                         onProgressLine: progressCallback(for: pushPhase)
                     )
                 }
-            } else if repo.usesSelectiveRefSync {
+            } else if usesSelectiveRefSync {
                 try await withTransientRetry(log: targetLog) {
                     try await self.runner.pushSelectiveRefs(
                         mirrorPath: mirrorPath,
@@ -395,22 +449,24 @@ final class SyncEngine {
                     let message = classifyError(error)
                     targetLog(String(localized: "LFS push error: \(message)"))
                     result.error = message
+                    result.failureKind = failureKind(for: error, destinationID: target.id)
                     result.succeeded = false
                     return result
                 }
             }
 
-            if repo.mirrorReleases, pushesToCheckBranches {
+            if plan.policy.content.mirrorsReleases, pushesToCheckBranches {
                 targetLog("Skipping release mirroring: check branches leave the destination's releases alone.")
-            } else if repo.mirrorReleases, let mirrorReleases {
+            } else if plan.policy.content.mirrorsReleases, let mirrorReleases {
                 targetLog("Mirroring releases...")
                 do {
-                    try await mirrorReleases(repo, target, sendableTargetLog(targetLog))
+                    try await mirrorReleases(plan, target, sendableTargetLog(targetLog))
                     targetLog("Release mirror complete. ✓")
                 } catch {
                     let message = classifyError(error)
                     targetLog("Release mirror error: \(message)")
                     result.error = message
+                    result.failureKind = failureKind(for: error, destinationID: target.id)
                     result.succeeded = false
                     return result
                 }
@@ -421,10 +477,34 @@ final class SyncEngine {
             let message = classifyError(error)
             targetLog(String(localized: "Error: \(message)"))
             result.error = message
+            result.failureKind = failureKind(for: error, destinationID: target.id)
             result.succeeded = false
         }
 
         return result
+    }
+
+    private func failureKind(for error: Error, destinationID: UUID) -> MirrorFailureKind {
+        if error is DestructivePushError {
+            return .destructiveChangeBlocked
+        }
+        if error is ArchiveError {
+            return .localStorage
+        }
+        if error is GitError, error.localizedDescription.localizedCaseInsensitiveContains("cancel") {
+            return .cancelled
+        }
+
+        switch SyncFailureClassifier.kind(fromStoredMessage: classifyError(error)) {
+        case .authentication:
+            return .destinationAuthentication
+        case .repositoryNotFound, .pushRejected:
+            return .destinationRejected
+        case .network:
+            return .network
+        case .other:
+            return .unknown
+        }
     }
 
     private func log(_ line: String) {
@@ -494,15 +574,7 @@ final class SyncEngine {
     }
 
     nonisolated static func redactCredentials(_ message: String) -> String {
-        var result = message
-        if let regex = try? NSRegularExpression(pattern: "https://[^@]+@") {
-            result = regex.stringByReplacingMatches(
-                in: result,
-                range: NSRange(result.startIndex..., in: result),
-                withTemplate: "https://****@"
-            )
-        }
-        return result
+        CredentialRedactor.redact(message)
     }
 
     private func buildEnv(for auth: AuthConfig) -> [String: String] {
@@ -510,7 +582,7 @@ final class SyncEngine {
         case .sshAgent:
             return [:]
         case .sshKey(let path):
-            return ["GIT_SSH_COMMAND": "ssh -i \(path) -o StrictHostKeyChecking=accept-new -o BatchMode=yes"]
+            return ["GIT_SSH_COMMAND": GitSSHCommand.usingPrivateKey(at: path)]
         case .httpsToken:
             return ["GIT_TERMINAL_PROMPT": "0"]
         }

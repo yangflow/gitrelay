@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 import UserNotifications
 @testable import GitRelay
@@ -158,316 +159,52 @@ struct DestructivePushPolicyTests {
     }
 }
 
-// MARK: - RepoConfig Codable
-
 @MainActor
-struct RepoConfigCodableTests {
-    @Test func newReposDefaultToStrictDestructivePushPolicy() {
-        let repo = RepoConfig(
+struct MirrorSnapshotBehaviorTests {
+    @Test func newMirrorsDefaultToStrictDestructivePushPolicy() {
+        let mirror = MirrorSnapshot(
             name: "my-repo",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git"
         )
 
-        #expect(repo.destructivePushPolicy == .strict)
+        #expect(mirror.destructivePushPolicy == .strict)
     }
 
-    @Test func existingReposWithoutPolicyDecodeAsAuto() throws {
-        let json = """
-        {
-          "id": "00000000-0000-0000-0000-000000000001",
-          "name": "legacy-repo",
-          "srcURL": "git@github.com:user/repo.git",
-          "dstURL": "git@github.com:user/mirror.git",
-          "srcAuth": { "sshAgent": {} },
-          "dstAuth": { "sshAgent": {} },
-          "frequency": "手动",
-          "createdAt": "2026-04-25T12:00:00Z"
-        }
-        """
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
-
-        #expect(repo.destructivePushPolicy == .auto)
-    }
-
-    @Test func legacySuccessfulSyncBackfillsLastSuccessfulSyncedAt() throws {
-        let json = """
-        {
-          "id": "00000000-0000-0000-0000-000000000001",
-          "name": "legacy-repo",
-          "srcURL": "git@github.com:user/repo.git",
-          "dstURL": "git@github.com:user/mirror.git",
-          "srcAuth": { "sshAgent": {} },
-          "dstAuth": { "sshAgent": {} },
-          "frequency": "手动",
-          "createdAt": "2026-04-25T12:00:00Z",
-          "lastSyncedAt": "2026-04-25T13:00:00Z"
-        }
-        """
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
-
-        #expect(repo.lastSuccessfulSyncedAt == repo.lastSyncedAt)
-        #expect(repo.consecutiveFailureCount == 0)
-    }
-
-    @Test func legacyFailedSyncDefaultsToOneFailure() throws {
-        let json = """
-        {
-          "id": "00000000-0000-0000-0000-000000000001",
-          "name": "legacy-repo",
-          "srcURL": "git@github.com:user/repo.git",
-          "dstURL": "git@github.com:user/mirror.git",
-          "srcAuth": { "sshAgent": {} },
-          "dstAuth": { "sshAgent": {} },
-          "frequency": "手动",
-          "createdAt": "2026-04-25T12:00:00Z",
-          "lastSyncedAt": "2026-04-25T13:00:00Z",
-          "lastSyncError": "network failed"
-        }
-        """
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
-
-        #expect(repo.lastSuccessfulSyncedAt == nil)
-        #expect(repo.consecutiveFailureCount == 1)
-    }
-
-    @Test func recordSyncResultIncrementsFailuresAndResetsOnSuccess() {
+    @Test func syncResultsUpdateHealthWithoutChangingThePlan() {
         let failureAt = Date(timeIntervalSince1970: 1_777_080_000)
         let successAt = failureAt.addingTimeInterval(60)
-        var repo = RepoConfig(
+        var mirror = MirrorSnapshot(
             name: "my-repo",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git"
         )
+        let originalPlan = mirror.plan
 
-        repo.recordSyncResult(at: failureAt, error: "network failed")
-        repo.recordSyncResult(at: failureAt.addingTimeInterval(30), error: "still failing")
+        mirror.recordSyncResult(at: failureAt, error: "network failed")
+        mirror.recordSyncResult(at: failureAt.addingTimeInterval(30), error: "still failing")
 
-        #expect(repo.lastSyncedAt == failureAt.addingTimeInterval(30))
-        #expect(repo.lastSuccessfulSyncedAt == nil)
-        #expect(repo.lastSyncError == "still failing")
-        #expect(repo.consecutiveFailureCount == 2)
+        #expect(mirror.plan == originalPlan)
+        #expect(mirror.lastSyncedAt == failureAt.addingTimeInterval(30))
+        #expect(mirror.lastSuccessfulSyncedAt == nil)
+        #expect(mirror.lastSyncError == "still failing")
+        #expect(mirror.consecutiveFailureCount == 2)
 
-        repo.recordSyncResult(at: successAt, error: nil)
+        mirror.recordSyncResult(at: successAt, error: nil)
 
-        #expect(repo.lastSyncedAt == successAt)
-        #expect(repo.lastSuccessfulSyncedAt == successAt)
-        #expect(repo.lastSyncError == nil)
-        #expect(repo.consecutiveFailureCount == 0)
-    }
-
-    @Test func legacyDstURLMigratesToTargetsOnDecode() throws {
-        let json = """
-        {
-          "id": "00000000-0000-0000-0000-000000000001",
-          "name": "legacy-repo",
-          "srcURL": "git@github.com:user/repo.git",
-          "dstURL": "git@github.com:user/mirror.git",
-          "srcAuth": { "sshAgent": {} },
-          "dstAuth": { "httpsToken": { "keychainTag": "00000000-0000-0000-0000-000000000001-dst" } },
-          "frequency": "手动",
-          "createdAt": "2026-04-25T12:00:00Z"
-        }
-        """
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
-
-        #expect(repo.targets.count == 1)
-        #expect(repo.targets[0].url == "git@github.com:user/mirror.git")
-        #expect(repo.targets[0].enabled)
-        if case .httpsToken(let tag) = repo.targets[0].auth {
-            #expect(tag == "00000000-0000-0000-0000-000000000001-dst")
-        } else {
-            Issue.record("expected migrated https token auth")
-        }
-    }
-
-    @Test func encodesTargetsNotLegacyDstFields() throws {
-        let repo = RepoConfig(
-            name: "multi",
-            srcURL: "git@github.com:user/repo.git",
-            targets: [
-                MirrorTarget(url: "git@github.com:user/a.git"),
-                MirrorTarget(url: "git@gitlab.com:user/b.git", enabled: false)
-            ]
-        )
-
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(repo)
-        let object = try JSONSerialization.jsonObject(with: data) as! [String: Any]
-
-        #expect(object["targets"] != nil)
-        #expect(object["dstURL"] == nil)
-        #expect(object["dstAuth"] == nil)
-    }
-
-    @Test func tagsDefaultToEmptyArrayOnDecode() throws {
-        let json = """
-        {
-          "id": "00000000-0000-0000-0000-000000000001",
-          "name": "legacy-repo",
-          "srcURL": "git@github.com:user/repo.git",
-          "dstURL": "git@github.com:user/mirror.git",
-          "srcAuth": { "sshAgent": {} },
-          "dstAuth": { "sshAgent": {} },
-          "frequency": "手动",
-          "createdAt": "2026-04-25T12:00:00Z"
-        }
-        """
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
-
-        #expect(repo.tags.isEmpty)
-    }
-
-    @Test func encodesAndDecodesTags() throws {
-        let repo = RepoConfig(
-            name: "tagged",
-            srcURL: "git@github.com:user/repo.git",
-            dstURL: "git@github.com:user/mirror.git",
-            tags: ["work", "oss"]
-        )
-
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(repo)
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        let decoded = try decoder.decode(RepoConfig.self, from: data)
-
-        #expect(decoded.tags == ["work", "oss"])
-    }
-
-    @Test func decodeNormalizesWhitespaceAndDedupesTags() throws {
-        let json = """
-        {
-          "id": "00000000-0000-0000-0000-000000000001",
-          "name": "tagged",
-          "srcURL": "git@github.com:user/repo.git",
-          "targets": [{ "url": "git@github.com:user/mirror.git", "auth": { "sshAgent": {} } }],
-          "srcAuth": { "sshAgent": {} },
-          "frequency": "手动",
-          "createdAt": "2026-04-25T12:00:00Z",
-          "tags": [" work ", "work", "  ", "oss"]
-        }
-        """
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
-
-        #expect(repo.tags == ["work", "oss"])
-    }
-
-    @Test func depthAndRefSpecsDefaultOnDecode() throws {
-        let json = """
-        {
-          "id": "00000000-0000-0000-0000-000000000001",
-          "name": "legacy-repo",
-          "srcURL": "git@github.com:user/repo.git",
-          "dstURL": "git@github.com:user/mirror.git",
-          "srcAuth": { "sshAgent": {} },
-          "dstAuth": { "sshAgent": {} },
-          "frequency": "手动",
-          "createdAt": "2026-04-25T12:00:00Z"
-        }
-        """
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
-
-        #expect(repo.depth == nil)
-        #expect(repo.resolvedRefSpecs == RepoConfig.defaultRefSpecs)
-        #expect(!repo.usesSelectiveRefSync)
-    }
-
-    @Test func encodesDepthAndCustomRefSpecs() throws {
-        let repo = RepoConfig(
-            name: "partial",
-            srcURL: "git@github.com:user/repo.git",
-            dstURL: "git@github.com:user/mirror.git",
-            depth: 50,
-            refSpecs: [
-                "+refs/heads/main:refs/heads/main",
-                "+refs/tags/v*:refs/tags/v*"
-            ]
-        )
-
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(repo)
-        let object = try JSONSerialization.jsonObject(with: data) as! [String: Any]
-
-        #expect(object["depth"] as? Int == 50)
-        #expect(object["refSpecs"] as? [String] == [
-            "+refs/heads/main:refs/heads/main",
-            "+refs/tags/v*:refs/tags/v*"
-        ])
-    }
-
-    @Test func webhookEnabledDefaultsFalseOnDecode() throws {
-        let json = """
-        {
-          "id": "00000000-0000-0000-0000-000000000001",
-          "name": "legacy-repo",
-          "srcURL": "git@github.com:user/repo.git",
-          "dstURL": "git@github.com:user/mirror.git",
-          "srcAuth": { "sshAgent": {} },
-          "dstAuth": { "sshAgent": {} },
-          "frequency": "手动",
-          "createdAt": "2026-04-25T12:00:00Z"
-        }
-        """
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
-        #expect(repo.webhookEnabled == false)
-    }
-
-    @Test func encodesWebhookEnabledWhenTrue() throws {
-        let repo = RepoConfig(
-            name: "hooked",
-            srcURL: "git@github.com:user/repo.git",
-            dstURL: "git@github.com:user/mirror.git",
-            webhookEnabled: true
-        )
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(repo)
-        let object = try JSONSerialization.jsonObject(with: data) as! [String: Any]
-        #expect(object["webhookEnabled"] as? Bool == true)
+        #expect(mirror.plan == originalPlan)
+        #expect(mirror.lastSyncedAt == successAt)
+        #expect(mirror.lastSuccessfulSyncedAt == successAt)
+        #expect(mirror.lastSyncError == nil)
+        #expect(mirror.consecutiveFailureCount == 0)
     }
 }
 
-// MARK: - GitSyncArguments
+ // MARK: - GitSyncArguments
 
 struct GitSyncArgumentsTests {
     @Test func defaultRefSpecsMatchGitMirrorConvention() {
-        #expect(RepoConfig.defaultRefSpecs == [
+        #expect(MirrorSnapshot.defaultRefSpecs == [
             "+refs/heads/*:refs/heads/*",
             "+refs/tags/*:refs/tags/*"
         ])
@@ -476,7 +213,7 @@ struct GitSyncArgumentsTests {
     @Test func fetchArgsIncludeDepthWhenShallow() {
         let args = GitSyncArguments.fetchArgs(
             depth: 50,
-            refSpecs: RepoConfig.defaultRefSpecs
+            refSpecs: MirrorSnapshot.defaultRefSpecs
         )
 
         #expect(args == [
@@ -493,7 +230,7 @@ struct GitSyncArgumentsTests {
     @Test func fetchArgsOmitDepthForFullClone() {
         let args = GitSyncArguments.fetchArgs(
             depth: nil,
-            refSpecs: RepoConfig.defaultRefSpecs
+            refSpecs: MirrorSnapshot.defaultRefSpecs
         )
 
         #expect(args == [
@@ -519,7 +256,7 @@ struct GitSyncArgumentsTests {
     }
 
     @Test func shallowCloneUsesSelectiveRefSync() {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "shallow",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
@@ -532,7 +269,7 @@ struct GitSyncArgumentsTests {
     }
 
     @Test func customRefSpecsUseSelectiveRefSyncWithoutDepth() {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "filtered",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
@@ -545,7 +282,7 @@ struct GitSyncArgumentsTests {
     }
 
     @Test func fullMirrorConfigDoesNotUseSelectiveRefSync() {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "full",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git"
@@ -589,7 +326,7 @@ struct GitSyncArgumentsTests {
 
         let fetch = GitSyncArguments.fetchArgs(
             depth: nil,
-            refSpecs: RepoConfig.defaultRefSpecs,
+            refSpecs: MirrorSnapshot.defaultRefSpecs,
             progress: true
         )
         #expect(fetch.contains("--progress"))
@@ -599,8 +336,8 @@ struct GitSyncArgumentsTests {
 // MARK: - RepoTagGrouping
 
 struct RepoTagGroupingTests {
-    private func makeRepo(name: String, tags: [String] = []) -> RepoConfig {
-        RepoConfig(
+    private func makeRepo(name: String, tags: [String] = []) -> MirrorSnapshot {
+        MirrorSnapshot(
             name: name,
             srcURL: "git@github.com:user/\(name).git",
             dstURL: "git@github.com:user/\(name)-mirror.git",
@@ -609,21 +346,21 @@ struct RepoTagGroupingTests {
     }
 
     @Test func allUniqueTagsAreSorted() {
-        let repos = [
+        let mirrors = [
             makeRepo(name: "a", tags: ["work", "client"]),
             makeRepo(name: "b", tags: ["oss"])
         ]
 
-        #expect(RepoTagGrouping.allUniqueTags(from: repos) == ["client", "oss", "work"])
+        #expect(RepoTagGrouping.allUniqueTags(from: mirrors) == ["client", "oss", "work"])
     }
 
     @Test func sectionsIncludeUntaggedBucket() {
-        let repos = [
+        let mirrors = [
             makeRepo(name: "tagged", tags: ["work"]),
             makeRepo(name: "plain")
         ]
 
-        let sections = RepoTagGrouping.sections(from: repos)
+        let sections = RepoTagGrouping.sections(from: mirrors)
 
         #expect(sections.count == 2)
         #expect(sections[0].title == "work")
@@ -634,9 +371,9 @@ struct RepoTagGroupingTests {
     }
 
     @Test func multiTagRepoAppearsInMultipleSections() {
-        let repos = [makeRepo(name: "shared", tags: ["work", "oss"])]
+        let mirrors = [makeRepo(name: "shared", tags: ["work", "oss"])]
 
-        let sections = RepoTagGrouping.sections(from: repos)
+        let sections = RepoTagGrouping.sections(from: mirrors)
 
         #expect(sections.count == 2)
         #expect(sections.allSatisfy { $0.repos.count == 1 })
@@ -647,10 +384,10 @@ struct RepoTagGroupingTests {
         let work = makeRepo(name: "work-repo", tags: ["work"])
         let oss = makeRepo(name: "oss-repo", tags: ["oss"])
         let plain = makeRepo(name: "plain")
-        let repos = [work, oss, plain]
+        let mirrors = [work, oss, plain]
 
-        #expect(RepoTagGrouping.repoIDs(matching: "work", in: repos) == [work.id])
-        #expect(RepoTagGrouping.repoIDs(matching: nil, in: repos) == [plain.id])
+        #expect(RepoTagGrouping.repoIDs(matching: "work", in: mirrors) == [work.id])
+        #expect(RepoTagGrouping.repoIDs(matching: nil, in: mirrors) == [plain.id])
     }
 
     @Test func matchingSuggestionsFiltersSelectedAndPrefix() {
@@ -664,18 +401,18 @@ struct RepoTagGroupingTests {
     }
 }
 
-// MARK: - AppViewModel tag batch ops
+// MARK: - GitRelayAppModel tag batch ops
 
 @MainActor
-struct AppViewModelTagBatchTests {
-    private func makeViewModel() -> AppViewModel {
+struct GitRelayAppModelTagBatchTests {
+    private func makeViewModel() -> GitRelayAppModel {
         let suite = "gitrelay.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("gitrelay-vm-tests-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         Constants.setBaseDirectoryForTesting(base)
-        return AppViewModel(
+        return GitRelayAppModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults)
         )
@@ -683,14 +420,14 @@ struct AppViewModelTagBatchTests {
 
     @Test func updateFrequencyAppliesOnlyToMatchingTag() {
         let vm = makeViewModel()
-        let work = RepoConfig(
+        let work = MirrorSnapshot(
             name: "work-repo",
             srcURL: "git@github.com:user/work.git",
             dstURL: "git@github.com:user/work-mirror.git",
             frequency: .manual,
             tags: ["work"]
         )
-        let oss = RepoConfig(
+        let oss = MirrorSnapshot(
             name: "oss-repo",
             srcURL: "git@github.com:user/oss.git",
             dstURL: "git@github.com:user/oss-mirror.git",
@@ -708,12 +445,12 @@ struct AppViewModelTagBatchTests {
 
     @Test func reposMatchingTagReturnsUntaggedBucket() {
         let vm = makeViewModel()
-        vm.addRepo(RepoConfig(
+        vm.addRepo(MirrorSnapshot(
             name: "plain",
             srcURL: "git@github.com:user/plain.git",
             dstURL: "git@github.com:user/plain-mirror.git"
         ))
-        vm.addRepo(RepoConfig(
+        vm.addRepo(MirrorSnapshot(
             name: "tagged",
             srcURL: "git@github.com:user/tagged.git",
             dstURL: "git@github.com:user/tagged-mirror.git",
@@ -808,8 +545,8 @@ struct SyncHealthSummaryTests {
         lastSuccessfulSyncedAt: Date? = nil,
         lastSyncError: String? = nil,
         consecutiveFailureCount: Int = 0
-    ) -> RepoConfig {
-        RepoConfig(
+    ) -> MirrorSnapshot {
+        MirrorSnapshot(
             id: id,
             name: "repo-\(id.uuidString.suffix(4))",
             srcURL: "git@github.com:user/repo.git",
@@ -824,7 +561,35 @@ struct SyncHealthSummaryTests {
 
 // MARK: - WidgetHealthSnapshot
 
+@MainActor
 struct WidgetHealthSnapshotTests {
+    @Test func containerResolutionRequiresTheMatchingAppGroupEntitlement() {
+        let expectedURL = URL(fileURLWithPath: "/tmp/gitrelay-widget-group")
+        var resolvedGroupID: String?
+
+        let deniedURL = WidgetHealthSnapshotStore.authorizedContainerURL(
+            applicationGroups: nil,
+            resolver: { groupID in
+                resolvedGroupID = groupID
+                return expectedURL
+            }
+        )
+
+        #expect(deniedURL == nil)
+        #expect(resolvedGroupID == nil)
+
+        let allowedURL = WidgetHealthSnapshotStore.authorizedContainerURL(
+            applicationGroups: [WidgetHealthSnapshotStore.appGroupID],
+            resolver: { groupID in
+                resolvedGroupID = groupID
+                return expectedURL
+            }
+        )
+
+        #expect(allowedURL == expectedURL)
+        #expect(resolvedGroupID == WidgetHealthSnapshotStore.appGroupID)
+    }
+
     @Test func builderShapesTodayCountsFromSyncHealthSummary() {
         let calendar = makeUTCCalendar()
         let now = makeDate(year: 2026, month: 4, day: 25, hour: 12, calendar: calendar)
@@ -847,9 +612,10 @@ struct WidgetHealthSnapshotTests {
         )
 
         let snapshot = WidgetHealthSnapshotBuilder.make(
-            repos: [successRepo, failedRepo, notRunRepo],
-            statuses: [:],
-            inProgressSyncIDs: [],
+            plans: [successRepo, failedRepo, notRunRepo].map(\.plan),
+            health: Dictionary(
+                uniqueKeysWithValues: [successRepo, failedRepo, notRunRepo].map { ($0.id, $0.health) }
+            ),
             now: now,
             calendar: calendar
         )
@@ -860,7 +626,7 @@ struct WidgetHealthSnapshotTests {
         #expect(snapshot.updatedAt == now)
     }
 
-    @Test func attentionReposPrioritizeRecentFailuresThenStaleRepos() {
+    @Test func attentionMirrorsPrioritizeRecentFailuresThenStaleRepos() {
         let calendar = makeUTCCalendar()
         let now = makeDate(year: 2026, month: 4, day: 25, hour: 12, calendar: calendar)
         let recentFailure = now.addingTimeInterval(-300)
@@ -892,10 +658,10 @@ struct WidgetHealthSnapshotTests {
             lastSuccessfulSyncedAt: now
         )
 
-        let attention = WidgetHealthSnapshotBuilder.attentionRepos(
-            repos: [healthyRepo, staleRepo, olderFailureRepo, recentFailureRepo],
-            statuses: [:],
-            inProgressSyncIDs: [],
+        let mirrors = [healthyRepo, staleRepo, olderFailureRepo, recentFailureRepo]
+        let attention = WidgetHealthSnapshotBuilder.attentionMirrors(
+            plans: mirrors.map(\.plan),
+            health: Dictionary(uniqueKeysWithValues: mirrors.map { ($0.id, $0.health) }),
             now: now,
             limit: 3
         )
@@ -918,8 +684,8 @@ struct WidgetHealthSnapshotTests {
         let snapshot = WidgetHealthSnapshot(
             updatedAt: Date(timeIntervalSince1970: 1_777_000_000),
             summary: WidgetHealthSummaryPayload(succeededToday: 2, failedToday: 1, notRunToday: 0),
-            attentionRepos: [
-                WidgetAttentionRepo(
+            attentionMirrors: [
+                WidgetAttentionMirror(
                     id: repoID,
                     name: "core-api",
                     status: .failure,
@@ -969,8 +735,8 @@ struct WidgetHealthSnapshotTests {
         lastSyncedAt: Date?,
         lastSuccessfulSyncedAt: Date? = nil,
         lastSyncError: String? = nil
-    ) -> RepoConfig {
-        RepoConfig(
+    ) -> MirrorSnapshot {
+        MirrorSnapshot(
             id: id,
             name: name,
             srcURL: "git@github.com:user/repo.git",
@@ -984,9 +750,10 @@ struct WidgetHealthSnapshotTests {
 
 // MARK: - BackupCompleteness
 
+@MainActor
 struct BackupCompletenessTests {
     @Test func shallowRepoShowsIncompleteMark() {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "shallow",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
@@ -1001,7 +768,7 @@ struct BackupCompletenessTests {
     }
 
     @Test func fullRepoDoesNotShowIncompleteMark() {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "full",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git"
@@ -1015,7 +782,7 @@ struct BackupCompletenessTests {
     }
 
     @Test func customRefFiltersShowIncompleteMark() {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "filtered",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
@@ -1030,7 +797,7 @@ struct BackupCompletenessTests {
     }
 
     @Test func needsCredentialsAloneDoesNotShowIncompleteMark() {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "imported",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
@@ -1044,7 +811,7 @@ struct BackupCompletenessTests {
     }
 
     @Test func missingGitLFSFromRecentSyncShowsIncompleteMark() {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "lfs",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git"
@@ -1062,7 +829,7 @@ struct BackupCompletenessTests {
     }
 
     @Test func shallowPlusMissingLFSListsBothReasons() {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "both",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
@@ -1083,6 +850,7 @@ struct BackupCompletenessTests {
 
 // MARK: - RepoRowHealthPresentation
 
+@MainActor
 struct RepoRowHealthPresentationTests {
     @Test func captionUsesLastSyncTimeAndMarksStaleAfterThreshold() {
         let calendar = makeUTCCalendar()
@@ -1207,8 +975,8 @@ struct RepoRowHealthPresentationTests {
         lastSyncedAt: Date? = nil,
         lastSuccessfulSyncedAt: Date? = nil,
         consecutiveFailureCount: Int = 0
-    ) -> RepoConfig {
-        RepoConfig(
+    ) -> MirrorSnapshot {
+        MirrorSnapshot(
             name: "repo",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
@@ -1245,7 +1013,7 @@ struct RepoFailureNextStepTests {
         repo.needsCredentials = true
         let step = RepoFailureNextStep.make(
             repo: repo,
-            status: .failed(RepoCredentialGate.missingCredentialsMessage)
+            status: .failed(MirrorCredentialGate.missingCredentialsMessage)
         )
 
         #expect(step.primaryAction == .reenterCredentials)
@@ -1331,14 +1099,14 @@ struct RepoFailureNextStepTests {
         #expect(step.showsOpenLog)
     }
 
-    @Test func requestingReenterCredentialsDoesNotMutateRepoConfig() {
+    @Test func requestingReenterCredentialsDoesNotMutateMirrorSnapshot() {
         let suite = "gitrelay.tests.next-step.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("gitrelay-next-step-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         Constants.setBaseDirectoryForTesting(base)
-        let vm = AppViewModel(
+        let vm = GitRelayAppModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
             biometricAuthenticator: PermissiveBiometricAuthenticator()
@@ -1363,7 +1131,7 @@ struct RepoFailureNextStepTests {
 
     @Test func editViewModelPreservesConfigWhenOpeningForReenterCredentials() {
         let lastSyncedAt = Date(timeIntervalSince1970: 1_700_000_000)
-        let existing = RepoConfig(
+        let existing = MirrorSnapshot(
             name: "keep-me",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
@@ -1378,8 +1146,8 @@ struct RepoFailureNextStepTests {
             needsCredentials: false
         )
 
-        let vm = AddEditRepoViewModel(editing: existing)
-        let rebuilt = vm.buildRepoConfig()
+        let vm = MirrorEditorModel(editing: existing)
+        let rebuilt = vm.buildMirrorSnapshot()
 
         #expect(rebuilt.id == existing.id)
         #expect(rebuilt.name == "keep-me")
@@ -1393,8 +1161,8 @@ struct RepoFailureNextStepTests {
         #expect(rebuilt.tags == ["prod"])
     }
 
-    private func makeRepo(lastSyncError: String? = nil) -> RepoConfig {
-        RepoConfig(
+    private func makeRepo(lastSyncError: String? = nil) -> MirrorSnapshot {
+        MirrorSnapshot(
             name: "repo",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
@@ -1403,6 +1171,7 @@ struct RepoFailureNextStepTests {
     }
 }
 
+@MainActor
 struct SyncFailureClassifierTests {
     @Test func classifiesAuthAndNotFoundWithStableDisplayMessages() {
         let auth = SyncFailureClassifier.classifyError(
@@ -1437,8 +1206,8 @@ struct MenuBarPopoverFilterTests {
         name: String,
         tags: [String] = [],
         needsCredentials: Bool = false
-    ) -> RepoConfig {
-        RepoConfig(
+    ) -> MirrorSnapshot {
+        MirrorSnapshot(
             name: name,
             srcURL: "git@github.com:user/\(name).git",
             dstURL: "git@github.com:user/\(name)-mirror.git",
@@ -1448,30 +1217,30 @@ struct MenuBarPopoverFilterTests {
     }
 
     @Test func emptySearchReturnsAllRepos() {
-        let repos = [
+        let mirrors = [
             makeRepo(name: "alpha"),
             makeRepo(name: "beta")
         ]
 
-        #expect(MenuBarPopoverFilter.filteredRepos(repos, searchText: "") == repos)
-        #expect(MenuBarPopoverFilter.filteredRepos(repos, searchText: "   ") == repos)
+        #expect(MenuBarPopoverFilter.filteredRepos(mirrors, searchText: "") == mirrors)
+        #expect(MenuBarPopoverFilter.filteredRepos(mirrors, searchText: "   ") == mirrors)
     }
 
     @Test func searchMatchesRepoNameCaseInsensitively() {
         let alpha = makeRepo(name: "AlphaProject")
         let beta = makeRepo(name: "beta-service")
-        let repos = [alpha, beta]
+        let mirrors = [alpha, beta]
 
-        #expect(MenuBarPopoverFilter.filteredRepos(repos, searchText: "alpha") == [alpha])
-        #expect(MenuBarPopoverFilter.filteredRepos(repos, searchText: "SERVICE") == [beta])
+        #expect(MenuBarPopoverFilter.filteredRepos(mirrors, searchText: "alpha") == [alpha])
+        #expect(MenuBarPopoverFilter.filteredRepos(mirrors, searchText: "SERVICE") == [beta])
     }
 
     @Test func searchMatchesTags() {
         let tagged = makeRepo(name: "mirror-a", tags: ["production"])
         let other = makeRepo(name: "mirror-b", tags: ["staging"])
-        let repos = [tagged, other]
+        let mirrors = [tagged, other]
 
-        #expect(MenuBarPopoverFilter.filteredRepos(repos, searchText: "prod") == [tagged])
+        #expect(MenuBarPopoverFilter.filteredRepos(mirrors, searchText: "prod") == [tagged])
     }
 
     @Test func canTriggerSyncAllowsAllStatusesExceptSyncingAndQueued() {
@@ -1490,7 +1259,7 @@ struct MenuBarPopoverFilterTests {
         let creds = makeRepo(name: "needs-creds", needsCredentials: true)
         let failedB = makeRepo(name: "failed-b")
         let idleLast = makeRepo(name: "idle-last")
-        let repos = [idle, failedA, ok, creds, failedB, idleLast]
+        let mirrors = [idle, failedA, ok, creds, failedB, idleLast]
 
         let statuses: [UUID: SyncStatus] = [
             failedA.id: .failed("auth"),
@@ -1502,7 +1271,7 @@ struct MenuBarPopoverFilterTests {
         ]
 
         let ordered = MenuBarPopoverFilter.filteredRepos(
-            repos,
+            mirrors,
             searchText: "",
             statuses: statuses
         )
@@ -1520,15 +1289,15 @@ struct MenuBarPopoverFilterTests {
         let a = makeRepo(name: "a")
         let b = makeRepo(name: "b")
         let c = makeRepo(name: "c")
-        let repos = [a, b, c]
+        let mirrors = [a, b, c]
         let statuses: [UUID: SyncStatus] = [
             a.id: .idle,
             b.id: .syncing,
             c.id: .diverged("tip mismatch"),
         ]
         #expect(
-            MenuBarPopoverFilter.filteredRepos(repos, searchText: "", statuses: statuses)
-                == repos
+            MenuBarPopoverFilter.filteredRepos(mirrors, searchText: "", statuses: statuses)
+                == mirrors
         )
         #expect(!MenuBarPopoverFilter.needsAttention(c, status: .diverged("tip mismatch")))
     }
@@ -1537,7 +1306,7 @@ struct MenuBarPopoverFilterTests {
         let idleMatch = makeRepo(name: "svc-idle")
         let failedMatch = makeRepo(name: "svc-failed")
         let otherFailed = makeRepo(name: "other-failed")
-        let repos = [idleMatch, failedMatch, otherFailed]
+        let mirrors = [idleMatch, failedMatch, otherFailed]
         let statuses: [UUID: SyncStatus] = [
             idleMatch.id: .idle,
             failedMatch.id: .failed("x"),
@@ -1545,7 +1314,7 @@ struct MenuBarPopoverFilterTests {
         ]
 
         let ordered = MenuBarPopoverFilter.filteredRepos(
-            repos,
+            mirrors,
             searchText: "svc",
             statuses: statuses
         )
@@ -1553,221 +1322,38 @@ struct MenuBarPopoverFilterTests {
     }
 }
 
-// MARK: - SidebarRepoFilter
-
-struct SidebarRepoFilterTests {
-    private func makeRepo(
-        name: String,
-        srcURL: String? = nil,
-        dstURL: String? = nil,
-        targets: [MirrorTarget]? = nil,
-        tags: [String] = [],
-        lastSyncedAt: Date? = Date(timeIntervalSince1970: 1_700_000_000),
-        divergedDetail: String? = nil
-    ) -> RepoConfig {
-        if let targets {
-            return RepoConfig(
-                name: name,
-                srcURL: srcURL ?? "git@github.com:user/\(name).git",
-                targets: targets,
-                lastSyncedAt: lastSyncedAt,
-                lastSuccessfulSyncedAt: lastSyncedAt,
-                divergedDetail: divergedDetail,
-                tags: tags
-            )
-        }
-        return RepoConfig(
-            name: name,
-            srcURL: srcURL ?? "git@github.com:user/\(name).git",
-            dstURL: dstURL ?? "git@github.com:user/\(name)-mirror.git",
-            lastSyncedAt: lastSyncedAt,
-            lastSuccessfulSyncedAt: lastSyncedAt,
-            divergedDetail: divergedDetail,
-            tags: tags
-        )
-    }
-
-    @Test func searchMatchesRepoNameCaseInsensitively() {
-        let alpha = makeRepo(name: "AlphaProject")
-        let beta = makeRepo(name: "beta-service")
-        let repos = [alpha, beta]
-
-        let hit = SidebarRepoFilter.filteredRepos(
-            repos,
-            searchText: "alpha",
-            statusFilter: .all,
-            statuses: [:]
-        )
-        #expect(hit == [alpha])
-
-        let upper = SidebarRepoFilter.filteredRepos(
-            repos,
-            searchText: "SERVICE",
-            statusFilter: .all,
-            statuses: [:]
-        )
-        #expect(upper == [beta])
-    }
-
-    @Test func searchMatchesTags() {
-        let tagged = makeRepo(name: "mirror-a", tags: ["production"])
-        let other = makeRepo(name: "mirror-b", tags: ["staging"])
-        let repos = [tagged, other]
-
-        let hit = SidebarRepoFilter.filteredRepos(
-            repos,
-            searchText: "prod",
-            statusFilter: .all,
-            statuses: [:]
-        )
-        #expect(hit == [tagged])
-    }
-
-    @Test func searchMatchesSourceAndDestinationURLsIncludingMultiTarget() {
-        let multi = makeRepo(
-            name: "multi",
-            srcURL: "git@github.com:acme/source.git",
-            targets: [
-                MirrorTarget(url: "git@gitlab.com:acme/primary.git"),
-                MirrorTarget(url: "git@backup.local:mirrors/secondary.git")
-            ]
-        )
-        let other = makeRepo(name: "other")
-        let repos = [multi, other]
-
-        #expect(
-            SidebarRepoFilter.filteredRepos(
-                repos,
-                searchText: "acme/source",
-                statusFilter: .all,
-                statuses: [:]
-            ) == [multi]
-        )
-        #expect(
-            SidebarRepoFilter.filteredRepos(
-                repos,
-                searchText: "backup.local",
-                statusFilter: .all,
-                statuses: [:]
-            ) == [multi]
-        )
-    }
-
-    @Test func failedFilterShowsOnlyFailedStatuses() {
-        let ok = makeRepo(name: "ok")
-        let failed = makeRepo(name: "failed")
-        let diverged = makeRepo(name: "diverged")
-        let repos = [ok, failed, diverged]
-        let statuses: [UUID: SyncStatus] = [
-            ok.id: .idle,
-            failed.id: .failed("network"),
-            diverged.id: .diverged("tree mismatch")
-        ]
-
-        let hit = SidebarRepoFilter.filteredRepos(
-            repos,
-            searchText: "",
-            statusFilter: .failed,
-            statuses: statuses
-        )
-        #expect(hit == [failed])
-    }
-
-    @Test func clearingSearchRestoresFullFilteredSet() {
-        let alpha = makeRepo(name: "Alpha")
-        let beta = makeRepo(name: "Beta")
-        let repos = [alpha, beta]
-        let statuses: [UUID: SyncStatus] = [
-            alpha.id: .failed("boom"),
-            beta.id: .failed("boom")
-        ]
-
-        let narrowed = SidebarRepoFilter.filteredRepos(
-            repos,
-            searchText: "alpha",
-            statusFilter: .failed,
-            statuses: statuses
-        )
-        #expect(narrowed == [alpha])
-
-        let restored = SidebarRepoFilter.filteredRepos(
-            repos,
-            searchText: "   ",
-            statusFilter: .failed,
-            statuses: statuses
-        )
-        #expect(restored == [alpha, beta])
-    }
-
-    @Test func searchAndStatusFilterCombineWithAND() {
-        let failedAlpha = makeRepo(name: "Alpha")
-        let failedBeta = makeRepo(name: "Beta")
-        let idleAlpha = makeRepo(name: "AlphaIdle")
-        let repos = [failedAlpha, failedBeta, idleAlpha]
-        let statuses: [UUID: SyncStatus] = [
-            failedAlpha.id: .failed("err"),
-            failedBeta.id: .failed("err"),
-            idleAlpha.id: .idle
-        ]
-
-        let hit = SidebarRepoFilter.filteredRepos(
-            repos,
-            searchText: "alpha",
-            statusFilter: .failed,
-            statuses: statuses
-        )
-        #expect(hit == [failedAlpha])
-    }
-
-    @Test func divergedFilterMatchesStatusOrPersistedDivergence() {
-        let byStatus = makeRepo(name: "status-diverged")
-        let byDetail = makeRepo(name: "detail-diverged", divergedDetail: "src != dst")
-        let ok = makeRepo(name: "ok")
-        let repos = [byStatus, byDetail, ok]
-        let statuses: [UUID: SyncStatus] = [
-            byStatus.id: .diverged("live"),
-            byDetail.id: .idle,
-            ok.id: .idle
-        ]
-
-        let hit = SidebarRepoFilter.filteredRepos(
-            repos,
-            searchText: "",
-            statusFilter: .diverged,
-            statuses: statuses
-        )
-        #expect(hit == [byStatus, byDetail])
-    }
-
-    @Test func notSyncedFilterMatchesNeverSyncedCaptionPath() {
-        let neverSynced = makeRepo(name: "fresh", lastSyncedAt: nil)
-        let synced = makeRepo(name: "done")
-        let repos = [neverSynced, synced]
-
-        let hit = SidebarRepoFilter.filteredRepos(
-            repos,
-            searchText: "",
-            statusFilter: .notSynced,
-            statuses: [:]
-        )
-        #expect(hit == [neverSynced])
-    }
-}
-
 // MARK: - DesignTokens
 
+@MainActor
 struct DesignTokensTests {
     @Test func sidebarWidthStaysNarrowIceLikeRange() {
-        #expect(DesignTokens.Layout.sidebarMinWidth == 200)
-        #expect(DesignTokens.Layout.sidebarIdealWidth == 240)
-        #expect(DesignTokens.Layout.sidebarMaxWidth == 300)
+        #expect(DesignTokens.Layout.sidebarMinWidth == 180)
+        #expect(DesignTokens.Layout.sidebarIdealWidth == 200)
+        #expect(DesignTokens.Layout.sidebarMaxWidth == 240)
         #expect(DesignTokens.Layout.sidebarMinWidth < DesignTokens.Layout.sidebarIdealWidth)
         #expect(DesignTokens.Layout.sidebarIdealWidth < DesignTokens.Layout.sidebarMaxWidth)
     }
 
-    @Test func addEditRepoSheetUsesResizableTwoColumnMinimum() {
+    @Test func addEditRepoSheetUsesResizableUnifiedFlowMinimum() {
         #expect(DesignTokens.Layout.addEditRepoSheetMinWidth == 640)
         #expect(DesignTokens.Layout.addEditRepoSheetMinHeight == 420)
+        #expect(DesignTokens.Layout.addEditRepoSheetDefaultWidth == 720)
+        #expect(DesignTokens.Layout.addEditRepoSheetDefaultHeight == 760)
+        #expect(DesignTokens.Layout.addEditRepoSheetDefaultWidth > DesignTokens.Layout.addEditRepoSheetMinWidth)
+        #expect(DesignTokens.Layout.addEditRepoSheetDefaultHeight > DesignTokens.Layout.addEditRepoSheetMinHeight)
+    }
+
+    @Test func addEditRepoSheetDoesNotResizeAfterPresentation() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let repoRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let sheetURL = repoRoot.appendingPathComponent("gitrelay/Views/Sheet/MirrorEditorSheet.swift")
+        let source = try String(contentsOf: sheetURL, encoding: .utf8)
+
+        #expect(source.contains("struct MirrorEditorSheet"))
+        #expect(source.contains("presentationSizing(.fitted)"))
+        #expect(!source.contains("window.setFrame("))
     }
 
     @Test func statusColorMappingCoversEverySyncStatus() {
@@ -1807,11 +1393,11 @@ struct DesignTokensTests {
 
     @Test func sharedLayoutTokensStayStable() {
         #expect(DesignTokens.Layout.popoverWidth == 280)
-        #expect(DesignTokens.Layout.settingsMinWidth == 560)
-        #expect(DesignTokens.Layout.settingsSidebarMinWidth == 140)
-        #expect(DesignTokens.Layout.settingsSidebarIdealWidth == 160)
-        #expect(DesignTokens.Layout.settingsSidebarMaxWidth == 200)
-        #expect(DesignTokens.Layout.settingsDetailMinWidth == 380)
+        #expect(DesignTokens.Layout.settingsMinWidth == 640)
+        #expect(DesignTokens.Layout.settingsSidebarMinWidth == 160)
+        #expect(DesignTokens.Layout.settingsSidebarIdealWidth == 180)
+        #expect(DesignTokens.Layout.settingsSidebarMaxWidth == 220)
+        #expect(DesignTokens.Layout.settingsDetailMinWidth == 400)
         #expect(DesignTokens.Layout.settingsSidebarMinWidth < DesignTokens.Layout.settingsSidebarIdealWidth)
         #expect(DesignTokens.Layout.settingsSidebarIdealWidth < DesignTokens.Layout.settingsSidebarMaxWidth)
         #expect(DesignTokens.Spacing.sheetFooter == 16)
@@ -1851,7 +1437,7 @@ struct SyncHistorySparklineTests {
     @Test func recordSyncResultPersistsDailyOutcomesAndPrunesOldEntries() {
         let calendar = makeUTCCalendar()
         let now = makeDate(year: 2026, month: 4, day: 25, hour: 12, calendar: calendar)
-        var repo = RepoConfig(
+        var repo = MirrorSnapshot(
             name: "repo",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git"
@@ -1931,6 +1517,7 @@ struct SyncHistorySparklineTests {
 
 // MARK: - VerificationDecision
 
+@MainActor
 struct VerificationDecisionTests {
     @Test func identicalCommitSHAsMatchWithoutTrees() {
         let decision = VerificationDecision.decide(
@@ -2009,8 +1596,8 @@ struct VerificationSamplerTests {
     }
 
     @Test func sampleRespectsCountAndDoesNotExceedPopulation() {
-        let repos = (0..<5).map { index in
-            RepoConfig(
+        let mirrors = (0..<5).map { index in
+            MirrorSnapshot(
                 id: UUID(uuidString: "00000000-0000-0000-0000-00000000000\(index)")!,
                 name: "repo-\(index)",
                 srcURL: "git@github.com:user/repo.git",
@@ -2018,25 +1605,25 @@ struct VerificationSamplerTests {
             )
         }
         var generator = SeededGenerator(state: 42)
-        let sample = VerificationSampler.sample(from: repos, count: 3, using: &generator)
+        let sample = VerificationSampler.sample(from: mirrors.map(\.plan), count: 3, using: &generator)
         #expect(sample.count == 3)
         #expect(Set(sample.map(\.id)).count == 3)
     }
 
     @Test func sampleOfZeroOrEmptyIsEmpty() {
         #expect(VerificationSampler.sample(from: [], count: 3).isEmpty)
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "only",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git"
         )
         var generator = SeededGenerator(state: 7)
-        #expect(VerificationSampler.sample(from: [repo], count: 0, using: &generator).isEmpty)
+        #expect(VerificationSampler.sample(from: [repo.plan], count: 0, using: &generator).isEmpty)
     }
 
     @Test func sampleCountLargerThanPopulationReturnsAll() {
-        let repos = (0..<2).map { index in
-            RepoConfig(
+        let mirrors = (0..<2).map { index in
+            MirrorSnapshot(
                 id: UUID(uuidString: "00000000-0000-0000-0000-00000000001\(index)")!,
                 name: "repo-\(index)",
                 srcURL: "git@github.com:user/repo.git",
@@ -2044,7 +1631,7 @@ struct VerificationSamplerTests {
             )
         }
         var generator = SeededGenerator(state: 99)
-        let sample = VerificationSampler.sample(from: repos, count: 10, using: &generator)
+        let sample = VerificationSampler.sample(from: mirrors.map(\.plan), count: 10, using: &generator)
         #expect(sample.count == 2)
     }
 }
@@ -2071,7 +1658,7 @@ struct LSRemoteParsingTests {
 
 struct DivergedStateTests {
     @Test func recordVerificationResultSetsAndClearsDivergence() {
-        var repo = RepoConfig(
+        var repo = MirrorSnapshot(
             name: "my-repo",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git"
@@ -2089,7 +1676,7 @@ struct DivergedStateTests {
     }
 
     @Test func successfulSyncClearsDivergence() {
-        var repo = RepoConfig(
+        var repo = MirrorSnapshot(
             name: "my-repo",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
@@ -2100,29 +1687,9 @@ struct DivergedStateTests {
         #expect(!repo.isDiverged)
     }
 
-    @Test func legacyReposDefaultBranchIsMain() throws {
-        let json = """
-        {
-          "id": "00000000-0000-0000-0000-000000000001",
-          "name": "legacy-repo",
-          "srcURL": "git@github.com:user/repo.git",
-          "dstURL": "git@github.com:user/mirror.git",
-          "srcAuth": { "sshAgent": {} },
-          "dstAuth": { "sshAgent": {} },
-          "frequency": "手动",
-          "createdAt": "2026-04-25T12:00:00Z"
-        }
-        """
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
-        #expect(repo.defaultBranch == "main")
-        #expect(repo.divergedDetail == nil)
-    }
-
     @Test func normalizedBranchStripsRefsHeadsPrefix() {
-        #expect(RepoConfig.normalizedBranch("refs/heads/develop") == "develop")
-        #expect(RepoConfig.normalizedBranch("  ") == "main")
+        #expect(MirrorSnapshot.normalizedBranch("refs/heads/develop") == "develop")
+        #expect(MirrorSnapshot.normalizedBranch("  ") == "main")
     }
 }
 
@@ -2142,13 +1709,13 @@ struct VerificationFrequencyTests {
 // MARK: - Form Validation
 
 @MainActor
-struct AddEditRepoValidationTests {
-    private func setPrimaryTargetURL(_ vm: AddEditRepoViewModel, _ url: String) {
+struct MirrorEditorValidationTests {
+    private func setPrimaryTargetURL(_ vm: MirrorEditorModel, _ url: String) {
         vm.targets[0].url = url
     }
 
     @Test func emptyNameIsInvalid() {
-        let vm = AddEditRepoViewModel()
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:user/repo.git"
         vm.updateName("")
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
@@ -2157,7 +1724,7 @@ struct AddEditRepoValidationTests {
     }
 
     @Test func whitespaceOnlyNameIsInvalid() {
-        let vm = AddEditRepoViewModel()
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:user/repo.git"
         vm.updateName("   ")
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
@@ -2166,7 +1733,7 @@ struct AddEditRepoValidationTests {
     }
 
     @Test func sshURLsAreValid() {
-        let vm = AddEditRepoViewModel()
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@gitlab.com:org/repo.git"
         vm.updateName("my-repo")
         setPrimaryTargetURL(vm, "git@github.com:user/repo.git")
@@ -2176,7 +1743,7 @@ struct AddEditRepoValidationTests {
     }
 
     @Test func httpsURLsAreValid() {
-        let vm = AddEditRepoViewModel()
+        let vm = MirrorEditorModel()
         vm.srcURL = "https://github.com/user/repo.git"
         vm.updateName("my-repo")
         setPrimaryTargetURL(vm, "https://github.com/user/mirror.git")
@@ -2184,7 +1751,7 @@ struct AddEditRepoValidationTests {
     }
 
     @Test func invalidURLIsRejected() {
-        let vm = AddEditRepoViewModel()
+        let vm = MirrorEditorModel()
         vm.updateName("my-repo")
         vm.srcURL = "not-a-url"
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
@@ -2194,7 +1761,7 @@ struct AddEditRepoValidationTests {
     }
 
     @Test func emptyURLsAreInvalid() {
-        let vm = AddEditRepoViewModel()
+        let vm = MirrorEditorModel()
         vm.updateName("my-repo")
         _ = vm.validate()
         #expect(vm.srcError != nil)
@@ -2202,7 +1769,7 @@ struct AddEditRepoValidationTests {
     }
 
     @Test func allDisabledTargetsAreInvalid() {
-        let vm = AddEditRepoViewModel()
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:user/repo.git"
         vm.updateName("my-repo")
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
@@ -2211,24 +1778,24 @@ struct AddEditRepoValidationTests {
         #expect(!vm.targetErrors.isEmpty)
     }
 
-    @Test func buildRepoConfigKeepsDestructivePushPolicy() {
-        let vm = AddEditRepoViewModel()
+    @Test func buildMirrorSnapshotKeepsDestructivePushPolicy() {
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@gitlab.com:org/repo.git"
         vm.updateName("my-repo")
         setPrimaryTargetURL(vm, "git@github.com:user/repo.git")
         vm.destructivePushPolicy = .auto
 
-        let repo = vm.buildRepoConfig()
+        let repo = vm.buildMirrorSnapshot()
 
         #expect(repo.destructivePushPolicy == .auto)
         #expect(repo.targets.count == 1)
     }
 
-    @Test func buildRepoConfigPreservesHealthFieldsWhenEditing() {
+    @Test func buildMirrorSnapshotPreservesHealthFieldsWhenEditing() {
         let lastSyncedAt = Date(timeIntervalSince1970: 1_777_080_000)
         let lastSuccessfulSyncedAt = lastSyncedAt.addingTimeInterval(-3_600)
         let lastVerifiedAt = lastSyncedAt.addingTimeInterval(120)
-        let existingRepo = RepoConfig(
+        let existingRepo = MirrorSnapshot(
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000021")!,
             name: "old-name",
             srcURL: "git@github.com:user/repo.git",
@@ -2241,10 +1808,10 @@ struct AddEditRepoValidationTests {
             lastVerifiedAt: lastVerifiedAt,
             divergedDetail: "内容分歧"
         )
-        let vm = AddEditRepoViewModel(editing: existingRepo)
+        let vm = MirrorEditorModel(editing: existingRepo)
         vm.name = "new-name"
 
-        let repo = vm.buildRepoConfig()
+        let repo = vm.buildMirrorSnapshot()
 
         #expect(repo.name == "new-name")
         #expect(repo.defaultBranch == "develop")
@@ -2257,8 +1824,8 @@ struct AddEditRepoValidationTests {
         #expect(repo.targets.count == 1)
     }
 
-    @Test func buildRepoConfigSupportsMultipleTargets() {
-        let vm = AddEditRepoViewModel()
+    @Test func buildMirrorSnapshotSupportsMultipleTargets() {
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:user/repo.git"
         vm.updateName("multi")
         vm.targets[0].url = "git@github.com:user/mirror-a.git"
@@ -2266,27 +1833,27 @@ struct AddEditRepoValidationTests {
         vm.targets[1].url = "git@gitlab.com:user/mirror-b.git"
         vm.targets[1].enabled = false
 
-        let repo = vm.buildRepoConfig()
+        let repo = vm.buildMirrorSnapshot()
 
         #expect(repo.targets.count == 2)
         #expect(repo.enabledTargets.count == 1)
         #expect(repo.enabledTargets[0].url.contains("mirror-a"))
     }
 
-    @Test func buildRepoConfigNormalizesTags() {
-        let vm = AddEditRepoViewModel()
+    @Test func buildMirrorSnapshotNormalizesTags() {
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:user/repo.git"
         vm.updateName("tagged")
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
         vm.tags = [" work ", "work", "oss", "  "]
 
-        let repo = vm.buildRepoConfig()
+        let repo = vm.buildMirrorSnapshot()
 
         #expect(repo.tags == ["work", "oss"])
     }
 
-    @Test func buildRepoConfigPersistsDepthAndRefSpecs() {
-        let vm = AddEditRepoViewModel()
+    @Test func buildMirrorSnapshotPersistsDepthAndRefSpecs() {
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:user/repo.git"
         vm.updateName("partial")
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
@@ -2296,7 +1863,7 @@ struct AddEditRepoValidationTests {
         +refs/tags/v*:refs/tags/v*
         """
 
-        let repo = vm.buildRepoConfig()
+        let repo = vm.buildMirrorSnapshot()
 
         #expect(repo.depth == 50)
         #expect(repo.resolvedRefSpecs == [
@@ -2307,7 +1874,7 @@ struct AddEditRepoValidationTests {
     }
 
     @Test func invalidDepthIsRejected() {
-        let vm = AddEditRepoViewModel()
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:user/repo.git"
         vm.updateName("partial")
         setPrimaryTargetURL(vm, "git@github.com:user/mirror.git")
@@ -2318,14 +1885,14 @@ struct AddEditRepoValidationTests {
     }
 
     @Test func editingRepoLoadsAdvancedOptions() {
-        let existingRepo = RepoConfig(
+        let existingRepo = MirrorSnapshot(
             name: "partial",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
             depth: 25,
             refSpecs: ["+refs/heads/main:refs/heads/main"]
         )
-        let vm = AddEditRepoViewModel(editing: existingRepo)
+        let vm = MirrorEditorModel(editing: existingRepo)
 
         #expect(vm.depthText == "25")
         #expect(vm.refSpecsText == "+refs/heads/main:refs/heads/main")
@@ -2333,51 +1900,49 @@ struct AddEditRepoValidationTests {
     }
 
     @Test func editingRepoPreservesTags() {
-        let existingRepo = RepoConfig(
+        let existingRepo = MirrorSnapshot(
             name: "tagged",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
             tags: ["work", "client"]
         )
-        let vm = AddEditRepoViewModel(editing: existingRepo)
+        let vm = MirrorEditorModel(editing: existingRepo)
 
         #expect(vm.tags == ["work", "client"])
     }
 }
 
-// MARK: - Add repo two-step + drop prefill (#59)
+// MARK: - Add repo unified flow + drop prefill (#59)
 
 @MainActor
-struct AddEditRepoTwoStepTests {
-    private func setPrimaryTargetURL(_ vm: AddEditRepoViewModel, _ url: String) {
+struct MirrorEditorUnifiedFlowTests {
+    private func setPrimaryTargetURL(_ vm: MirrorEditorModel, _ url: String) {
         vm.targets[0].url = url
     }
 
-    @Test func newRepoStartsOnBasicsStepWithSSHAgentDefault() {
-        let suite = "AddEditRepoTwoStep.\(UUID().uuidString)"
+    @Test func newRepoStartsWithSSHAgentDefault() {
+        let suite = "MirrorEditorUnifiedFlow.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
 
-        let vm = AddEditRepoViewModel(defaults: defaults)
-        #expect(!vm.showsMoreOptions)
+        let vm = MirrorEditorModel(defaults: defaults)
         #expect(vm.srcAuthMode == .sshAgent)
         #expect(vm.targets[0].authMode == .sshAgent)
     }
 
     @Test func defaultAuthReusesLastUsedMode() {
-        let suite = "AddEditRepoTwoStep.lastAuth.\(UUID().uuidString)"
+        let suite = "MirrorEditorUnifiedFlow.lastAuth.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
 
         LastUsedAuthMode.save(.httpsToken, to: defaults)
-        let vm = AddEditRepoViewModel(defaults: defaults)
+        let vm = MirrorEditorModel(defaults: defaults)
         #expect(vm.srcAuthMode == .httpsToken)
         #expect(vm.targets[0].authMode == .httpsToken)
     }
 
     @Test func requiredFieldsAloneValidateAndBuildConfigForSync() {
-        let vm = AddEditRepoViewModel()
-        #expect(!vm.showsMoreOptions)
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:acme/source.git"
         setPrimaryTargetURL(vm, "git@github.com:acme/mirror.git")
         vm.frequency = .hour1
@@ -2385,9 +1950,7 @@ struct AddEditRepoTwoStepTests {
         #expect(vm.name == "source")
         #expect(vm.srcAuthMode == .sshAgent)
         #expect(vm.validate())
-        #expect(!vm.showsMoreOptions)
-
-        let repo = vm.buildRepoConfig()
+        let repo = vm.buildMirrorSnapshot()
         #expect(repo.name == "source")
         #expect(repo.srcURL == "git@github.com:acme/source.git")
         #expect(repo.targets.count == 1)
@@ -2399,22 +1962,8 @@ struct AddEditRepoTwoStepTests {
         #expect(repo.depth == nil)
     }
 
-    @Test func openMoreOptionsWorksWithoutFilledBasics() {
-        let vm = AddEditRepoViewModel()
-        #expect(!vm.showsMoreOptions)
-
-        vm.openMoreOptions()
-        #expect(vm.showsMoreOptions)
-        // Validation is deferred to Save / Add and Start Syncing.
-        #expect(vm.nameError == nil)
-
-        vm.backToBasics()
-        #expect(!vm.showsMoreOptions)
-    }
-
-    @Test func saveStillRequiresBasicsEvenAfterVisitingMoreOptions() {
-        let vm = AddEditRepoViewModel()
-        vm.openMoreOptions()
+    @Test func saveRequiresMirrorPathFields() {
+        let vm = MirrorEditorModel()
         #expect(!vm.validate())
         #expect(vm.nameError != nil)
         #expect(vm.srcError != nil)
@@ -2426,27 +1975,25 @@ struct AddEditRepoTwoStepTests {
     }
 
     @Test func infersNameAndSSHAgentFromGitAtSourceURL() {
-        let vm = AddEditRepoViewModel()
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@gitlab.com:org/my-project.git"
         #expect(vm.name == "my-project")
         #expect(vm.srcAuthMode == .sshAgent)
-        #expect(vm.basicsInferenceCaption == "SSH Agent · my-project")
     }
 
     @Test func infersHTTPSTokenAuthFromHTTPSSourceURL() {
-        let suite = "AddEditRepoInference.https.\(UUID().uuidString)"
+        let suite = "MirrorEditorInference.https.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
 
-        let vm = AddEditRepoViewModel(defaults: defaults)
+        let vm = MirrorEditorModel(defaults: defaults)
         vm.srcURL = "https://github.com/acme/widget.git"
         #expect(vm.name == "widget")
         #expect(vm.srcAuthMode == .httpsToken)
-        #expect(vm.basicsInferenceCaption == "HTTPS Token · widget")
     }
 
     @Test func userEditedNameIsNotOverwrittenBySourceURLChange() {
-        let vm = AddEditRepoViewModel()
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:acme/original.git"
         #expect(vm.name == "original")
 
@@ -2457,15 +2004,14 @@ struct AddEditRepoTwoStepTests {
         vm.srcURL = "git@github.com:acme/other-repo.git"
         #expect(vm.name == "custom-name")
         #expect(vm.srcAuthMode == .sshAgent)
-        #expect(vm.basicsInferenceCaption == "SSH Agent · custom-name")
     }
 
     @Test func staticInferenceHelpersMatchURLSchemes() {
-        #expect(AddEditRepoViewModel.inferredRepoName(fromSourceURL: "git@github.com:a/b.git") == "b")
-        #expect(AddEditRepoViewModel.inferredRepoName(fromSourceURL: "https://github.com/a/c.git") == "c")
-        #expect(AddEditRepoViewModel.inferredAuthMode(fromSourceURL: "git@x:y/z.git") == .sshAgent)
-        #expect(AddEditRepoViewModel.inferredAuthMode(fromSourceURL: "ssh://git@host/path/repo.git") == .sshAgent)
-        #expect(AddEditRepoViewModel.inferredAuthMode(fromSourceURL: "https://host/a/b.git") == .httpsToken)
+        #expect(MirrorEditorModel.inferredRepoName(fromSourceURL: "git@github.com:a/b.git") == "b")
+        #expect(MirrorEditorModel.inferredRepoName(fromSourceURL: "https://github.com/a/c.git") == "c")
+        #expect(MirrorEditorModel.inferredAuthMode(fromSourceURL: "git@x:y/z.git") == .sshAgent)
+        #expect(MirrorEditorModel.inferredAuthMode(fromSourceURL: "ssh://git@host/path/repo.git") == .sshAgent)
+        #expect(MirrorEditorModel.inferredAuthMode(fromSourceURL: "https://host/a/b.git") == .httpsToken)
     }
 
     @Test func droppedURLPrefillsSourceAndInferredName() {
@@ -2473,7 +2019,7 @@ struct AddEditRepoTwoStepTests {
         #expect(prefill?.srcURL == "https://github.com/acme/widget.git")
         #expect(prefill?.inferredName == "widget")
 
-        let vm = AddEditRepoViewModel(prefill: prefill)
+        let vm = MirrorEditorModel(prefill: prefill)
         #expect(vm.srcURL == "https://github.com/acme/widget.git")
         #expect(vm.name == "widget")
     }
@@ -2483,7 +2029,7 @@ struct AddEditRepoTwoStepTests {
         #expect(prefill?.srcURL == "https://github.com/org/repo.git")
         #expect(prefill?.inferredName == "repo")
 
-        let vm = AddEditRepoViewModel(prefill: prefill)
+        let vm = MirrorEditorModel(prefill: prefill)
         #expect(vm.validateBasics() == false) // still needs a target
         vm.targets[0].url = "git@github.com:org/mirror.git"
         #expect(vm.validateBasics())
@@ -2506,7 +2052,7 @@ struct AddEditRepoTwoStepTests {
         #expect(fromGitDir?.srcURL == gitDir.path)
         #expect(fromGitDir?.inferredName == "my-local-repo")
 
-        let vm = AddEditRepoViewModel(prefill: fromWorkingTree)
+        let vm = MirrorEditorModel(prefill: fromWorkingTree)
         vm.targets[0].url = "git@github.com:acme/mirror.git"
         #expect(vm.validate())
         #expect(vm.srcURL == repoDir.path)
@@ -2514,39 +2060,34 @@ struct AddEditRepoTwoStepTests {
     }
 
     @Test func editingStillLoadsLFSAndWebhookFields() {
-        let existing = RepoConfig(
+        let existing = MirrorSnapshot(
             name: "edit-me",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
             lfsMirrorMode: .off,
             webhookEnabled: true
         )
-        let vm = AddEditRepoViewModel(editing: existing)
-        // Edit uses the same quiet two-step: optional fields stay behind More Options.
-        #expect(!vm.showsMoreOptions)
+        let vm = MirrorEditorModel(editing: existing)
         #expect(vm.lfsMirrorMode == .off)
         #expect(vm.webhookEnabled)
 
-        vm.openMoreOptions()
-        #expect(vm.showsMoreOptions)
-
         vm.lfsMirrorMode = .auto
         vm.webhookEnabled = false
-        let saved = vm.buildRepoConfig()
+        let saved = vm.buildMirrorSnapshot()
         #expect(saved.lfsMirrorMode == .auto)
         #expect(!saved.webhookEnabled)
     }
 
     @Test func rememberLastUsedAuthModePersistsWithoutSecrets() {
-        let suite = "AddEditRepoTwoStep.remember.\(UUID().uuidString)"
+        let suite = "MirrorEditorUnifiedFlow.remember.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
 
-        let vm = AddEditRepoViewModel(defaults: defaults)
+        let vm = MirrorEditorModel(defaults: defaults)
         vm.srcAuthMode = .sshKey
         vm.rememberLastUsedAuthMode()
         #expect(LastUsedAuthMode.load(from: defaults) == .sshKey)
-        #expect(defaults.string(forKey: "AddEditRepo.lastUsedAuthMode") == AuthMode.sshKey.rawValue)
+        #expect(defaults.string(forKey: "GitRelay.mirrorEditor.lastUsedAuthMode") == AuthMode.sshKey.rawValue)
     }
 }
 
@@ -2571,25 +2112,24 @@ struct EmptyStateExamplePrefillTests {
         try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         Constants.setBaseDirectoryForTesting(base)
 
-        let appVM = AppViewModel(
+        let appVM = GitRelayAppModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults)
         )
         #expect(appVM.repos.isEmpty)
 
-        let sheetVM = AddEditRepoViewModel(
+        let sheetVM = MirrorEditorModel(
             prefill: .emptyStateExample,
             defaults: defaults
         )
         #expect(sheetVM.srcURL == "https://github.com/org/repo.git")
         #expect(sheetVM.targets[0].url == "https://gitlab.com/org/repo.git")
         #expect(sheetVM.name == "repo")
-        #expect(!sheetVM.showsMoreOptions)
         #expect(sheetVM.validateBasics())
 
-        // Prefill only — never auto-save into AppViewModel / repos.json.
+        // Prefill only; never auto-save into the application library.
         #expect(appVM.repos.isEmpty)
-        #expect(try RepoStore.load().isEmpty)
+        #expect(try MirrorPlanStore().load().isEmpty)
     }
 
     @Test func dropPrefillWithoutDestinationLeavesTargetBlank() {
@@ -2597,7 +2137,7 @@ struct EmptyStateExamplePrefillTests {
             srcURL: "https://github.com/acme/only-src.git",
             inferredName: "only-src"
         )
-        let vm = AddEditRepoViewModel(prefill: prefill)
+        let vm = MirrorEditorModel(prefill: prefill)
         #expect(vm.srcURL == "https://github.com/acme/only-src.git")
         #expect(vm.targets[0].url.isEmpty)
         #expect(vm.name == "only-src")
@@ -2617,82 +2157,6 @@ struct RepoSourceDropParserTests {
     @Test func rejectsNonGitNoise() {
         #expect(RepoSourceDropParser.parse("hello world") == nil)
         #expect(RepoSourceDropParser.parse("/tmp/not-a-repo-\(UUID().uuidString)") == nil)
-    }
-}
-
-// MARK: - ReposDocument migration
-
-struct ReposDocumentMigrationTests {
-    @Test func loadsLegacyBareArrayAsVersionOne() throws {
-        let json = """
-        [
-          {
-            "id": "00000000-0000-0000-0000-000000000001",
-            "name": "legacy-repo",
-            "srcURL": "git@github.com:user/repo.git",
-            "dstURL": "git@github.com:user/mirror.git",
-            "srcAuth": { "sshAgent": {} },
-            "dstAuth": { "sshAgent": {} },
-            "frequency": "手动",
-            "createdAt": "2026-04-25T12:00:00Z"
-          }
-        ]
-        """
-
-        let repos = try RepoStore.decodeRepos(from: Data(json.utf8))
-
-        #expect(repos.count == 1)
-        #expect(repos[0].targets.count == 1)
-        #expect(repos[0].targets[0].url == "git@github.com:user/mirror.git")
-    }
-
-    @Test func loadsVersionTwoDocumentEnvelope() throws {
-        let json = """
-        {
-          "version": 2,
-          "repos": [
-            {
-              "id": "00000000-0000-0000-0000-000000000002",
-              "name": "v2-repo",
-              "srcURL": "git@github.com:user/repo.git",
-              "targets": [
-                {
-                  "id": "00000000-0000-0000-0000-000000000003",
-                  "url": "git@gitlab.com:user/mirror.git",
-                  "auth": { "sshAgent": {} },
-                  "enabled": true
-                }
-              ],
-              "srcAuth": { "sshAgent": {} },
-              "frequency": "手动",
-              "createdAt": "2026-04-25T12:00:00Z"
-            }
-          ]
-        }
-        """
-
-        let repos = try RepoStore.decodeRepos(from: Data(json.utf8))
-
-        #expect(repos.count == 1)
-        #expect(repos[0].targets.count == 1)
-        #expect(repos[0].targets[0].url == "git@gitlab.com:user/mirror.git")
-    }
-
-    @Test func saveWritesVersionTwoEnvelope() throws {
-        let repo = RepoConfig(
-            name: "saved",
-            srcURL: "git@github.com:user/repo.git",
-            dstURL: "git@github.com:user/mirror.git"
-        )
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        encoder.outputFormatting = .sortedKeys
-        let document = ReposDocument(repos: [repo])
-        let data = try encoder.encode(document)
-        let object = try JSONSerialization.jsonObject(with: data) as! [String: Any]
-
-        #expect(object["version"] as? Int == 2)
-        #expect((object["repos"] as? [Any])?.count == 1)
     }
 }
 
@@ -2723,7 +2187,7 @@ struct TargetSyncAggregationTests {
     }
 
     @Test func enabledTargetsFilterDisabledEntries() {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "multi",
             srcURL: "git@github.com:user/repo.git",
             targets: [
@@ -2821,7 +2285,7 @@ struct FailureNotificationCopyTests {
                 (repoName: "delta", message: "fail", count: 1)
             ]
         )
-        #expect(body.contains("4 repositories failed to sync"))
+        #expect(body.contains("4 mirrors failed to sync"))
         #expect(body.contains("alpha"))
         #expect(body.contains("beta"))
         #expect(body.contains("gamma"))
@@ -3192,7 +2656,7 @@ struct SyncFailureNotifierFocusTests {
     }
 
     @Test func ignoresCancelledSyncFailures() {
-        var focused: Bool? = true
+        let focused: Bool? = true
         let notifier = SyncFailureNotifier(focusStatusProvider: { focused })
         let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000032")!
 
@@ -3208,7 +2672,7 @@ struct SyncFailureNotifierFocusTests {
     }
 
     @Test func clearPendingDropsDeferredAlert() {
-        var focused: Bool? = true
+        let focused: Bool? = true
         let notifier = SyncFailureNotifier(focusStatusProvider: { focused })
         let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000033")!
 
@@ -3224,7 +2688,7 @@ struct SyncFailureNotifierFocusTests {
     }
 
     @Test func respectsDisabledNotifications() {
-        var focused: Bool? = true
+        let focused: Bool? = true
         let notifier = SyncFailureNotifier(focusStatusProvider: { focused })
         var prefs = NotificationPreferences.default
         prefs.notificationsEnabled = false
@@ -3241,7 +2705,7 @@ struct SyncFailureNotifierFocusTests {
     }
 
     @Test func deferredAlertPayloadCarriesRepoIDOnly() {
-        var focused: Bool? = true
+        let focused: Bool? = true
         let notifier = SyncFailureNotifier(focusStatusProvider: { focused })
         let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000034")!
 
@@ -3262,7 +2726,7 @@ struct SyncFailureNotifierFocusTests {
     }
 
     @Test func redactsCredentialsBeforeQueuingAlert() {
-        var focused: Bool? = true
+        let focused: Bool? = true
         let notifier = SyncFailureNotifier(focusStatusProvider: { focused })
         let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000035")!
 
@@ -3319,12 +2783,12 @@ struct SyncFailureNotificationRoutingTests {
 
 @MainActor
 struct SyncFailureNotificationActionMappingTests {
-    private func makeViewModel(defaults: UserDefaults) -> AppViewModel {
+    private func makeViewModel(defaults: UserDefaults) -> GitRelayAppModel {
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("gitrelay-failure-notif-actions-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         Constants.setBaseDirectoryForTesting(base)
-        let vm = AppViewModel(
+        let vm = GitRelayAppModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
             notificationPreferencesStore: NotificationPreferencesStore(defaults: defaults),
@@ -3334,10 +2798,10 @@ struct SyncFailureNotificationActionMappingTests {
         return vm
     }
 
-    private func addSSHRepo(to vm: AppViewModel, name: String) -> UUID {
+    private func addSSHRepo(to vm: GitRelayAppModel, name: String) -> UUID {
         let id = UUID()
         vm.addRepo(
-            RepoConfig(
+            MirrorSnapshot(
                 id: id,
                 name: name,
                 srcURL: "git@github.com:user/\(name).git",
@@ -3556,173 +3020,72 @@ struct ProviderTokenScopeCacheTests {
 
 // MARK: - App Intents support
 
-struct RepoIntentSupportTests {
-    private func makeRepo(
-        name: String,
-        lastSyncedAt: Date? = nil,
-        lastSuccessfulSyncedAt: Date? = nil,
-        lastSyncError: String? = nil,
-        divergedDetail: String? = nil,
-        lastVerifiedAt: Date? = nil
-    ) -> RepoConfig {
-        RepoConfig(
-            name: name,
-            srcURL: "git@github.com:user/\(name).git",
-            dstURL: "git@github.com:user/\(name)-mirror.git",
-            lastSyncedAt: lastSyncedAt,
-            lastSuccessfulSyncedAt: lastSuccessfulSyncedAt,
-            lastSyncError: lastSyncError,
-            lastVerifiedAt: lastVerifiedAt,
-            divergedDetail: divergedDetail
-        )
-    }
-
-    @Test func repoLookupIsCaseInsensitive() {
-        let repos = [makeRepo(name: "My Docs")]
-        #expect(RepoIntentSupport.repo(matchingName: "my docs", in: repos)?.name == "My Docs")
-        #expect(RepoIntentSupport.repo(matchingName: "  My Docs  ", in: repos)?.name == "My Docs")
-        #expect(RepoIntentSupport.repo(matchingName: "missing", in: repos) == nil)
-        #expect(RepoIntentSupport.repo(matchingName: "   ", in: repos) == nil)
-    }
-
-    @Test func snapshotPrefersInProgressSync() {
-        let repo = makeRepo(name: "docs", lastSuccessfulSyncedAt: Date(timeIntervalSince1970: 1_000))
-        let snapshot = RepoIntentSupport.makeSnapshot(
-            repo: repo,
-            runtimeStatus: .idle,
-            isSyncInProgress: true
-        )
-
-        #expect(snapshot.status == .syncing)
-        #expect(snapshot.repoName == "docs")
-    }
-
-    @Test func snapshotMapsQueuedDistinctFromSyncing() {
-        let repo = makeRepo(name: "waiting")
-        let snapshot = RepoIntentSupport.makeSnapshot(
-            repo: repo,
-            runtimeStatus: .queued,
-            isSyncInProgress: false
-        )
-        #expect(snapshot.status == .queued)
-    }
-
-    @Test func snapshotMapsRuntimeFailureAndPersistedSuccess() {
-        let syncedAt = Date(timeIntervalSince1970: 2_000)
-        let repo = makeRepo(
-            name: "docs",
-            lastSyncedAt: syncedAt,
-            lastSuccessfulSyncedAt: syncedAt
-        )
-
-        let failed = RepoIntentSupport.makeSnapshot(
-            repo: repo,
-            runtimeStatus: .failed("network failed"),
-            isSyncInProgress: false
-        )
-        #expect(failed.status == .failure)
-        #expect(failed.message == "network failed")
-        #expect(failed.lastSyncedAt == syncedAt)
-
-        let success = RepoIntentSupport.makeSnapshot(
-            repo: repo,
-            runtimeStatus: .idle,
-            isSyncInProgress: false
-        )
-        #expect(success.status == .success)
-        #expect(success.lastSyncedAt == syncedAt)
-    }
-
-    @Test func snapshotFallsBackToPersistedFailureDivergenceAndUnknown() {
-        let failedAt = Date(timeIntervalSince1970: 3_000)
-        let failedRepo = makeRepo(
-            name: "failed",
-            lastSyncedAt: failedAt,
-            lastSyncError: "auth denied"
-        )
-        let failedSnapshot = RepoIntentSupport.makeSnapshot(
-            repo: failedRepo,
-            runtimeStatus: nil,
-            isSyncInProgress: false
-        )
-        #expect(failedSnapshot.status == .failure)
-        #expect(failedSnapshot.message == "auth denied")
-
-        let divergedRepo = makeRepo(name: "diverged", divergedDetail: "tree mismatch")
-        let divergedSnapshot = RepoIntentSupport.makeSnapshot(
-            repo: divergedRepo,
-            runtimeStatus: nil,
-            isSyncInProgress: false
-        )
-        #expect(divergedSnapshot.status == .diverged)
-        #expect(divergedSnapshot.message == "tree mismatch")
-
-        let unknownRepo = makeRepo(name: "fresh")
-        let unknownSnapshot = RepoIntentSupport.makeSnapshot(
-            repo: unknownRepo,
-            runtimeStatus: nil,
-            isSyncInProgress: false
-        )
-        #expect(unknownSnapshot.status == .unknown)
-    }
-}
-
 @MainActor
+@Suite(.serialized)
 struct AppIntentBridgeTests {
-    private func makeViewModel() -> AppViewModel {
-        let suite = "gitrelay.tests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
+    private func makeTemporaryDirectory() -> URL {
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("gitrelay-intent-tests-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         Constants.setBaseDirectoryForTesting(base)
-        return AppViewModel(
-            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
-            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults)
+        return base
+    }
+
+    private func makePlan(name: String) -> MirrorPlan {
+        MirrorPlan(
+            name: name,
+            source: GitEndpoint(url: "git@github.com:acme/\(name).git"),
+            destinations: [.git(url: "git@gitlab.com:acme/\(name)-mirror.git")]
         )
     }
 
     @Test func triggerSyncReportsMissingRepository() {
-        let vm = makeViewModel()
-        AppIntentBridge.register(vm)
+        let base = makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: base) }
+        let viewModel = GitRelayAppModel()
 
         do {
-            try AppIntentBridge.triggerSync(repoName: "Missing")
+            try AppIntentBridge.triggerSync(mirrorName: "Missing")
             Issue.record("Expected repoNotFound error")
-        } catch AppIntentBridgeError.repoNotFound(let name) {
+        } catch AppIntentBridgeError.mirrorNotFound(let name) {
             #expect(name == "Missing")
         } catch {
             Issue.record("Unexpected error: \(error)")
         }
+        _ = viewModel
     }
 
-    @Test func triggerSyncAllUsesRegisteredViewModel() throws {
-        let vm = makeViewModel()
-        AppIntentBridge.register(vm)
+    @Test func triggerSyncAllAcceptsAnEmptyLibrary() throws {
+        let base = makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: base) }
+        let viewModel = GitRelayAppModel()
         try AppIntentBridge.triggerSyncAll()
-        #expect(vm.inProgressSyncIDs.isEmpty)
+        _ = viewModel
     }
 
-    @Test func syncStatusSnapshotReturnsMappedStatus() throws {
-        let vm = makeViewModel()
-        AppIntentBridge.register(vm)
+    @Test func mirrorStatusSnapshotReturnsCurrentStatus() throws {
+        let base = makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: base) }
         let syncedAt = Date(timeIntervalSince1970: 4_000)
-        vm.addRepo(RepoConfig(
-            name: "Docs",
-            srcURL: "git@github.com:user/docs.git",
-            dstURL: "git@github.com:user/docs-mirror.git",
-            lastSyncedAt: syncedAt,
-            lastSuccessfulSyncedAt: syncedAt
-        ))
+        let plan = makePlan(name: "Docs")
+        try MirrorPlanStore().save([plan])
+        try MirrorStateStore().save([
+            plan.id: MirrorHealthSnapshot(
+                mirrorID: plan.id,
+                lastAttemptAt: syncedAt,
+                lastSuccessfulAt: syncedAt
+            )
+        ])
 
-        let snapshot = try AppIntentBridge.syncStatusSnapshot(repoName: "Docs")
-        #expect(snapshot.status == .success)
-        #expect(snapshot.lastSyncedAt == syncedAt)
+        let snapshot = try AppIntentBridge.mirrorStatusSnapshot(mirrorID: plan.id)
+        #expect(snapshot.status == .healthy)
+        #expect(snapshot.lastSuccessfulAt == syncedAt)
     }
 }
 
 // MARK: - GitRelayCLI
 
+@MainActor
 struct GitRelayCLIParserTests {
     @Test func parsesListCommand() {
         let result = GitRelayCLIParser.parse(["gitrelayctl", "list"])
@@ -3772,8 +3135,8 @@ struct GitRelayCLIParserTests {
 
     @Test func rejectsMissingSyncName() {
         let result = GitRelayCLIParser.parse(["gitrelayctl", "sync"])
-        guard case .failure(.missingRepoName("sync")) = result else {
-            Issue.record("Expected missingRepoName")
+        guard case .failure(.missingMirrorName("sync")) = result else {
+            Issue.record("Expected missingMirrorName")
             return
         }
     }
@@ -3789,8 +3152,8 @@ struct GitRelayCLIParserTests {
 
 struct GitRelayCLIExitCodeTests {
     @Test func mapsRepoNotFoundToExitCodeThree() {
-        let code = GitRelayCLIExecutor.exitCode(for: HeadlessSyncError.repoNotFound("missing"))
-        #expect(code == .repoNotFound)
+        let code = GitRelayCLIExecutor.exitCode(for: MirrorHeadlessSyncError.mirrorNotFound("missing"))
+        #expect(code == .mirrorNotFound)
         #expect(code.rawValue == 3)
     }
 
@@ -3801,81 +3164,57 @@ struct GitRelayCLIExitCodeTests {
     }
 
     @Test func mapsOperationalFailuresToExitCodeOne() {
-        let code = GitRelayCLIExecutor.exitCode(for: HeadlessSyncError.loadFailed("broken json"))
+        let code = GitRelayCLIExecutor.exitCode(for: MirrorHeadlessSyncError.loadFailed("broken json"))
         #expect(code == .failure)
         #expect(code.rawValue == 1)
     }
 }
 
+@MainActor
 struct GitRelayCLIStatusJSONTests {
     @Test func encodesSingleRepoStatusAsJSON() throws {
+        let mirrorID = UUID(uuidString: "00000000-0000-0000-0000-000000000201")!
         let syncedAt = Date(timeIntervalSince1970: 1_700_000_000)
-        let snapshot = RepoSyncStatusSnapshot(
-            repoName: "Docs",
-            status: .success,
-            lastSyncedAt: syncedAt,
+        let snapshot = MirrorSurfaceSnapshot(
+            mirrorID: mirrorID,
+            mirrorName: "Docs",
+            status: .healthy,
+            lastSuccessfulAt: syncedAt,
             message: nil
         )
         let json = try GitRelayCLIFormatter.jsonString(
             GitRelayCLIFormatter.statusEntry(from: snapshot)
         )
-        #expect(json.contains("\"repoName\" : \"Docs\""))
-        #expect(json.contains("\"status\" : \"success\""))
+        #expect(json.lowercased().contains(mirrorID.uuidString.lowercased()))
+        #expect(json.contains("\"mirrorName\" : \"Docs\""))
+        #expect(json.contains("\"status\" : \"healthy\""))
         #expect(json.contains("2023-11-14T22:13:20"))
     }
 
     @Test func encodesAllRepoStatusesDocument() throws {
-        let document = GitRelayCLIStatusDocument(repos: [
+        let document = GitRelayCLIStatusDocument(mirrors: [
             GitRelayCLIStatusEntry(
-                repoName: "A",
-                status: .failure,
+                mirrorID: UUID(uuidString: "00000000-0000-0000-0000-000000000202"),
+                mirrorName: "A",
+                status: .failed,
                 lastSyncedAt: nil,
                 message: "auth denied"
             ),
             GitRelayCLIStatusEntry(
-                repoName: "B",
-                status: .unknown,
+                mirrorID: UUID(uuidString: "00000000-0000-0000-0000-000000000203"),
+                mirrorName: "B",
+                status: .notRun,
                 lastSyncedAt: nil,
                 message: nil
             ),
         ])
         let json = try GitRelayCLIFormatter.jsonString(document)
-        #expect(json.contains("\"repoName\" : \"A\""))
-        #expect(json.contains("\"status\" : \"failure\""))
+        #expect(json.contains("\"mirrorName\" : \"A\""))
+        #expect(json.contains("\"status\" : \"failed\""))
         #expect(json.contains("\"message\" : \"auth denied\""))
-        #expect(json.contains("\"repoName\" : \"B\""))
+        #expect(json.contains("\"mirrorName\" : \"B\""))
+        #expect(json.contains("\"status\" : \"notRun\""))
     }
-}
-
-struct SyncLogStoreTests {
-    @Test func appendLoadAndTailLogLines() throws {
-        let repoID = UUID(uuidString: "00000000-0000-0000-0000-000000000101")!
-        let base = FileManager.default.temporaryDirectory
-            .appendingPathComponent("gitrelay-cli-tests-\(UUID().uuidString)")
-        defer { try? FileManager.default.removeItem(at: base) }
-
-        let originalBase = Constants.baseDirectory
-        setBaseDirectoryForTesting(base)
-
-        defer { setBaseDirectoryForTesting(originalBase) }
-
-        var record = SyncRecord(repoID: repoID, succeeded: true)
-        record.finishedAt = Date(timeIntervalSince1970: 100)
-        record.logLines = (1...5).map { "line \($0)" }
-
-        try SyncLogStore.append(record, for: repoID)
-
-        let loaded = try SyncLogStore.loadRecords(for: repoID)
-        #expect(loaded.count == 1)
-        #expect(loaded[0].logLines.count == 5)
-
-        let tailTwo = try SyncLogStore.formattedLogLines(for: repoID, tail: 2)
-        #expect(tailTwo == ["line 4", "line 5"])
-    }
-}
-
-private func setBaseDirectoryForTesting(_ url: URL) {
-    Constants.setBaseDirectoryForTesting(url)
 }
 
 // MARK: - SSHKeyGenerator
@@ -4269,7 +3608,7 @@ struct ArchiveCommandBuilderTests {
 // MARK: - Filesystem target model
 
 struct FilesystemMirrorTargetTests {
-    @Test func legacyTargetDecodesAsGitRemote() throws {
+    @Test func targetWithoutAnExplicitKindUsesGitRemote() throws {
         let json = """
         {
           "id": "00000000-0000-0000-0000-000000000001",
@@ -4318,7 +3657,7 @@ struct FilesystemMirrorTargetTests {
 @MainActor
 struct FilesystemTargetValidationTests {
     @Test func filesystemTargetRequiresDirectory() {
-        let vm = AddEditRepoViewModel()
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:user/repo.git"
         vm.updateName("archived")
         vm.targets[0].kind = .filesystem
@@ -4328,8 +3667,8 @@ struct FilesystemTargetValidationTests {
         #expect(!vm.targetErrors.isEmpty)
     }
 
-    @Test func filesystemTargetBuildsRepoConfig() {
-        let vm = AddEditRepoViewModel()
+    @Test func filesystemTargetBuildsMirrorSnapshot() {
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:user/repo.git"
         vm.updateName("archived")
         vm.targets[0].kind = .filesystem
@@ -4338,7 +3677,7 @@ struct FilesystemTargetValidationTests {
         vm.targets[0].retentionCount = "3"
 
         #expect(vm.validate())
-        let repo = vm.buildRepoConfig()
+        let repo = vm.buildMirrorSnapshot()
         #expect(repo.targets.count == 1)
         #expect(repo.targets[0].kind == .filesystem)
         #expect(repo.targets[0].filesystemPath == "/Volumes/Backup/git")
@@ -4347,7 +3686,7 @@ struct FilesystemTargetValidationTests {
     }
 
     @Test func mixedGitAndFilesystemTargetsValidate() {
-        let vm = AddEditRepoViewModel()
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:user/repo.git"
         vm.updateName("mixed")
         vm.targets[0].url = "git@github.com:user/mirror.git"
@@ -4356,7 +3695,7 @@ struct FilesystemTargetValidationTests {
         vm.targets[1].filesystemPath = "/Volumes/Backup"
 
         #expect(vm.validate())
-        #expect(vm.buildRepoConfig().enabledTargets.count == 2)
+        #expect(vm.buildMirrorSnapshot().enabledTargets.count == 2)
     }
 }
 
@@ -4633,50 +3972,6 @@ struct WebhookPushMapperTests {
     }
 }
 
-@MainActor
-struct WebhookSyncTriggerTests {
-    @Test func handleWebhookRequestQueuesSyncIndependentlyOfFrequency() {
-        let suite = "gitrelay.tests.webhook.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
-        let vm = AppViewModel(
-            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
-            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults)
-        )
-        let repoID = UUID()
-        let secret = "unit-test-secret"
-        vm.webhookSecretProvider = { $0 == repoID ? secret : nil }
-
-        let repo = RepoConfig(
-            id: repoID,
-            name: "hooked",
-            srcURL: "git@github.com:user/repo.git",
-            dstURL: "git@github.com:user/mirror.git",
-            frequency: .manual,
-            webhookEnabled: true
-        )
-        vm.addRepo(repo)
-
-        let body = Data("{\"ref\":\"refs/heads/main\"}".utf8)
-        let signature = WebhookHMACVerifier.githubSignatureHeader(payload: body, secret: secret)
-        let request = WebhookHTTPRequest(
-            method: "POST",
-            path: "/hook/\(repo.webhookPathID)",
-            headers: [
-                "X-GitHub-Event": "push",
-                "X-Hub-Signature-256": signature
-            ],
-            body: body
-        )
-
-        let response = vm.handleWebhookRequest(request)
-        #expect(response.statusCode == 202)
-        #expect(vm.webhookLastEvent?.repoName == "hooked")
-        #expect(vm.webhookLastEvent?.statusCode == 202)
-        #expect(vm.inProgressSyncIDs.contains(repoID) || vm.statuses[repoID] == .syncing)
-        vm.cancelSync(repoID: repoID)
-    }
-}
-
 struct WebhookLastEventFormattingTests {
     @Test func formatsRelativeTimeRepoAndStatus() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
@@ -4815,25 +4110,25 @@ struct ProviderTokenWebhookScopeTests {
 }
 
 @MainActor
-struct AddEditRepoWebhookTests {
-    @Test func buildRepoConfigIncludesWebhookFlag() {
-        let vm = AddEditRepoViewModel()
+struct MirrorEditorWebhookTests {
+    @Test func buildMirrorSnapshotIncludesWebhookFlag() {
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:user/repo.git"
         vm.updateName("w")
         vm.targets[0].url = "git@github.com:user/mirror.git"
         vm.webhookEnabled = true
         #expect(vm.validate())
-        #expect(vm.buildRepoConfig().webhookEnabled)
+        #expect(vm.buildMirrorSnapshot().webhookEnabled)
     }
 
     @Test func loadsWebhookEnabledFromExistingRepo() {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "w",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git",
             webhookEnabled: true
         )
-        let vm = AddEditRepoViewModel(editing: repo)
+        let vm = MirrorEditorModel(editing: repo)
         #expect(vm.webhookEnabled)
     }
 }
@@ -4861,19 +4156,19 @@ struct ProviderAccountTests {
     }
 }
 
-struct BrowseRemoteAccountSelectionTests {
+struct ConnectionAccountSelectionTests {
     @Test func validatedNewLabelRejectsDuplicates() {
-        #expect(BrowseRemoteAccountSelection.validatedNewLabel("Work", existing: ["work"]) == nil)
-        #expect(BrowseRemoteAccountSelection.validatedNewLabel("Personal", existing: ["default"]) == "personal")
+        #expect(ConnectionAccountSelection.validatedNewLabel("Work", existing: ["work"]) == nil)
+        #expect(ConnectionAccountSelection.validatedNewLabel("Personal", existing: ["default"]) == "personal")
     }
 
     @Test func cannotDeleteLastAccount() {
-        #expect(!BrowseRemoteAccountSelection.canDeleteAccount(accountCount: 1))
-        #expect(BrowseRemoteAccountSelection.canDeleteAccount(accountCount: 2))
+        #expect(!ConnectionAccountSelection.canDeleteAccount(accountCount: 1))
+        #expect(ConnectionAccountSelection.canDeleteAccount(accountCount: 2))
     }
 
     @Test func selectedLabelAfterDeletePrefersDefault() {
-        let next = BrowseRemoteAccountSelection.selectedLabelAfterDelete(
+        let next = ConnectionAccountSelection.selectedLabelAfterDelete(
             deleted: "work",
             current: "work",
             remaining: ["default", "personal"]
@@ -4882,7 +4177,7 @@ struct BrowseRemoteAccountSelectionTests {
     }
 
     @Test func selectedLabelAfterDeleteKeepsCurrentWhenNotDeleted() {
-        let next = BrowseRemoteAccountSelection.selectedLabelAfterDelete(
+        let next = ConnectionAccountSelection.selectedLabelAfterDelete(
             deleted: "work",
             current: "personal",
             remaining: ["default", "personal"]
@@ -4891,43 +4186,23 @@ struct BrowseRemoteAccountSelectionTests {
     }
 }
 
-struct ProviderTokenStoreMigrationTests {
-    @Test func legacyTagMigratesToDefaultAccountTag() throws {
-        let provider = GitProvider.github
-        let legacy = ProviderTokenStore.legacyTag(for: provider)
-        let migrated = ProviderTokenStore.tag(for: provider, accountLabel: ProviderAccount.defaultLabel)
-        defer {
-            try? KeychainService.deleteToken(tag: legacy)
-            try? KeychainService.deleteToken(tag: migrated)
-        }
-
-        try KeychainService.saveToken("legacy-token", tag: legacy)
-        ProviderTokenStore.migrateLegacyTokenIfNeeded(for: provider)
-
-        #expect(try KeychainService.loadToken(tag: migrated) == "legacy-token")
-        #expect((try? KeychainService.loadToken(tag: legacy)) == nil)
-    }
-
+struct ProviderTokenStoreTests {
     @Test func namespacedTagIncludesProviderAndAccount() {
-        #expect(ProviderTokenStore.tag(for: .gitea, accountLabel: "work") == "provider-api-gitea-work")
-        #expect(ProviderTokenStore.legacyTag(for: .gitea) == "provider-api-gitea")
+        #expect(ProviderTokenStore.tag(for: .gitea, accountLabel: "work") == "gitrelay-provider-gitea-work")
     }
 }
 
 struct ProviderAccountStoreTests {
-    @Test func migrateLegacyHostIntoDefaultAccount() {
+    @Test func connectionsIgnoreAndPreserveUnrelatedHostDefaults() {
         let suite = "gitrelay.tests.provider-accounts.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
 
         defaults.set("https://gitlab.company.com", forKey: "BrowseRemoteRepo.gitlabHost")
-        ProviderAccountStore.migrateIfNeeded(defaults: defaults)
+        ProviderAccountStore.ensureInitialized(defaults: defaults)
 
-        #expect(
-            ProviderAccountStore.host(for: .gitlab, label: ProviderAccount.defaultLabel, defaults: defaults)
-                == "https://gitlab.company.com"
-        )
-        #expect(defaults.string(forKey: "BrowseRemoteRepo.gitlabHost") == nil)
+        #expect(ProviderAccountStore.host(for: .gitlab, label: ProviderAccount.defaultLabel, defaults: defaults) == nil)
+        #expect(defaults.string(forKey: "BrowseRemoteRepo.gitlabHost") == "https://gitlab.company.com")
     }
 
     @Test func addSwitchAndDeleteAccounts() throws {
@@ -4935,7 +4210,7 @@ struct ProviderAccountStoreTests {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
 
-        ProviderAccountStore.migrateIfNeeded(defaults: defaults)
+        ProviderAccountStore.ensureInitialized(defaults: defaults)
         _ = try ProviderAccountStore.addAccount(label: "Work", for: .github, defaults: defaults)
         ProviderAccountStore.setSelectedLabel("work", for: .github, defaults: defaults)
 
@@ -4949,7 +4224,7 @@ struct ProviderAccountStoreTests {
 }
 
 @MainActor
-struct BrowseRemoteRepoViewModelAccountTests {
+struct ConnectedServiceSourceModelAccountTests {
     @Test func switchingAccountsRestoresSeparateTokensAndHosts() throws {
         let suite = "gitrelay.tests.browse-vm.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
@@ -4961,11 +4236,10 @@ struct BrowseRemoteRepoViewModelAccountTests {
                         tag: ProviderTokenStore.tag(for: provider, accountLabel: label)
                     )
                 }
-                try? KeychainService.deleteToken(tag: ProviderTokenStore.legacyTag(for: provider))
             }
         }
 
-        ProviderAccountStore.migrateIfNeeded(defaults: defaults)
+        ProviderAccountStore.ensureInitialized(defaults: defaults)
         _ = try ProviderAccountStore.addAccount(label: "Work", for: .gitlab, defaults: defaults)
 
         try ProviderTokenStore.save(token: "default-token", provider: .gitlab, accountLabel: "default")
@@ -4973,7 +4247,7 @@ struct BrowseRemoteRepoViewModelAccountTests {
         ProviderAccountStore.setHost("https://gitlab.com", for: .gitlab, label: "default", defaults: defaults)
         ProviderAccountStore.setHost("https://gitlab.company.com", for: .gitlab, label: "work", defaults: defaults)
 
-        let vm = BrowseRemoteRepoViewModel(defaults: defaults)
+        let vm = ConnectedServiceSourceModel(defaults: defaults)
         vm.provider = .gitlab
         vm.refreshSourceAccounts()
 
@@ -5134,13 +4408,28 @@ struct AppLifecyclePolicyTests {
 
     @Test func settingsSidebarPanesCoverAllGroups() {
         #expect(SettingsPane.allCases.map(\.rawValue) == [
-            "security",
+            "general",
+            "connections",
+            "defaultPolicies",
             "notifications",
-            "schedule",
-            "webhook",
-            "cache",
-            "configuration",
+            "integrations",
+            "storageMaintenance",
         ])
+    }
+
+    @Test func settingsSidebarUsesSystemManagedNavigationSplitView() throws {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let repoRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let settingsURL = repoRoot.appendingPathComponent("gitrelay/Views/Settings/SettingsView.swift")
+        let source = try String(contentsOf: settingsURL, encoding: .utf8)
+
+        #expect(source.contains("struct SettingsView: View"))
+        #expect(source.contains("NavigationSplitView {"))
+        #expect(!source.contains("NavigationSplitView(columnVisibility:"))
+        #expect(!source.contains("SettingsSidebarTransitionPolicy"))
+        #expect(!source.contains("withTransaction("))
     }
 }
 
@@ -5190,25 +4479,9 @@ struct WindowLayoutStoreTests {
 
         let store = WindowLayoutStore(defaults: defaults)
         #expect(store.selectedRepoID == nil)
+        #expect(store.selectedSmartView == nil)
         #expect(store.detailTab == .overview)
         #expect(store.sidebarWidth == DesignTokens.Layout.sidebarIdealWidth)
-        #expect(store.sidebarVisible == true)
-    }
-
-    @Test func persistsAndReloadsSidebarVisibility() {
-        let suite = "gitrelay.tests.window-layout.sidebar-visible.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
-        defer { defaults.removePersistentDomain(forName: suite) }
-
-        let store = WindowLayoutStore(defaults: defaults)
-        store.sidebarVisible = false
-
-        let reloaded = WindowLayoutStore(defaults: defaults)
-        #expect(reloaded.sidebarVisible == false)
-
-        store.sidebarVisible = true
-        let shown = WindowLayoutStore(defaults: defaults)
-        #expect(shown.sidebarVisible == true)
     }
 
     @Test func persistsAndReloadsSelectionTabAndSidebarWidth() {
@@ -5219,13 +4492,15 @@ struct WindowLayoutStoreTests {
         let repoID = UUID()
         let store = WindowLayoutStore(defaults: defaults)
         store.selectedRepoID = repoID
+        store.selectedSmartView = .label("production")
         store.detailTab = .releases
-        store.sidebarWidth = 280
+        store.sidebarWidth = 220
 
         let reloaded = WindowLayoutStore(defaults: defaults)
         #expect(reloaded.selectedRepoID == repoID)
+        #expect(reloaded.selectedSmartView == .label("production"))
         #expect(reloaded.detailTab == .releases)
-        #expect(reloaded.sidebarWidth == 280)
+        #expect(reloaded.sidebarWidth == 220)
     }
 
     @Test func reconcileSelectionClearsMissingRepoID() {
@@ -5305,11 +4580,11 @@ struct WindowLayoutStoreTests {
         defer { defaults.removePersistentDomain(forName: suite) }
 
         let store = WindowLayoutStore(defaults: defaults)
-        store.sidebarWidth = 260
+        store.sidebarWidth = 220
         store.sidebarWidth = 0
-        #expect(store.sidebarWidth == 260)
+        #expect(store.sidebarWidth == 220)
         store.sidebarWidth = 9_999
-        #expect(store.sidebarWidth == 260)
+        #expect(store.sidebarWidth == 220)
     }
 
     @Test func deleteRepoClearsPersistedSelectionForRemovedID() {
@@ -5327,14 +4602,14 @@ struct WindowLayoutStoreTests {
         }
 
         let layoutStore = WindowLayoutStore(defaults: defaults)
-        let vm = AppViewModel(
+        let vm = GitRelayAppModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
             windowLayoutStore: layoutStore
         )
         let repoID = UUID()
         vm.addRepo(
-            RepoConfig(
+            MirrorSnapshot(
                 id: repoID,
                 name: "doomed",
                 srcURL: "git@github.com:user/doomed.git",
@@ -5364,11 +4639,6 @@ struct WindowLayoutModelTests {
         #expect(reconciled.selectedRepoID == nil)
         #expect(reconciled.detailTab == .releases)
         #expect(reconciled.sidebarWidth == 260)
-        #expect(reconciled.sidebarVisible == true)
-    }
-
-    @Test func defaultSidebarIsVisible() {
-        #expect(WindowLayout.default.sidebarVisible == true)
     }
 
     @Test func clampedSidebarWidthRespectsMinMax() {
@@ -5453,6 +4723,7 @@ final class StubLoginItemService: LoginItemManaging {
     }
 }
 
+@MainActor
 struct BiometricGateTests {
     @Test func allowsActionWhenPolicyDoesNotRequireAuthentication() async {
         let gate = BiometricGate(
@@ -5482,10 +4753,44 @@ struct BiometricGateTests {
 }
 
 @MainActor
-struct AddEditRepoHostChangeDetectionTests {
+struct MirrorEditorHostChangeDetectionTests {
+    @Test func editingPreservesImportedCredentialTagsOnlyWhileHostsStayTheSame() {
+        let mirrorID = UUID()
+        let targetID = UUID()
+        let sourceTag = "\(mirrorID.uuidString)-import-fresh-src"
+        let targetTag = "\(mirrorID.uuidString)-import-fresh-target"
+        let original = MirrorSnapshot(
+            id: mirrorID,
+            name: "imported",
+            srcURL: "https://github.com/acme/source.git",
+            targets: [
+                MirrorTarget(
+                    id: targetID,
+                    url: "https://gitlab.com/acme/target.git",
+                    auth: .httpsToken(keychainTag: targetTag)
+                )
+            ],
+            srcAuth: .httpsToken(keychainTag: sourceTag)
+        )
+
+        let unchanged = MirrorEditorModel(editing: original).buildMirrorSnapshot()
+        #expect(unchanged.srcAuth == .httpsToken(keychainTag: sourceTag))
+        #expect(unchanged.targets[0].auth == .httpsToken(keychainTag: targetTag))
+
+        let changed = MirrorEditorModel(editing: original)
+        changed.srcURL = "https://evil.example/acme/source.git"
+        changed.targets[0].url = "https://other.example/acme/target.git"
+        let rebuilt = changed.buildMirrorSnapshot()
+        #expect(rebuilt.srcAuth == .httpsToken(keychainTag: "\(mirrorID.uuidString)-src"))
+        #expect(
+            rebuilt.targets[0].auth
+                == .httpsToken(keychainTag: "\(mirrorID.uuidString)-target-\(targetID.uuidString)")
+        )
+    }
+
     @Test func detectsGitRemoteTargetHostChangesOnly() {
         let targetID = UUID(uuidString: "00000000-0000-0000-0000-000000000010")!
-        let original = RepoConfig(
+        let original = MirrorSnapshot(
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
             name: "demo",
             srcURL: "git@github.com:org/src.git",
@@ -5505,7 +4810,7 @@ struct AddEditRepoHostChangeDetectionTests {
             createdAt: Date(timeIntervalSince1970: 0)
         )
 
-        let vm = AddEditRepoViewModel(editing: original)
+        let vm = MirrorEditorModel(editing: original)
         vm.targets[0].url = "git@gitlab.com:org/dst.git"
 
         let changes = vm.gitRemoteTargetHostChanges(comparedTo: original)
@@ -5516,7 +4821,7 @@ struct AddEditRepoHostChangeDetectionTests {
 
     @Test func ignoresSameHostPathChanges() {
         let targetID = UUID(uuidString: "00000000-0000-0000-0000-000000000011")!
-        let original = RepoConfig(
+        let original = MirrorSnapshot(
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!,
             name: "demo",
             srcURL: "git@github.com:org/src.git",
@@ -5536,7 +4841,7 @@ struct AddEditRepoHostChangeDetectionTests {
             createdAt: Date(timeIntervalSince1970: 0)
         )
 
-        let vm = AddEditRepoViewModel(editing: original)
+        let vm = MirrorEditorModel(editing: original)
         vm.targets[0].url = "https://github.com/other/dst.git"
 
         #expect(vm.gitRemoteTargetHostChanges(comparedTo: original).isEmpty)
@@ -5606,7 +4911,7 @@ struct MirrorCacheManagerTests {
     }
 
     @Test func lastAccessedPrefersSuccessfulSyncTimestamp() {
-        var repo = RepoConfig(
+        var repo = MirrorSnapshot(
             id: repoA,
             name: "demo",
             srcURL: "git@github.com:org/src.git",
@@ -5615,7 +4920,7 @@ struct MirrorCacheManagerTests {
         )
         repo.lastSuccessfulSyncedAt = Date(timeIntervalSince1970: 500)
         let fallback = Date(timeIntervalSince1970: 100)
-        #expect(MirrorCacheManager.lastAccessedAt(for: repo, mirrorModificationDate: fallback) == Date(timeIntervalSince1970: 500))
+        #expect(MirrorCacheManager.lastAccessedAt(health: repo.health, mirrorModificationDate: fallback) == Date(timeIntervalSince1970: 500))
     }
 }
 
@@ -5633,7 +4938,7 @@ struct CachePreferencesTests {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
 
-        var prefs = CachePreferences(cacheQuotaGB: 50)
+        let prefs = CachePreferences(cacheQuotaGB: 50)
         prefs.save(to: defaults)
         #expect(CachePreferences.load(from: defaults).cacheQuotaGB == 50)
 
@@ -5673,8 +4978,8 @@ struct MirrorCacheServiceTests {
         var gcCalls: [UUID] = []
         var deleteCalls: [UUID] = []
 
-        let repos = [
-            RepoConfig(
+        let mirrors = [
+            MirrorSnapshot(
                 id: repoA,
                 name: "a",
                 srcURL: "git@github.com:org/a.git",
@@ -5682,7 +4987,7 @@ struct MirrorCacheServiceTests {
                 createdAt: Date(timeIntervalSince1970: 0),
                 lastSuccessfulSyncedAt: Date(timeIntervalSince1970: 200)
             ),
-            RepoConfig(
+            MirrorSnapshot(
                 id: repoB,
                 name: "b",
                 srcURL: "git@github.com:org/b.git",
@@ -5693,7 +4998,8 @@ struct MirrorCacheServiceTests {
         ]
 
         let result = await MirrorCacheService.performCleanup(
-            repos: repos,
+            plans: mirrors.map(\.plan),
+            healthByMirrorID: Dictionary(uniqueKeysWithValues: mirrors.map { ($0.id, $0.health) }),
             quotaGB: 0,
             sizeOf: { url in
                 guard let id = UUID(uuidString: url.lastPathComponent) else { return 0 }
@@ -5715,8 +5021,8 @@ struct MirrorCacheServiceTests {
     }
 
     @Test func performCleanupNoOpsWhenUnlimited() async {
-        let repos = [
-            RepoConfig(
+        let mirrors = [
+            MirrorSnapshot(
                 id: repoA,
                 name: "a",
                 srcURL: "git@github.com:org/a.git",
@@ -5726,7 +5032,7 @@ struct MirrorCacheServiceTests {
         ]
 
         let result = await MirrorCacheService.performCleanup(
-            repos: repos,
+            plans: mirrors.map(\.plan),
             quotaGB: nil,
             sizeOf: { _ in 999_999 }
         )
@@ -5782,15 +5088,15 @@ struct MirrorCacheServiceTests {
         let sizes = SizeBox([repoA: 200, repoB: 300])
         var deleted: [UUID] = []
 
-        let repos = [
-            RepoConfig(
+        let mirrors = [
+            MirrorSnapshot(
                 id: repoA,
                 name: "a",
                 srcURL: "git@github.com:org/a.git",
                 targets: [],
                 createdAt: Date(timeIntervalSince1970: 0)
             ),
-            RepoConfig(
+            MirrorSnapshot(
                 id: repoB,
                 name: "b",
                 srcURL: "git@github.com:org/b.git",
@@ -5800,7 +5106,7 @@ struct MirrorCacheServiceTests {
         ]
 
         let result = await MirrorCacheService.evictAllMirrors(
-            repos: repos,
+            plans: mirrors.map(\.plan),
             sizeOf: { url in
                 guard let id = UUID(uuidString: url.lastPathComponent) else { return 0 }
                 return sizes.values[id] ?? 0
@@ -5822,15 +5128,15 @@ struct MirrorCacheServiceTests {
 
     @Test func evictAllMirrorsSkipsExcludedInProgressRepos() async {
         var deleted: [UUID] = []
-        let repos = [
-            RepoConfig(
+        let mirrors = [
+            MirrorSnapshot(
                 id: repoA,
                 name: "a",
                 srcURL: "git@github.com:org/a.git",
                 targets: [],
                 createdAt: Date(timeIntervalSince1970: 0)
             ),
-            RepoConfig(
+            MirrorSnapshot(
                 id: repoB,
                 name: "b",
                 srcURL: "git@github.com:org/b.git",
@@ -5840,7 +5146,7 @@ struct MirrorCacheServiceTests {
         ]
 
         let result = await MirrorCacheService.evictAllMirrors(
-            repos: repos,
+            plans: mirrors.map(\.plan),
             excluding: [repoA],
             sizeOf: { url in
                 guard let id = UUID(uuidString: url.lastPathComponent) else { return 0 }
@@ -5855,15 +5161,15 @@ struct MirrorCacheServiceTests {
     }
 
     @Test func repoUsagesSplitsPerFolderAndSkipsEmpty() {
-        let repos = [
-            RepoConfig(
+        let mirrors = [
+            MirrorSnapshot(
                 id: repoB,
                 name: "keychord",
                 srcURL: "git@github.com:org/keychord.git",
                 targets: [],
                 createdAt: Date(timeIntervalSince1970: 0)
             ),
-            RepoConfig(
+            MirrorSnapshot(
                 id: repoA,
                 name: "gitrelay",
                 srcURL: "git@github.com:org/gitrelay.git",
@@ -5873,7 +5179,7 @@ struct MirrorCacheServiceTests {
         ]
 
         let usages = MirrorCacheService.repoUsages(
-            repos: repos,
+            plans: mirrors.map(\.plan),
             sizeOf: { url in
                 guard let id = UUID(uuidString: url.lastPathComponent) else { return 0 }
                 switch id {
@@ -5937,8 +5243,8 @@ struct OrgRepoDiffTests {
         )
     }
 
-    private func localRepo(srcURL: String) -> RepoConfig {
-        RepoConfig(
+    private func localRepo(srcURL: String) -> MirrorSnapshot {
+        MirrorSnapshot(
             id: UUID(),
             name: "mirror",
             srcURL: srcURL,
@@ -5958,13 +5264,13 @@ struct OrgRepoDiffTests {
             localRepo(srcURL: "https://github.com/acme/beta.git")
         ]
 
-        let result = OrgRepoDiff.newRepos(remoteRepos: remoteRepos, localRepos: local)
+        let result = OrgRepoDiff.newRepos(remoteRepos: remoteRepos, localMirrors: local.map(\.plan))
         #expect(result.map(\.fullName) == ["acme/gamma"])
     }
 
     @Test func syncedRemotePathsIsCaseInsensitive() {
         let local = [localRepo(srcURL: "git@github.com:Acme/Alpha.git")]
-        let paths = OrgRepoDiff.syncedRemotePaths(from: local)
+        let paths = OrgRepoDiff.syncedRemotePaths(from: local.map(\.plan))
         #expect(paths.contains("acme/alpha"))
     }
 }
@@ -6084,7 +5390,7 @@ struct OrgDiscoveryPendingFilterTests {
     let sub = subscription()
     let newRepos = [remote("yangflow/alpha"), remote("yangflow/beta")]
     let local = [
-      RepoConfig(
+      MirrorSnapshot(
         id: UUID(),
         name: "alpha",
         srcURL: "git@github.com:yangflow/alpha.git",
@@ -6095,7 +5401,7 @@ struct OrgDiscoveryPendingFilterTests {
     let actionable = OrgDiscoveryPendingFilter.actionableRepos(
       subscription: sub,
       newRepos: newRepos,
-      localRepos: local
+      localMirrors: local.map(\.plan)
     )
     #expect(actionable.map(\.fullName) == ["yangflow/beta"])
   }
@@ -6159,14 +5465,14 @@ struct OrgSubscriptionTemplateApplierTests {
         template.namePrefix = "mirror-"
         template.frequency = .hour1
         template.targetURLTemplate = "git@backup.local:mirrors/{name}.git"
-        let config = OrgSubscriptionTemplateApplier.makeConfig(
+        let plan = OrgSubscriptionTemplateApplier.makePlan(
             repo: sampleRepo,
             template: template,
             dstURL: "git@backup.local:mirrors/widget.git"
         )
-        #expect(config.name == "mirror-widget")
-        #expect(config.frequency == .hour1)
-        #expect(config.srcURL == sampleRepo.sshCloneURL)
+        #expect(plan.name == "mirror-widget")
+        #expect(plan.policy.frequency == .hour1)
+        #expect(plan.source.url == sampleRepo.sshCloneURL)
     }
 
     @Test func isValidTemplateRequiresNamePlaceholder() {
@@ -6252,7 +5558,7 @@ struct OrgSubscriptionPollerTests {
         try? ProviderTokenStore.save(token: "test-token", provider: .github)
 
         let localRepos = [
-            RepoConfig(
+            MirrorSnapshot(
                 id: UUID(),
                 name: "existing",
                 srcURL: "git@github.com:acme/existing.git",
@@ -6261,7 +5567,10 @@ struct OrgSubscriptionPollerTests {
             )
         ]
 
-        let result = await poller.checkSubscription(subscription, localRepos: localRepos)
+        let result = await poller.checkSubscription(
+            subscription,
+            localMirrors: localRepos.map(\.plan)
+        )
         defer { ProviderTokenStore.delete(provider: .github) }
 
         #expect(result?.newRepos.map(\.fullName) == ["acme/new-repo"])
@@ -6298,6 +5607,7 @@ struct LFSAttributesDetectorTests {
     }
 }
 
+@MainActor
 struct LFSMirrorPlannerTests {
     @Test func offAlwaysSkips() {
         #expect(LFSMirrorPlanner.decide(mode: .off, usesLFS: true, gitLFSAvailable: true) == .skip)
@@ -6377,6 +5687,7 @@ actor FakeLFSCommandRunner: LFSCommandRunning {
     }
 }
 
+@MainActor
 struct LFSMirrorServiceTests {
     @Test func lfsPresentInvokesFetchAndPush() async throws {
         let runner = FakeLFSCommandRunner(available: true, usesLFS: true)
@@ -6453,9 +5764,9 @@ struct LFSMirrorServiceTests {
 }
 
 @MainActor
-struct RepoConfigLFSMirrorModeTests {
+struct MirrorContentPolicyLFSTests {
     @Test func defaultsToAuto() {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "lfs-repo",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git"
@@ -6463,60 +5774,24 @@ struct RepoConfigLFSMirrorModeTests {
         #expect(repo.lfsMirrorMode == .auto)
     }
 
-    @Test func legacyJSONWithoutLFSModeDecodesAsAuto() throws {
-        let json = """
-        {
-          "id": "00000000-0000-0000-0000-000000000043",
-          "name": "legacy-lfs",
-          "srcURL": "git@github.com:user/repo.git",
-          "dstURL": "git@github.com:user/mirror.git",
-          "srcAuth": { "sshAgent": {} },
-          "dstAuth": { "sshAgent": {} },
-          "frequency": "手动",
-          "createdAt": "2026-04-25T12:00:00Z"
-        }
-        """
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        let repo = try decoder.decode(RepoConfig.self, from: Data(json.utf8))
-        #expect(repo.lfsMirrorMode == .auto)
-    }
-
-    @Test func offModeRoundTripsAndOmitsDefaultAuto() throws {
-        var repo = RepoConfig(
-            name: "lfs-off",
-            srcURL: "git@github.com:user/repo.git",
-            dstURL: "git@github.com:user/mirror.git",
-            lfsMirrorMode: .off
-        )
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(repo)
-        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        #expect(object?["lfsMirrorMode"] as? String == "off")
-
-        repo.lfsMirrorMode = .auto
-        let autoData = try encoder.encode(repo)
-        let autoObject = try JSONSerialization.jsonObject(with: autoData) as? [String: Any]
-        #expect(autoObject?["lfsMirrorMode"] == nil)
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        let decoded = try decoder.decode(RepoConfig.self, from: data)
-        #expect(decoded.lfsMirrorMode == .off)
+    @Test func contentPolicyRoundTripsOffMode() throws {
+        let policy = MirrorContentPolicy(lfsMode: .off)
+        let data = try JSONEncoder().encode(policy)
+        let decoded = try JSONDecoder().decode(MirrorContentPolicy.self, from: data)
+        #expect(decoded.lfsMode == .off)
     }
 }
 
 @MainActor
-struct AddEditRepoLFSMirrorModeTests {
-    @Test func buildRepoConfigPreservesLFSMode() {
-        let vm = AddEditRepoViewModel()
+struct MirrorEditorLFSMirrorModeTests {
+    @Test func buildMirrorSnapshotPreservesLFSMode() {
+        let vm = MirrorEditorModel()
         vm.srcURL = "git@github.com:org/src.git"
         vm.updateName("demo")
         vm.targets[0].url = "git@github.com:org/dst.git"
         vm.lfsMirrorMode = .off
         #expect(vm.validate())
-        #expect(vm.buildRepoConfig().lfsMirrorMode == .off)
+        #expect(vm.buildMirrorSnapshot().lfsMirrorMode == .off)
     }
 }
 
@@ -6698,7 +5973,7 @@ struct GitRetryExecutorTests {
         #expect(retries.values[0].lowercased().contains("timed out") || retries.values[0].contains("timeout") || retries.values[0].contains("Connection"))
 
         // A later successful retry must look like a normal success for failure counting.
-        var repo = RepoConfig(
+        var repo = MirrorSnapshot(
             name: "retry-ok",
             srcURL: "git@github.com:user/repo.git",
             dstURL: "git@github.com:user/mirror.git"
@@ -6789,7 +6064,7 @@ struct ConfigExportImportTests {
         let repoID = UUID(uuidString: "00000000-0000-0000-0000-0000000000aa")!
         let targetID = UUID(uuidString: "00000000-0000-0000-0000-0000000000bb")!
         let secretTag = "super-secret-token-value"
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             id: repoID,
             name: "api",
             srcURL: "https://github.com/acme/api.git",
@@ -6810,7 +6085,7 @@ struct ConfigExportImportTests {
         )
 
         let document = ConfigExportCodec.makeDocument(
-            repos: [repo],
+            mirrors: [repo.plan],
             providerAccounts: [
                 ExportedProviderAccount(provider: .github, label: "work", host: nil)
             ],
@@ -6836,12 +6111,13 @@ struct ConfigExportImportTests {
         #expect(!json.localizedCaseInsensitiveContains("-----BEGIN"))
         #expect(json.contains("\"kind\" : \"httpsToken\"") || json.contains("\"kind\":\"httpsToken\""))
         #expect(json.contains("\"schemaVersion\""))
+        #expect(json.contains(ConfigExportDocument.formatIdentifier))
         #expect(json.contains("work"))
         #expect(json.contains("acme"))
     }
 
     @Test func exportOmitsMachineLocalSSHKeyPaths() throws {
-        let repo = RepoConfig(
+        let repo = MirrorSnapshot(
             name: "keys",
             srcURL: "git@github.com:acme/keys.git",
             dstURL: "git@gitlab.com:acme/keys.git",
@@ -6849,7 +6125,7 @@ struct ConfigExportImportTests {
             dstAuth: .sshKey(privateKeyPath: "relative/id_ed25519")
         )
         let document = ConfigExportCodec.makeDocument(
-            repos: [repo],
+            mirrors: [repo.plan],
             providerAccounts: [],
             orgSubscriptions: [],
             orgSubscriptionPreferences: nil
@@ -6861,11 +6137,31 @@ struct ConfigExportImportTests {
         #expect(!json.contains("\\/Users\\/me\\/.ssh\\/id_ed25519"))
         // JSONEncoder may escape `/` as `\/`.
         #expect(json.contains("relative/id_ed25519") || json.contains("relative\\/id_ed25519"))
+
+        let imported = try ConfigExportCodec.planImport(
+            document: ConfigExportCodec.decode(data),
+            mode: .replace,
+            existingMirrors: []
+        )
+        let importedPlan = try #require(imported.mirrors.first)
+        if case .sshKey(let sourcePath) = importedPlan.source.auth {
+            #expect(sourcePath.isEmpty)
+        } else {
+            Issue.record("expected the source to remain an SSH-key endpoint")
+        }
+        #expect(MirrorCredentialGate.needsCredentials(for: importedPlan, probe: .alwaysMissing))
+
+        let tempDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-imported-ssh-plan-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tempDirectory) }
+        let store = MirrorPlanStore(fileURL: tempDirectory.appendingPathComponent("mirrors.json"))
+        try store.save(imported.mirrors)
+        #expect(try store.load() == imported.mirrors)
     }
 
     @Test func importReplaceRestoresRepoCount() throws {
         let existing = [
-            RepoConfig(name: "old", srcURL: "a", dstURL: "b")
+            MirrorSnapshot(name: "old", srcURL: "a", dstURL: "b")
         ]
         let importedIDs = [
             UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
@@ -6873,77 +6169,107 @@ struct ConfigExportImportTests {
             UUID(uuidString: "00000000-0000-0000-0000-000000000003")!
         ]
         let document = ConfigExportDocument(
-            repos: importedIDs.map {
-                ExportedRepo(from: RepoConfig(
+            mirrors: importedIDs.map {
+                ExportedMirrorPlan(from: MirrorSnapshot(
                     id: $0,
                     name: "r-\($0.uuidString.prefix(4))",
                     srcURL: "git@github.com:acme/r.git",
                     dstURL: "git@gitlab.com:acme/r.git",
                     frequency: .hour1
-                ))
+                ).plan)
             },
             providerAccounts: [],
             orgSubscriptions: []
         )
 
-        let plan = ConfigExportCodec.planImport(
+        let plan = try ConfigExportCodec.planImport(
             document: document,
             mode: .replace,
-            existingRepos: existing,
-            probe: .alwaysPresent
+            existingMirrors: existing.map(\.plan)
         )
-        #expect(plan.repos.count == 3)
+        #expect(plan.mirrors.count == 3)
         #expect(plan.importedRepoCount == 3)
         #expect(plan.skippedRepoCount == 0)
     }
 
-    @Test func importMergeSkipsSameIDByDefault() {
+    @Test func importDoesNotReuseAnExistingIDDerivedCredentialTag() throws {
+        let mirrorID = UUID(uuidString: "00000000-0000-0000-0000-0000000000dd")!
+        let sourceTag = MirrorCredentialTags.sourceTokenTag(mirrorID: mirrorID)
+        let document = ConfigExportDocument(
+            mirrors: [
+                ExportedMirrorPlan(from: MirrorSnapshot(
+                    id: mirrorID,
+                    name: "moved-host",
+                    srcURL: "https://untrusted.example/acme/repo.git",
+                    dstURL: "https://gitlab.com/acme/repo.git",
+                    srcAuth: .httpsToken(keychainTag: sourceTag),
+                    dstAuth: .httpsToken(keychainTag: "old-destination-tag")
+                ).plan)
+            ]
+        )
+
+        let imported = try ConfigExportCodec.planImport(
+            document: document,
+            mode: .replace,
+            existingMirrors: []
+        )
+        let plan = try #require(imported.mirrors.first)
+        guard case .httpsToken(let importedSourceTag) = plan.source.auth else {
+            Issue.record("expected an HTTPS-token source")
+            return
+        }
+
+        #expect(importedSourceTag != sourceTag)
+        #expect(importedSourceTag.contains("-import-"))
+    }
+
+    @Test func importMergeSkipsSameIDByDefault() throws {
         let sharedID = UUID(uuidString: "00000000-0000-0000-0000-000000000099")!
         let existing = [
-            RepoConfig(id: sharedID, name: "keep-me", srcURL: "a", dstURL: "b")
+            MirrorSnapshot(id: sharedID, name: "keep-me", srcURL: "a", dstURL: "b")
         ]
         let document = ConfigExportDocument(
-            repos: [
-                ExportedRepo(from: RepoConfig(
+            mirrors: [
+                ExportedMirrorPlan(from: MirrorSnapshot(
                     id: sharedID,
                     name: "incoming",
                     srcURL: "c",
                     dstURL: "d"
-                )),
-                ExportedRepo(from: RepoConfig(
+                ).plan),
+                ExportedMirrorPlan(from: MirrorSnapshot(
                     id: UUID(uuidString: "00000000-0000-0000-0000-000000000100")!,
                     name: "new-one",
                     srcURL: "e",
                     dstURL: "f"
-                ))
+                ).plan)
             ]
         )
 
-        let plan = ConfigExportCodec.planImport(
+        let plan = try ConfigExportCodec.planImport(
             document: document,
             mode: .merge,
-            existingRepos: existing,
-            probe: .alwaysPresent
+            existingMirrors: existing.map(\.plan)
         )
-        #expect(plan.repos.count == 2)
+        #expect(plan.mirrors.count == 2)
         #expect(plan.importedRepoCount == 1)
         #expect(plan.skippedRepoCount == 1)
-        #expect(plan.repos.first?.name == "keep-me")
+        #expect(plan.mirrors.first?.name == "keep-me")
     }
 
     @Test func httpsTokenWithoutKeychainIsMarkedNeedsCredentials() {
         let repoID = UUID(uuidString: "00000000-0000-0000-0000-0000000000dd")!
-        let exported = ExportedRepo(from: RepoConfig(
+        let exported = ExportedMirrorPlan(from: MirrorSnapshot(
             id: repoID,
             name: "needs-auth",
             srcURL: "https://github.com/acme/x.git",
             dstURL: "https://gitlab.com/acme/x.git",
             srcAuth: .httpsToken(keychainTag: "\(repoID.uuidString)-src"),
             frequency: .min15
-        ))
-        let imported = exported.toRepoConfig(probe: .alwaysMissing)
+        ).plan)
+        var imported = MirrorSnapshot(plan: exported.toMirrorPlan())
+        imported.needsCredentials = MirrorCredentialGate.needsCredentials(for: imported.plan, probe: .alwaysMissing)
         #expect(imported.needsCredentials)
-        #expect(RepoCredentialGate.needsCredentials(for: imported, probe: .alwaysMissing))
+        #expect(MirrorCredentialGate.needsCredentials(for: imported.plan, probe: .alwaysMissing))
     }
 
     @MainActor
@@ -6951,18 +6277,18 @@ struct ConfigExportImportTests {
         let scheduler = SyncScheduler()
         defer { scheduler.invalidateAll() }
 
-        var repo = RepoConfig(
+        var repo = MirrorSnapshot(
             name: "paused",
             srcURL: "git@github.com:acme/p.git",
             dstURL: "git@gitlab.com:acme/p.git",
             frequency: .min15
         )
         repo.needsCredentials = true
-        scheduler.schedule(repo: repo)
+        scheduler.schedule(plan: repo.plan, needsCredentials: repo.needsCredentials)
         #expect(scheduler.nextFireDate(for: repo.id) == nil)
 
         repo.needsCredentials = false
-        scheduler.schedule(repo: repo)
+        scheduler.schedule(plan: repo.plan, needsCredentials: repo.needsCredentials)
         #expect(scheduler.nextFireDate(for: repo.id) != nil)
     }
 
@@ -6976,8 +6302,9 @@ struct ConfigExportImportTests {
     @Test func unsupportedSchemaVersionThrows() throws {
         let payload = """
         {
+          "format": "gitrelay-mirror-plan",
           "schemaVersion": 99,
-          "repos": [],
+          "mirrors": [],
           "providerAccounts": [],
           "orgSubscriptions": []
         }
@@ -6997,26 +6324,36 @@ struct ConfigExportImportTests {
         }
     }
 
-    @Test func partialDecodeDoesNotHalfApply() throws {
+    @Test func repositoryListConfigurationIsRejectedExplicitly() {
         let payload = """
         {
           "schemaVersion": 1,
-          "repos": [
+          "repos": []
+        }
+        """
+        #expect(throws: ConfigExportError.unsupportedRepositoryDocument) {
+            try ConfigExportCodec.decode(Data(payload.utf8))
+        }
+    }
+
+    @Test func partialDecodeDoesNotHalfApply() throws {
+        let payload = """
+        {
+          "format": "gitrelay-mirror-plan",
+          "schemaVersion": 1,
+          "mirrors": [
             {
               "id": "not-a-uuid",
               "name": "broken",
-              "srcURL": "x",
-              "targets": [],
-              "srcAuth": { "kind": "sshAgent" },
-              "frequency": "手动",
-              "destructivePushPolicy": "strict",
-              "defaultBranch": "main",
+              "source": {
+                "url": "x",
+                "auth": { "kind": "sshAgent" }
+              },
+              "destinations": [],
+              "policy": {},
               "createdAt": "2026-04-25T12:00:00Z",
-              "tags": [],
-              "mirrorReleases": false,
-              "lfsMirrorMode": "auto",
-              "refSpecs": [],
-              "webhookEnabled": false
+              "labels": [],
+              "isSchedulePaused": false
             }
           ],
           "providerAccounts": [],
@@ -7024,18 +6361,17 @@ struct ConfigExportImportTests {
         }
         """
         var store = [
-            RepoConfig(name: "untouched", srcURL: "a", dstURL: "b")
+            MirrorSnapshot(name: "untouched", srcURL: "a", dstURL: "b")
         ]
         let snapshot = store
 
         do {
             let document = try ConfigExportCodec.decode(Data(payload.utf8))
-            store = ConfigExportCodec.planImport(
+            store = try ConfigExportCodec.planImport(
                 document: document,
                 mode: .replace,
-                existingRepos: store,
-                probe: .alwaysPresent
-            ).repos
+                existingMirrors: store.map(\.plan)
+            ).mirrors.map { MirrorSnapshot(plan: $0) }
             Issue.record("decode should have failed")
         } catch is ConfigExportError {
             #expect(store == snapshot)
@@ -7044,8 +6380,38 @@ struct ConfigExportImportTests {
         }
     }
 
+    @Test func semanticValidationFinishesBeforeImportCanMutateApplicationState() throws {
+        let mirrorID = UUID(uuidString: "00000000-0000-0000-0000-0000000000de")!
+        var invalidMirror = ExportedMirrorPlan(from: MirrorSnapshot(
+            id: mirrorID,
+            name: "valid-before-export",
+            srcURL: "git@github.com:acme/source.git",
+            dstURL: "git@gitlab.com:acme/destination.git"
+        ).plan)
+        invalidMirror.name = "   "
+
+        let invalidDocument = ConfigExportDocument(mirrors: [invalidMirror])
+        #expect(throws: MirrorDomainError.emptyName) {
+            try ConfigExportCodec.planImport(
+                document: invalidDocument,
+                mode: .replace,
+                existingMirrors: []
+            )
+        }
+
+        invalidMirror.name = "duplicate"
+        let duplicateDocument = ConfigExportDocument(mirrors: [invalidMirror, invalidMirror])
+        #expect(throws: MirrorPersistenceError.duplicateMirrorID(mirrorID)) {
+            try ConfigExportCodec.planImport(
+                document: duplicateDocument,
+                mode: .replace,
+                existingMirrors: []
+            )
+        }
+    }
+
     @MainActor
-    @Test func importFailureLeavesRepoStoreUnchanged() throws {
+    @Test func importDecodeFailureLeavesApplicationLibraryUnchanged() throws {
         let suite = "config-import-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -7060,7 +6426,7 @@ struct ConfigExportImportTests {
         Constants.setBaseDirectoryForTesting(tempDir)
 
         let orgStore = OrgSubscriptionStore(defaults: defaults)
-        let vm = AppViewModel(
+        let vm = GitRelayAppModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             orgSubscriptionStore: orgStore,
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
@@ -7069,13 +6435,13 @@ struct ConfigExportImportTests {
             biometricAuthenticator: PermissiveBiometricAuthenticator()
         )
 
-        let original = RepoConfig(
+        let original = MirrorSnapshot(
             id: UUID(uuidString: "00000000-0000-0000-0000-0000000000ee")!,
             name: "keep",
             srcURL: "git@github.com:acme/keep.git",
             dstURL: "git@gitlab.com:acme/keep.git"
         )
-        vm.repos = [original]
+        vm.addRepo(original)
         let beforeCount = vm.repos.count
 
         #expect(throws: ConfigExportError.self) {
@@ -7101,7 +6467,7 @@ struct ConfigExportImportTests {
         Constants.setBaseDirectoryForTesting(tempDir)
 
         let orgStore = OrgSubscriptionStore(defaults: defaults)
-        let vm = AppViewModel(
+        let vm = GitRelayAppModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             orgSubscriptionStore: orgStore,
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
@@ -7109,19 +6475,17 @@ struct ConfigExportImportTests {
             cachePreferencesStore: CachePreferencesStore(defaults: defaults),
             biometricAuthenticator: PermissiveBiometricAuthenticator()
         )
-        vm.repos = []
-
         let repoID = UUID(uuidString: "00000000-0000-0000-0000-0000000000ff")!
         let document = ConfigExportDocument(
-            repos: [
-                ExportedRepo(from: RepoConfig(
+            mirrors: [
+                ExportedMirrorPlan(from: MirrorSnapshot(
                     id: repoID,
                     name: "imported",
                     srcURL: "https://github.com/acme/imported.git",
                     dstURL: "https://gitlab.com/acme/imported.git",
                     srcAuth: .httpsToken(keychainTag: "\(repoID.uuidString)-src"),
                     frequency: .min15
-                ))
+                ).plan)
             ],
             providerAccounts: [
                 ExportedProviderAccount(provider: .github, label: "default", host: nil)
@@ -7136,12 +6500,106 @@ struct ConfigExportImportTests {
         #expect(vm.nextFireDate(for: repoID) == nil)
 
         vm.triggerSync(repoID: repoID)
-        #expect(vm.errorMessage == RepoCredentialGate.missingCredentialsMessage)
+        #expect(vm.errorMessage == MirrorCredentialGate.missingCredentialsMessage)
         if case .failed(let message) = vm.statuses[repoID] {
-            #expect(message == RepoCredentialGate.missingCredentialsMessage)
+            #expect(message == MirrorCredentialGate.missingCredentialsMessage)
         } else {
             Issue.record("expected failed status for missing credentials")
         }
+    }
+
+    @MainActor
+    @Test func replaceImportDoesNotResurrectHealthForAReusedMirrorID() throws {
+        let suite = "config-import-health-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-config-import-health-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+        let planStore = MirrorPlanStore(fileURL: tempDir.appendingPathComponent("mirrors.json"))
+        let stateStore = MirrorStateStore(fileURL: tempDir.appendingPathComponent("mirror-state.json"))
+        let runStore = MirrorRunStore(directoryURL: tempDir.appendingPathComponent("logs"))
+        let mirrorID = UUID()
+        let oldPlan = MirrorSnapshot(
+            id: mirrorID,
+            name: "old",
+            srcURL: "git@github.com:acme/old.git",
+            dstURL: "git@gitlab.com:acme/old.git"
+        ).plan
+        let oldHealth = MirrorHealthSnapshot(
+            mirrorID: mirrorID,
+            lastFailure: MirrorFailureSummary(kind: .network, message: "old failure"),
+            consecutiveFailures: 4
+        )
+        try planStore.save([oldPlan])
+        try stateStore.save([mirrorID: oldHealth])
+
+        let vm = GitRelayAppModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            orgSubscriptionStore: OrgSubscriptionStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
+            securityPreferencesStore: SecurityPreferencesStore(defaults: defaults),
+            cachePreferencesStore: CachePreferencesStore(defaults: defaults),
+            biometricAuthenticator: PermissiveBiometricAuthenticator(),
+            mirrorPlanStore: planStore,
+            mirrorStateStore: stateStore,
+            mirrorRunStore: runStore
+        )
+        let replacement = MirrorSnapshot(
+            id: mirrorID,
+            name: "replacement",
+            srcURL: "git@github.com:acme/new.git",
+            dstURL: "git@gitlab.com:acme/new.git"
+        ).plan
+        let data = try ConfigExportCodec.encode(ConfigExportDocument(
+            mirrors: [ExportedMirrorPlan(from: replacement)]
+        ))
+
+        try vm.importConfiguration(from: data, mode: .replace, probe: .alwaysPresent)
+
+        #expect(vm.repos.first?.name == "replacement")
+        #expect(vm.repos.first?.health.lastFailure == nil)
+        let persisted = try #require(stateStore.load()[mirrorID])
+        #expect(persisted.lastFailure == nil)
+        #expect(persisted.consecutiveFailures == 0)
+        #expect(persisted.lastSuccessfulAt == nil)
+    }
+
+    @MainActor
+    @Test func corruptHealthDocumentDoesNotHideValidMirrorPlans() throws {
+        let suite = "config-load-health-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitrelay-load-health-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+        let planStore = MirrorPlanStore(fileURL: tempDir.appendingPathComponent("mirrors.json"))
+        let stateURL = tempDir.appendingPathComponent("mirror-state.json")
+        let stateStore = MirrorStateStore(fileURL: stateURL)
+        let plan = MirrorSnapshot(
+            name: "visible",
+            srcURL: "git@github.com:acme/visible.git",
+            dstURL: "git@gitlab.com:acme/visible.git"
+        ).plan
+        try planStore.save([plan])
+        try Data("not-json".utf8).write(to: stateURL)
+
+        let vm = GitRelayAppModel(
+            verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
+            orgSubscriptionStore: OrgSubscriptionStore(defaults: defaults),
+            webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
+            securityPreferencesStore: SecurityPreferencesStore(defaults: defaults),
+            cachePreferencesStore: CachePreferencesStore(defaults: defaults),
+            biometricAuthenticator: PermissiveBiometricAuthenticator(),
+            mirrorPlanStore: planStore,
+            mirrorStateStore: stateStore,
+            mirrorRunStore: MirrorRunStore(directoryURL: tempDir.appendingPathComponent("logs"))
+        )
+
+        #expect(vm.repos.map(\.id) == [plan.id])
+        #expect(vm.errorMessage != nil)
     }
 }
 
@@ -7223,16 +6681,16 @@ struct SyncConcurrencyGateTests {
     }
 }
 
-// MARK: - Sync concurrency (AppViewModel)
+// MARK: - Sync concurrency (GitRelayAppModel)
 
 @MainActor
-struct SyncConcurrencyAppViewModelTests {
-    private func makeViewModel(defaults: UserDefaults) -> AppViewModel {
+struct SyncConcurrencyAppModelTests {
+    private func makeViewModel(defaults: UserDefaults) -> GitRelayAppModel {
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("gitrelay-sync-concurrency-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         Constants.setBaseDirectoryForTesting(base)
-        let vm = AppViewModel(
+        let vm = GitRelayAppModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
             notificationPreferencesStore: NotificationPreferencesStore(defaults: defaults)
@@ -7241,10 +6699,10 @@ struct SyncConcurrencyAppViewModelTests {
         return vm
     }
 
-    private func addSSHRepo(to vm: AppViewModel, name: String) -> UUID {
+    private func addSSHRepo(to vm: GitRelayAppModel, name: String) -> UUID {
         let id = UUID()
         vm.addRepo(
-            RepoConfig(
+            MirrorSnapshot(
                 id: id,
                 name: name,
                 srcURL: "git@github.com:user/\(name).git",
@@ -7379,20 +6837,20 @@ struct MainWindowShortcutBindingTests {
     }
 
     @Test func menuTitlesMatchLocalizedCatalogKeys() {
-        #expect(MainWindowShortcutBinding.addRepository.menuTitle == String(localized: "Add Repository"))
-        #expect(MainWindowShortcutBinding.focusSearch.menuTitle == String(localized: "Search Repositories"))
-        #expect(MainWindowShortcutBinding.syncSelected.menuTitle == String(localized: "Sync Selected Repository"))
+        #expect(MainWindowShortcutBinding.addRepository.menuTitle == String(localized: "Add Mirror"))
+        #expect(MainWindowShortcutBinding.focusSearch.menuTitle == String(localized: "Search Mirrors"))
+        #expect(MainWindowShortcutBinding.syncSelected.menuTitle == String(localized: "Sync Selected Mirror"))
     }
 }
 
 @MainActor
 struct MainWindowShortcutCommandTests {
-    private func makeViewModel(defaults: UserDefaults) -> AppViewModel {
+    private func makeViewModel(defaults: UserDefaults) -> GitRelayAppModel {
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("gitrelay-main-shortcuts-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         Constants.setBaseDirectoryForTesting(base)
-        let vm = AppViewModel(
+        let vm = GitRelayAppModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
             notificationPreferencesStore: NotificationPreferencesStore(defaults: defaults)
@@ -7401,10 +6859,10 @@ struct MainWindowShortcutCommandTests {
         return vm
     }
 
-    private func addSSHRepo(to vm: AppViewModel, name: String) -> UUID {
+    private func addSSHRepo(to vm: GitRelayAppModel, name: String) -> UUID {
         let id = UUID()
         vm.addRepo(
-            RepoConfig(
+            MirrorSnapshot(
                 id: id,
                 name: name,
                 srcURL: "git@github.com:user/\(name).git",
@@ -7505,36 +6963,31 @@ struct StringCatalogLocaleTests {
             "Pushing...",
             "Pushing LFS...",
             "%lld / %lld objects",
-            "Add Repository",
-            "Search Repositories",
-            "Sync Selected Repository",
-            "Repository",
-            // Locked main-window chrome (issue #100).
-            "Overview",
-            "Accounts",
-            "Repositories",
-            "Queue",
-            "Browse Remote",
+            "Add Mirror",
+            "Search Mirrors",
+            "Sync Selected Mirror",
+            "Mirror",
+            // Adaptive continuity workspace.
+            "Needs Attention",
+            "All Mirrors",
+            "Paused",
             "Settings",
             "Running",
-            "%lld repos · %lld failed",
+            "%lld mirrors · %lld failed",
             "Pause Scheduled Sync",
             "Resume Scheduled Sync",
             "Source",
             "Target",
             "Status",
             "Last",
-            // Quiet browse-remote wizard (issue #85).
+            // Connected-service source selection inside Add Mirror.
             "Host",
             "Connection",
             "Account",
-            "Add Account",
-            "Remove Account",
             "Gitea Account",
-            "Step %lld of %lld",
-            "Choose a Host",
-            "Pick Repositories",
-            "Configure the Target",
+            "Choose a Connected Service",
+            "Choose Source Repositories",
+            "Choose Destinations and Policy",
             "Start Over",
             "%lld selected",
             "Private repository",
@@ -7679,12 +7132,12 @@ struct GitProgressParserTests {
 
 @MainActor
 struct SyncPhaseLifecycleTests {
-    private func makeViewModel(defaults: UserDefaults) -> AppViewModel {
+    private func makeViewModel(defaults: UserDefaults) -> GitRelayAppModel {
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("gitrelay-sync-phase-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         Constants.setBaseDirectoryForTesting(base)
-        let vm = AppViewModel(
+        let vm = GitRelayAppModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
             notificationPreferencesStore: NotificationPreferencesStore(defaults: defaults)
@@ -7693,10 +7146,10 @@ struct SyncPhaseLifecycleTests {
         return vm
     }
 
-    private func addSSHRepo(to vm: AppViewModel, name: String) -> UUID {
+    private func addSSHRepo(to vm: GitRelayAppModel, name: String) -> UUID {
         let id = UUID()
         vm.addRepo(
-            RepoConfig(
+            MirrorSnapshot(
                 id: id,
                 name: name,
                 srcURL: "git@github.com:user/\(name).git",
@@ -7753,74 +7206,18 @@ struct SyncPhaseLifecycleTests {
     }
 }
 
-// MARK: - Main sidebar chrome (issue #100)
+// MARK: - Connected-service source navigation
 
-struct MainSidebarItemTests {
-    @Test func sectionsExposeOnlyTheLockedRows() {
-        #expect(MainSidebarSection.allCases.map(\.rawValue) == ["overview", "accounts", "settings"])
-        #expect(MainSidebarSection.overview.items == [.repositories, .queue, .browseRemote])
-        #expect(MainSidebarSection.accounts.items == [.githubAccounts, .gitlabAccounts, .giteaAccounts])
-        #expect(MainSidebarSection.settings.items == [.settings])
-        #expect(MainSidebarItem.allCases.count == 7)
-    }
-
-    @Test func defaultRowIsRepositories() {
-        #expect(MainSidebarItem.default == .repositories)
-    }
-
-    @Test func accountRowsCarryTheirProvider() {
-        #expect(MainSidebarItem.githubAccounts.provider == .github)
-        #expect(MainSidebarItem.gitlabAccounts.provider == .gitlab)
-        #expect(MainSidebarItem.giteaAccounts.provider == .gitea)
-        #expect(MainSidebarItem.repositories.provider == nil)
-        #expect(MainSidebarItem.settings.provider == nil)
-    }
-
-    @Test func everyRowHasATitleAndSymbol() {
-        for item in MainSidebarItem.allCases {
-            #expect(!item.title.isEmpty)
-            #expect(!item.systemImage.isEmpty)
-        }
-    }
-}
-
-// MARK: - Browse-remote wizard steps (issue #85)
-
-struct BrowseRemoteStepTests {
-    @Test func theRailStaysAtThreeNumberedSteps() {
-        #expect(BrowseRemoteStep.allCases == [.connect, .select, .configure])
-        #expect(BrowseRemoteStep.total == 3)
-        #expect(BrowseRemoteStep.allCases.map(\.number) == [1, 2, 3])
-        #expect(BrowseRemoteStep.connect.isFirst)
-        #expect(!BrowseRemoteStep.select.isFirst)
-    }
-
-    @Test func everyStepHasATitleSubtitleAndProgressLabel() {
-        for step in BrowseRemoteStep.allCases {
-            #expect(!step.title.isEmpty)
-            #expect(!step.subtitle.isEmpty)
-            #expect(!step.progressLabel.isEmpty)
-        }
-        #expect(BrowseRemoteStep.select.progressLabel == String(localized: "Step 2 of 3"))
-    }
-
-    @Test func creatingAndReviewingStayOnStepThree() {
-        #expect(BrowseRemotePhase.connect.step == .connect)
-        #expect(BrowseRemotePhase.selecting.step == .select)
-        #expect(BrowseRemotePhase.configureTarget.step == .configure)
-        #expect(BrowseRemotePhase.submitting.step == .configure)
-        #expect(BrowseRemotePhase.result.step == .configure)
-    }
-
+struct ConnectedServiceSourcePhaseTests {
     @Test func backIsOfferedOnlyOnTheTwoMiddlePhases() {
-        #expect(BrowseRemotePhase.selecting.previous == .connect)
-        #expect(BrowseRemotePhase.configureTarget.previous == .selecting)
-        #expect(BrowseRemotePhase.connect.previous == nil)
-        #expect(BrowseRemotePhase.submitting.previous == nil)
-        #expect(BrowseRemotePhase.result.previous == nil)
+        #expect(ConnectedServiceSourcePhase.selecting.previous == .connect)
+        #expect(ConnectedServiceSourcePhase.configureTarget.previous == .selecting)
+        #expect(ConnectedServiceSourcePhase.connect.previous == nil)
+        #expect(ConnectedServiceSourcePhase.submitting.previous == nil)
+        #expect(ConnectedServiceSourcePhase.result.previous == nil)
 
         let backable = [
-            BrowseRemotePhase.connect,
+            ConnectedServiceSourcePhase.connect,
             .selecting,
             .configureTarget,
             .submitting,
@@ -7831,9 +7228,9 @@ struct BrowseRemoteStepTests {
 }
 
 @MainActor
-struct BrowseRemoteWizardNavigationTests {
+struct ConnectedServiceSourceNavigationTests {
     private struct Fixture {
-        let vm: BrowseRemoteRepoViewModel
+        let vm: ConnectedServiceSourceModel
         let defaults: UserDefaults
         let suite: String
 
@@ -7846,7 +7243,7 @@ struct BrowseRemoteWizardNavigationTests {
         let suite = "gitrelay.tests.browse-nav.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         return Fixture(
-            vm: BrowseRemoteRepoViewModel(defaults: defaults),
+            vm: ConnectedServiceSourceModel(defaults: defaults),
             defaults: defaults,
             suite: suite
         )
@@ -7858,15 +7255,12 @@ struct BrowseRemoteWizardNavigationTests {
         let vm = fixture.vm
 
         vm.phase = .configureTarget
-        #expect(vm.step == .configure)
 
         vm.goBack()
         #expect(vm.phase == .selecting)
-        #expect(vm.step == .select)
 
         vm.goBack()
         #expect(vm.phase == .connect)
-        #expect(vm.step == .connect)
 
         vm.goBack()
         #expect(vm.phase == .connect)
@@ -7949,7 +7343,7 @@ struct BrowseRemoteWizardNavigationTests {
 
 // MARK: - Repository pair table (issue #100)
 
-struct RepoPairTableTests {
+struct MirrorSummaryProjectionTests {
     private func repo(
         name: String = "keychord",
         srcURL: String = "https://github.com/yangflow/keychord.git",
@@ -7960,8 +7354,8 @@ struct RepoPairTableTests {
         divergedDetail: String? = nil,
         needsCredentials: Bool = false,
         frequency: SyncFrequency = .manual
-    ) -> RepoConfig {
-        RepoConfig(
+    ) -> MirrorSnapshot {
+        MirrorSnapshot(
             id: UUID(),
             name: name,
             srcURL: srcURL,
@@ -7976,7 +7370,7 @@ struct RepoPairTableTests {
     }
 
     @Test func sourceShowsOwnerRepoAndTargetKeepsTheHost() {
-        let row = RepoPairTable.row(for: repo(), status: .idle)
+        let row = MirrorSummaryProjection.row(for: repo(), status: .idle)
         #expect(row.sourceLabel == "yangflow/keychord")
         #expect(row.targetLabel == "gitlab.com/yangflow/keychord")
         #expect(row.sourceProvider == .github)
@@ -7984,7 +7378,7 @@ struct RepoPairTableTests {
     }
 
     @Test func unparseableRemoteFallsBackToTheRawString() {
-        #expect(RepoPairTable.sourceLabel(for: "not a url") == "not a url")
+        #expect(MirrorSummaryProjection.sourceLabel(for: "not a url") == "not a url")
     }
 
     @Test func filesystemTargetShowsItsPathAndNoProvider() {
@@ -7992,13 +7386,13 @@ struct RepoPairTableTests {
             kind: .filesystem,
             filesystemPath: "/Volumes/backup/keychord"
         )
-        let row = RepoPairTable.row(for: repo(targets: [target]), status: .idle)
+        let row = MirrorSummaryProjection.row(for: repo(targets: [target]), status: .idle)
         #expect(row.targetLabel == "/Volumes/backup/keychord")
         #expect(row.targetProvider == nil)
     }
 
     @Test func extraEnabledTargetsAreCounted() {
-        let row = RepoPairTable.row(
+        let row = MirrorSummaryProjection.row(
             for: repo(targets: [
                 MirrorTarget(url: "git@gitlab.com:yangflow/keychord.git"),
                 MirrorTarget(url: "git@gitlab.com:yangflow/keychord-2.git"),
@@ -8010,44 +7404,44 @@ struct RepoPairTableTests {
     }
 
     @Test func statusCollapsesToSucceededOrFailed() {
-        #expect(RepoPairTable.statusKind(for: repo(), status: .idle) == .succeeded)
-        #expect(RepoPairTable.statusKind(for: repo(), status: .ahead(3)) == .succeeded)
-        #expect(RepoPairTable.statusKind(for: repo(), status: .failed("boom")) == .failed)
-        #expect(RepoPairTable.statusKind(for: repo(), status: .syncing) == .syncing)
-        #expect(RepoPairTable.statusKind(for: repo(), status: .queued) == .queued)
+        #expect(MirrorSummaryProjection.statusKind(for: repo(), status: .idle) == .succeeded)
+        #expect(MirrorSummaryProjection.statusKind(for: repo(), status: .ahead(3)) == .succeeded)
+        #expect(MirrorSummaryProjection.statusKind(for: repo(), status: .failed("boom")) == .failed)
+        #expect(MirrorSummaryProjection.statusKind(for: repo(), status: .syncing) == .syncing)
+        #expect(MirrorSummaryProjection.statusKind(for: repo(), status: .queued) == .queued)
     }
 
     @Test func divergenceReadsAsFailureRatherThanACautionState() {
-        #expect(RepoPairTable.statusKind(for: repo(), status: .diverged("tree differs")) == .failed)
+        #expect(MirrorSummaryProjection.statusKind(for: repo(), status: .diverged("tree differs")) == .failed)
         let stored = repo(divergedDetail: "tree differs")
-        #expect(RepoPairTable.statusKind(for: stored, status: .unknown) == .failed)
-        #expect(RepoPairTable.statusDetail(for: stored, status: .unknown) == "tree differs")
+        #expect(MirrorSummaryProjection.statusKind(for: stored, status: .unknown) == .failed)
+        #expect(MirrorSummaryProjection.statusDetail(for: stored, status: .unknown) == "tree differs")
     }
 
     @Test func unknownStatusUsesPersistedHistory() {
         let never = repo()
-        #expect(RepoPairTable.statusKind(for: never, status: .unknown) == .notSynced)
+        #expect(MirrorSummaryProjection.statusKind(for: never, status: .unknown) == .notSynced)
 
         let succeeded = repo(lastSyncedAt: .now, lastSuccessfulSyncedAt: .now)
-        #expect(RepoPairTable.statusKind(for: succeeded, status: .unknown) == .succeeded)
+        #expect(MirrorSummaryProjection.statusKind(for: succeeded, status: .unknown) == .succeeded)
 
         let failed = repo(lastSyncedAt: .now, lastSyncError: "auth failed")
-        #expect(RepoPairTable.statusKind(for: failed, status: .unknown) == .failed)
-        #expect(RepoPairTable.statusDetail(for: failed, status: .unknown) == "auth failed")
+        #expect(MirrorSummaryProjection.statusKind(for: failed, status: .unknown) == .failed)
+        #expect(MirrorSummaryProjection.statusDetail(for: failed, status: .unknown) == "auth failed")
 
         let missingCredentials = repo(needsCredentials: true)
-        #expect(RepoPairTable.statusKind(for: missingCredentials, status: .unknown) == .failed)
+        #expect(MirrorSummaryProjection.statusKind(for: missingCredentials, status: .unknown) == .failed)
     }
 
     @Test func lastSyncedTextIsAbsentUntilTheFirstSync() {
-        #expect(RepoPairTable.row(for: repo(), status: .unknown).lastSyncedText == nil)
-        #expect(RepoPairTable.row(for: repo(lastSyncedAt: .now), status: .idle).lastSyncedText != nil)
+        #expect(MirrorSummaryProjection.row(for: repo(), status: .unknown).lastSyncedText == nil)
+        #expect(MirrorSummaryProjection.row(for: repo(lastSyncedAt: .now), status: .idle).lastSyncedText != nil)
     }
 
     @Test func rowsFollowTheConfiguredOrder() {
         let first = repo(name: "a")
         let second = repo(name: "b")
-        let rows = RepoPairTable.rows(repos: [first, second], statuses: [:])
+        let rows = MirrorSummaryProjection.rows(repos: [first, second], statuses: [:])
         #expect(rows.map(\.name) == ["a", "b"])
         #expect(rows.map(\.id) == [first.id, second.id])
     }
@@ -8060,8 +7454,8 @@ struct SidebarFooterSummaryTests {
         name: String,
         frequency: SyncFrequency = .manual,
         lastSyncError: String? = nil
-    ) -> RepoConfig {
-        RepoConfig(
+    ) -> MirrorSnapshot {
+        MirrorSnapshot(
             name: name,
             srcURL: "git@github.com:user/\(name).git",
             dstURL: "git@gitlab.com:user/\(name).git",
@@ -8137,9 +7531,9 @@ struct SidebarFooterSummaryTests {
 
 // MARK: - Sync queue pane (issue #100)
 
-struct SyncQueueListTests {
-    private func repo(_ name: String) -> RepoConfig {
-        RepoConfig(
+struct MirrorQueueProjectionTests {
+    private func repo(_ name: String) -> MirrorSnapshot {
+        MirrorSnapshot(
             name: name,
             srcURL: "git@github.com:user/\(name).git",
             dstURL: "git@gitlab.com:user/\(name).git"
@@ -8152,7 +7546,7 @@ struct SyncQueueListTests {
         let idle = repo("idle")
         let failed = repo("failed")
 
-        let entries = SyncQueueList.entries(
+        let entries = MirrorQueueProjection.entries(
             repos: [queued, idle, syncing, failed],
             statuses: [
                 queued.id: .queued,
@@ -8172,7 +7566,7 @@ struct SyncQueueListTests {
         let syncing = repo("syncing")
         let phase = SyncPhase(.fetchingSource, progressDetail: "1 / 2 objects")
 
-        let entries = SyncQueueList.entries(
+        let entries = MirrorQueueProjection.entries(
             repos: [syncing],
             statuses: [syncing.id: .syncing],
             syncPhases: [syncing.id: phase]
@@ -8184,7 +7578,7 @@ struct SyncQueueListTests {
 
     @Test func syncingWithoutAPhaseFallsBackToGenericCopy() {
         let syncing = repo("syncing")
-        let entries = SyncQueueList.entries(
+        let entries = MirrorQueueProjection.entries(
             repos: [syncing],
             statuses: [syncing.id: .syncing],
             syncPhases: [:]
@@ -8195,7 +7589,7 @@ struct SyncQueueListTests {
     @Test func emptyWhenNothingIsMoving() {
         let idle = repo("idle")
         #expect(
-            SyncQueueList.entries(
+            MirrorQueueProjection.entries(
                 repos: [idle],
                 statuses: [idle.id: .idle],
                 syncPhases: [:]
@@ -8608,8 +8002,8 @@ struct MissedRunCatchUpProgressTests {
 
 @MainActor
 struct SyncSchedulerRunExpectationTests {
-    private func repo(frequency: SyncFrequency, needsCredentials: Bool = false) -> RepoConfig {
-        RepoConfig(
+    private func repo(frequency: SyncFrequency, needsCredentials: Bool = false) -> MirrorSnapshot {
+        MirrorSnapshot(
             name: "mirror",
             srcURL: "git@github.com:user/mirror.git",
             dstURL: "git@gitlab.com:user/mirror.git",
@@ -8625,7 +8019,7 @@ struct SyncSchedulerRunExpectationTests {
         defer { scheduler.invalidateAll() }
 
         let scheduled = repo(frequency: .min15)
-        scheduler.schedule(repo: scheduled)
+        scheduler.schedule(plan: scheduled.plan, needsCredentials: scheduled.needsCredentials)
 
         let expectation = scheduler.runExpectation(for: scheduled.id)
         #expect(expectation?.interval == 900)
@@ -8638,8 +8032,8 @@ struct SyncSchedulerRunExpectationTests {
 
         let manual = repo(frequency: .manual)
         let gated = repo(frequency: .min15, needsCredentials: true)
-        scheduler.schedule(repo: manual)
-        scheduler.schedule(repo: gated)
+        scheduler.schedule(plan: manual.plan, needsCredentials: manual.needsCredentials)
+        scheduler.schedule(plan: gated.plan, needsCredentials: gated.needsCredentials)
 
         #expect(scheduler.runExpectation(for: manual.id) == nil)
         #expect(scheduler.runExpectation(for: gated.id) == nil)
@@ -8652,10 +8046,10 @@ struct SyncSchedulerRunExpectationTests {
         defer { scheduler.invalidateAll() }
 
         let scheduled = repo(frequency: .min15)
-        scheduler.schedule(repo: scheduled)
+        scheduler.schedule(plan: scheduled.plan, needsCredentials: scheduled.needsCredentials)
 
         clock = clock.addingTimeInterval(3600)
-        scheduler.reschedule(repo: scheduled)
+        scheduler.reschedule(plan: scheduled.plan, needsCredentials: scheduled.needsCredentials)
 
         #expect(
             scheduler.runExpectation(for: scheduled.id)?.expectedFireDate
@@ -8668,7 +8062,7 @@ struct SyncSchedulerRunExpectationTests {
         defer { scheduler.invalidateAll() }
 
         let scheduled = repo(frequency: .hour1)
-        scheduler.schedule(repo: scheduled)
+        scheduler.schedule(plan: scheduled.plan, needsCredentials: scheduled.needsCredentials)
         #expect(scheduler.runExpectation(for: scheduled.id) != nil)
 
         scheduler.deschedule(repoID: scheduled.id)
@@ -8678,13 +8072,13 @@ struct SyncSchedulerRunExpectationTests {
 }
 
 @MainActor
-struct MissedRunCatchUpAppViewModelTests {
-    private func makeViewModel(defaults: UserDefaults) -> AppViewModel {
+struct MissedRunCatchUpAppModelTests {
+    private func makeViewModel(defaults: UserDefaults) -> GitRelayAppModel {
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("gitrelay-missed-runs-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         Constants.setBaseDirectoryForTesting(base)
-        let vm = AppViewModel(
+        let vm = GitRelayAppModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
             notificationPreferencesStore: NotificationPreferencesStore(defaults: defaults)
@@ -8699,10 +8093,10 @@ struct MissedRunCatchUpAppViewModelTests {
         return vm
     }
 
-    private func addScheduledRepo(to vm: AppViewModel, name: String) -> UUID {
+    private func addScheduledRepo(to vm: GitRelayAppModel, name: String) -> UUID {
         let id = UUID()
         vm.addRepo(
-            RepoConfig(
+            MirrorSnapshot(
                 id: id,
                 name: name,
                 srcURL: "git@github.com:user/\(name).git",

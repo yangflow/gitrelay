@@ -1,7 +1,7 @@
 import Foundation
 
 /// The 账号 line under a pair's URLs: which saved provider account the pair's
-/// remotes authenticate with. There is no account id on ``RepoConfig``, so the
+/// remotes authenticate with. There is no account id on ``MirrorSnapshot``, so the
 /// name is resolved the same way the token is — the account pinned to that host,
 /// then the provider's selected account, then the default one. When none of them
 /// holds a token the line stays away rather than naming a credential GitRelay
@@ -37,7 +37,7 @@ nonisolated struct RepoAccountLine: Equatable, Sendable {
     }
 
     @MainActor
-    static func resolve(for repo: RepoConfig, defaults: UserDefaults = .standard) -> RepoAccountLine? {
+    static func resolve(for repo: MirrorSnapshot, defaults: UserDefaults = .standard) -> RepoAccountLine? {
         var names: [String] = []
         if let name = accountName(forRemote: repo.srcURL, defaults: defaults) {
             names.append(name)

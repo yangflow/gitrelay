@@ -12,13 +12,13 @@ nonisolated struct MirrorCacheCleanupResult: Equatable, Sendable {
 
 nonisolated enum MirrorCacheService {
     static func currentUsageBytes(
-        repos: [RepoConfig],
-        mirrorsDirectory: URL = Constants.mirrorsDirectory,
+        plans: [MirrorPlan],
+        mirrorsDirectory: URL = Constants.mirrorCacheDirectory,
         fileManager: FileManager = .default,
         sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider
     ) -> Int64 {
         MirrorDirectorySizer.mirrorsUsage(
-            repos: repos,
+            plans: plans,
             mirrorsDirectory: mirrorsDirectory,
             fileManager: fileManager,
             sizeOf: sizeOf
@@ -26,13 +26,15 @@ nonisolated enum MirrorCacheService {
     }
 
     static func mirrorEntries(
-        repos: [RepoConfig],
-        mirrorsDirectory: URL = Constants.mirrorsDirectory,
+        plans: [MirrorPlan],
+        healthByMirrorID: [UUID: MirrorHealthSnapshot] = [:],
+        mirrorsDirectory: URL = Constants.mirrorCacheDirectory,
         fileManager: FileManager = .default,
         sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider
     ) -> [MirrorCacheEntry] {
         MirrorDirectorySizer.mirrorEntries(
-            repos: repos,
+            plans: plans,
+            healthByMirrorID: healthByMirrorID,
             mirrorsDirectory: mirrorsDirectory,
             fileManager: fileManager,
             sizeOf: sizeOf
@@ -40,13 +42,13 @@ nonisolated enum MirrorCacheService {
     }
 
     static func repoUsages(
-        repos: [RepoConfig],
-        mirrorsDirectory: URL = Constants.mirrorsDirectory,
+        plans: [MirrorPlan],
+        mirrorsDirectory: URL = Constants.mirrorCacheDirectory,
         fileManager: FileManager = .default,
         sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider
     ) -> [MirrorCacheRepoUsage] {
         MirrorDirectorySizer.repoUsages(
-            repos: repos,
+            plans: plans,
             mirrorsDirectory: mirrorsDirectory,
             fileManager: fileManager,
             sizeOf: sizeOf
@@ -55,17 +57,18 @@ nonisolated enum MirrorCacheService {
 
     @MainActor
     static func performCleanup(
-        repos: [RepoConfig],
+        plans: [MirrorPlan],
+        healthByMirrorID: [UUID: MirrorHealthSnapshot] = [:],
         quotaGB: Int?,
         excluding repoIDs: Set<UUID> = [],
-        mirrorsDirectory: URL = Constants.mirrorsDirectory,
+        mirrorsDirectory: URL = Constants.mirrorCacheDirectory,
         fileManager: FileManager = .default,
         sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider,
         runGarbageCollection: (UUID) async throws -> Void = defaultGarbageCollection,
         deleteMirror: (UUID) throws -> Void = MirrorStore.deleteMirror(for:)
     ) async -> MirrorCacheCleanupResult {
         let initialUsage = currentUsageBytes(
-            repos: repos,
+            plans: plans,
             mirrorsDirectory: mirrorsDirectory,
             fileManager: fileManager,
             sizeOf: sizeOf
@@ -82,7 +85,8 @@ nonisolated enum MirrorCacheService {
         var usage = initialUsage
         var steps: [MirrorCacheEvictionStep] = []
         var entries = mirrorEntries(
-            repos: repos,
+            plans: plans,
+            healthByMirrorID: healthByMirrorID,
             mirrorsDirectory: mirrorsDirectory,
             fileManager: fileManager,
             sizeOf: sizeOf
@@ -123,7 +127,7 @@ nonisolated enum MirrorCacheService {
     @MainActor
     static func freeMirrorSpace(
         for repoID: UUID,
-        mirrorsDirectory: URL = Constants.mirrorsDirectory,
+        mirrorsDirectory: URL = Constants.mirrorCacheDirectory,
         fileManager: FileManager = .default,
         sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider,
         runGarbageCollection: (UUID) async throws -> Void = defaultGarbageCollection,
@@ -142,16 +146,16 @@ nonisolated enum MirrorCacheService {
     /// Skips `excluding` IDs (typically in-progress syncs). Rebuilds on the next sync.
     @MainActor
     static func evictAllMirrors(
-        repos: [RepoConfig],
+        plans: [MirrorPlan],
         excluding repoIDs: Set<UUID> = [],
-        mirrorsDirectory: URL = Constants.mirrorsDirectory,
+        mirrorsDirectory: URL = Constants.mirrorCacheDirectory,
         fileManager: FileManager = .default,
         sizeOf: (URL) -> Int64 = MirrorDirectorySizer.defaultSizeProvider,
         runGarbageCollection: (UUID) async throws -> Void = defaultGarbageCollection,
         deleteMirror: (UUID) throws -> Void = MirrorStore.deleteMirror(for:)
     ) async -> MirrorCacheCleanupResult {
         let initialUsage = currentUsageBytes(
-            repos: repos,
+            plans: plans,
             mirrorsDirectory: mirrorsDirectory,
             fileManager: fileManager,
             sizeOf: sizeOf
@@ -161,10 +165,10 @@ nonisolated enum MirrorCacheService {
         var usage = initialUsage
         var seen = Set<UUID>()
 
-        for repo in repos where !repoIDs.contains(repo.id) {
-            seen.insert(repo.id)
+        for plan in plans where !repoIDs.contains(plan.id) {
+            seen.insert(plan.id)
             let freed = await freeMirrorSpace(
-                for: repo.id,
+                for: plan.id,
                 mirrorsDirectory: mirrorsDirectory,
                 fileManager: fileManager,
                 sizeOf: sizeOf,
@@ -172,8 +176,8 @@ nonisolated enum MirrorCacheService {
                 deleteMirror: deleteMirror
             )
             guard freed > 0 else { continue }
-            steps.append(.garbageCollect(repoID: repo.id))
-            steps.append(.deleteMirror(repoID: repo.id))
+            steps.append(.garbageCollect(repoID: plan.id))
+            steps.append(.deleteMirror(repoID: plan.id))
             usage -= freed
         }
 

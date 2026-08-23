@@ -38,8 +38,7 @@ nonisolated struct ProviderAccount: Hashable, Codable, Identifiable, Sendable {
 nonisolated struct ProviderAccountRecord: Codable, Hashable, Sendable {
     var label: String
     var host: String?
-    /// Absent for an account whose token has never been exercised, and for
-    /// records written before last-used tracking existed.
+    /// Absent for an account whose token has never been exercised.
     var lastUsedAt: Date?
 
     init(label: String, host: String? = nil, lastUsedAt: Date? = nil) {
@@ -49,7 +48,7 @@ nonisolated struct ProviderAccountRecord: Codable, Hashable, Sendable {
     }
 }
 
-nonisolated enum BrowseRemoteAccountSelection {
+nonisolated enum ConnectionAccountSelection {
     /// Returns a normalized label when `raw` is valid and not already used.
     static func validatedNewLabel(_ raw: String, existing: [String]) -> String? {
         guard let label = ProviderAccount.normalizeLabel(raw) else { return nil }

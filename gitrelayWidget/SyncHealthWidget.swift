@@ -34,24 +34,24 @@ struct SyncHealthWidgetProvider: TimelineProvider {
             snapshot: WidgetHealthSnapshot(
                 updatedAt: .now,
                 summary: WidgetHealthSummaryPayload(succeededToday: 18, failedToday: 2, notRunToday: 3),
-                attentionRepos: [
-                    WidgetAttentionRepo(
+                attentionMirrors: [
+                    WidgetAttentionMirror(
                         id: UUID(),
                         name: "core-api",
                         status: .failure,
                         lastSyncedAt: .now,
                         message: "network failed"
                     ),
-                    WidgetAttentionRepo(
+                    WidgetAttentionMirror(
                         id: UUID(),
                         name: "docs",
                         status: .diverged,
                         lastSyncedAt: .now,
                         message: "tree mismatch"
                     ),
-                    WidgetAttentionRepo(
+                    WidgetAttentionMirror(
                         id: UUID(),
-                        name: "legacy",
+                        name: "design-assets",
                         status: .unknown,
                         lastSyncedAt: nil,
                         message: nil
@@ -188,14 +188,14 @@ private struct SyncHealthMediumWidgetView: View {
                 Text(SyncHealthCountsView.accessibilitySummary(for: snapshot.summary))
             )
 
-            if snapshot.attentionRepos.isEmpty {
+            if snapshot.attentionMirrors.isEmpty {
                 Text(String(localized: "All mirrors look healthy"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             } else {
                 VStack(spacing: DesignTokens.Spacing.xs) {
-                    ForEach(snapshot.attentionRepos) { repo in
+                    ForEach(snapshot.attentionMirrors) { repo in
                         Link(destination: WidgetDeepLink.repoURL(id: repo.id)) {
                             SyncHealthAttentionRow(repo: repo)
                         }
@@ -209,7 +209,7 @@ private struct SyncHealthMediumWidgetView: View {
 }
 
 private struct SyncHealthAttentionRow: View {
-    let repo: WidgetAttentionRepo
+    let repo: WidgetAttentionMirror
 
     var body: some View {
         HStack(spacing: DesignTokens.Spacing.statusDotGap) {
@@ -255,7 +255,7 @@ private struct SyncHealthAttentionRow: View {
         snapshot: WidgetHealthSnapshot(
             updatedAt: .now,
             summary: WidgetHealthSummaryPayload(succeededToday: 18, failedToday: 2, notRunToday: 3),
-            attentionRepos: []
+            attentionMirrors: []
         )
     )
 }
@@ -268,8 +268,8 @@ private struct SyncHealthAttentionRow: View {
         snapshot: WidgetHealthSnapshot(
             updatedAt: .now,
             summary: WidgetHealthSummaryPayload(succeededToday: 18, failedToday: 2, notRunToday: 3),
-            attentionRepos: [
-                WidgetAttentionRepo(
+            attentionMirrors: [
+                WidgetAttentionMirror(
                     id: UUID(),
                     name: "core-api",
                     status: .failure,

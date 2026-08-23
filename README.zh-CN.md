@@ -1,56 +1,47 @@
 # GitRelay
 
-在 Mac 上自动将任意 Git 仓库镜像同步到另一个仓库。
+为重要仓库提供持续、清晰、可验证的 Git 镜像保障。
 
-GitRelay 是一款原生 macOS 应用，用于管理多个 Git 托管平台之间的单向镜像同步。填写源仓库和一个或多个目标，选择同步频率，剩下的交给它：`git clone --mirror`、`git fetch --prune`、`git push --mirror`，安静地在后台运行，不打扰你的工作。
-
-支持 GitLab、GitHub、Gitea、Gitee、Bitbucket 或自托管 Git 服务器的任意组合，内置 SSH Agent、SSH 密钥和 HTTPS Token 三种认证方式。界面语言跟随系统（英文 / 简体中文）。
+GitRelay 是原生 macOS 镜像工作区。每个 Mirror 将一个源仓库、一个或多个目标、同步策略、健康状态和运行记录组合成单一产品对象。所有 Git 操作都在本机执行，包括 `git clone --mirror`、`git fetch --prune` 和 `git push --mirror`。
 
 [English](./README.md)
 
----
+## GitRelay 如何工作
 
-## 功能
+- 智能视图直接呈现需要处理、正在运行、已暂停或带指定标签的 Mirror。
+- Mirror 列表始终可见，支持搜索、比较和快速切换。
+- 详情页由状态驱动，优先解释当前问题和下一步动作，再展示历史与诊断信息。
+- “添加 Mirror”在同一流程中提供服务商浏览和手动 Git URL 两种入口。
+- 连接账号和全局默认策略集中在系统原生设置窗口。
+- 一个源可以同步到多个 Git 远端或文件系统归档。
 
-- **多仓库侧边栏** — 在同一个窗口管理任意数量的仓库对；可按名称、URL、标签或同步状态搜索与过滤
-- **1→N 扇出** — 一个源仓库，多个目标（Git 远端和/或文件系统归档）
-- **全量镜像同步** — 所有分支和标签，单向 src → dst
-- **标签 / 分组** — 给仓库打标签，并按标签做批量操作
-- **破坏性推送保护** — mirror push 前先 dry-run，默认弹出确认阻断目标 ref 删除和强制更新
-- **同步健康仪表盘** — 侧边栏/菜单栏汇总今日成功、失败、未运行；详情页含近期 sparkline
-- **定时同步** — 每个仓库单独配置频率：手动、15 分钟、30 分钟、1 小时、1 天
-- **静默时段** — 在本地时间窗口内跳过计划同步（手动同步仍可用）
-- **灵活认证** — SSH Agent、SSH 密钥路径或 HTTPS Token（Token 存储在 macOS 钥匙串）
-- **Token 权限校验** — 连接时检查 provider token scopes，权限不足时提前提示
-- **内置 SSH 密钥生成** — 生成 ed25519 密钥并把公钥复制到剪贴板
-- **多账户** — 每个 provider 可保存个人 / 工作（及自定义）标签，用于远程浏览
-- **状态栏快捷操作** — 汇总状态、搜索，无需打开主窗口即可触发单仓同步
-- **快捷指令 / App Intents** — 在快捷指令中调用 Sync / Sync All
-- **gitrelayctl CLI** — 与 GUI 共用配置的无界面工具（`list` / `sync` / `status` / `logs`）；二进制位于 `GitRelay.app/Contents/MacOS/gitrelayctl`
-- **Webhook 即时同步** — 推送事件触发同步，无需等待下一次计划
-- **Release 资源镜像** — 同步 GitHub/GitLab Releases 及其二进制 assets
-- **文件系统归档** — 将快照落到磁盘（tar.gz 或 git bundle）
-- **浅克隆 / ref 过滤** — 为大仓库提供 depth 与 ref-glob 选项
-- **组织自动订阅** — 监视组织/用户，发现新仓库时提示加入同步
-- **Git LFS 对象** — 已安装 `git-lfs` 时自动随镜像同步
-- **瞬时 git 重试** — 对网络抖动错误做指数退避重试
-- **配置导出 / 导入** — 换机迁移仓库配置，不包含密钥与 Token
-- **桌面 / 锁屏小组件** — 通过 App Group `group.com.yangflow.gitrelay` 一览同步健康度
-- **Touch ID 门禁** — 显示 Token 明文或执行高危操作前需生物识别确认
-- **LRU bare clone 清理** — 缓存配额，避免本地镜像无限增长
-- **en-US + zh-Hans** — 界面语言跟随系统
-- **同步日志** — 每次运行的详细日志，自动遮蔽凭证、自动分类错误
-- **提交差值** — 推送前显示源仓库领先目标仓库的提交数量
+GitRelay 支持 GitHub、GitLab、Gitea、Gitee、Bitbucket 和自托管 Git 服务，可使用 SSH Agent、指定 SSH 密钥或保存在 macOS 钥匙串中的 HTTPS Token。
 
----
+## 核心能力
+
+- 完整镜像分支和标签，并支持 prune
+- 多目标独立结果与部分失败提示
+- 基于 dry-run 确认的严格破坏性推送保护
+- 相互独立的同步与校验计划
+- 每个目标独立的新鲜度和完整性状态
+- 搜索、标签、健康筛选和排序，面向 5 到 200 个 Mirror 的工作区
+- 主窗口、菜单栏、小组件、快捷指令、通知和 CLI 共用同一 Mirror UUID
+- Webhook 触发本机同步
+- Git LFS 与 Release 资源镜像
+- tar.gz、zip 和 Git bundle 文件归档
+- 不包含 Token 明文的配置导入与导出
+- 日志和持久化错误中的凭证遮蔽
+- 英文与简体中文界面
+
+## 本机执行边界
+
+GitRelay 是本地优先工具，不是云端托管服务。计划同步和 Webhook 处理要求 Mac 处于唤醒状态，并且 GitRelay 进程可以运行。睡眠或中断后，应用会如实显示新鲜度和错过的任务，不会暗示具备持续在线的云端 SLA。手动同步、已有 Mirror、本地归档和 CLI 不依赖服务商浏览 API。
 
 ## 系统要求
 
-- macOS 14（Sonoma）或更高版本
+- macOS 26.2 或更高版本
 - Apple Silicon 或 Intel
-- 已安装 `git`（`/usr/bin/git`、`/usr/local/bin/git` 或 `/opt/homebrew/bin/git`）
-
----
+- Git 位于 `/usr/bin/git`、`/usr/local/bin/git` 或 `/opt/homebrew/bin/git`
 
 ## 安装
 
@@ -61,14 +52,15 @@ brew tap yangflow/tap
 brew install --cask gitrelay
 ```
 
-### 下载 DMG
+### 下载
 
-前往 [Releases](https://github.com/yangflow/gitrelay/releases) 下载最新版 `GitRelay-x.y.z.dmg`，打开后将 GitRelay 拖入 Applications 文件夹。
+从 [Releases](https://github.com/yangflow/gitrelay/releases) 下载最新 DMG，然后将 GitRelay 拖入“应用程序”。
 
-> 当前为未签名构建，首次启动请右键 → 打开，或执行：
-> ```bash
-> xattr -cr /Applications/GitRelay.app
-> ```
+当前社区构建使用临时签名。首次启动时请右键选择“打开”，或执行：
+
+```bash
+xattr -cr /Applications/GitRelay.app
+```
 
 ### 从源码构建
 
@@ -78,59 +70,56 @@ cd gitrelay
 open gitrelay.xcodeproj
 ```
 
-选择 `gitrelay` Scheme，按 ⌘R。
+选择 `gitrelay` Scheme，然后按 `Command-R`。
 
----
+## 添加第一个 Mirror
 
-## 使用方法
+1. 点击 Mirror 列表中的添加按钮。
+2. 浏览已连接的服务商，或选择“输入 Git URL”。
+3. 确认源仓库，并添加一个或多个目标。
+4. 选择凭证和策略。新 Mirror 会继承“设置”中的默认值。
+5. 添加 Mirror 并开始首次同步。
 
-1. 点击工具栏的 **+** 或空状态页的按钮，添加一对仓库。
-2. 填写名称、源仓库 URL，以及一个或多个目标 URL（或归档路径）。
-3. 为两侧分别选择认证方式——SSH Agent 模式无需额外配置，只需系统已运行 `ssh-agent`。
-4. 设置同步频率，点击 **添加并开始同步**。
-5. 首次同步时 GitRelay 会将源仓库 bare clone 到本地，之后每次运行只做增量 fetch + push。
+后续编辑继续使用同一界面，源、目标、凭证和策略不会分散到多个页面。
 
-状态栏图标显示汇总状态：任意仓库同步失败时显示警告三角。脚本化可运行 `GitRelay.app/Contents/MacOS/gitrelayctl --help`。
+## CLI
 
----
-
-## 数据位置
-
-| 内容 | 路径 |
-|------|------|
-| 仓库配置 | `~/.local/share/gitrelay/repos.json`（应用与 `gitrelayctl` 共用） |
-| 本地镜像克隆 | `~/.local/share/gitrelay/mirrors/<uuid>/` |
-| HTTPS Token | macOS 钥匙串 |
-| 小组件健康快照 | App Group `group.com.yangflow.gitrelay`（`widget-health-snapshot.json`） |
-| gitrelayctl 二进制 | `GitRelay.app/Contents/MacOS/gitrelayctl` |
-
----
-
-## 重新生成图标
-
-AppIcon PNG 从仓库内提交的源图导出。修改
-`scripts/assets/gitrelay-status-first-01.png` 后重新生成：
+应用包内包含 `GitRelay.app/Contents/MacOS/gitrelayctl`。
 
 ```bash
-# macOS
-swift scripts/generate-icon.swift
-
-# Linux / CI 友好
-python3 scripts/generate-icon.py
+gitrelayctl list
+gitrelayctl sync <mirror-uuid-or-unique-name>
+gitrelayctl status [<mirror-uuid-or-unique-name>]
+gitrelayctl logs <mirror-uuid-or-unique-name> [--tail N]
 ```
 
-AppIcon 为铺满画布的炭灰底 3D 合并箭头（macOS 自行裁切圆角）。菜单栏状态项
-用 `MenuBarBranchMark` 从 `GitRelayCore/Design/GitRelayMark.swift` 绘制同款
-几何的单色模板（无彩色底板，失败时红色着色）。`GitRelayMarkTests` 固定该几何参数。
+CLI 状态 JSON 使用 `mirrors`、`mirrorID` 和 `mirrorName`。显示名称必须唯一，UUID 查询始终稳定。
 
----
+## 数据与隐私
 
-## 参与贡献
+| 数据 | 位置 |
+|---|---|
+| Mirror 计划 | `~/.local/share/gitrelay/mirrors.json` |
+| 精简健康状态 | `~/.local/share/gitrelay/mirror-state.json` |
+| 权威运行记录 | `~/.local/share/gitrelay/logs/` |
+| Bare Mirror 缓存 | `~/.local/share/gitrelay/mirrors/<uuid>/` |
+| 校验临时目录 | `~/.local/share/gitrelay/verify-scratch/` |
+| HTTPS Token 和托管密钥 | macOS 钥匙串 |
+| 小组件健康快照 | App Group `group.com.yangflow.gitrelay` |
+| CLI 二进制 | `GitRelay.app/Contents/MacOS/gitrelayctl` |
 
-欢迎提交 Issue 和 Pull Request，详见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+Mirror 计划只包含仓库 URL 和策略，不保存 Token 明文或私钥内容。HTTPS Token 和托管密钥保存在 macOS 钥匙串中；导出的配置不包含密钥，错误与日志写入磁盘前也会遮蔽凭证。
 
----
+## 开发检查
+
+```bash
+python3 scripts/check_string_catalog.py
+python3 scripts/check_unlocalized_strings.py
+xcodebuild test -project gitrelay.xcodeproj -scheme gitrelay \
+  -destination 'platform=macOS' -testLanguage en -testRegion US \
+  CODE_SIGNING_ALLOWED=NO
+```
 
 ## 许可证
 
-MIT — 详见 [LICENSE](./LICENSE)。
+MIT，详见 [LICENSE](./LICENSE)。

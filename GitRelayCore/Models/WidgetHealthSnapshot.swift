@@ -24,10 +24,10 @@ struct WidgetHealthSummaryPayload: Codable, Equatable, Sendable {
     }
 }
 
-struct WidgetAttentionRepo: Codable, Equatable, Sendable, Identifiable {
+struct WidgetAttentionMirror: Codable, Equatable, Sendable, Identifiable {
     var id: UUID
     var name: String
-    var status: RepoSyncStatusKind
+    var status: MirrorWidgetStatus
     var lastSyncedAt: Date?
     var message: String?
 }
@@ -35,11 +35,11 @@ struct WidgetAttentionRepo: Codable, Equatable, Sendable, Identifiable {
 struct WidgetHealthSnapshot: Codable, Equatable, Sendable {
     var updatedAt: Date
     var summary: WidgetHealthSummaryPayload
-    var attentionRepos: [WidgetAttentionRepo]
+    var attentionMirrors: [WidgetAttentionMirror]
 
     static let empty = WidgetHealthSnapshot(
         updatedAt: .distantPast,
         summary: WidgetHealthSummaryPayload(succeededToday: 0, failedToday: 0, notRunToday: 0),
-        attentionRepos: []
+        attentionMirrors: []
     )
 }

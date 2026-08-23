@@ -19,7 +19,7 @@ enum RepoRowHealthPresentation {
     }
 
     static func caption(
-        for repo: RepoConfig,
+        for repo: MirrorSnapshot,
         status: SyncStatus,
         syncPhase: SyncPhase? = nil,
         now: Date = .now
@@ -46,18 +46,18 @@ enum RepoRowHealthPresentation {
         return Caption(kind: kind, isStale: isStale(for: repo, now: now))
     }
 
-    static func isStale(for repo: RepoConfig, now: Date = .now) -> Bool {
+    static func isStale(for repo: MirrorSnapshot, now: Date = .now) -> Bool {
         guard let lastSuccessfulSyncedAt = repo.lastSuccessfulSyncedAt else {
             return true
         }
         return now.timeIntervalSince(lastSuccessfulSyncedAt) > staleThreshold
     }
 
-    static func showsFailureBadge(for repo: RepoConfig) -> Bool {
+    static func showsFailureBadge(for repo: MirrorSnapshot) -> Bool {
         repo.consecutiveFailureCount >= failureEscalationThreshold
     }
 
-    static func failureBadgeCount(for repo: RepoConfig) -> Int? {
+    static func failureBadgeCount(for repo: MirrorSnapshot) -> Int? {
         let count = repo.consecutiveFailureCount
         guard count >= failureEscalationThreshold else { return nil }
         return count

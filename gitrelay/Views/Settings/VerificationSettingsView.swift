@@ -1,7 +1,10 @@
 import SwiftUI
 
 struct VerificationSettingsView: View {
-    @Environment(AppViewModel.self) private var appVM
+    @Environment(AppPreferencesModel.self) private var preferences
+    @Environment(MirrorSchedulingController.self) private var scheduling
+    @Environment(MirrorOperationsController.self) private var operations
+    @Environment(MirrorLibraryModel.self) private var library
 
     var body: some View {
         Form {
@@ -13,10 +16,10 @@ struct VerificationSettingsView: View {
                 }
 
                 Stepper(value: sampleSizeBinding, in: VerificationPreferences.sampleSizeRange) {
-                    Text(String(format: String.loc("Sample %lld repositories each time"), appVM.verificationPreferences.sampleSize))
+                    Text(String(format: String.loc("Sample %lld repositories each time"), preferences.verification.sampleSize))
                 }
 
-                if let next = appVM.nextVerificationFireDate() {
+                if let next = scheduling.nextVerificationFireDate() {
                     LabeledContent(String.loc("Next Sample")) {
                         Text(next, format: .relative(presentation: .named))
                             .foregroundStyle(.secondary)
@@ -30,9 +33,13 @@ struct VerificationSettingsView: View {
 
             Section {
                 Button(String.loc("Verify a Sample Now")) {
-                    appVM.triggerVerifySampleNow()
+                    let sample = VerificationSampler.sample(
+                        from: library.plans,
+                        count: preferences.verification.sampleSize
+                    )
+                    sample.forEach { operations.triggerVerify(mirrorID: $0.id) }
                 }
-                .disabled(appVM.repos.isEmpty)
+                .disabled(library.mirrors.isEmpty)
             }
         }
         .formStyle(.grouped)
@@ -42,22 +49,22 @@ struct VerificationSettingsView: View {
 
     private var frequencyBinding: Binding<VerificationFrequency> {
         Binding(
-            get: { appVM.verificationPreferences.frequency },
+            get: { preferences.verification.frequency },
             set: { newValue in
-                var prefs = appVM.verificationPreferences
+                var prefs = preferences.verification
                 prefs.frequency = newValue
-                appVM.updateVerificationPreferences(prefs)
+                preferences.updateVerification(prefs)
             }
         )
     }
 
     private var sampleSizeBinding: Binding<Int> {
         Binding(
-            get: { appVM.verificationPreferences.sampleSize },
+            get: { preferences.verification.sampleSize },
             set: { newValue in
-                var prefs = appVM.verificationPreferences
+                var prefs = preferences.verification
                 prefs.sampleSize = VerificationPreferences.clampedSampleSize(newValue)
-                appVM.updateVerificationPreferences(prefs)
+                preferences.updateVerification(prefs)
             }
         )
     }

@@ -51,12 +51,12 @@ enum FailureNotificationCopy {
     }
 
     static func aggregatedBody(items: [(repoName: String, message: String, count: Int)]) -> String {
-        guard !items.isEmpty else { return String(localized: "Some repositories failed to sync.") }
+        guard !items.isEmpty else { return String(localized: "Some mirrors failed to sync.") }
         if items.count == 1, let only = items.first {
             return body(message: "\(only.repoName): \(only.message)", consecutiveFailureCount: only.count)
         }
         let preview = items.prefix(3).map(\.repoName).joined(separator: ", ")
         let suffix = items.count > 3 ? String(localized: " and others") : ""
-        return String(localized: "\(items.count) repositories failed to sync: \(preview)\(suffix)")
+        return String(localized: "\(items.count) mirrors failed to sync: \(preview)\(suffix)")
     }
 }

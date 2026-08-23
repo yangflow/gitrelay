@@ -70,16 +70,15 @@ struct SyncLogRecordView: View {
     }
 
     private var isDivergenceRecord: Bool {
-        // Legacy zh-Hans log lines before string externalization.
-        let legacyDivergence = "\u{5185}\u{5BB9}\u{5206}\u{6B67}"
+        let localizedDivergence = "\u{5185}\u{5BB9}\u{5206}\u{6B67}"
         return record.logLines.contains {
             $0.contains("Content divergence")
-                || $0.contains(legacyDivergence)
+                || $0.contains(localizedDivergence)
                 || $0.contains("Divergence detected")
         }
             || record.targetResults.contains {
                 let error = $0.error ?? ""
-                return error.contains("Content divergence") || error.contains(legacyDivergence)
+                return error.contains("Content divergence") || error.contains(localizedDivergence)
             }
     }
 

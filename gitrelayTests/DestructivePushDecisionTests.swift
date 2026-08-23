@@ -73,7 +73,7 @@ struct CheckBranchRefMappingTests {
     }
 
     @Test func defaultMirrorRefSpecsMapOntoTheNamespace() {
-        let pushRefSpecs = GitSyncArguments.pushRefSpecs(from: RepoConfig.defaultRefSpecs)
+        let pushRefSpecs = GitSyncArguments.pushRefSpecs(from: MirrorSnapshot.defaultRefSpecs)
 
         #expect(CheckBranchRefMapping.refSpecs(from: pushRefSpecs) == [
             "+refs/heads/*:refs/heads/gitrelay-check/*",
@@ -95,7 +95,7 @@ struct CheckBranchRefMappingTests {
 
     @Test func noMappedRefSpecCanTouchARefOutsideTheNamespace() {
         let mapped = CheckBranchRefMapping.refSpecs(from: GitSyncArguments.pushRefSpecs(
-            from: RepoConfig.defaultRefSpecs + ["+refs/heads/main:refs/heads/main"]
+            from: MirrorSnapshot.defaultRefSpecs + ["+refs/heads/main:refs/heads/main"]
         ))
 
         #expect(!mapped.isEmpty)

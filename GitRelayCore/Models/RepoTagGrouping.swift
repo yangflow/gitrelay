@@ -6,7 +6,7 @@ nonisolated enum RepoTagGrouping {
         let title: String
         /// Tag name for batch operations; `nil` for the untagged bucket.
         let tag: String?
-        let repos: [RepoConfig]
+        let repos: [MirrorSnapshot]
 
         var id: String { tag ?? "__untagged__" }
     }
@@ -28,7 +28,7 @@ nonisolated enum RepoTagGrouping {
         return result
     }
 
-    static func allUniqueTags(from repos: [RepoConfig]) -> [String] {
+    static func allUniqueTags(from repos: [MirrorSnapshot]) -> [String] {
         var seen = Set<String>()
         for repo in repos {
             for tag in repo.tags {
@@ -40,7 +40,7 @@ nonisolated enum RepoTagGrouping {
         return seen.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }
 
-    static func sections(from repos: [RepoConfig]) -> [Section] {
+    static func sections(from repos: [MirrorSnapshot]) -> [Section] {
         let tags = allUniqueTags(from: repos)
         var sections = tags.map { tag in
             Section(
@@ -57,26 +57,26 @@ nonisolated enum RepoTagGrouping {
         return sections
     }
 
-    static func repos(withTag tag: String, in repos: [RepoConfig]) -> [RepoConfig] {
+    static func repos(withTag tag: String, in repos: [MirrorSnapshot]) -> [MirrorSnapshot] {
         repos
             .filter { $0.tags.contains(tag) }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
-    static func untaggedRepos(in repos: [RepoConfig]) -> [RepoConfig] {
+    static func untaggedRepos(in repos: [MirrorSnapshot]) -> [MirrorSnapshot] {
         repos
             .filter { normalizedTags($0.tags).isEmpty }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
-    static func repos(matching tag: String?, in repos: [RepoConfig]) -> [RepoConfig] {
+    static func repos(matching tag: String?, in repos: [MirrorSnapshot]) -> [MirrorSnapshot] {
         if let tag {
             return Self.repos(withTag: tag, in: repos)
         }
         return untaggedRepos(in: repos)
     }
 
-    static func repoIDs(matching tag: String?, in repos: [RepoConfig]) -> [UUID] {
+    static func repoIDs(matching tag: String?, in repos: [MirrorSnapshot]) -> [UUID] {
         Self.repos(matching: tag, in: repos).map(\.id)
     }
 

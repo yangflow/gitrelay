@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ReleaseMirrorStatusView: View {
-    let repo: RepoConfig
+    let repo: MirrorSnapshot
     let statuses: [ReleaseTargetMirrorStatus]
     let isSyncing: Bool
 
@@ -10,7 +10,7 @@ struct ReleaseMirrorStatusView: View {
             if !repo.mirrorReleases {
                 quietEmpty(
                     symbol: "shippingbox",
-                    message: String.loc("Release mirroring is off. Enable it when editing this repository.")
+                    message: String.loc("Release mirroring is off. Enable it when editing this mirror.")
                 )
             } else if statuses.isEmpty {
                 quietEmpty(

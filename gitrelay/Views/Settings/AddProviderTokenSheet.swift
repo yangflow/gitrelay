@@ -53,7 +53,8 @@ struct AddProviderTokenSheet: View {
                     if !locksProviderSelection {
                         Picker(String.loc("Provider"), selection: $provider) {
                             ForEach(GitProvider.allCases) { candidate in
-                                Text(candidate.shortName).tag(candidate)
+                                ProviderBrandLabel(provider: candidate, usesShortName: true)
+                                    .tag(candidate)
                             }
                         }
                     }
@@ -71,11 +72,9 @@ struct AddProviderTokenSheet: View {
                 }
 
                 Section {
-                    GatedSecureTokenField(placeholder: "", text: $token)
-
-                    Text(provider.tokenHelpText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    LabeledContent(String.loc("Token")) {
+                        GatedSecureTokenField(placeholder: "Paste Token", text: $token)
+                    }
 
                     if let errorMessage {
                         Text(errorMessage)
@@ -85,7 +84,7 @@ struct AddProviderTokenSheet: View {
                 } header: {
                     Text(String.loc("Personal Access Token"))
                 } footer: {
-                    Text(String.loc("The token is stored in the Keychain. It is never written to a log or to exported configuration."))
+                    Text(provider.tokenHelpText)
                 }
             }
             .formStyle(.grouped)

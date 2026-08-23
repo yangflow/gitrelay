@@ -16,15 +16,18 @@ final class SyncScheduler {
     /// Injected clock for tests. Production uses `Date()`.
     var now: () -> Date = { Date() }
 
-    func schedule(repo: RepoConfig) {
+    func schedule(plan: MirrorPlan, needsCredentials: Bool = false) {
         // Manual-only pairs, a paused pair, and imported repos still missing
         // Token/SSH all stay unscheduled. Manual 同步 goes around this.
-        guard RepoScheduleState.armsTimer(for: repo), let interval = repo.frequency.interval else {
-            deschedule(repoID: repo.id)
+        guard plan.policy.frequency != .manual,
+              !plan.isSchedulePaused,
+              !needsCredentials,
+              let interval = plan.policy.frequency.interval else {
+            deschedule(repoID: plan.id)
             return
         }
-        deschedule(repoID: repo.id)
-        let id = repo.id
+        deschedule(repoID: plan.id)
+        let id = plan.id
         let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
@@ -44,9 +47,9 @@ final class SyncScheduler {
         armed.removeValue(forKey: repoID)
     }
 
-    func reschedule(repo: RepoConfig) {
-        deschedule(repoID: repo.id)
-        schedule(repo: repo)
+    func reschedule(plan: MirrorPlan, needsCredentials: Bool = false) {
+        deschedule(repoID: plan.id)
+        schedule(plan: plan, needsCredentials: needsCredentials)
     }
 
     func nextFireDate(for repoID: UUID) -> Date? {

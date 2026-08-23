@@ -31,11 +31,11 @@ enum MainWindowShortcutBinding: String, CaseIterable, Sendable {
     var menuTitle: String {
         switch self {
         case .addRepository:
-            String.loc("Add Repository")
+            String.loc("Add Mirror")
         case .focusSearch:
-            String.loc("Search Repositories")
+            String.loc("Search Mirrors")
         case .syncSelected:
-            String.loc("Sync Selected Repository")
+            String.loc("Sync Selected Mirror")
         }
     }
 }

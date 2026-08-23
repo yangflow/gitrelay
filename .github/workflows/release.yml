@@ -1,10 +1,10 @@
-# Triggered when a vX.Y.Z tag is pushed.
-# Builds an unsigned DMG and attaches it to a GitHub Release.
+# Triggered when a vX.Y.Z tag is pushed without a corresponding release.
+# Builds an ad-hoc-signed DMG and publishes a fallback GitHub Release.
 #
-# For a notarized release, run scripts/release.sh locally with the
+# For a Sparkle-signed or notarized release, run scripts/release.sh locally with the
 # DEVELOPER_ID_APPLICATION / APPLE_ID / APPLE_TEAM_ID / APPLE_APP_PASSWORD
-# env vars set, then upload the resulting DMG with:
-#   gh release create vX.Y.Z dist/GitRelay-X.Y.Z.dmg
+# env vars set, sign the update, and publish the release before the tag event.
+# This workflow then detects the existing release and exits without replacing it.
 name: Release
 
 on:
@@ -27,20 +27,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Detect an already published release
+        id: published
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "GitRelay $GITHUB_REF_NAME was published before this tag event; skipping the fallback build."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Select latest Xcode
+        if: steps.published.outputs.exists != 'true'
         run: sudo xcode-select -s /Applications/Xcode.app
 
       - name: Show versions
+        if: steps.published.outputs.exists != 'true'
         run: |
           sw_vers
           xcodebuild -version
           swift --version
 
       - name: Extract version from tag
+        if: steps.published.outputs.exists != 'true'
         id: version
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - name: Build release DMG
+        if: steps.published.outputs.exists != 'true'
         env:
           VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
@@ -48,12 +64,13 @@ jobs:
           ./scripts/release.sh "$VERSION"
 
       - name: Create GitHub Release
+        if: steps.published.outputs.exists != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
             --title "GitRelay $VERSION" \
-            --generate-notes \
+            --notes-file CHANGELOG.md \
             "dist/GitRelay-${VERSION}.dmg#GitRelay ${VERSION} (DMG)" \
             "dist/GitRelay-${VERSION}.dmg.sha256#SHA256"

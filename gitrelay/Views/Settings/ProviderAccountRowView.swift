@@ -13,9 +13,7 @@ struct ProviderAccountRowView: View {
 
     var body: some View {
         HStack(spacing: DesignTokens.Spacing.md) {
-            Image(systemName: summary.provider.symbolName)
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
+            ProviderBrandIcon(provider: summary.provider, size: 18)
 
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                 Text(summary.label)

@@ -7,30 +7,41 @@ import SwiftUI
 enum DesignTokens {
     enum Layout {
         /// Narrow sidebar range (Ice-like); keeps filters + repo rows usable.
-        static let sidebarMinWidth: CGFloat = 200
-        static let sidebarIdealWidth: CGFloat = 240
-        static let sidebarMaxWidth: CGFloat = 300
+        static let sidebarMinWidth: CGFloat = 180
+        static let sidebarIdealWidth: CGFloat = 200
+        static let sidebarMaxWidth: CGFloat = 240
 
-        static let windowMinWidth: CGFloat = 720
-        static let windowMinHeight: CGFloat = 500
+        /// Compact workspace still preserves the mirror list and a usable detail pane.
+        static let windowMinWidth: CGFloat = 860
+        static let windowMinHeight: CGFloat = 600
+        static let windowDefaultWidth: CGFloat = 1180
+        static let windowDefaultHeight: CGFloat = 760
 
         static let popoverWidth: CGFloat = 280
         static let popoverListMaxHeight: CGFloat = 280
-        /// Overall Settings window (narrow sidebar + detail form).
-        static let settingsMinWidth: CGFloat = 560
+        /// KeyChord-style Settings window: compact native sidebar + detail form.
+        static let settingsMinWidth: CGFloat = 640
         static let settingsMinHeight: CGFloat = 420
-        static let settingsSidebarMinWidth: CGFloat = 140
-        static let settingsSidebarIdealWidth: CGFloat = 160
-        static let settingsSidebarMaxWidth: CGFloat = 200
-        static let settingsDetailMinWidth: CGFloat = 380
+        static let settingsDefaultWidth: CGFloat = 720
+        static let settingsDefaultHeight: CGFloat = 480
+        /// Settings is a category navigator, not a second workspace. Keep its
+        /// native sidebar narrower than the main window's status sidebar.
+        static let settingsSidebarMinWidth: CGFloat = 160
+        static let settingsSidebarIdealWidth: CGFloat = 180
+        static let settingsSidebarMaxWidth: CGFloat = 220
+        static let settingsDetailMinWidth: CGFloat = 400
+        static let settingsDetailIdealWidth: CGFloat = 520
         static let verificationSettingsMinHeight: CGFloat = 240
         static let orgSubscriptionSettingsMinHeight: CGFloat = 320
         static let aboutWidth: CGFloat = 280
         static let aboutIconSize: CGFloat = 80
 
-        /// Add / Edit repository sheet — resizable; floor matches the locked two-column mockup.
+        /// Unified add/edit flow remains resizable with enough room for the mirror route.
         static let addEditRepoSheetMinWidth: CGFloat = 640
         static let addEditRepoSheetMinHeight: CGFloat = 420
+        /// The standalone Add Mirror window fits the collapsed Git URL form without scrolling.
+        static let addEditRepoSheetDefaultWidth: CGFloat = 720
+        static let addEditRepoSheetDefaultHeight: CGFloat = 760
 
         /// 添加令牌 sheet: one narrow column of provider, name, host, token.
         static let addProviderTokenSheetWidth: CGFloat = 440
@@ -38,6 +49,8 @@ enum DesignTokens {
         /// Browse-remote wizard rail: keeps 1–2–3 centered instead of stretching
         /// across a wide, resized detail pane.
         static let browseStepBarMaxWidth: CGFloat = 320
+        /// Connect/configure forms stay compact while the repository picker may expand.
+        static let browseFormMaxWidth: CGFloat = 880
         /// Repository picker keeps a workable height on a short window.
         static let browseRepoListMinHeight: CGFloat = 200
 
@@ -48,6 +61,8 @@ enum DesignTokens {
         static let pairTableStatusColumnIdeal: CGFloat = 96
         static let pairTableLastColumnMin: CGFloat = 80
         static let pairTableLastColumnIdeal: CGFloat = 104
+        /// Keeps repository metadata and status sections readable on wide windows.
+        static let repoDetailContentMaxWidth: CGFloat = 960
         /// Determinate-free progress bar in the queue pane.
         static let queueProgressWidth: CGFloat = 170
     }
@@ -100,6 +115,9 @@ enum DesignTokens {
     enum Size {
         static let statusDot: CGFloat = 8
         static let searchFieldMinHeight: CGFloat = 28
+        static let sidebarIconTile: CGFloat = 24
+        static let sidebarIconPointSize: CGFloat = 12
+        static let emptyStateIconTile: CGFloat = 48
         static let menuBarIconPointSize: CGFloat = 18
         /// Multiplier on ``GitRelayMark`` stroke and ring thickness for the menu-bar mark.
         static let menuBarStrokeScale: CGFloat = 1.28
@@ -159,7 +177,7 @@ enum DesignTokens {
             }
         }
 
-        static func forWidgetStatus(_ status: RepoSyncStatusKind) -> Color {
+        static func forWidgetStatus(_ status: MirrorWidgetStatus) -> Color {
             switch status {
             case .success:
                 return success
@@ -189,7 +207,7 @@ enum DesignTokens {
             }
         }
 
-        static func label(forWidgetStatus status: RepoSyncStatusKind) -> String {
+        static func label(forWidgetStatus status: MirrorWidgetStatus) -> String {
             switch status {
             case .success: return "success"
             case .failure: return "failure"
@@ -302,7 +320,7 @@ struct GitRelayVisualEffectView: NSViewRepresentable {
 
 /// Plain status color dot for widget attention rows (same palette as app ``StatusDotView``).
 struct WidgetStatusDotView: View {
-    let status: RepoSyncStatusKind
+    let status: MirrorWidgetStatus
 
     var body: some View {
         Circle()

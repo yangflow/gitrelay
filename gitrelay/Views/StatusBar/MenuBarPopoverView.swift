@@ -2,16 +2,19 @@ import SwiftUI
 import AppKit
 
 struct MenuBarPopoverView: View {
-    @Environment(AppViewModel.self) private var appVM
+    @Environment(MirrorLibraryModel.self) private var library
+    @Environment(MirrorOperationsController.self) private var operations
+    @Environment(MirrorSchedulingController.self) private var scheduling
+    @Environment(WorkspaceModel.self) private var workspace
     @Environment(\.openWindow) private var openWindow
 
     @State private var searchText = ""
 
-    private var filteredRepos: [RepoConfig] {
+    private var filteredRepos: [MirrorSnapshot] {
         MenuBarPopoverFilter.filteredRepos(
-            appVM.repos,
+            library.mirrors,
             searchText: searchText,
-            statuses: appVM.statuses
+            statuses: operations.statuses
         )
     }
 
@@ -42,14 +45,14 @@ struct MenuBarPopoverView: View {
 
                 Spacer(minLength: DesignTokens.Spacing.xs)
 
-                if !appVM.repos.isEmpty {
-                    Button(String.loc("Sync All")) { appVM.triggerSyncAll() }
+                if !library.mirrors.isEmpty {
+                    Button(String.loc("Sync All")) { operations.triggerSyncAll() }
                         .buttonStyle(QuietPressButtonStyle())
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                Button { openMainWindow(showing: .settings) } label: {
+                Button { showSettings() } label: {
                     Image(systemName: "gearshape")
                 }
                 .buttonStyle(.borderless)
@@ -59,7 +62,7 @@ struct MenuBarPopoverView: View {
 
             searchField
 
-            if let line = appVM.menuBarStatusLine {
+            if let line = scheduling.menuBarStatusLine {
                 MenuBarStatusLineView(line: line)
             }
         }
@@ -72,7 +75,7 @@ struct MenuBarPopoverView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
                 .font(.caption)
-            TextField("Search Repositories", text: $searchText)
+            TextField("Search Mirrors", text: $searchText)
                 .textFieldStyle(.plain)
                 .font(.caption)
         }
@@ -90,17 +93,22 @@ struct MenuBarPopoverView: View {
 
     @ViewBuilder
     private var content: some View {
-        if appVM.repos.isEmpty {
-            quietLine(String.loc("No Repositories"))
+        if library.mirrors.isEmpty {
+            quietLine(String.loc("No Mirrors"))
         } else {
-            SyncHealthSummaryView(summary: appVM.healthSummary)
+            SyncHealthSummaryView(
+                summary: SyncHealthSummary.make(
+                    repos: library.mirrors,
+                    statuses: operations.statuses
+                )
+            )
                 .padding(.horizontal, DesignTokens.Spacing.popoverChromeHorizontal)
                 .padding(.vertical, DesignTokens.Spacing.sm)
 
             Divider()
 
             if filteredRepos.isEmpty {
-                quietLine(String.loc("No Matching Repositories"))
+                quietLine(String.loc("No Matching Mirrors"))
             } else {
                 repoList
             }
@@ -113,17 +121,17 @@ struct MenuBarPopoverView: View {
                 ForEach(filteredRepos) { repo in
                     MenuBarRepoRowView(
                         repo: repo,
-                        status: appVM.statuses[repo.id] ?? .unknown,
-                        syncPhase: appVM.syncPhases[repo.id],
-                        recentRecords: appVM.records[repo.id] ?? [],
+                        status: operations.statuses[repo.id] ?? .unknown,
+                        syncPhase: operations.syncPhases[repo.id],
+                        recentRecords: operations.records[repo.id] ?? [],
                         onOpen: { openMainWindow(focusing: repo.id) },
-                        onSync: { appVM.triggerSync(repoID: repo.id) },
+                        onSync: { operations.triggerSync(mirrorID: repo.id) },
                         onReenterCredentials: {
-                            appVM.requestReenterCredentials(repoID: repo.id)
+                            workspace.requestEditCredentials(mirrorID: repo.id)
                             openMainWindow(focusing: repo.id)
                         },
                         onOpenLog: {
-                            appVM.requestOpenSyncLog(repoID: repo.id)
+                            workspace.requestOpenSyncLog(mirrorID: repo.id)
                             openMainWindow(focusing: repo.id)
                         }
                     )
@@ -176,22 +184,35 @@ struct MenuBarPopoverView: View {
             .padding(.vertical, DesignTokens.Spacing.md)
     }
 
-    private func openMainWindow(
-        focusing repoID: UUID? = nil,
-        showing item: MainSidebarItem? = nil
-    ) {
-        appVM.pendingMainWindowRepoID = repoID
-        appVM.pendingMainWindowSidebarItem = item
+    private func openMainWindow(focusing repoID: UUID? = nil) {
+        workspace.requestMirrorSelection(repoID)
         let popover = NSApp.keyWindow
         NSApp.setActivationPolicy(.regular)
-        openWindow(id: "main")
+        if let mainWindow = NSApp.windows.first(where: { $0.title == "GitRelay" }) {
+            mainWindow.deminiaturize(nil)
+            mainWindow.makeKeyAndOrderFront(nil)
+        } else {
+            openWindow(id: "main")
+        }
         NSApp.activate(ignoringOtherApps: true)
+        if popover !== NSApp.keyWindow {
+            popover?.close()
+        }
+    }
+
+    private func showSettings() {
+        let popover = NSApp.keyWindow
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        openWindow(id: "settings")
         popover?.close()
     }
 
     private func openAbout() {
         let popover = NSApp.keyWindow
-        openWindow(id: "about")
         popover?.close()
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        openWindow(id: "about")
     }
 }

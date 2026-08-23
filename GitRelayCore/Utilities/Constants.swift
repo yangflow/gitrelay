@@ -14,12 +14,24 @@ nonisolated enum Constants {
             .appendingPathComponent(".local/share/gitrelay")
     }
 
-    static var mirrorsDirectory: URL {
+    static var mirrorPlansFile: URL {
+        baseDirectory.appendingPathComponent("mirrors.json")
+    }
+
+    static var mirrorStateFile: URL {
+        baseDirectory.appendingPathComponent("mirror-state.json")
+    }
+
+    static var mirrorLogsDirectory: URL {
+        baseDirectory.appendingPathComponent("logs")
+    }
+
+    static var mirrorCacheDirectory: URL {
         baseDirectory.appendingPathComponent("mirrors")
     }
 
-    static var reposFile: URL {
-        baseDirectory.appendingPathComponent("repos.json")
+    static var verificationScratchDirectory: URL {
+        baseDirectory.appendingPathComponent("verify-scratch")
     }
 
     #if DEBUG

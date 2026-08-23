@@ -5,7 +5,7 @@ struct GitRelayShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: SyncAllIntent(),
             phrases: [
-                "Sync all repos in \(.applicationName)",
+                "Sync all mirrors in \(.applicationName)",
                 "Sync everything with \(.applicationName)",
                 "Run sync all in \(.applicationName)",
             ],
@@ -16,22 +16,22 @@ struct GitRelayShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: SyncRepoIntent(),
             phrases: [
-                "Sync \(\.$repo) with \(.applicationName)",
-                "Sync repo \(\.$repo) in \(.applicationName)",
-                "Run sync for \(\.$repo) in \(.applicationName)",
+                "Sync \(\.$mirror) with \(.applicationName)",
+                "Sync mirror \(\.$mirror) in \(.applicationName)",
+                "Run sync for \(\.$mirror) in \(.applicationName)",
             ],
-            shortTitle: "Sync Repository",
+            shortTitle: "Sync Mirror",
             systemImageName: "arrow.triangle.2.circlepath"
         )
 
         AppShortcut(
             intent: GetSyncStatusIntent(),
             phrases: [
-                "Get sync status for \(\.$repo) in \(.applicationName)",
-                "Check \(\.$repo) sync status in \(.applicationName)",
-                "What is the sync status of \(\.$repo) in \(.applicationName)",
+                "Get sync status for \(\.$mirror) in \(.applicationName)",
+                "Check \(\.$mirror) sync status in \(.applicationName)",
+                "What is the sync status of \(\.$mirror) in \(.applicationName)",
             ],
-            shortTitle: "Get Sync Status",
+            shortTitle: "Get Mirror Status",
             systemImageName: "checkmark.circle"
         )
     }

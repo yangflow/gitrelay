@@ -18,8 +18,6 @@ struct ProviderAccountsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PaneHeaderView(title: provider.displayName)
-
             Form {
                 accountsSection()
             }

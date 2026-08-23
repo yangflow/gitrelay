@@ -5,11 +5,6 @@ struct RepoFailureRowView: View {
     let lastSyncedAt: Date?
     let lastSuccessfulSyncedAt: Date?
     let consecutiveFailureCount: Int
-    let nextStep: RepoFailureNextStep
-    let onRetry: () -> Void
-    let onReenterCredentials: () -> Void
-    let onOpenLog: () -> Void
-    var onCopyFailure: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .top, spacing: DesignTokens.Spacing.sm) {
@@ -42,18 +37,7 @@ struct RepoFailureRowView: View {
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
-                RepoFailureNextStepActionsView(
-                    nextStep: nextStep,
-                    compact: false,
-                    onReenterCredentials: onReenterCredentials,
-                    onOpenLog: onOpenLog,
-                    onCopyFailure: onCopyFailure
-                )
             }
-            Spacer(minLength: DesignTokens.Spacing.md)
-            Button(String.loc("Retry"), action: onRetry)
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
         }
     }
 }

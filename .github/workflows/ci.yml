@@ -41,6 +41,8 @@ jobs:
             -project gitrelay.xcodeproj \
             -scheme gitrelay \
             -destination 'platform=macOS' \
+            -testLanguage en \
+            -testRegion US \
             -only-testing:gitrelayTests \
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO

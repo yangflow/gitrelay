@@ -4,11 +4,6 @@ import Observation
 /// Persists the language choice, mirrors it into `AppleLanguages` for the next
 /// launch, points ``AppLocalization`` at the chosen catalog for strings built in
 /// code, and exposes a SwiftUI `Locale` so open windows relabel themselves.
-///
-/// What a change cannot reach is the chrome AppKit built from the launch
-/// catalog — window titles and the app menu. ``showsLaunchCatalogNote`` says
-/// when that is the case, and Settings mentions it in one quiet line instead of
-/// demanding a relaunch.
 @MainActor
 @Observable
 final class AppLanguageStore {
@@ -25,22 +20,12 @@ final class AppLanguageStore {
         }
     }
 
-    /// Language this process started in. Window titles and the app menu are
-    /// bound to it for the life of the process.
-    let launchPreference: AppLanguagePreference
-
-    /// True once the choice differs from the one the app launched with, which is
-    /// exactly when some chrome is still reading from the launch catalog.
-    /// Switching back makes it false again — nothing is stale then.
-    var showsLaunchCatalogNote: Bool { preference != launchPreference }
-
     var locale: Locale { preference.locale }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         let stored = Self.storedPreference(defaults: defaults)
         self.preference = stored
-        self.launchPreference = stored
     }
 
     /// Call once at process start so strings built in code match the saved

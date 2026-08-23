@@ -1,6 +1,6 @@
 import Foundation
 
-enum ArchiveFilenameTemplate {
+nonisolated enum ArchiveFilenameTemplate {
     static let defaultDateFormat = "yyyy-MM-dd"
 
     /// Replaces `{name}` and `{date}` placeholders in a filename template.
@@ -30,5 +30,20 @@ enum ArchiveFilenameTemplate {
         let sanitized = trimmed.unicodeScalars.map { invalid.contains($0) ? "-" : Character($0) }
         let result = String(sanitized).trimmingCharacters(in: CharacterSet(charactersIn: ". "))
         return result.isEmpty ? "repo" : result
+    }
+
+    /// Templates produce one filename inside the selected archive directory.
+    /// Path separators and traversal components are never valid template data.
+    static func isSafe(_ template: String) -> Bool {
+        let trimmed = template.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              !trimmed.contains("/"),
+              !trimmed.contains("\\"),
+              trimmed != ".",
+              trimmed != "..",
+              !trimmed.hasPrefix(".."),
+              !trimmed.hasSuffix("..")
+        else { return false }
+        return true
     }
 }

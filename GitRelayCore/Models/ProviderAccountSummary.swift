@@ -34,9 +34,8 @@ nonisolated struct ProviderAccountSummary: Identifiable, Equatable, Sendable {
         return Self.defaultHost(for: provider)
     }
 
-    /// Every provider gets a `default` record from migration whether or not
-    /// anyone ever put a credential in it. An untouched one is a placeholder,
-    /// not an account worth listing.
+    /// Every provider begins with a `default` record. An untouched record is a
+    /// placeholder, not an account worth listing.
     var isUntouchedPlaceholder: Bool {
         !hasToken
             && label == ProviderAccount.defaultLabel

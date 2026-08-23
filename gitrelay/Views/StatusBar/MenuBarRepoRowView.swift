@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MenuBarRepoRowView: View {
-    let repo: RepoConfig
+    let repo: MirrorSnapshot
     let status: SyncStatus
     var syncPhase: SyncPhase? = nil
     var recentRecords: [SyncRecord] = []

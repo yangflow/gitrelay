@@ -47,7 +47,7 @@ struct RepoFailureNextStep: Equatable, Sendable {
     }
 
     static func make(
-        repo: RepoConfig,
+        repo: MirrorSnapshot,
         status: SyncStatus,
         recentRecords: [SyncRecord] = []
     ) -> RepoFailureNextStep {
@@ -152,6 +152,6 @@ struct RepoFailureNextStep: Equatable, Sendable {
     // MARK: - Helpers
 
     private static func isMissingCredentialsMessage(_ message: String) -> Bool {
-        message == RepoCredentialGate.missingCredentialsMessage
+        message == MirrorCredentialGate.missingCredentialsMessage
     }
 }

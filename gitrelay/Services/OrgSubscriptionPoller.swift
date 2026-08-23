@@ -1,18 +1,5 @@
 import Foundation
 
-/// Prefill payload for opening the browse-remote pane after org discovery.
-struct BrowseRemotePrefill: Equatable, Identifiable, Sendable {
-    var id: UUID { subscriptionID }
-    let subscriptionID: UUID
-    let provider: GitProvider
-    let accountLabel: String
-    let organizationName: String
-    let gitlabHost: String?
-    let repos: [RemoteRepo]
-    let preselectedRepoIDs: Set<String>
-    let template: OrgSubscriptionTemplate
-}
-
 /// Result of checking one org subscription against the remote listing.
 struct OrgSubscriptionCheckResult: Equatable, Sendable {
     let subscription: OrgSubscription
@@ -59,10 +46,10 @@ final class OrgSubscriptionPoller {
         self.fetcher = fetcher ?? .live
     }
 
-    func checkAllSubscriptions(localRepos: [RepoConfig]) async -> [OrgSubscriptionCheckResult] {
+    func checkAllSubscriptions(localMirrors: [MirrorPlan]) async -> [OrgSubscriptionCheckResult] {
         var results: [OrgSubscriptionCheckResult] = []
         for subscription in store.subscriptions {
-            if let result = await checkSubscription(subscription, localRepos: localRepos) {
+            if let result = await checkSubscription(subscription, localMirrors: localMirrors) {
                 results.append(result)
             }
         }
@@ -71,7 +58,7 @@ final class OrgSubscriptionPoller {
 
     func checkSubscription(
         _ subscription: OrgSubscription,
-        localRepos: [RepoConfig]
+        localMirrors: [MirrorPlan]
     ) async -> OrgSubscriptionCheckResult? {
         guard subscription.provider == .github || subscription.provider == .gitlab else { return nil }
         guard let token = ProviderTokenStore.load(
@@ -93,7 +80,7 @@ final class OrgSubscriptionPoller {
                 gitlabBaseURL: gitlabBaseURL,
                 scope: subscription.scope
             )
-            let newRepos = OrgRepoDiff.newRepos(remoteRepos: remoteRepos, localRepos: localRepos)
+            let newRepos = OrgRepoDiff.newRepos(remoteRepos: remoteRepos, localMirrors: localMirrors)
             store.markChecked(id: subscription.id)
             return OrgSubscriptionCheckResult(
                 subscription: subscription,

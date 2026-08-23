@@ -98,7 +98,7 @@ final class AddRepoPreflightViewModel {
     /// the network probes wait for the typing to settle.
     func update(
         _ newInput: AddPreflightInput,
-        existingRepos: [RepoConfig],
+        existingRepos: [MirrorSnapshot],
         excluding excludedID: UUID? = nil
     ) {
         guard !isFinished else { return }

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Secure token field with an optional reveal toggle gated by biometric authentication.
 struct GatedSecureTokenField: View {
-    @Environment(AppViewModel.self) private var appVM
+    @Environment(SecurityController.self) private var security
 
     let placeholder: LocalizedStringKey
     @Binding var text: String
@@ -40,7 +40,7 @@ struct GatedSecureTokenField: View {
         }
         isAuthenticating = true
         defer { isAuthenticating = false }
-        guard await appVM.authorizeSensitiveAction(.revealToken) else { return }
+        guard await security.authorize(.revealToken) else { return }
         isRevealed = true
     }
 }

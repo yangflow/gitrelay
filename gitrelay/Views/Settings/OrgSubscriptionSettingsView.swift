@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct OrgSubscriptionSettingsView: View {
-    @Environment(AppViewModel.self) private var appVM
+    @Environment(OrgDiscoveryController.self) private var orgDiscovery
     @State private var editingSubscription: OrgSubscription?
     @State private var isAddingSubscription = false
 
@@ -19,7 +19,7 @@ struct OrgSubscriptionSettingsView: View {
                     isOn: notificationsEnabledBinding
                 )
 
-                if let next = appVM.nextOrgSubscriptionFireDate() {
+                if let next = orgDiscovery.nextFireDate() {
                     LabeledContent(String.loc("Next Poll")) {
                         Text(next, format: .relative(presentation: .named))
                             .foregroundStyle(.secondary)
@@ -32,11 +32,11 @@ struct OrgSubscriptionSettingsView: View {
             }
 
             Section {
-                if appVM.orgSubscriptions.isEmpty {
+                if orgDiscovery.subscriptions.isEmpty {
                     Text(String.loc("No org or group subscriptions yet."))
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(appVM.orgSubscriptions) { subscription in
+                    ForEach(orgDiscovery.subscriptions) { subscription in
                         OrgSubscriptionRow(subscription: subscription)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -47,7 +47,7 @@ struct OrgSubscriptionSettingsView: View {
                                     editingSubscription = subscription
                                 }
                                 Button(String.loc("Remove"), role: .destructive) {
-                                    appVM.removeOrgSubscription(id: subscription.id)
+                                    orgDiscovery.remove(id: subscription.id)
                                 }
                             }
                     }
@@ -62,9 +62,9 @@ struct OrgSubscriptionSettingsView: View {
 
             Section {
                 Button(String.loc("Poll Subscriptions Now")) {
-                    Task { await appVM.triggerOrgSubscriptionPollNow() }
+                    Task { await orgDiscovery.pollNow() }
                 }
-                .disabled(appVM.orgSubscriptions.isEmpty)
+                .disabled(orgDiscovery.subscriptions.isEmpty)
             }
         }
         .formStyle(.grouped)
@@ -80,22 +80,22 @@ struct OrgSubscriptionSettingsView: View {
 
     private var pollFrequencyBinding: Binding<OrgSubscriptionPollFrequency> {
         Binding(
-            get: { appVM.orgSubscriptionPreferences.pollFrequency },
+            get: { orgDiscovery.subscriptionPreferences.pollFrequency },
             set: { newValue in
-                var prefs = appVM.orgSubscriptionPreferences
+                var prefs = orgDiscovery.subscriptionPreferences
                 prefs.pollFrequency = newValue
-                appVM.updateOrgSubscriptionPreferences(prefs)
+                orgDiscovery.updatePreferences(prefs)
             }
         )
     }
 
     private var notificationsEnabledBinding: Binding<Bool> {
         Binding(
-            get: { appVM.orgSubscriptionPreferences.notificationsEnabled },
+            get: { orgDiscovery.subscriptionPreferences.notificationsEnabled },
             set: { newValue in
-                var prefs = appVM.orgSubscriptionPreferences
+                var prefs = orgDiscovery.subscriptionPreferences
                 prefs.notificationsEnabled = newValue
-                appVM.updateOrgSubscriptionPreferences(prefs)
+                orgDiscovery.updatePreferences(prefs)
             }
         )
     }
@@ -109,7 +109,10 @@ private struct OrgSubscriptionRow: View {
             Text(subscription.organizationName)
                 .font(.headline)
             HStack(spacing: DesignTokens.Spacing.sm) {
-                Text(subscription.provider.displayName)
+                ProviderBrandLabel(
+                    provider: subscription.provider,
+                    iconSize: 13
+                )
                 Text("·")
                 Text(subscription.accountLabel)
                 if subscription.autoAddEnabled {
@@ -134,7 +137,7 @@ private struct OrgSubscriptionRow: View {
 }
 
 struct OrgSubscriptionEditorSheet: View {
-    @Environment(AppViewModel.self) private var appVM
+    @Environment(OrgDiscoveryController.self) private var orgDiscovery
     @Environment(\.dismiss) private var dismiss
 
     @State private var provider: GitProvider = .github
@@ -171,12 +174,11 @@ struct OrgSubscriptionEditorSheet: View {
 
             Form {
                 Section {
-                    Picker(String.loc("Provider"), selection: $provider) {
-                        ForEach(GitProvider.listingCases) { p in
-                            Text(p.displayName).tag(p)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    ProviderSegmentedControl(
+                        selection: $provider,
+                        providers: GitProvider.listingCases
+                    )
+                    .accessibilityLabel(String.loc("Provider"))
                     .onChange(of: provider) { _, _ in refreshAccounts() }
 
                     Picker(String.loc("Account"), selection: $accountLabel) {
@@ -243,7 +245,7 @@ struct OrgSubscriptionEditorSheet: View {
                             )
                         }
                     } else {
-                        Text(String.loc("GitRelay notifies you and opens Browse Remote prefilled so you can review before mirroring."))
+                        Text(String.loc("GitRelay notifies you and opens Add Mirror with the service and organization preselected."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -271,7 +273,7 @@ struct OrgSubscriptionEditorSheet: View {
         .onAppear {
             refreshAccounts()
             if let id = existingID {
-                targetToken = appVM.orgSubscriptionStore.loadTargetToken(for: id) ?? ""
+                targetToken = orgDiscovery.store.loadTargetToken(for: id) ?? ""
             }
         }
     }
@@ -296,15 +298,17 @@ struct OrgSubscriptionEditorSheet: View {
             organizationName: organizationName,
             autoAddEnabled: autoAddEnabled,
             template: template,
-            lastCheckedAt: existingID.flatMap { id in appVM.orgSubscriptions.first { $0.id == id }?.lastCheckedAt }
+            lastCheckedAt: existingID.flatMap { id in
+                orgDiscovery.subscriptions.first { $0.id == id }?.lastCheckedAt
+            }
         )
         if existingID == nil {
-            appVM.addOrgSubscription(subscription)
+            orgDiscovery.add(subscription)
         } else {
-            appVM.updateOrgSubscription(subscription)
+            orgDiscovery.update(subscription)
         }
         if !targetToken.isEmpty {
-            try? appVM.saveOrgSubscriptionTargetToken(targetToken, for: subscription.id)
+            try? orgDiscovery.saveTargetToken(targetToken, subscriptionID: subscription.id)
         }
         dismiss()
     }

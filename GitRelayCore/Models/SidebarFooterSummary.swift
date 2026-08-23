@@ -15,7 +15,11 @@ nonisolated struct SidebarFooterSummary: Equatable, Sendable {
     /// Only a manual pause is reversible from the footer; environment pauses
     /// (quiet hours, Low Power Mode, expensive network) clear on their own.
     var showsPauseControl: Bool {
-        hasScheduledSync && (pauseReason == nil || pauseReason == .manual)
+        guard hasScheduledSync else { return false }
+        switch pauseReason {
+        case nil, .manual: return true
+        default: return false
+        }
     }
 
     var stateText: String {
@@ -23,16 +27,16 @@ nonisolated struct SidebarFooterSummary: Equatable, Sendable {
     }
 
     var countsText: String {
-        String(localized: "\(repoCount) repos · \(failedCount) failed")
+        String(localized: "\(repoCount) mirrors · \(failedCount) failed")
     }
 
     static func make(
-        repos: [RepoConfig],
+        repos: [MirrorSnapshot],
         statuses: [UUID: SyncStatus],
         pauseReason: SyncPauseReason?
     ) -> SidebarFooterSummary {
         let failed = repos.reduce(into: 0) { total, repo in
-            if RepoPairTable.statusKind(for: repo, status: statuses[repo.id] ?? .unknown) == .failed {
+            if MirrorSummaryProjection.statusKind(for: repo, status: statuses[repo.id] ?? .unknown) == .failed {
                 total += 1
             }
         }

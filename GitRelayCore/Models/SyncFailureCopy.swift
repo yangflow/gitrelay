@@ -1,20 +1,20 @@
 import Foundation
 
 /// The clipboard payload behind 复制这次失败: which pair failed, when, the error,
-/// and the failed run's log — every line through ``SyncEngine.redactCredentials``,
+/// and the failed run's log — every line through ``CredentialRedactor.redact``,
 /// so a URL carrying a token cannot ride along into an issue report.
 nonisolated enum SyncFailureCopy {
     /// Keeps a long clone/push log from taking over the clipboard.
     static let maxLogLines = 300
 
     static func text(
-        repo: RepoConfig,
+        repo: MirrorSnapshot,
         message: String,
         logLines: [String] = [],
         failedAt: Date? = nil
     ) -> String {
         var lines: [String] = [String(localized: "GitRelay sync failure")]
-        lines.append(String(localized: "Repository: \(redacted(repo.name))"))
+        lines.append(String(localized: "Mirror: \(redacted(repo.name))"))
         lines.append(String(localized: "Source: \(redacted(repo.srcURL))"))
         for target in repo.targets {
             lines.append(String(localized: "Target: \(redacted(target.displayLabel))"))
@@ -47,7 +47,7 @@ nonisolated enum SyncFailureCopy {
     }
 
     private static func redacted(_ value: String) -> String {
-        SyncEngine.redactCredentials(value).trimmingCharacters(in: .whitespacesAndNewlines)
+        CredentialRedactor.redact(value).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// UTC, so a pasted report reads the same wherever it lands.

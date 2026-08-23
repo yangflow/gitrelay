@@ -87,16 +87,12 @@ struct FilesystemArchiveService {
     }
 
     func archiveMirror(
-        repo: RepoConfig,
-        target: MirrorTarget,
+        mirrorName: String,
+        destination: ArchiveDestination,
         mirrorPath: String,
         log: @Sendable (String) -> Void
     ) async throws -> URL {
-        guard target.kind == .filesystem else {
-            throw ArchiveError.invalidOutputDirectory("Expected filesystem target")
-        }
-
-        let outputDirectory = (target.filesystemPath ?? target.url)
+        let outputDirectory = destination.directoryPath
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !outputDirectory.isEmpty else {
             throw ArchiveError.invalidOutputDirectory("(empty)")
@@ -114,11 +110,14 @@ struct FilesystemArchiveService {
             )
         }
 
-        let format = target.resolvedArchiveFormat
+        let format = destination.format
         let filename = ArchiveFilenameTemplate.render(
-            template: target.resolvedFilenameTemplate(),
-            repoName: repo.name
+            template: destination.filenameTemplate,
+            repoName: mirrorName
         )
+        guard ArchiveFilenameTemplate.isSafe(filename) else {
+            throw ArchiveError.invalidOutputDirectory(outputDirectory)
+        }
         let outputURL = URL(fileURLWithPath: outputDirectory, isDirectory: true)
             .appendingPathComponent(filename)
 
@@ -131,8 +130,11 @@ struct FilesystemArchiveService {
         try await archiveRunner.createArchive(plan: plan)
         log("Archive created: \(outputURL.lastPathComponent)")
 
-        if let retentionCount = target.retentionCount, retentionCount > 0 {
-            let prefix = Self.archivePrefix(from: target.resolvedFilenameTemplate(), repoName: repo.name)
+        if let retentionCount = destination.retentionCount, retentionCount > 0 {
+            let prefix = Self.archivePrefix(
+                from: destination.filenameTemplate,
+                repoName: mirrorName
+            )
             let stale = ArchiveRetention.archivesToDelete(
                 in: URL(fileURLWithPath: outputDirectory, isDirectory: true),
                 matchingPrefix: prefix,

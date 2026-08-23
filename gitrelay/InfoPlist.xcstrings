@@ -22,13 +22,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "GitRelay uses Touch ID or your login password to protect sensitive actions such as viewing tokens and deleting repositories."
+            "value": "GitRelay uses Touch ID or your login password to protect sensitive actions such as viewing tokens and deleting mirrors."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "GitRelay 使用 Touch ID 或登录密码来保护查看令牌和删除仓库等敏感操作。"
+            "value": "GitRelay 使用 Touch ID 或登录密码来保护查看令牌和删除镜像等敏感操作。"
           }
         }
       }

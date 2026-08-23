@@ -58,7 +58,7 @@ enum ReleaseMirrorError: LocalizedError {
         case .unsupportedProvider(let provider):
             return "Release mirroring is not supported for \(provider.displayName)"
         case .missingToken(let side):
-            return "Missing API token for \(side) — configure HTTPS token or save a provider token in Browse Remote"
+            return "Missing API token for \(side). Reconnect the account in Settings."
         case .invalidRemoteURL(let url):
             return "Could not parse repository path from \(url)"
         case .assetUploadFailed(let name):

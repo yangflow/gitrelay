@@ -6,12 +6,12 @@ Thanks for your interest in GitRelay. This document covers how to build, test, a
 
 - Be kind. Bug reports and PRs are welcome from everyone.
 - Discuss large changes in an issue before starting so we can align on scope and design.
-- GitRelay intentionally does not modify the user's dotfiles or global git config — no change should break that guarantee.
+- GitRelay intentionally does not modify the user's dotfiles or global Git configuration. No change should break that guarantee.
 
 ## Prerequisites
 
-- macOS 14 (Sonoma) or later
-- Xcode 16 or later
+- macOS 26.2 or later
+- Xcode 26.2 or later
 - Apple Silicon or Intel
 
 ## Build
@@ -41,7 +41,7 @@ If you add a bug fix, add a regression test that fails on the old code. New serv
 
 ## Code style
 
-- Swift 6, `@MainActor` / `actor` / `Sendable` as appropriate. Keep diffs concurrency-safe.
+- Use Swift concurrency deliberately: `@MainActor`, actors, and `Sendable` should match ownership boundaries.
 - SwiftUI for all views. No AppKit unless unavoidable at the menu bar or window layer.
 - Prefer plain structs and enums with associated values over class hierarchies.
 - No force unwraps on user input. Throw typed errors.
@@ -69,11 +69,11 @@ Type prefixes: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`.
 
 ## Areas that need extra care
 
-- **`SyncEngine`** — errors must never leak credentials into logs. `redactCredentials` is the gate; if you add a new log line that might contain a URL, pass it through.
-- **`GitRunner`** — all git subprocess calls. If you add a new command, make sure it handles the cancelled signal path (`GitError.cancelled`) and cleans up any partially-written state.
-- **`KeychainService`** — tokens must stay in the Keychain. Never store a token in `RepoConfig` or `repos.json`.
-- **`SyncScheduler`** — `Timer` fires on the main run loop. All callbacks must be `MainActor`-safe. Use `MainActor.assumeIsolated` in the timer closure if needed.
-- **Concurrency** — `AppViewModel.inProgressSyncIDs` guards against double-syncing a single repo. Global throughput is capped by `SyncConcurrencyGate` (default 2); overflow stays `.queued` until a slot frees. Do not bypass either.
+- **`SyncEngine`:** errors must never leak credentials into logs. `redactCredentials` is the gate; if you add a new log line that might contain a URL, pass it through.
+- **`GitRunner`:** all Git subprocess calls. If you add a new command, make sure it handles the cancelled signal path (`GitError.cancelled`) and cleans up any partially written state.
+- **`KeychainService`:** tokens must stay in the Keychain. Never store a token or private-key material in `MirrorPlan`, exported configuration, or logs.
+- **`SyncScheduler`:** `Timer` fires on the main run loop. All callbacks must be `MainActor`-safe. Use `MainActor.assumeIsolated` in the timer closure if needed.
+- **Concurrency:** `MirrorOperationsController` owns queued and in-progress work. `MirrorOperationLease` prevents sync and verification from mutating the same Mirror concurrently, while `SyncConcurrencyGate` caps global sync throughput. Do not bypass these boundaries.
 
 ## Security
 

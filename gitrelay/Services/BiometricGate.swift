@@ -15,7 +15,7 @@ struct BiometricGate: Sendable {
         case .revealToken:
             return String.loc("Authenticate to show the token in plaintext.")
         case .deleteRepository:
-            return String.loc("Authenticate to delete this repository and its local mirror.")
+            return String.loc("Authenticate to delete this mirror and its local data.")
         case .changeTargetHost:
             return String.loc("Authenticate to change the mirror target to a different host.")
         }

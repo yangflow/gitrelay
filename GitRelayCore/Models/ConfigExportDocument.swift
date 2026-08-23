@@ -3,26 +3,30 @@ import Foundation
 /// Portable configuration snapshot for moving GitRelay between machines.
 /// Secrets (HTTPS tokens, Keychain values, private key material) are never included.
 nonisolated struct ConfigExportDocument: Codable, Equatable, Sendable {
+    static let formatIdentifier = "gitrelay-mirror-plan"
     static let currentSchemaVersion = 1
 
+    var format: String
     var schemaVersion: Int
     var exportedAt: Date?
-    var repos: [ExportedRepo]
+    var mirrors: [ExportedMirrorPlan]
     var providerAccounts: [ExportedProviderAccount]
     var orgSubscriptions: [ExportedOrgSubscription]
     var orgSubscriptionPreferences: OrgSubscriptionPreferences?
 
     init(
+        format: String = formatIdentifier,
         schemaVersion: Int = currentSchemaVersion,
         exportedAt: Date? = Date(),
-        repos: [ExportedRepo] = [],
+        mirrors: [ExportedMirrorPlan] = [],
         providerAccounts: [ExportedProviderAccount] = [],
         orgSubscriptions: [ExportedOrgSubscription] = [],
         orgSubscriptionPreferences: OrgSubscriptionPreferences? = nil
     ) {
+        self.format = format
         self.schemaVersion = schemaVersion
         self.exportedAt = exportedAt
-        self.repos = repos
+        self.mirrors = mirrors
         self.providerAccounts = providerAccounts
         self.orgSubscriptions = orgSubscriptions
         self.orgSubscriptionPreferences = orgSubscriptionPreferences
@@ -123,113 +127,144 @@ nonisolated struct ExportedOrgSubscriptionTemplate: Codable, Equatable, Hashable
     }
 }
 
-nonisolated struct ExportedMirrorTarget: Codable, Equatable, Hashable, Sendable {
-    var id: UUID
-    var kind: MirrorTargetKind
+nonisolated struct ExportedGitEndpoint: Codable, Equatable, Sendable {
     var url: String
     var auth: ExportedAuth
-    var enabled: Bool
-    var filesystemPath: String?
-    var archiveFormat: ArchiveFormat?
-    var filenameTemplate: String?
-    var retentionCount: Int?
+    var provider: GitProvider?
+    var accountLabel: String?
 
-    init(from target: MirrorTarget) {
-        id = target.id
-        kind = target.kind
-        url = target.url
-        auth = ExportedAuth.from(target.auth)
-        enabled = target.enabled
-        // Filesystem archive dirs are machine-local; keep the path so the user can remap,
-        // but never treat it as a credential.
-        filesystemPath = target.filesystemPath
-        archiveFormat = target.archiveFormat
-        filenameTemplate = target.filenameTemplate
-        retentionCount = target.retentionCount
+    init(from endpoint: GitEndpoint) {
+        url = endpoint.url
+        auth = ExportedAuth.from(endpoint.auth)
+        provider = endpoint.provider
+        accountLabel = endpoint.accountLabel
     }
 
-    func toMirrorTarget(repoID: UUID) -> MirrorTarget {
-        let tag = RepoCredentialTags.targetTokenTag(repoID: repoID, targetID: id)
-        return MirrorTarget(
-            id: id,
-            kind: kind,
+    func toGitEndpoint(keychainTag: String) -> GitEndpoint {
+        GitEndpoint(
             url: url,
-            auth: auth.toAuthConfig(keychainTag: tag),
-            enabled: enabled,
-            filesystemPath: filesystemPath,
-            archiveFormat: archiveFormat,
-            filenameTemplate: filenameTemplate,
-            retentionCount: retentionCount
+            auth: auth.toAuthConfig(keychainTag: keychainTag),
+            provider: provider,
+            accountLabel: accountLabel
         )
     }
 }
 
-nonisolated struct ExportedRepo: Codable, Equatable, Hashable, Sendable {
+nonisolated enum ExportedMirrorDestinationLocation: Codable, Equatable, Sendable {
+    case git(ExportedGitEndpoint)
+    case archive(ArchiveDestination)
+
+    init(from location: MirrorDestinationLocation) {
+        switch location {
+        case .git(let endpoint):
+            self = .git(ExportedGitEndpoint(from: endpoint))
+        case .archive(let archive):
+            // Archive paths are intentionally retained so the importing user can remap them.
+            self = .archive(archive)
+        }
+    }
+
+    func toLocation(
+        mirrorID: UUID,
+        destinationID: UUID,
+        credentialNamespace: UUID
+    ) -> MirrorDestinationLocation {
+        switch self {
+        case .git(let endpoint):
+            let tag = MirrorCredentialTags.destinationTokenTag(
+                mirrorID: mirrorID,
+                destinationID: destinationID,
+                namespace: credentialNamespace
+            )
+            return .git(endpoint.toGitEndpoint(keychainTag: tag))
+        case .archive(let archive):
+            return .archive(archive)
+        }
+    }
+}
+
+nonisolated struct ExportedMirrorDestination: Codable, Equatable, Identifiable, Sendable {
+    var id: UUID
+    var location: ExportedMirrorDestinationLocation
+    var isEnabled: Bool
+
+    init(from destination: MirrorDestination) {
+        id = destination.id
+        location = ExportedMirrorDestinationLocation(from: destination.location)
+        isEnabled = destination.isEnabled
+    }
+
+    func toDestination(mirrorID: UUID, credentialNamespace: UUID) -> MirrorDestination {
+        MirrorDestination(
+            id: id,
+            location: location.toLocation(
+                mirrorID: mirrorID,
+                destinationID: id,
+                credentialNamespace: credentialNamespace
+            ),
+            isEnabled: isEnabled
+        )
+    }
+}
+
+nonisolated struct ExportedMirrorPlan: Codable, Equatable, Identifiable, Sendable {
     var id: UUID
     var name: String
-    var srcURL: String
-    var targets: [ExportedMirrorTarget]
-    var srcAuth: ExportedAuth
-    var frequency: SyncFrequency
-    var destructivePushPolicy: DestructivePushPolicy
-    var defaultBranch: String
+    var source: ExportedGitEndpoint
+    var destinations: [ExportedMirrorDestination]
+    var policy: MirrorPolicy
+    var labels: [String]
     var createdAt: Date
-    var tags: [String]
-    var mirrorReleases: Bool
-    var lfsMirrorMode: LFSMirrorMode
-    var depth: Int?
-    var refSpecs: [String]
-    var webhookEnabled: Bool
+    var isSchedulePaused: Bool
 
-    init(from repo: RepoConfig) {
-        id = repo.id
-        name = repo.name
-        srcURL = repo.srcURL
-        targets = repo.targets.map(ExportedMirrorTarget.init(from:))
-        srcAuth = ExportedAuth.from(repo.srcAuth)
-        frequency = repo.frequency
-        destructivePushPolicy = repo.destructivePushPolicy
-        defaultBranch = repo.defaultBranch
-        createdAt = repo.createdAt
-        tags = repo.tags
-        mirrorReleases = repo.mirrorReleases
-        lfsMirrorMode = repo.lfsMirrorMode
-        depth = repo.depth
-        refSpecs = repo.refSpecs
-        webhookEnabled = repo.webhookEnabled
+    init(from plan: MirrorPlan) {
+        id = plan.id
+        name = plan.name
+        source = ExportedGitEndpoint(from: plan.source)
+        destinations = plan.destinations.map(ExportedMirrorDestination.init(from:))
+        policy = plan.policy
+        labels = plan.labels
+        createdAt = plan.createdAt
+        isSchedulePaused = plan.isSchedulePaused
     }
 
-    func toRepoConfig(probe: CredentialProbe) -> RepoConfig {
-        let srcTag = RepoCredentialTags.sourceTokenTag(repoID: id)
-        let mirrorTargets = targets.map { $0.toMirrorTarget(repoID: id) }
-        var repo = RepoConfig(
+    func toMirrorPlan() -> MirrorPlan {
+        // Portable exports never carry credentials. Give every import a fresh
+        // namespace so an old token for the same mirror UUID cannot silently be
+        // reused against a different host supplied by the imported document.
+        let credentialNamespace = UUID()
+        return MirrorPlan(
             id: id,
             name: name,
-            srcURL: srcURL,
-            targets: mirrorTargets,
-            srcAuth: srcAuth.toAuthConfig(keychainTag: srcTag),
-            frequency: frequency,
-            destructivePushPolicy: destructivePushPolicy,
-            defaultBranch: defaultBranch,
+            source: source.toGitEndpoint(
+                keychainTag: MirrorCredentialTags.sourceTokenTag(
+                    mirrorID: id,
+                    namespace: credentialNamespace
+                )
+            ),
+            destinations: destinations.map {
+                $0.toDestination(mirrorID: id, credentialNamespace: credentialNamespace)
+            },
+            policy: policy,
+            labels: labels,
             createdAt: createdAt,
-            tags: tags,
-            mirrorReleases: mirrorReleases,
-            lfsMirrorMode: lfsMirrorMode,
-            depth: depth,
-            refSpecs: refSpecs,
-            webhookEnabled: webhookEnabled
+            isSchedulePaused: isSchedulePaused
         )
-        repo.needsCredentials = RepoCredentialGate.needsCredentials(for: repo, probe: probe)
-        return repo
     }
 }
 
-nonisolated enum RepoCredentialTags {
-    static func sourceTokenTag(repoID: UUID) -> String {
-        "\(repoID.uuidString)-src"
+nonisolated enum MirrorCredentialTags {
+    static func sourceTokenTag(mirrorID: UUID, namespace: UUID? = nil) -> String {
+        let suffix = namespace.map { "-import-\($0.uuidString)" } ?? ""
+        return "\(mirrorID.uuidString)\(suffix)-src"
     }
 
-    static func targetTokenTag(repoID: UUID, targetID: UUID) -> String {
-        "\(repoID.uuidString)-target-\(targetID.uuidString)"
+    static func destinationTokenTag(
+        mirrorID: UUID,
+        destinationID: UUID,
+        namespace: UUID? = nil
+    ) -> String {
+        let suffix = namespace.map { "-import-\($0.uuidString)" } ?? ""
+        return "\(mirrorID.uuidString)\(suffix)-target-\(destinationID.uuidString)"
     }
 }

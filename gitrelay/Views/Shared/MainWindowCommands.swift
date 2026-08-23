@@ -2,12 +2,15 @@ import SwiftUI
 
 /// Menu-bar commands for the main window shortcuts (⌘N / ⌘F / ⌘R).
 struct MainWindowCommands: Commands {
-    let appVM: AppViewModel
+    let workspace: WorkspaceModel
+    let operations: MirrorOperationsController
+    let notifications: NotificationController
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
             Button(MainWindowShortcutBinding.addRepository.menuTitle) {
-                appVM.requestOpenAddRepository()
+                workspace.requestOpenAddMirror()
+                notifications.presentMainWindow()
             }
             .keyboardShortcut(
                 MainWindowShortcutBinding.addRepository.keyEquivalent,
@@ -19,7 +22,8 @@ struct MainWindowCommands: Commands {
         // Find after the standard text-editing group so ⌘F still appears in Edit.
         CommandGroup(after: .textEditing) {
             Button(MainWindowShortcutBinding.focusSearch.menuTitle) {
-                appVM.requestFocusSidebarSearch()
+                workspace.requestFocusSearch()
+                notifications.presentMainWindow()
             }
             .keyboardShortcut(
                 MainWindowShortcutBinding.focusSearch.keyEquivalent,
@@ -27,9 +31,11 @@ struct MainWindowCommands: Commands {
             )
         }
 
-        CommandMenu(String.loc("Repository")) {
+        CommandMenu(String.loc("Mirror")) {
             Button(MainWindowShortcutBinding.syncSelected.menuTitle) {
-                appVM.syncMainWindowSelectedRepository()
+                if let id = workspace.selectedMirrorID {
+                    operations.triggerSync(mirrorID: id)
+                }
             }
             .keyboardShortcut(
                 MainWindowShortcutBinding.syncSelected.keyEquivalent,
@@ -38,8 +44,23 @@ struct MainWindowCommands: Commands {
 
             // The pair table keeps only search and add, so Sync All lives here.
             Button(String.loc("Sync All")) {
-                appVM.triggerSyncAll()
+                operations.triggerSyncAll()
             }
+        }
+    }
+}
+
+/// Keeps the conventional macOS Settings menu and ⌘, shortcut while the
+/// settings interface lives in a normal window, matching the main workspace.
+struct SettingsCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some Commands {
+        CommandGroup(replacing: .appSettings) {
+            Button(String.loc("Settings…")) {
+                openWindow(id: "settings")
+            }
+            .keyboardShortcut(",", modifiers: .command)
         }
     }
 }

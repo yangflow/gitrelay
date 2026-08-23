@@ -4,7 +4,7 @@ enum GitRelayCLIExitCode: Int32, Equatable, Sendable {
     case success = 0
     case failure = 1
     case usage = 2
-    case repoNotFound = 3
+    case mirrorNotFound = 3
 }
 
 enum GitRelayCLICommand: Equatable, Sendable {
@@ -18,7 +18,7 @@ enum GitRelayCLICommand: Equatable, Sendable {
 enum GitRelayCLIParseError: LocalizedError, Equatable {
     case missingSubcommand
     case unknownSubcommand(String)
-    case missingRepoName(String)
+    case missingMirrorName(String)
     case invalidTailValue(String)
 
     var errorDescription: String? {
@@ -27,8 +27,8 @@ enum GitRelayCLIParseError: LocalizedError, Equatable {
             return "Missing subcommand."
         case .unknownSubcommand(let command):
             return "Unknown subcommand \"\(command)\"."
-        case .missingRepoName(let subcommand):
-            return "Missing repository name for \"\(subcommand)\"."
+        case .missingMirrorName(let subcommand):
+            return "Missing mirror name for \"\(subcommand)\"."
         case .invalidTailValue(let value):
             return "Invalid value for --tail: \"\(value)\"."
         }
@@ -45,7 +45,7 @@ enum GitRelayCLIParser {
       gitrelayctl status [<name>]
       gitrelayctl logs <name> [--tail N]
 
-    Config: ~/.local/share/gitrelay/repos.json
+    Config: ~/.local/share/gitrelay/mirrors.json
     """
 
     static func parse(_ arguments: [String]) -> Result<GitRelayCLICommand, GitRelayCLIParseError> {
@@ -65,7 +65,7 @@ enum GitRelayCLIParser {
             return .success(.list)
         case "sync":
             guard let name = args.dropFirst().first, !name.isEmpty else {
-                return .failure(.missingRepoName("sync"))
+                return .failure(.missingMirrorName("sync"))
             }
             return .success(.sync(name: name))
         case "status":
@@ -73,7 +73,7 @@ enum GitRelayCLIParser {
             return .success(.status(name: name))
         case "logs":
             guard let name = args.dropFirst().first, !name.isEmpty else {
-                return .failure(.missingRepoName("logs"))
+                return .failure(.missingMirrorName("logs"))
             }
             switch parseTail(from: Array(args.dropFirst(2))) {
             case .success(let tail):
@@ -118,14 +118,29 @@ enum GitRelayCLIParser {
 }
 
 struct GitRelayCLIStatusDocument: Codable, Equatable, Sendable {
-    var repos: [GitRelayCLIStatusEntry]
+    var mirrors: [GitRelayCLIStatusEntry]
 }
 
 struct GitRelayCLIStatusEntry: Codable, Equatable, Sendable {
-    var repoName: String
-    var status: RepoSyncStatusKind
+    var mirrorID: UUID?
+    var mirrorName: String
+    var status: MirrorSurfaceStatus
     var lastSyncedAt: Date?
     var message: String?
+
+    init(
+        mirrorID: UUID? = nil,
+        mirrorName: String,
+        status: MirrorSurfaceStatus,
+        lastSyncedAt: Date?,
+        message: String?
+    ) {
+        self.mirrorID = mirrorID
+        self.mirrorName = mirrorName
+        self.status = status
+        self.lastSyncedAt = lastSyncedAt
+        self.message = message.map(SyncEngine.redactCredentials)
+    }
 }
 
 enum GitRelayCLIFormatter {
@@ -144,14 +159,16 @@ enum GitRelayCLIFormatter {
         return string
     }
 
-    static func statusEntry(from snapshot: RepoSyncStatusSnapshot) -> GitRelayCLIStatusEntry {
+    static func statusEntry(from snapshot: MirrorSurfaceSnapshot) -> GitRelayCLIStatusEntry {
         GitRelayCLIStatusEntry(
-            repoName: snapshot.repoName,
+            mirrorID: snapshot.mirrorID,
+            mirrorName: snapshot.mirrorName,
             status: snapshot.status,
-            lastSyncedAt: snapshot.lastSyncedAt,
+            lastSyncedAt: snapshot.lastSuccessfulAt,
             message: snapshot.message
         )
     }
+
 }
 
 enum GitRelayCLIExecutionError: LocalizedError, Equatable {
@@ -167,11 +184,12 @@ enum GitRelayCLIExecutionError: LocalizedError, Equatable {
 
 enum GitRelayCLIExecutor {
     static func exitCode(for error: Error) -> GitRelayCLIExitCode {
-        if let headlessError = error as? HeadlessSyncError {
+        if let headlessError = error as? MirrorHeadlessSyncError {
             switch headlessError {
-            case .repoNotFound:
-                return .repoNotFound
-            case .loadFailed, .saveFailed, .needsCredentials:
+            case .mirrorNotFound:
+                return .mirrorNotFound
+            case .ambiguousMirrorName, .loadFailed, .missingCredentials,
+                 .alreadyRunning, .operationFinishedWithoutSuccess:
                 return .failure
             }
         }
@@ -181,39 +199,44 @@ enum GitRelayCLIExecutor {
         return .failure
     }
 
+    @MainActor
     static func run(command: GitRelayCLICommand) async throws -> GitRelayCLIExitCode {
         switch command {
         case .help:
             print(GitRelayCLIParser.usage)
             return .success
         case .list:
-            let repos = try HeadlessSyncRunner.loadRepos()
-            for repo in repos {
-                print(repo.name)
+            let plans = try MirrorHeadlessSyncRunner.loadPlans()
+            for plan in plans {
+                print("\(plan.id.uuidString.lowercased())\t\(plan.name)")
             }
             return .success
         case .sync(let name):
-            let succeeded = try await HeadlessSyncRunner.sync(repoName: name)
-            return succeeded ? .success : .failure
+            _ = try await MirrorHeadlessSyncRunner.sync(query: name)
+            return .success
         case .status(let name):
-            let repos = try HeadlessSyncRunner.loadRepos()
+            let plans = try MirrorHeadlessSyncRunner.loadPlans()
+            let health = try MirrorHeadlessSyncRunner.loadHealth()
             if let name {
-                guard let repo = RepoIntentSupport.repo(matchingName: name, in: repos) else {
-                    throw HeadlessSyncError.repoNotFound(name)
+                let plan: MirrorPlan
+                do {
+                    plan = try MirrorSurfaceSupport.mirror(matching: name, in: plans)
+                } catch MirrorSurfaceLookupError.notFound {
+                    throw MirrorHeadlessSyncError.mirrorNotFound(name)
+                } catch MirrorSurfaceLookupError.ambiguousName {
+                    throw MirrorHeadlessSyncError.ambiguousMirrorName(name)
                 }
-                let snapshot = RepoIntentSupport.makeSnapshot(
-                    repo: repo,
-                    runtimeStatus: nil,
-                    isSyncInProgress: false
+                let snapshot = MirrorSurfaceSupport.snapshot(
+                    plan: plan,
+                    health: health[plan.id]
                 )
                 print(try GitRelayCLIFormatter.jsonString(GitRelayCLIFormatter.statusEntry(from: snapshot)))
             } else {
                 let document = GitRelayCLIStatusDocument(
-                    repos: repos.map { repo in
-                        let snapshot = RepoIntentSupport.makeSnapshot(
-                            repo: repo,
-                            runtimeStatus: nil,
-                            isSyncInProgress: false
+                    mirrors: plans.map { plan in
+                        let snapshot = MirrorSurfaceSupport.snapshot(
+                            plan: plan,
+                            health: health[plan.id]
                         )
                         return GitRelayCLIFormatter.statusEntry(from: snapshot)
                     }
@@ -222,11 +245,16 @@ enum GitRelayCLIExecutor {
             }
             return .success
         case .logs(let name, let tail):
-            let repos = try HeadlessSyncRunner.loadRepos()
-            guard let repo = RepoIntentSupport.repo(matchingName: name, in: repos) else {
-                throw HeadlessSyncError.repoNotFound(name)
+            let plans = try MirrorHeadlessSyncRunner.loadPlans()
+            let plan: MirrorPlan
+            do {
+                plan = try MirrorSurfaceSupport.mirror(matching: name, in: plans)
+            } catch MirrorSurfaceLookupError.notFound {
+                throw MirrorHeadlessSyncError.mirrorNotFound(name)
+            } catch MirrorSurfaceLookupError.ambiguousName {
+                throw MirrorHeadlessSyncError.ambiguousMirrorName(name)
             }
-            let lines = try SyncLogStore.formattedLogLines(for: repo.id, tail: tail)
+            let lines = try MirrorHeadlessSyncRunner.logLines(mirrorID: plan.id, tail: tail)
             for line in lines {
                 print(line)
             }

@@ -30,7 +30,7 @@ struct BackupCompleteness: Equatable, Sendable {
     }
 
     static func evaluate(
-        repo: RepoConfig,
+        repo: MirrorSnapshot,
         recentRecords: [SyncRecord] = []
     ) -> BackupCompleteness {
         var reasons: [Reason] = []
@@ -38,7 +38,7 @@ struct BackupCompleteness: Equatable, Sendable {
         if repo.isShallowClone {
             reasons.append(.shallowClone)
         }
-        if !RepoConfig.refSpecsEqual(repo.resolvedRefSpecs, RepoConfig.defaultRefSpecs) {
+        if !MirrorSnapshot.refSpecsEqual(repo.resolvedRefSpecs, MirrorSnapshot.defaultRefSpecs) {
             reasons.append(.customRefFilters)
         }
         if LFSMirrorMessages.recentRecordsContainMissingToolWarning(recentRecords) {

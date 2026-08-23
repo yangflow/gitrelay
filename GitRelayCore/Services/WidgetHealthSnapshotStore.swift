@@ -1,4 +1,5 @@
 import Foundation
+import Security
 
 enum WidgetHealthSnapshotStore {
     static let appGroupID = "group.com.yangflow.gitrelay"
@@ -10,9 +11,40 @@ enum WidgetHealthSnapshotStore {
         if let testingContainerURL {
             return testingContainerURL
         }
-        return FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: appGroupID
+        return authorizedContainerURL(
+            applicationGroups: signedApplicationGroups,
+            resolver: { groupID in
+                FileManager.default.containerURL(
+                    forSecurityApplicationGroupIdentifier: groupID
+                )
+            }
         )
+    }
+
+    /// Resolving an App Group container without the matching entitlement makes
+    /// macOS treat the request as access to another app's data. Local ad-hoc
+    /// builds do not carry restricted entitlements, so skip the resolver before
+    /// the system can show a privacy prompt.
+    static func authorizedContainerURL(
+        applicationGroups: [String]?,
+        resolver: (String) -> URL?
+    ) -> URL? {
+        guard applicationGroups?.contains(appGroupID) == true else {
+            return nil
+        }
+        return resolver(appGroupID)
+    }
+
+    private static var signedApplicationGroups: [String]? {
+        guard let task = SecTaskCreateFromSelf(nil),
+              let value = SecTaskCopyValueForEntitlement(
+                  task,
+                  "com.apple.security.application-groups" as CFString,
+                  nil
+              ) else {
+            return nil
+        }
+        return value as? [String]
     }
 
     static var snapshotURL: URL? {

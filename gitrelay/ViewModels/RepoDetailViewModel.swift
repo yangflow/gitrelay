@@ -23,7 +23,7 @@ final class RepoDetailViewModel {
         branches = (try? await runner.listRefs(repoPath: path)) ?? []
     }
 
-    func loadReleaseStatus(for repo: RepoConfig) async {
-        releaseStatuses = releaseMirrorService.loadStatus(repo: repo)
+    func loadReleaseStatus(for repo: MirrorSnapshot) async {
+        releaseStatuses = releaseMirrorService.loadStatus(plan: repo.plan)
     }
 }

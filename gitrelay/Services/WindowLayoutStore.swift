@@ -7,9 +7,9 @@ import Observation
 final class WindowLayoutStore {
     private enum Keys {
         static let selectedRepoID = "WindowLayout.selectedRepoID"
+        static let selectedSmartView = "WindowLayout.selectedSmartView"
         static let detailTab = "WindowLayout.detailTab"
         static let sidebarWidth = "WindowLayout.sidebarWidth"
-        static let sidebarVisible = "WindowLayout.sidebarVisible"
     }
 
     private let defaults: UserDefaults
@@ -29,6 +29,19 @@ final class WindowLayoutStore {
             guard storage.selectedRepoID != newValue else { return }
             storage.selectedRepoID = newValue
             persistSelectedRepoID(newValue)
+        }
+    }
+
+    var selectedSmartView: MirrorSmartView? {
+        get { storage.selectedSmartView }
+        set {
+            guard storage.selectedSmartView != newValue else { return }
+            storage.selectedSmartView = newValue
+            if let newValue {
+                defaults.set(newValue.id, forKey: Keys.selectedSmartView)
+            } else {
+                defaults.removeObject(forKey: Keys.selectedSmartView)
+            }
         }
     }
 
@@ -55,15 +68,6 @@ final class WindowLayoutStore {
         }
     }
 
-    var sidebarVisible: Bool {
-        get { storage.sidebarVisible }
-        set {
-            guard storage.sidebarVisible != newValue else { return }
-            storage.sidebarVisible = newValue
-            defaults.set(newValue, forKey: Keys.sidebarVisible)
-        }
-    }
-
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.storage = Self.normalized(Self.load(from: defaults))
@@ -82,9 +86,13 @@ final class WindowLayoutStore {
 
     private func persist(_ value: WindowLayout) {
         persistSelectedRepoID(value.selectedRepoID)
+        if let selectedSmartView = value.selectedSmartView {
+            defaults.set(selectedSmartView.id, forKey: Keys.selectedSmartView)
+        } else {
+            defaults.removeObject(forKey: Keys.selectedSmartView)
+        }
         defaults.set(value.detailTab.rawValue, forKey: Keys.detailTab)
         defaults.set(value.sidebarWidth, forKey: Keys.sidebarWidth)
-        defaults.set(value.sidebarVisible, forKey: Keys.sidebarVisible)
     }
 
     private func persistSelectedRepoID(_ id: UUID?) {
@@ -120,6 +128,9 @@ final class WindowLayoutStore {
             detailTab = fallback.detailTab
         }
 
+        let selectedSmartView = defaults.string(forKey: Keys.selectedSmartView)
+            .flatMap(MirrorSmartView.init(id:))
+
         let sidebarWidth: Double
         if defaults.object(forKey: Keys.sidebarWidth) == nil {
             sidebarWidth = fallback.sidebarWidth
@@ -127,18 +138,11 @@ final class WindowLayoutStore {
             sidebarWidth = WindowLayout.clampedSidebarWidth(defaults.double(forKey: Keys.sidebarWidth))
         }
 
-        let sidebarVisible: Bool
-        if defaults.object(forKey: Keys.sidebarVisible) == nil {
-            sidebarVisible = fallback.sidebarVisible
-        } else {
-            sidebarVisible = defaults.bool(forKey: Keys.sidebarVisible)
-        }
-
         return WindowLayout(
             selectedRepoID: selectedRepoID,
+            selectedSmartView: selectedSmartView,
             detailTab: detailTab,
-            sidebarWidth: sidebarWidth,
-            sidebarVisible: sidebarVisible
+            sidebarWidth: sidebarWidth
         )
     }
 }

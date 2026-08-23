@@ -5,7 +5,7 @@ import Foundation
 /// the single line that says when the next run is due.
 ///
 /// Pausing here only stops frequency-driven runs. Manual 同步 and webhook syncs
-/// go through ``AppViewModel.triggerSync`` and never consult this.
+/// go through the operations controller and never consult this.
 nonisolated struct RepoScheduleState: Equatable, Sendable {
     let isPaused: Bool
     /// True when the pair syncs on a frequency rather than only by hand.
@@ -14,7 +14,7 @@ nonisolated struct RepoScheduleState: Equatable, Sendable {
     let needsCredentials: Bool
     let nextFireDate: Date?
 
-    static func make(repo: RepoConfig, nextFireDate: Date? = nil) -> RepoScheduleState {
+    static func make(repo: MirrorSnapshot, nextFireDate: Date? = nil) -> RepoScheduleState {
         RepoScheduleState(
             isPaused: repo.scheduledSyncPaused,
             hasFrequency: repo.frequency != .manual,
@@ -25,7 +25,7 @@ nonisolated struct RepoScheduleState: Equatable, Sendable {
 
     /// The scheduler arms a repeating timer only for a pair that has a
     /// frequency, is not paused, and is not waiting on credentials.
-    static func armsTimer(for repo: RepoConfig) -> Bool {
+    static func armsTimer(for repo: MirrorSnapshot) -> Bool {
         make(repo: repo).armsTimer
     }
 

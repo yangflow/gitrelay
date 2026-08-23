@@ -3,7 +3,6 @@ import SwiftUI
 struct RepoSyncingRowView: View {
     let statusTitle: String
     let latestLogLine: String?
-    let onCancel: () -> Void
 
     var body: some View {
         HStack(spacing: DesignTokens.Spacing.md) {
@@ -19,10 +18,6 @@ struct RepoSyncingRowView: View {
                         .lineLimit(1)
                 }
             }
-            Spacer(minLength: DesignTokens.Spacing.md)
-            Button(String.loc("Cancel"), action: onCancel)
-                .buttonStyle(.bordered)
-                .controlSize(.small)
         }
     }
 }

@@ -75,8 +75,8 @@ struct RepoOpenLocationTests {
     private func repo(
         srcURL: String,
         targets: [MirrorTarget]
-    ) -> RepoConfig {
-        RepoConfig(name: "keychord", srcURL: srcURL, targets: targets)
+    ) -> MirrorSnapshot {
+        MirrorSnapshot(name: "keychord", srcURL: srcURL, targets: targets)
     }
 
     @Test func aRemoteSourceOpensItsPage() throws {
@@ -146,8 +146,8 @@ struct RepoScheduleStateTests {
         frequency: SyncFrequency = .hour1,
         paused: Bool = false,
         needsCredentials: Bool = false
-    ) -> RepoConfig {
-        RepoConfig(
+    ) -> MirrorSnapshot {
+        MirrorSnapshot(
             name: "keychord",
             srcURL: "git@github.com:organization/keychord.git",
             dstURL: "git@github.com:organization/keychord-mirror.git",
@@ -211,26 +211,23 @@ struct RepoScheduleStateTests {
         #expect(sameDay != nextDay)
     }
 
-    @Test func thePauseFlagSurvivesASaveAndLoad() throws {
-        let data = try JSONEncoder().encode(repo(paused: true))
-        let restored = try JSONDecoder().decode(RepoConfig.self, from: data)
-        #expect(restored.scheduledSyncPaused)
+    @Test func thePauseFlagSurvivesPlanEncoding() throws {
+        let data = try JSONEncoder().encode(repo(paused: true).plan)
+        let restored = try JSONDecoder().decode(MirrorPlan.self, from: data)
+        #expect(restored.isSchedulePaused)
     }
 
-    @Test func anUnpausedPairWritesNoPauseKeyAndReadsBackFalse() throws {
-        let data = try JSONEncoder().encode(repo())
-        let json = try #require(String(data: data, encoding: .utf8))
-        #expect(!json.contains("scheduledSyncPaused"))
-
-        let restored = try JSONDecoder().decode(RepoConfig.self, from: data)
-        #expect(!restored.scheduledSyncPaused)
+    @Test func anActiveMirrorReadsBackAsActive() throws {
+        let data = try JSONEncoder().encode(repo().plan)
+        let restored = try JSONDecoder().decode(MirrorPlan.self, from: data)
+        #expect(!restored.isSchedulePaused)
     }
 }
 
 @MainActor
 struct ScheduledSyncPauseSchedulerTests {
-    private func repo(paused: Bool) -> RepoConfig {
-        RepoConfig(
+    private func repo(paused: Bool) -> MirrorSnapshot {
+        MirrorSnapshot(
             name: "keychord",
             srcURL: "git@github.com:organization/keychord.git",
             dstURL: "git@github.com:organization/keychord-mirror.git",
@@ -244,15 +241,15 @@ struct ScheduledSyncPauseSchedulerTests {
         defer { scheduler.invalidateAll() }
 
         var config = repo(paused: false)
-        scheduler.schedule(repo: config)
+        scheduler.schedule(plan: config.plan, needsCredentials: config.needsCredentials)
         #expect(scheduler.nextFireDate(for: config.id) != nil)
 
         config.scheduledSyncPaused = true
-        scheduler.reschedule(repo: config)
+        scheduler.reschedule(plan: config.plan, needsCredentials: config.needsCredentials)
         #expect(scheduler.nextFireDate(for: config.id) == nil)
 
         config.scheduledSyncPaused = false
-        scheduler.reschedule(repo: config)
+        scheduler.reschedule(plan: config.plan, needsCredentials: config.needsCredentials)
         #expect(scheduler.nextFireDate(for: config.id) != nil)
     }
 
@@ -263,23 +260,23 @@ struct ScheduledSyncPauseSchedulerTests {
         defer { scheduler.invalidateAll() }
 
         var config = repo(paused: false)
-        scheduler.schedule(repo: config)
+        scheduler.schedule(plan: config.plan, needsCredentials: config.needsCredentials)
         #expect(scheduler.nextFireDate(for: config.id) != nil)
 
         config.frequency = .manual
-        scheduler.schedule(repo: config)
+        scheduler.schedule(plan: config.plan, needsCredentials: config.needsCredentials)
         #expect(scheduler.nextFireDate(for: config.id) == nil)
     }
 }
 
 @MainActor
-struct ScheduledSyncPauseAppViewModelTests {
-    private func makeViewModel(defaults: UserDefaults) -> AppViewModel {
+struct ScheduledSyncPauseAppModelTests {
+    private func makeViewModel(defaults: UserDefaults) -> GitRelayAppModel {
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("gitrelay-pair-pause-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         Constants.setBaseDirectoryForTesting(base)
-        let vm = AppViewModel(
+        let vm = GitRelayAppModel(
             verificationPreferencesStore: VerificationPreferencesStore(defaults: defaults),
             webhookPreferencesStore: WebhookPreferencesStore(defaults: defaults),
             notificationPreferencesStore: NotificationPreferencesStore(defaults: defaults)
@@ -294,10 +291,10 @@ struct ScheduledSyncPauseAppViewModelTests {
         return vm
     }
 
-    private func addScheduledRepo(to vm: AppViewModel) -> UUID {
+    private func addScheduledRepo(to vm: GitRelayAppModel) -> UUID {
         let id = UUID()
         vm.addRepo(
-            RepoConfig(
+            MirrorSnapshot(
                 id: id,
                 name: "keychord",
                 srcURL: "git@github.com:organization/keychord.git",
@@ -354,8 +351,8 @@ struct ScheduledSyncPauseAppViewModelTests {
 // MARK: - 复制这次失败 payload (#103)
 
 struct SyncFailureCopyTests {
-    private var repo: RepoConfig {
-        RepoConfig(
+    private var repo: MirrorSnapshot {
+        MirrorSnapshot(
             name: "keychord",
             srcURL: "git@github.com:organization/keychord.git",
             dstURL: "git@github.com:organization/keychord-mirror.git"

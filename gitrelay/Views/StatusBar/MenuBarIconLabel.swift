@@ -2,7 +2,8 @@ import SwiftUI
 import AppKit
 
 struct MenuBarIconLabel: View {
-    let appVM: AppViewModel
+    let mirrors: [MirrorSnapshot]
+    let statuses: [UUID: SyncStatus]
 
     var body: some View {
         Image(nsImage: icon)
@@ -11,8 +12,12 @@ struct MenuBarIconLabel: View {
 
     private var appearance: MenuBarIconAppearance {
         MenuBarIconAppearance.make(
-            hasFailure: appVM.hasAnyFailure,
-            hasDivergence: appVM.hasAnyDivergence
+            hasFailure: statuses.values.contains {
+                if case .failed = $0 { true } else { false }
+            },
+            hasDivergence: statuses.values.contains {
+                if case .diverged = $0 { true } else { false }
+            } || mirrors.contains(where: \.isDiverged)
         )
     }
 

@@ -21,58 +21,25 @@ struct AppLanguageStoreTests {
 
     @Test func persistingEnglishWritesAppleLanguages() {
         defer { AppLocalization.resetOverride() }
-        let (defaults, _) = freshDefaults()
+        let (defaults, suiteName) = freshDefaults()
         let store = AppLanguageStore(defaults: defaults)
 
         store.preference = .english
 
         #expect(defaults.string(forKey: AppLanguageStore.preferenceKey) == "english")
-        #expect(defaults.array(forKey: "AppleLanguages") as? [String] == ["en"])
+        #expect(defaults.persistentDomain(forName: suiteName)?["AppleLanguages"] as? [String] == ["en"])
         #expect(store.locale.identifier.hasPrefix("en"))
-    }
-
-    @Test func theNoteAppearsOnlyAfterAChange() {
-        defer { AppLocalization.resetOverride() }
-        let (defaults, _) = freshDefaults()
-        let store = AppLanguageStore(defaults: defaults)
-        let quietAtLaunch = store.showsLaunchCatalogNote
-
-        store.preference = .english
-        let afterChange = store.showsLaunchCatalogNote
-
-        #expect(!quietAtLaunch)
-        #expect(afterChange)
-    }
-
-    @Test func switchingBackToTheLaunchLanguageClearsTheNote() {
-        defer { AppLocalization.resetOverride() }
-        let (defaults, _) = freshDefaults()
-        defaults.set(
-            AppLanguagePreference.simplifiedChinese.rawValue,
-            forKey: AppLanguageStore.preferenceKey
-        )
-        let store = AppLanguageStore(defaults: defaults)
-        let launchPreference = store.launchPreference
-
-        store.preference = .english
-        let afterChange = store.showsLaunchCatalogNote
-        store.preference = .simplifiedChinese
-        let afterSwitchingBack = store.showsLaunchCatalogNote
-
-        #expect(launchPreference == .simplifiedChinese)
-        #expect(afterChange)
-        #expect(!afterSwitchingBack)
     }
 
     @Test func persistingSimplifiedChineseWritesAppleLanguages() {
         defer { AppLocalization.resetOverride() }
-        let (defaults, _) = freshDefaults()
+        let (defaults, suiteName) = freshDefaults()
         let store = AppLanguageStore(defaults: defaults)
 
         store.preference = .simplifiedChinese
 
         #expect(defaults.string(forKey: AppLanguageStore.preferenceKey) == "simplifiedChinese")
-        #expect(defaults.array(forKey: "AppleLanguages") as? [String] == ["zh-Hans"])
+        #expect(defaults.persistentDomain(forName: suiteName)?["AppleLanguages"] as? [String] == ["zh-Hans"])
     }
 
     @Test func returningToSystemClearsAppleLanguagesOverride() {
@@ -92,12 +59,12 @@ struct AppLanguageStoreTests {
 
     @Test func bootstrapAppliesStoredPreference() {
         defer { AppLocalization.resetOverride() }
-        let (defaults, _) = freshDefaults()
+        let (defaults, suiteName) = freshDefaults()
         defaults.set(AppLanguagePreference.simplifiedChinese.rawValue, forKey: AppLanguageStore.preferenceKey)
 
         AppLanguageStore.bootstrapAppleLanguages(defaults: defaults)
 
-        #expect(defaults.array(forKey: "AppleLanguages") as? [String] == ["zh-Hans"])
+        #expect(defaults.persistentDomain(forName: suiteName)?["AppleLanguages"] as? [String] == ["zh-Hans"])
     }
 
     @Test func bootstrapSystemRemovesOverride() {

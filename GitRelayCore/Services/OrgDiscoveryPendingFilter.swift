@@ -6,9 +6,9 @@ nonisolated enum OrgDiscoveryPendingFilter {
   static func actionableRepos(
     subscription: OrgSubscription,
     newRepos: [RemoteRepo],
-    localRepos: [RepoConfig]
+    localMirrors: [MirrorPlan]
   ) -> [RemoteRepo] {
-    let mirrored = OrgRepoDiff.syncedRemotePaths(from: localRepos)
+    let mirrored = OrgRepoDiff.syncedRemotePaths(from: localMirrors)
     let ignored = Set(subscription.ignoredDiscoveredRepoIDs)
     return newRepos.filter { repo in
       !ignored.contains(repo.id)

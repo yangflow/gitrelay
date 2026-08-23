@@ -61,7 +61,7 @@ struct SyncPausePolicy: Equatable, Sendable {
     }
 }
 
-enum SyncPauseReason: Equatable, Sendable {
+nonisolated enum SyncPauseReason: Equatable, Sendable {
     case manual
     case quietHours
     case lowPowerMode

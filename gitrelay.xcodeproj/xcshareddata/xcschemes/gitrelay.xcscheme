@@ -34,6 +34,20 @@
                ReferencedContainer = "container:gitrelay.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "964A1AF52F8B6C91008A7FD2"
+               BuildableName = "gitrelayUITests.xctest"
+               BlueprintName = "gitrelayUITests"
+               ReferencedContainer = "container:gitrelay.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -60,6 +74,16 @@
                BlueprintIdentifier = "964A1AEB2F8B6C91008A7FD2"
                BuildableName = "gitrelayTests.xctest"
                BlueprintName = "gitrelayTests"
+               ReferencedContainer = "container:gitrelay.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "964A1AF52F8B6C91008A7FD2"
+               BuildableName = "gitrelayUITests.xctest"
+               BlueprintName = "gitrelayUITests"
                ReferencedContainer = "container:gitrelay.xcodeproj">
             </BuildableReference>
          </TestableReference>

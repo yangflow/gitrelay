@@ -18,7 +18,7 @@ nonisolated enum RepoOpenLocation: Equatable, Sendable {
 
     /// The pair's source: a remote page when the URL names a host, the folder
     /// when the source is a path on this Mac.
-    static func source(of repo: RepoConfig) -> RepoOpenLocation? {
+    static func source(of repo: MirrorSnapshot) -> RepoOpenLocation? {
         make(gitLocation: repo.srcURL)
     }
 

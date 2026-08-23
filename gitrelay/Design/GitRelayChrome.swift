@@ -16,7 +16,7 @@ struct GitRelayChromeBackground: View {
 }
 
 extension View {
-    /// Pins the main-window sidebar to the narrow DesignTokens width range.
+    /// Pins native main and Settings sidebars to the shared token width range.
     /// - Parameter ideal: Restored or current column width (clamped by min/max).
     func gitRelaySidebarColumnWidth(
         ideal: CGFloat = DesignTokens.Layout.sidebarIdealWidth
@@ -25,20 +25,18 @@ extension View {
             max(ideal, DesignTokens.Layout.sidebarMinWidth),
             DesignTokens.Layout.sidebarMaxWidth
         )
-        return frame(
-            minWidth: DesignTokens.Layout.sidebarMinWidth,
-            idealWidth: clampedIdeal,
-            maxWidth: DesignTokens.Layout.sidebarMaxWidth
+        return navigationSplitViewColumnWidth(
+            min: DesignTokens.Layout.sidebarMinWidth,
+            ideal: clampedIdeal,
+            max: DesignTokens.Layout.sidebarMaxWidth
         )
     }
 
-    /// Pins the Settings sidebar to the narrow DesignTokens width range.
-    func gitRelaySettingsSidebarColumnWidth() -> some View {
-        navigationSplitViewColumnWidth(
-            min: DesignTokens.Layout.settingsSidebarMinWidth,
-            ideal: DesignTokens.Layout.settingsSidebarIdealWidth,
-            max: DesignTokens.Layout.settingsSidebarMaxWidth
-        )
+    /// Native sidebar list treatment shared by the main and Settings windows.
+    func gitRelaySidebarListStyle() -> some View {
+        listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     func gitRelayChrome(_ role: DesignTokens.ChromeRole) -> some View {
